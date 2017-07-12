@@ -22,11 +22,18 @@ Mascot: an octopus.
 
 x Draft plan for the core API.
 
-- Set up repo.
+x Set up repo.
 
-- Zero-config use case.
+x Zero-config use case.
 
 - Simple-spec use case.
+
+    - <x> for positionals.
+    - X for option args.
+    - All values are strings.
+
+            spec = '-n NAME --foo --bar B1 B2 <x> <y>'
+            p = parser(simple = spec)
 
 - API-config use case, supporting core features: option, nargs, repeatable,
   tolerant, required.

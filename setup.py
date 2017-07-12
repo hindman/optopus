@@ -54,13 +54,6 @@ package_data = {
     ],
 }
 
-entry_points = {
-    'console_scripts': [
-        'opto-py = opto_py.main:main',
-    ],
-}
-
-
 ####
 # Import __version__.
 ####
@@ -88,6 +81,5 @@ setup(
     install_requires = reqs,
     tests_require    = extras['test'],
     extras_require   = extras,
-    entry_points     = entry_points,
 )
 
