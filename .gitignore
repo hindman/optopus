@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+/__pycache__/
+*.py[cod]
+
+# Development-related files.
+/.ackrc
+/.vimrc
+/.noseids
+/.python-version
+/tags
+
+# Building, distribution, packaging.
+/.profile
+/.vagrant/
+/build/
+/dist/
+/MANIFEST
+/*.egg-info
+/src/*.egg-info
+*.egg
+
+# Temp and similar directories.
+/tmp/
+/log/
+
+# Unit test and coverage reports.
+/htmlcov/
+/.tox/
+/.coverage
+/coverage.xml
+/xunit.xml
+/.coverage.*
+.cache/
+
+#Sphinx documentation
+/docs/build/
+
+# Junk files.
+.DS_Store
+
+# PyCharm .idea settings
+.idea
+
