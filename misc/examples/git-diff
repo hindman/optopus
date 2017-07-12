@@ -1,0 +1,36 @@
+#! /usr/bin/env python
+
+# git-diff
+#
+# - Illustrates the style of Git's usage text.
+#
+# - Note that complex programs might have general-options that conflict
+#   with the options of a subcommand (eg, -C is also used by git-diff).
+
+
+USAGE['main'] = '''
+    git [--version] [--help] [-C <path>] [-c name=value]
+        [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
+        [-p|--paginate|--no-pager] [--no-replace-objects] [--bare]
+        [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
+        <command> [<args>]
+'''
+
+
+USAGE['merge'] = '''
+    git merge [-n] [--stat] [--no-commit] [--squash] [--[no-]edit]
+            [-s <strategy>] [-X <strategy-option>] [-S[<key-id>]]
+            [--[no-]rerere-autoupdate] [-m <msg>] [<commit>...]
+    git merge <msg> HEAD <commit>...
+    git merge --abort
+'''
+
+
+USAGE['diff'] = '''
+    git diff [options] [<commit>] [--] [<path>...]
+    git diff [options] --cached [<commit>] [--] [<path>...]
+    git diff [options] <commit> <commit> [--] [<path>...]
+    git diff [options] <blob> <blob>
+    git diff [options] [--no-index] [--] <path> <path>
+'''
+

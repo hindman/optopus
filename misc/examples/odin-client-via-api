@@ -1,0 +1,270 @@
+#! /usr/bin/env python
+
+# odin-client : configuration via API.
+#
+# Includes the following examples:
+#
+# - Detailed example showing the configuration API.
+#
+# - Two partial attempts to specify the CLI grammar with API.
+#
+#   - Flat style: ultimately, this will fail for complex
+#     situations.
+#
+#   - Hierarchical style: the way to go, but the result really
+#     illustrates the superiority of specifying grammar via
+#     a simple textual syntax.
+
+
+####
+# The configuration API.
+####
+
+p = parser(
+    dict(
+        option   = 'task',
+        groups   = 'task',
+        arg_name = 'TASK',
+        choices  = 'configure submit upload start get stop download find'.split(),
+        desc     = 'The odin-client task to run',
+    ),
+    dict(
+        option  = '--odin-env ENV',
+        groups  = 'general',
+        default = 'dev',
+        desc    = "Odin environment ('production' for most users).",
+    ),
+    dict(
+        option = '--od-user USER',
+        groups = 'general',
+        desc   = 'Open Directory user name.',
+    ),
+    dict(
+        option  = '--log-level LEV',
+        groups  = 'general',
+        choices = 'DEBUG INFO WARNING ERROR CRITICAL'.split(),
+        default = 'INFO',
+        convert = str.upper,
+        desc    = AUTO,
+    ),
+    dict(
+        option = '--disable-logging',
+        groups = 'general',
+        desc   = 'Disable logging.',
+    ),
+    dict(
+        option   = '--debug',
+        groups   = ('general', 'developer'),
+        desc     = 'Enable debuggin',
+        suppress = OPTION_TEXT,
+    ),
+    dict(
+        option   = '--examples',
+        groups   = 'special',
+        dispatch = do_exit,
+        desc     = 'Display configuration and usage examples.',
+    ),
+    dict(
+        option   = '--autocomplete',
+        groups   = 'special',
+        dispatch = do_exit,
+        desc     = 'Display instructions for enabling autocomplete.',
+    ),
+    dict(
+        option   = '--version',
+        groups   = 'special',
+        dispatch = do_exit,
+        desc     = 'Display version information.',
+    ),
+    dict(
+        option   = '--help -h',
+        groups   = 'special',
+        dispatch = do_exit,
+        desc     = 'Display the help message.',
+    ),
+    dict(
+        # Fully explicit example.
+        option         = '--job-id',                # Or string with option, aliases, and arg_name.
+        aliases        = ['-j', '-J', '--jid'],     # Or just one string.
+        arg_name       = 'ID',
+        destination    = 'job_id',                  # Or `dest`.
+        groups         = ['command'],               # Or just one string.
+        n_args          = 1,
+        repeatable     = False,                     # If true, append values.
+        default        = None,
+        type           = str,
+        choices        = ('A', 'B', 'C', 'D'),      # Or a list of choices if nargs > 1. See SO Question: 28660992.
+        required       = False,
+        negate_option  = ['--no-job-id'],           # Or just True.
+        description    = 'The Odin job id.',        # Or `desc`.
+        tolerant       = False,                     # Setting option makes grammar fully tolerant.
+        case_sensitive = True,                      # Whether option value is case-sensitive.
+        hide           = ['choices', 'default']     # Other values: option, description.
+        dispatch       = (func, xs, kws),           # Or just a callable.
+        validate       = (func, xs, kws),           # Or just a callable.
+        convert        = (func, xs, kws),           # Or just callable. Done before validation.
+    ),
+    dict(
+        option = '--user -u USER',
+        groups = 'command',
+        desc   = 'Open Directory user who submitted the job.',
+    ),
+    dict(
+        option = '--job-status STATUS',
+        groups = 'command',
+        desc   = 'Job status.',
+    ),
+    dict(
+        option = '--job-config-file -c PATH',
+        groups = 'command',
+        type   = 'file',
+        desc   = 'Path to job configuration file, which should contain an '
+                 'OdinJobConfig, either base64-encoded or as JSON.',
+    ),
+    dict(
+        option = '--requests-file -r PATH',
+        groups = 'command',
+        type   = 'file',
+        desc   = "Path to the job's requests file, which should contain OdinItem "
+                 "objects, base64-encoded, one per line. If this option is given, "
+                 "odin-client will upload after submitting the OdinJobConfig.",
+    ),
+    dict(
+        option = '--start-job',
+        groups = 'command',
+        desc   = 'After submitting job and uploading requests, start job.',
+    ),
+    dict(
+        option  = '--resume N',
+        groups  = 'command',
+        default = 1,
+        type    = int,
+        desc    = 'Resume upload, starting at line N [1].',
+    ),
+    dict(option = '--json', groups = 'command', desc = 'JSON format'),
+    dict(option = '--b64',  groups = 'command', desc = 'B64 format'),
+    dict(option = '--yaml', groups = 'command', desc = 'YAML format'),
+    dict(option = '--indent', groups = 'command', desc = 'JSON indentation level'),
+    dict(
+        option = '--output-file -o PATH',
+        groups = 'download',
+        type   = 'file',
+        desc   = 'Output file path [STDOUT].',
+    ),
+    dict(
+        option  = '--start-index N',
+        groups  = 'download',
+        default = 1,
+        type    = int,
+        desc    = 'Start index [1].',
+    ),
+    dict(
+        option = '--stop-index N',
+        groups = 'download',
+        type   = int,
+        desc   = 'Stop index, inclusive.',
+    ),
+    dict(
+        option = '--force -f',
+        groups = 'download',
+        desc   = 'Download even if job is not finished.',
+    ),
+    grammar = [
+        'configure    : [general-options] ; !task=configure --odin-env --od-user',
+        'submit       : [general-options] ; !task=submit -c -r [--start-job]',
+        'upload       : [general-options] ; !task=upload -j -r [--resume]',
+        'start        : [general-options] ; !task=start -j',
+        'get          : [general-options] ; !task=get -j [--json [--indent] | --b64 | --yaml]',
+        'stop         : [general-options] ; !task=stop -j',
+        'download     : [general-options] ; !task=download -j [download-options]',
+        'find         : [general-options] ; !task=find [-j] [-u] [--job-status]',
+        'help         : * --help',
+        'version      : * --version',
+        'examples     : * --examples',
+        'autocomplete : * --autocomplete',
+        'other1       : [-x] [-y] (<a> <b> <c>)...{1,4}',
+    ],
+    usage_sections = [
+        ('Usage'            , GRAMMAR_SPEC),   # Use grammar-spec (text). Or AUTO: use grammar API config.
+        ('General options'  , AUTO),
+        ('Special options'  , AUTO),
+        ('Commands'         , USAGE['commands']),
+        ('Command options'  , AUTO),
+        ('Download options' , AUTO),
+        ('Short options'    , AUTO),
+        ('Notes'            , USAGE['notes'],
+    ],
+    program = 'odin-client',
+    version = __version__,    # Or callable.
+)
+
+
+####
+# Grammar via API: flat.
+####
+
+g = grammar(
+    #
+    # configure.
+    variant('configure'),
+    group('general-options'),
+    boundary(),
+    opt('task', value = 'configure', anchor = True),
+    opts('--odin-env', '--od-user', required = True),
+    #
+    # submit
+    variant('submit'),
+    group('general-options'),
+    boundary(),
+    opt('task', value = 'submit', anchor = True),
+    opts('-c', '-r', required = True),
+    opt('--start-job'),
+    #
+    # get
+    variant('get'),
+    group('general-options'),
+    boundary(),
+    opt('task', value = 'get', anchor = True),
+    opt('-j', required = True),
+    mutex(
+        [
+            opt('--json', required = True),
+            opt('--indent'),
+        ],
+        opt('--b64', required = True),
+        opt('--yaml', required = True),
+    ),
+    #
+    # etc...
+    #
+    # help
+    variant('help'),
+    tolerant(),
+    opt('--help'),
+    #
+    # etc...
+)
+
+
+####
+# Grammar via API: hierarchy.
+####
+
+g = grammar(
+    variant(
+        name = 'other1',
+        items = [
+            opts('-x', '-y'),
+            grouping(
+                items = [
+                    opt('a', required = True),
+                    opt('b', required = True),
+                    opt('c', required = True),
+                ],
+                repeatable = [1, 4],
+            ),
+        ],
+    ),
+
+)
+

@@ -1,0 +1,11 @@
+Changes
+lib/Getopt/Fullserv.pm
+Makefile.PL
+MANIFEST
+README
+examples/usage_examples.pl
+t/00-load.t
+t/boilerplate.t
+t/manifest.t
+t/pod-coverage.t
+t/pod.t

@@ -1,0 +1,53 @@
+#! /usr/bin/env python
+
+# Compares two different setups for a simple script:
+#
+# - opto-py : usage text
+# - opto-py : API
+# - opto-py : API, simple spec
+
+####
+# Usage text.
+####
+
+USAGE = '''
+Usage:
+    daily-reading [--help]
+    daily-reading [--sleep SEC] [--dryrun] [<url_group>...]
+
+Short options:
+    -h --help
+    -s --sleep
+'''.strip()
+
+p = parser(
+    opt('--sleep', default = 1.0, type = float),
+    opt('url_group', choices = URLS.keys(), dest = 'url_groups'),
+    usage_text = USAGE,
+)
+
+
+####
+# API.
+####
+
+p = parser(
+    opt('--sleep -s SEC', type = float, default = 1.0),
+    opt('url_group', nargs = '*', choices = URLS.keys(), dest = 'url_groups'),
+)
+
+
+####
+# API: simple spec.
+####
+
+# Bare minimum.
+spec = '--sleep SEC --dryrun <url_group>...'
+p = parser(simple = spec)
+
+# You can add more configuration but once you start doing that,
+# the normal API is just as easy, unless the number of supplemental
+# configurations is quite small relative to the N of options.
+p.opt('sleep', default = 1.0)
+p.opt('url_group', choices = URLS.keys())
+

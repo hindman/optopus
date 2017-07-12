@@ -1,0 +1,70 @@
+#! /usr/bin/env python
+
+# Compares three different setups for a simple script:
+#
+# - argparse
+# - opto-py : usage text
+# - opto-py : API
+# - opto-py : API, simple spec
+
+####
+# argparse.
+####
+
+ap = argparse.ArgumentParser()
+ap.add_argument('--since', type = int, default = lib.last_updated + 1)
+ap.add_argument('--limit', type = int, default = 0)
+ap.add_argument('--rebuild', action = 'store_true')
+ap.add_argument('--experiment', action = 'store')
+ap.add_argument('--stats', action = 'store_true')
+ap.add_argument('--month')
+ap.add_argument('--search', action = 'append')
+ap.add_argument('--get')
+
+
+####
+# USAGE text.
+####
+
+USAGE = '''
+    get-pocket-items [--limit N] [--rebuild] [--experiment EXP] [--stats]
+                     [--month M] [--search TERM]... [--get ITEM]
+    get-pocket-items [--help | -h] ...
+'''
+
+p = parser(
+    usage = USAGE,
+    opt('since', type = int, 'default' = lib.last_updated + 1),
+    opt('since', type = int, 'default' = 0),
+)
+
+
+####
+# opto-py : API.
+####
+
+p = parser(
+    opt('--since TERM', type = int, default = lib.last_updated + 1),
+    opt('--limit N', type = int, default = 0),
+    opt('--rebuild'),
+    opt('--experiment EXP'),
+    opt('--stats'),
+    opt('--month M'),
+    opt('--search TERM', repeatable = True),
+    opt('--get ITEM'),
+)
+
+
+####
+# opto-py : API: simple spec.
+####
+
+# Bare minimum.
+spec = '--limit N --rebuild --experiment EXP --status --month M --search TERM --get ITEM'
+p = parser(simple = spec)
+
+# Additional configuration.
+p.opt('since TERM', type = int, default = lib.last_updated + 1)
+p.opt('limit N', type = int, default = 0)
+p.opt('search TERM', repeatable = True)
+

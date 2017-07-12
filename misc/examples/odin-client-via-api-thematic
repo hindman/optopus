@@ -1,0 +1,93 @@
+#! /usr/bin/env python
+
+# odin-client : configuration via API, using a thematic approach
+# rather than a per-option approach.
+#
+# - Compared to the per-option configuration approach, this seems
+#   confusing.
+
+p = parser(
+    option_groups = dict(
+        task = [
+            'task',
+        ],
+        general = [
+            '--odin-env ENV',
+            '--od-user USER',
+            '--log-level LEV',
+            '--disable-logging',
+        ],
+        special = [
+            '--examples',
+            '--autocomplete',
+            '--version',
+            '--help -h',
+        ],
+        command = [
+            '--job-id -j ID',
+            '--user -u USER',
+            '--job-status STATUS',
+            '--job-config-file -c PATH',
+            '--requests-file -r PATH',
+            '--start-job',
+            '--resume N',
+        ],
+        download = [
+            '--output-file -o PATH',
+            '--start-index N',
+            '--stop-index N',
+            '--force -f',
+        ],
+    )
+    grammar = dict(
+        configure    = 'task=configure --odin-env --od-user'
+        submit       = 'task=submit -c -r [--start-job]',
+        upload       = 'task=upload -j -r [--resume]',
+        start        = 'task=start -j',
+        get          = 'task=get -j',
+        stop         = 'task=stop -j',
+        download     = 'task=download -j [download-options]',
+        find         = 'task=find [-j] [-u] [--job-status]',
+        help         = '--help',
+        version      = '--version',
+        examples     = '--examples',
+        autocomplete = '--autocomplete',
+    ),
+    defaults = dict(
+        resume = 1,
+        start_index = 1,
+    ),
+    types = dict(
+        job_config_file = 'file',
+        requests_file = 'file',
+        output_file = 'file',
+        resume = int,
+        start_index = int,
+        stop_index = int,
+    ),
+    option_help(
+        taks            = "The odin-client task to run",
+        odin_env        = "Odin environment ('production' for most users).",
+        od_user         = "Open Directory user name.",
+        log_level       = "DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].",
+        disable_logging = "Disable logging.",
+        examples        = "Display configuration and usage examples.",
+        autocomplete    = "Display instructions for enabling autocomplete.",
+        version         = "Display version information.",
+        help            = "Display the help message.",
+        job_id          = "The Odin job id.",
+        user            = "Open Directory user who submitted the job.",
+        job_status      = "Job status.",
+        job_config_file = "Path to job configuration file, which should contain an OdinJobConfig, either base64-encoded or as JSON.",
+        requests_file   = "Path to the job's requests file, which should contain OdinItem objects, base64-encoded, one per line. If this option is given, odin-client will upload after submitting the OdinJobConfig.",
+        start_job       = "After submitting job and uploading requests, start job.",
+        resume          = "Resume upload, starting at line N [1].",
+        output_file     = "Output file path [STDOUT].",
+        start_index     = "Start index [1].",
+        stop_index      = "Stop index, inclusive.",
+        force           = "Download even if job is not finished.",
+    ),
+)
+
+p.variants('help', 'version', 'examples', 'autocomplete').make_tolerant()
+

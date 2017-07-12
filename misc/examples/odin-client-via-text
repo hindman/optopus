@@ -1,0 +1,114 @@
+#! /usr/bin/env python
+
+# odin-client : configuration via usage text.
+#
+# - Attempts to add usage variant naming as a special syntax in the
+#   usage text. This is awkward.
+#
+# - Comparing this to the API-driven examples for odin-client
+#   illustrates the benefits of the API approach. This approach
+#   begins to feel burdensome precisely on a moderately complex
+#   project.
+#
+# - This approach tends to separate the option handling into
+#   multiple parts. Ensuring that they stay in sync would not
+#   be insurmountable, but it would require some special helpers
+#   and testing-support to do.
+
+
+USAGE = '''
+Usage:
+  odin-client [general-options] COMMAND [options]                               ## IGNORE
+
+  odin-client configure --odin-env ENV --od-user USER                           ## configure
+
+  odin-client submit --job-config-file PATH --requests-file PATH [--start-job]  ## submit
+  odin-client upload --job-id ID --requests-file PATH [--resume N]              ## upload
+  odin-client start --job-id ID                                                 ## start
+  odin-client get --job-id ID                                                   ## get
+  odin-client stop --job-id ID                                                  ## stop
+  odin-client download --job-id ID [download-options]                           ## download
+  odin-client find [--job-id ID] [--user USER] [--job-status S]                 ## find
+
+  odin-client --help                                                            ## help
+  odin-client --version                                                         ## version
+  odin-client --examples                                                        ## examples
+  odin-client --autocomplete                                                    ## autocomplete
+
+General options:
+  --odin-env ENV     Odin environment ('production' for most users).
+  --od-user USER     Open Directory user name.
+  --log-level LEVEL  DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].
+  --disable-logging  Disable logging.
+
+Special options:
+  --examples         Display configuration and usage examples.
+  --autocomplete     Display instructions for enabling autocomplete.
+  --version          Display version information.
+  --help             Display the help message.
+
+Commands:
+  configure          Set up the default configurations for odin-client.
+  submit             Submit the config file for a new job.
+  upload             Upload requests for a submitted job.
+  start              Start a submitted job.
+  stop               Stop a job.
+  download           Download OdinItem data for a job.
+  get                Get information about a job.
+  find               Find jobs.
+
+Command options:
+  --job-id ID        The Odin job id.
+  --user USER        Open Directory user who submitted the job.
+  --job-status S     Job status.
+  --job-config-file PATH
+                     Path to job configuration file, which should contain an
+                     OdinJobConfig, either base64-encoded or as JSON.
+  --requests-file PATH
+                     Path to the job's requests file, which should contain
+                     OdinItem objects, base64-encoded, one per line. If
+                     this option is given, odin-client will upload after
+                     submitting the OdinJobConfig.
+  --start-job        After submitting job and uploading requests, start job.
+  --resume N         Resume upload, starting at line N [1].
+
+Download options:
+  --output-file PATH Output file path [STDOUT].
+  --start-index N    Start index [1].
+  --stop-index N     Stop index, inclusive.
+  --force            Download even if job is not finished.
+
+Short options:
+  -h --help
+  -c --job-config-file
+  -r --requests-file
+  -j --job-id
+  -o --output-file
+  -f --force
+  -u --user
+'''.strip()
+
+p = parser(
+    usage_text = USAGE,
+    option_groups = 'general special command download'.split(),
+    defaults = dict(
+        odin_env = 'dev',
+        resume = 1,
+        start_index = 1,
+    ),
+    types = dict(
+        job_config_file = 'file',
+        requests_file = 'file',
+        output_file = 'file',
+        resume = int,
+        start_index = int,
+        stop_index = int,
+    ),
+    choices = dict(
+        log_level = 'DEBUG INFO WARNING ERROR CRITICAL'.split(),
+    ),
+)
+
+p.variants('help', 'version', 'examples', 'autocomplete').make_tolerant()
+p.variants().add_options('general-options')
+
