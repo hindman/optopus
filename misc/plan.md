@@ -28,15 +28,7 @@ x Zero-config use case.
 
 - Simple-spec use case.
 
-    - <x> for positionals.
-    - X for option args.
-    - All values are strings.
-
-            spec = '-n NAME --foo --bar B1 B2 <x> <y>'
-            p = parser(simple = spec)
-
-- API-config use case, supporting core features: option, nargs, repeatable,
-  tolerant, required.
+- API use case, core features: option, nargs, repeatable, tolerant, required.
 
 - Grammar configuration.
 
@@ -596,7 +588,15 @@ Handling literal option-arg choices.
     - opts are flags
     - everything else goes in args
 
-            opts = parser().parse_args()
+            opts = Parser().parse_args()
+
+  - Mostly-zero configuration.
+    - zero: True if zero is None and self.opts is empty
+
+            p = Parser(
+              Opts('--foo X', type = int)
+              zero = True
+            )
 
   - Bare-minimum configuration
     - User supplies a simple spec.
@@ -605,7 +605,7 @@ Handling literal option-arg choices.
     - All values are strings.
 
             spec = '-n NAME --foo --bar B1 B2 <x> <y>'
-            p = parser(simple = spec)
+            p = Parser(simple = spec)
 
   - Basic configuration via API.
     - Similar to argparse.

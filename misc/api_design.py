@@ -58,3 +58,61 @@ p = Parser(
 
 )
 
+####
+# Specs.
+####
+
+'''
+
+SimpleSpec
+
+    For example:
+
+        --verbose --type A <x> <y> -h -g
+
+        spec = '-n NAME --foo --bar B1 B2 <x> <y>'
+        p = parser(simple = spec)
+
+    Elements:
+
+        short opt  | -h
+        long opt   | --type
+        opt arg    | A
+        positional | <x>
+
+GrammarSpec
+
+    For example:
+
+        configure    : [general-options] ; !task=configure --odin-env --od-user
+        submit       : [general-options] ; !task=submit -c -r [--start-job]
+        get          : [general-options] ; !task=get -j [--json [--indent] | --b64 | --yaml]
+        help         : * --help
+        other1       : [-x] [-y] (<a> <b> <c>)...{14},
+
+    Elements:
+
+        short opt
+        long opt
+        opt arg
+        positional
+        variant
+        destination
+        literal
+        option group name
+
+        :   variant divider
+        []  square: grouping, optional
+        ()  round: grouping, required
+        <>  angle: variable
+        {}  curly: quantification
+        ;   boundary
+        !   anchor
+        =   dest-assign
+        |   alternatation
+        *   tolerant
+        -   option-prefix
+        ... repetition
+
+'''
+
