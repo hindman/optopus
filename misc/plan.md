@@ -50,6 +50,16 @@ x Zero-config use case.
 
 --------
 
+# Notes on parsing
+
+- https://ruslanspivak.com/lsbasi-part7/
+- https://en.wikipedia.org/wiki/Recursive_descent_parser
+- http://effbot.org/zone/simple-iterator-parser.htm
+- http://jayconrod.com/posts/37/a-simple-interpreter-from-scratch-in-python-part-1
+
+
+--------
+
 # Terminology
 
 Users:

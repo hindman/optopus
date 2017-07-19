@@ -59,60 +59,77 @@ p = Parser(
 )
 
 ####
-# Specs.
+# SimpleSpec.
 ####
 
 '''
 
-SimpleSpec
+For example:
 
-    For example:
+    --verbose --type A <x> <y> -h -g
 
-        --verbose --type A <x> <y> -h -g
+    spec = '-n NAME --foo --bar B1 B2 <x> <y>'
+    p = parser(simple = spec)
 
-        spec = '-n NAME --foo --bar B1 B2 <x> <y>'
-        p = parser(simple = spec)
 
-    Elements:
+    expr        = (longoption | shortoption | posarg)+
 
-        short opt  | -h
-        long opt   | --type
-        opt arg    | A
-        positional | <x>
+    longoption  = longopt optarg*
+    shortoption = shortopt optarg*
+    posarg      = "<" char+ ">"
 
-GrammarSpec
+    longopt     = "--" char+
+    shortopt    = "-" char
+    optarg      = [A-Z_\-\d]+
+    char        = [\w\-]
 
-    For example:
+Elements:
 
-        configure    : [general-options] ; !task=configure --odin-env --od-user
-        submit       : [general-options] ; !task=submit -c -r [--start-job]
-        get          : [general-options] ; !task=get -j [--json [--indent] | --b64 | --yaml]
-        help         : * --help
-        other1       : [-x] [-y] (<a> <b> <c>)...{14},
+    short opt  | -h
+    long opt   | --type
+    opt arg    | A
+    positional | <x>
 
-    Elements:
+'''
 
-        short opt
-        long opt
-        opt arg
-        positional
-        variant
-        destination
-        literal
-        option group name
+####
+# GrammarSpec.
+####
 
-        :   variant divider
-        []  square: grouping, optional
-        ()  round: grouping, required
-        <>  angle: variable
-        {}  curly: quantification
-        ;   boundary
-        !   anchor
-        =   dest-assign
-        |   alternatation
-        *   tolerant
-        -   option-prefix
-        ... repetition
+
+'''
+
+For example:
+
+    configure    : [general-options] ; !task=configure --odin-env --od-user
+    submit       : [general-options] ; !task=submit -c -r [--start-job]
+    get          : [general-options] ; !task=get -j [--json [--indent] | --b64 | --yaml]
+    help         : * --help
+    other1       : [-x] [-y] (<a> <b> <c>)...{14},
+
+Elements:
+
+    short opt
+    long opt
+    opt arg
+    positional
+    variant
+    destination
+    literal
+    option group name
+
+    :   variant divider
+    []  square: grouping, optional
+    ()  round: grouping, required
+    <>  angle: variable
+    {}  curly: quantification
+    ;   boundary
+    !   anchor
+    =   dest-assign
+    |   alternatation
+    *   tolerant
+    -   option-prefix
+    ... repetition
 
 '''
 
