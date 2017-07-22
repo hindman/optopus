@@ -35,27 +35,87 @@ class Parser(object):
         )
 
     def parse(self, args = None):
+        args = list(args or [])
         if self.zero:
-            return self.zero_parse(args)
+            return self.do_zero_parse(args)
         else:
-            return {}
+            return self.do_parse(args)
 
-    def zero_parse(self, args):
-        ps = []
-        opts = {}
+    def do_zero_parse(self, args):
+        positionals = []
+        options = {}
         for a in args:
             k = parse_single_arg('long_opt', a)
             if k:
-                opts[k] = True
+                options[k] = True
                 continue
             k = parse_single_arg('short_opts', a)
             if k:
                 for char in k:
-                    opts[char] = True
+                    options[char] = True
                 continue
-            ps.append(a)
-        opts['positionals'] = ps
+            positionals.append(a)
+        options['positionals'] = positionals
+        return options
+
+    def do_parse(self, args):
+
+        opts = {}
+        positionals = []
+
+        exp_opts = {
+            o.option : o
+            for o in self.opts
+            if not o.opt_type == o.POSITIONAL
+        }
+        exp_positionals = [
+            o for o in self.opts
+            if o.opt_type == o.POSITIONAL
+        ]
+
+        rargs = list(reversed(args))
+        while rargs:
+            a = pop(rargs)
+
+            if is_option(a):
+                if a in exp_opts:
+                    opt = exp_opts[a]
+                    if not opt.repeatable:
+                        del exp_opts[a]
+                    if opt.nargs:
+                        opts[opt.destination] = []
+                        for _ in range(0, opt.nargs or 0):
+                            if rargs:
+                                opts[opt.destination].append(rargs.pop())
+                            else:
+                                pass
+                                # error
+                        if opt.nargs == 1:
+                            opts[opt.destination] = opts[opt.destination][0]
+                    else:
+                        opts[opt.destination] = True
+                else:
+                    pass
+                    # error
+            else:
+                if expected:
+                    accectp
+                else:
+                    pass
+                    # error
+
         return opts
+
+def ParsedOpt(object):
+
+    def __init__(self, opt):
+        self.opt = opt
+
+def is_option(arg):
+    return (
+        arg.startswith('--') or
+        arg.startswith('-')
+    )
 
 def parse_single_arg(patt, arg, hyphens = True, anchored = True, prefix = False):
     k = 'anchored' if anchored else 'simple'
@@ -105,12 +165,12 @@ class SimpleSpec(object):
         while i < len_tokens:
             k, name, index = tokens[i]
             if k.endswith('_opt'):
-                curr_opt = Opt(option = name)
+                curr_opt = Opt(option_spec = name)
                 opts.append(curr_opt)
             elif k == 'opt_arg':
                 curr_opt.nargs += 1
             elif k == 'pos_arg':
-                curr_opt = Opt(option = name, nargs = 1)
+                curr_opt = Opt(option_spec = name, nargs = 1)
                 opts.append(curr_opt)
                 curr_opt = None
             else:
@@ -121,25 +181,30 @@ class SimpleSpec(object):
 
 class Opt(object):
 
+    LONG = 'long'
+    SHORT = 'short'
+    POSITIONAL = 'positional'
+
     def __init__(self,
-                 option,
+                 option_spec,
                  nargs = 0,
                  repeatable = False,
                  tolerant = False,
                  required = False):
 
-        opt_type = (
-            'long' if option.startswith('--') else
-            'short' if option.startswith('-') else
-            'positional'
-        )
-
-        self.option = option
-        self.opt_type = opt_type
+        self.option_spec = option_spec
         self.nargs = nargs
         self.repeatable = repeatable
         self.tolerant = tolerant
         self.required = required
+
+        self.option = option_spec
+        self.destination = self.option.replace('-', '_')
+        self.opt_type = (
+            self.LONG if option_spec.startswith('--') else
+            self.SHORT if option_spec.startswith('-') else
+            self.POSITIONAL
+        )
 
     def __repr__(self):
         fmt = 'Opt({}, opt_type = {}, nargs = {})'

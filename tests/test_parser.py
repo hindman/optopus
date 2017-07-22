@@ -21,7 +21,7 @@ def test_zero_config_parser():
     got = p.parse(args)
     assert got == exp
 
-def test_simple_spec_parser():
+def test_simple_spec():
     # Setup.
     spec = '-n NAME --foo --bar B1 B2 <x> <y>'
     ss = SimpleSpec(spec)
@@ -53,3 +53,8 @@ def test_simple_spec_parser():
     assert got_tokens == exp_tokens
     assert got_opts == exp_opts
 
+def test_simple_spec_parser():
+    # Setup.
+    spec = '-n NAME --foo --bar B1 B2 <x> <y>'
+    p = Parser(simple_spec = spec)
+    assert p.parse() == {}
