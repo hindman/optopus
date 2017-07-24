@@ -90,6 +90,32 @@ Elements:
     opt arg    | A
     positional | <x>
 
+
+Example: from spec to Opt() instances to parsing logic:
+
+    Spec:
+
+        -n NAME --foo --bar B1 B2 <x> <y>
+
+    Opt instances:
+
+        -n      nargs=1
+        --foo
+        --bar   nargs=2
+        x
+        y
+
+    Parsing logic:
+
+        # Initial grammar.
+        grammar = n | foo | bar | x | y
+
+        # Keep parsing until we have used all grammar elements.
+        while grammar.has_elements():
+            parse
+            if the ParsedOpt we got is not repeatable:
+                grammer = grammar - that Opt
+
 '''
 
 ####
@@ -105,7 +131,31 @@ For example:
     submit       : [general-options] ; !task=submit -c -r [--start-job]
     get          : [general-options] ; !task=get -j [--json [--indent] | --b64 | --yaml]
     help         : * --help
-    other1       : [-x] [-y] (<a> <b> <c>)...{14},
+    other1       : [-x] [-y] (<a> <b> <c> [-z])...{2,7}
+
+    Notes about the `other1` variant:
+        - A sequence of options/positionals can be occur 2 to 7 times.
+        - If the -z option appears at a group boundary, we attach it
+          to the group eagerly.
+        - For exampler:
+
+            # Input.
+            A1 B1 C1 -z A2 B2 C2
+
+            # ParseOption info.
+            a : [A1,   A2]
+            b : [B1,   B2]
+            c : [C1,   C2]
+            z : [True, False]
+
+    Notes about repeating positions:
+
+        - Only 1 positional can repeat a variable N of times.
+        - Otherwise, we cannot allocate the values unambiguously.
+        - For example, all of these are ambiguous:
+            <a>... <b>... <c>
+            <a>...{3} <b> <c>...{2} <d>
+            (<a> <b>... <c>){2}
 
 Elements:
 

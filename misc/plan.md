@@ -52,10 +52,13 @@ x Zero-config use case.
 
 # Notes on parsing
 
-- https://ruslanspivak.com/lsbasi-part7/
+- https://github.com/rspivak/lsbasi
 - https://en.wikipedia.org/wiki/Recursive_descent_parser
 - http://effbot.org/zone/simple-iterator-parser.htm
 - http://jayconrod.com/posts/37/a-simple-interpreter-from-scratch-in-python-part-1
+- Language Implementation Patterns: Create Your Own Domain-Specific and General Programming Languages
+
+- https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
 
 
 --------
