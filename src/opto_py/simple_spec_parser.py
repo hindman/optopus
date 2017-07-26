@@ -14,13 +14,16 @@ EOF        = 'EOF'
 PATT_END      = r'(?=\s|$)'
 PATT_OPT_CHAR = r'[\w\-]+'
 
-# Token types and their regexes.
+# Token types:
+# - The type.
+# - Whether the RegexLexer should emit the tokens of this type.
+# - The regex to match the token.
 SIMPLE_SPEC_TOKENS = (
-    (WHITESPACE , re.compile(r'\s+')),
-    (LONG_OPT   , re.compile(r'--' + PATT_OPT_CHAR + PATT_END)),
-    (SHORT_OPT  , re.compile(r'-' + PATT_OPT_CHAR + PATT_END)),
-    (POS_OPT    , re.compile(r'\<' + PATT_OPT_CHAR + r'\>' + PATT_END)),
-    (OPT_ARG    , re.compile(r'[A-Z\d_\-]+' + PATT_END)),
+    (WHITESPACE, False, re.compile(r'\s+')),
+    (LONG_OPT,   True,  re.compile(r'--' + PATT_OPT_CHAR + PATT_END)),
+    (SHORT_OPT,  True,  re.compile(r'-' + PATT_OPT_CHAR + PATT_END)),
+    (POS_OPT,    True,  re.compile(r'\<' + PATT_OPT_CHAR + r'\>' + PATT_END)),
+    (OPT_ARG,    True,  re.compile(r'[A-Z\d_\-]+' + PATT_END)),
 )
 
 class Token(object):
@@ -52,11 +55,22 @@ class RegexLexer(object):
         self.max_pos = len(self.text) - 1
 
     def get_next_token(self):
-        for tt, rgx in self.token_types:
+
+        # TODO: this approach isn't quite right.
+        #
+        # - It's very sensitive to the ordering of token_types.
+        #   For example, it fails if WHITESPACE is last in the list,
+        #   because it matches WHITESPACE but then we don't emit
+        #   anything. And then the loop exits. Perhaps we always
+        #   want to retry the loop once more?
+        #
+        #   ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
+        #
+        for tt, emit, rgx in self.token_types:
             tok = self.match_token(rgx, tt)
-            if tok:
-                if not tok.isa(WHITESPACE):
-                    return tok
+            # print(tt, emit, tok)
+            if tok and emit:
+                return tok
         if self.pos > self.max_pos:
             return Token(EOF, None)
         else:
@@ -111,7 +125,7 @@ class Parser(object):
 
     def parse(self):
         opts = []
-        while self.current_token.isa(LONG_OPT, SHORT_OPT, POS_OPT):
+        while True:
             tok = self.current_token
             opt = None
             if tok.isa(LONG_OPT):
@@ -120,6 +134,10 @@ class Parser(object):
                 opt = self.short_opt()
             elif tok.isa(POS_OPT):
                 opt = self.pos_opt()
+            elif tok.isa(EOF):
+                break
+            else:
+                self.error()
             if opt:
                 opts.append(opt)
         return opts
@@ -159,7 +177,7 @@ class Parser(object):
         else:
             self.error()
 
-DEFAULT_TEXT = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  ' 
+DEFAULT_TEXT = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
 
 def main(args):
 
