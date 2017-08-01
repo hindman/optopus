@@ -839,6 +839,270 @@ Handling literal option-arg choices.
 
 --------
 
+## Phrase objects
+
+Attributes:
+
+    subphrases      : []
+    ntimes          : examples: N * + ? (m,n) (m,None), func, iterable of ints
+    required        : not needed; can be handled by ntimes
+    phrase_type     : OPT | POS | PHRASE | ZONE
+    subphrase_logic : AND | OR
+    anchored        : bool
+
+The top-level Phrase represents the entire CLI grammar and is the root node
+in a tree of Phrase objects.
+
+The leaf nodes of the tree are always OPT or POS.
+
+There needs to be restrictions on nodes in the tree that take variable N of
+arguments. This applies especially to POS nodes with a varying ntimes attribute
+and, in more limited ways, to OPT nodes that have a varying nargs attribute.
+
+- The entire tree cannot contain more than one POS node with a variable
+  ntimes attribute. Conceivably, a rule or policy could be applied
+  to resolve the ambiguity created by multiple POS nodes with variable
+  ntimes. But at least in the default case (ie, without such a policy)
+  only one POS can have a variable ntimes.
+
+- In addition, a POS node with variable ntimes and an OPT node with variable
+  nargs raise similar ambituities -- at least in the absence of a
+  policy. In this case, one possible policy is the use of `--` to signal
+  the boundary between options and positional arguments.
+
+Example 1:
+
+    # Grammar:
+
+    [-b]      [-x] [-y]   # -a and -b are mutex,
+    [-a] [-c] [-x] [-y]   # and -b also allows -c
+
+    # Phrase tree:
+
+    PHR  (1,1)  OR
+
+        PHR  (1,1)  AND
+            OPT -b (0,1)
+            OPT -x (0,1)
+            OPT -y (0,1)
+
+        PHR  (1,1)  AND
+            OPT -a (0,1)
+            OPT -c (0,1)
+            OPT -x (0,1)
+            OPT -y (0,1)
+
+Example 2:
+
+    # Grammar:
+
+    [-x]  [-z] <a>
+    -y -x [-z] <a> [<b>]   # If -y, then -x is required and <b> is allowed.
+
+    # Phrase tree:
+
+    PHR  (1,1)  OR
+
+        PHR  1  AND
+            OPT -x (0,1)
+            OPT -z (0,1)
+            POS a  1
+
+        PHR  1  AND
+            OPT -y 1
+            OPT -x 1
+            OPT -z (0,1)
+            POS a  1
+            POS a  (0,1)
+
+Example 3:
+
+    # Grammar:
+
+    [-x] [-y] (<a> <b> <c>)...
+
+    # Phrase tree:
+
+    PHR  (1,1)  AND
+
+        OPT -x (0,1)
+
+        OPT -y (0,1)
+
+        PHR (1,None) AND
+            POS a  1
+            POS b  1
+            POS c  1
+
+Example 4:
+
+    # Grammar:
+
+    (-x | -y | -z -q) [-a] <b>
+
+    # Phrase tree:
+
+    PHR  (1,1)  AND
+
+        PHR (1,1) OR
+
+            OPT -x 1
+            OPT -y 1
+            PHR    1  AND
+                OPT -z 1
+                OPT -q 1
+
+        OPT -a (0,1)
+        POS b  1
+
+Example 5:
+
+    # Grammar:
+
+    (-a -x | -b... | -c -d) [-e | -f] [-g] <h> [<i>...] ([-j -k]... | -m -n)
+
+    # Phrase tree:
+
+    PHR  (1,1)  AND
+
+        PHR (1,1) OR
+
+            PHR (1,1) AND
+                OPT -a 1
+                OPT -x 1
+
+            OPT -b (1,None)
+
+            PHR (1,1)
+                OPT -c 1
+                OPT -d 1
+
+        PHR (0,1) OR
+            OPT -e 1
+            OPT -f 1
+
+        OPT -g (0,1)
+
+        POS h (1,1)
+
+        POS i (0,None)
+
+        PHR 1 OR
+
+            PHR (0,None) AND
+                OPT -j 1
+                OPT -k 1
+
+            PHR 1 AND
+                OPT -m 1
+                OPT -n 1
+
+Example 6:
+
+    # Grammar:
+
+    --foo F1 F2 -x -y <a> <b>
+
+    # Phrase tree:
+
+    PHR  (1,1)  AND
+        OPT --foo 1  nargs=2
+        OPT -x    1
+        OPT -y    1
+        POS a     1
+        POS b     1
+
+Example 7:
+
+    # Grammar:
+
+    (-x X1 -y Y1)...
+
+    # Phrase tree:
+
+    PHR  (1,None)  AND
+        OPT -x 1  nargs=1
+        OPT -y 1  nargs=1
+
+Example 8:
+
+    # Grammar:
+
+    .general-options : [-m] [-n] [-o]
+    configure        : [general-options] ; !task=configure --odin-env --od-user
+    submit           : [general-options] ; !task=submit -c -r [--start-job]
+    get              : [general-options] ; !task=get -j [--json [--indent] | --b64 | --yaml]
+    help             : * --help
+    other1           : [-x] [-y] (<a> <b> <c> [-z])...{2,7}
+
+    # Phrase tree:
+
+    PHR  (1,1)  OR
+
+        # configure
+        PHR (1, 1) AND
+
+            # general-options zone
+            ZONE
+                PHR 1 AND
+                    OPT -m (0,1)
+                    OPT -n (0,1)
+                    OPT -o (0,1)
+
+            ZONE
+                PHR 1 AND
+                    POS task 1         value=configure  anchored=True
+                    OPT --odin-env 1
+                    OPT --od-user  1
+
+        # submit
+        PHR (1, 1) AND
+
+            # general-options zone
+            ZONE
+                ...
+
+            ZONE
+                PHR 1 AND
+                    POS task 1         value=submit  anchored=True
+                    OPT -c 1
+                    OPT -r 1
+                    OPT --start-job (0,1)
+
+        # get
+        PHR (1, 1) AND
+
+            # general-options zone
+            ZONE
+                ...
+
+            ZONE
+                PHR 1 AND
+                    POS task 1         value=get  anchored=True
+                    OPT -j 1
+                    PHR 1 OR
+                        PHR 1 AND
+                            OPT --json 1
+                            OPT --indent (0,1)
+                        OPT --b64 1
+                        OPT --yaml 1
+
+        # help
+        PHR (1, 1) AND
+            OPT --help 1      tolerant=True
+
+        # other1
+        PHR (1, 1) AND
+            OPT -x (0,1)
+            OPT -y (0,1)
+            PHR (2,7) AND
+                POS a 1
+                POS b 1
+                POS c 1
+                OPT -z (0,1)
+
+--------
+
 ## Other tools
 
 
