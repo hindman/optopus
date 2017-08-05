@@ -58,3 +58,4 @@ def test_simple_spec_parser():
     spec = '-n NAME --foo --bar B1 B2 <x> <y>'
     p = Parser(simple_spec = spec)
     assert p.parse() == {}
+

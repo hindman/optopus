@@ -201,17 +201,3 @@ class SimpleSpecParser(GenericParser):
                 opt.nargs += 1
         return opt
 
-def main(args):
-
-    DEFAULT_TEXT = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
-
-    text = args[0] if args else DEFAULT_TEXT
-    lexer = RegexLexer(text, SIMPLE_SPEC_TOKENS)
-
-    parser = SimpleSpecParser(lexer)
-    for opt in parser.parse():
-        print(opt)
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
-
