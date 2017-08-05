@@ -2,6 +2,8 @@ import sys
 import json
 import re
 
+from .opt import Opt
+
 PATTERNS = dict(
     simple = dict(
         long_opt   = r'--(\w[\w\-]*)',
@@ -106,11 +108,6 @@ class Parser(object):
 
         return opts
 
-def ParsedOpt(object):
-
-    def __init__(self, opt):
-        self.opt = opt
-
 def is_option(arg):
     return (
         arg.startswith('--') or
@@ -136,6 +133,7 @@ def parse_single_arg(patt, arg, hyphens = True, anchored = True, prefix = False)
         return None
 
 class SimpleSpec(object):
+    # TODO: not needed.
 
     def __init__(self, spec):
         tokens = self.get_tokens(spec)
@@ -178,35 +176,4 @@ class SimpleSpec(object):
             i += 1
         return opts
 
-
-class Opt(object):
-
-    LONG = 'long'
-    SHORT = 'short'
-    POSITIONAL = 'positional'
-
-    def __init__(self,
-                 option_spec,
-                 nargs = 0,
-                 repeatable = False,
-                 tolerant = False,
-                 required = False):
-
-        self.option_spec = option_spec
-        self.nargs = nargs
-        self.repeatable = repeatable
-        self.tolerant = tolerant
-        self.required = required
-
-        self.option = option_spec
-        self.destination = self.option.replace('-', '_')
-        self.opt_type = (
-            self.LONG if option_spec.startswith('--') else
-            self.SHORT if option_spec.startswith('-') else
-            self.POSITIONAL
-        )
-
-    def __repr__(self):
-        fmt = 'Opt({}, opt_type = {}, nargs = {})'
-        return fmt.format(self.option, self.opt_type, self.nargs)
 

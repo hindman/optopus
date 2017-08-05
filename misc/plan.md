@@ -60,6 +60,73 @@ x Zero-config use case.
 
 - https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
 
+--------
+
+# Object overview
+
+Parser:
+
+  - Command line option and argument parser.
+
+Opt:
+
+  - Configuration object used by the Parser.
+
+  - Each represents either an option or positional argument.
+
+ParsedOptions:
+
+  - Object returned by Parser.parse().
+
+  - Basic form: self.DESTINATION = VALUE.
+
+  - Also behaves like a collection: iterable, dictable, etc.
+
+ParsedOpt:
+
+  - Object used by the Parser to store parsing data.
+
+  - Represents one DESTINATION-VALUE pair.
+
+  - Holds those two attributes, plus a collection of all Opt instances that
+    played a role in arriving at that pair.
+
+  - The Parser will store a collection of ParsedOpt instances.
+
+  - That collection is the basis for ParsedOptions.
+
+Phrase:
+
+  - Object used by the parser to represent the CLI grammar and to do the
+    parsing work.
+
+  - Each Phrase can store subphrases, so the grammar forms a tree.
+
+  - The leaves of the tree will be Phrase objects corresponding to specific Opt
+    intances (ie, the options and positional arguments of interest to the
+    user).
+
+SimpleSpecParser:
+
+  - Used to parse a simple-spec given by the user.
+
+  - For example: `--foo FF GG -x --blort -z Z1 Z2 <q> <r> --debug`.
+
+  - The SimpleSpecParser.parse() method returns a Phrase representing the
+    CLI grammar desired by the user.
+
+GrammarSpecParser:
+
+  - Just like SimpleSpecParser, but can parse the more featureful variant-based
+    grammars.
+
+RegexLexer:
+
+  - General purpose lexer used by SimpleSpecParser and GrammarSpecParser.
+
+Token:
+
+  - Emitted by the RegexLexer.
 
 --------
 

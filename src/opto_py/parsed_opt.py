@@ -1,0 +1,4 @@
+
+class ParsedOpt(object):
+    pass
+

@@ -1,0 +1,4 @@
+
+class Phrase(object):
+    pass
+

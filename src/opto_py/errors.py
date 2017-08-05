@@ -1,0 +1,4 @@
+
+class RegexLexerError(Exception):
+    pass
+
