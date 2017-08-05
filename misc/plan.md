@@ -788,13 +788,11 @@ Handling literal option-arg choices.
                     bar
                     baz
 
-
     Help text with subparsers:
 
         frob -h
             - some people want just top-level help
             - others want all help : top-level all subparsers
-
 
     https://stackoverflow.com/questions/4042452
 
