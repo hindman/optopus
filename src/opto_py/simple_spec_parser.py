@@ -55,22 +55,26 @@ class RegexLexer(object):
         self.max_pos = len(self.text) - 1
 
     def get_next_token(self):
-
-        # TODO: this approach isn't quite right.
+        # Starting at self.pos, try to emit the next Token.
+        # If we find a valid token, there are two possibilities:
         #
-        # - It's very sensitive to the ordering of token_types.
-        #   For example, it fails if WHITESPACE is last in the list,
-        #   because it matches WHITESPACE but then we don't emit
-        #   anything. And then the loop exits. Perhaps we always
-        #   want to retry the loop once more?
+        # - A Token that we should emit: just return it.
         #
-        #   ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
+        # - A Token that we should suppress: break out of the for-loop,
+        #   but try the while-loop again. This will allow the Lexer
+        #   to be able to ignore any number of suppressed tokens.
         #
-        for tt, emit, rgx in self.token_types:
-            tok = self.match_token(rgx, tt)
-            # print(tt, emit, tok)
-            if tok and emit:
-                return tok
+        tok = True
+        while tok:
+            for tt, emit, rgx in self.token_types:
+                tok = self.match_token(rgx, tt)
+                if tok:
+                    if emit:
+                        return tok
+                    else:
+                        break
+        # If we did not return a Token above, we should be
+        # at the end of the input text.
         if self.pos > self.max_pos:
             return Token(EOF, None)
         else:
@@ -129,9 +133,9 @@ class Parser(object):
             tok = self.current_token
             opt = None
             if tok.isa(LONG_OPT):
-                opt = self.long_opt()
+                opt = self.opt(LONG_OPT)
             elif tok.isa(SHORT_OPT):
-                opt = self.short_opt()
+                opt = self.opt(SHORT_OPT)
             elif tok.isa(POS_OPT):
                 opt = self.pos_opt()
             elif tok.isa(EOF):
@@ -142,19 +146,10 @@ class Parser(object):
                 opts.append(opt)
         return opts
 
-    def long_opt(self):
+    def opt(self, opt_type):
         tok = self.current_token
         opt = Opt(tok)
-        self.eat(LONG_OPT)
-        while self.current_token.isa(OPT_ARG):
-            opt.nargs += 1
-            self.eat(OPT_ARG)
-        return opt
-
-    def short_opt(self):
-        tok = self.current_token
-        opt = Opt(tok)
-        self.eat(SHORT_OPT)
+        self.eat(opt_type)
         while self.current_token.isa(OPT_ARG):
             opt.nargs += 1
             self.eat(OPT_ARG)
@@ -177,9 +172,10 @@ class Parser(object):
         else:
             self.error()
 
-DEFAULT_TEXT = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
 
 def main(args):
+
+    DEFAULT_TEXT = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
 
     text = args[0] if args else DEFAULT_TEXT
     lexer = RegexLexer(text, SIMPLE_SPEC_TOKENS)
