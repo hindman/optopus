@@ -43,7 +43,7 @@ class Token(object):
     def __repr__(self):
         return self.__str__()
 
-class LexerError(Exception):
+class RegexLexerError(Exception):
     pass
 
 class RegexLexer(object):
@@ -90,9 +90,9 @@ class RegexLexer(object):
             return None
 
     def error(self):
-        fmt = 'LexerError: pos={}'
+        fmt = 'RegexLexerError: pos={}'
         msg = fmt.format(self.pos)
-        raise LexerError(msg)
+        raise RegexLexerError(msg)
 
     def __iter__(self):
         self.is_eof = False
@@ -121,57 +121,85 @@ class Opt(Token):
     def __repr__(self):
         return self.__str__()
 
-class Parser(object):
+class GenericParser(object):
 
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = self.lexer.get_next_token()
+        self.parser_functions = tuple()
 
     def parse(self):
-        opts = []
-        while True:
-            tok = self.current_token
-            opt = None
-            if tok.isa(LONG_OPT):
-                opt = self.opt(LONG_OPT)
-            elif tok.isa(SHORT_OPT):
-                opt = self.opt(SHORT_OPT)
-            elif tok.isa(POS_OPT):
-                opt = self.pos_opt()
-            elif tok.isa(EOF):
-                break
-            else:
-                self.error()
-            if opt:
-                opts.append(opt)
-        return opts
+        elem = True
+        while elem:
+            for func in self.parser_functions:
+                elem = func()
+                if elem:
+                    yield elem
+                    break
+        if not self.current_token.isa(EOF):
+            self.error()
 
-    def opt(self, opt_type):
+    def eat(self, token_type):
+        # If the current Token is of the expected type, return it
+        # after advancing the lexer. Otherwise, return None.
         tok = self.current_token
-        opt = Opt(tok)
-        self.eat(opt_type)
-        while self.current_token.isa(OPT_ARG):
-            opt.nargs += 1
-            self.eat(OPT_ARG)
-        return opt
-
-    def pos_opt(self):
-        tok = self.current_token
-        opt = Opt(tok)
-        self.eat(POS_OPT)
-        return opt
+        if tok.isa(token_type):
+            self.current_token = self.lexer.get_next_token()
+            return tok
+        else:
+            return None
 
     def error(self):
         fmt = 'Invalid syntax: pos={}'
         msg = fmt.format(self.lexer.pos)
         raise Exception(msg)
 
-    def eat(self, token_type):
-        if self.current_token.isa(token_type):
-            self.current_token = self.lexer.get_next_token()
-        else:
-            self.error()
+class SimpleSpecParser(GenericParser):
 
+    ####
+    #
+    # To implement a parser:
+    #
+    # - Inherit from GenericParser.
+    #
+    # - Define one or more parser_functions.
+    #
+    # - Each of those functions should return some data element
+    #   appropriate for the grammar (if the current Token matches)
+    #   or None.
+    #
+    ####
+
+    def __init__(self, lexer):
+        super(SimpleSpecParser, self).__init__(lexer)
+        self.parser_functions = (
+            self.long_opt,
+            self.short_opt,
+            self.pos_opt,
+        )
+
+    def long_opt(self):
+        return self._opt(LONG_OPT)
+
+    def short_opt(self):
+        return self._opt(SHORT_OPT)
+
+    def pos_opt(self):
+        tok = self.eat(POS_OPT)
+        return Opt(tok) if tok else None
+
+    def _opt(self, opt_type):
+        # If the current Token is not the expected option type, bail out.
+        # Otherwise, count the N of OPT_ARG that the Opt takes.
+        tok = self.eat(opt_type)
+        if not tok:
+            return None
+        opt = Opt(tok)
+        while tok:
+            tok = self.eat(OPT_ARG)
+            if tok:
+                opt.nargs += 1
+        return opt
 
 def main(args):
 
@@ -180,9 +208,8 @@ def main(args):
     text = args[0] if args else DEFAULT_TEXT
     lexer = RegexLexer(text, SIMPLE_SPEC_TOKENS)
 
-    parser = Parser(lexer)
-    opts = parser.parse()
-    for opt in opts:
+    parser = SimpleSpecParser(lexer)
+    for opt in parser.parse():
         print(opt)
 
 if __name__ == '__main__':
