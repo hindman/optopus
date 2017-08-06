@@ -53,10 +53,11 @@ class RegexLexer(object):
         return self
 
     def __next__(self):
-        while not self.is_eof:
+        if self.is_eof:
+            raise StopIteration
+        else:
             tok = self.get_next_token()
             if tok.isa(EOF):
                 self.is_eof = True
             return tok
-        raise StopIteration
 

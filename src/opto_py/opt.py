@@ -1,9 +1,9 @@
 
 class Opt(object):
 
-    LONG = 'long'
-    SHORT = 'short'
-    POSITIONAL = 'positional'
+    LONG_OPT   = 'LONG_OPT'
+    SHORT_OPT  = 'SHORT_OPT'
+    POS_OPT    = 'POS_OPT'
 
     def __init__(self,
                  option_spec,
@@ -23,12 +23,24 @@ class Opt(object):
         self.option = option_spec
         self.destination = self.option.replace('-', '_')
         self.opt_type = (
-            self.LONG if option_spec.startswith('--') else
-            self.SHORT if option_spec.startswith('-') else
-            self.POSITIONAL
+            self.LONG_OPT if option_spec.startswith('--') else
+            self.SHORT_OPT if option_spec.startswith('-') else
+            self.POS_OPT
         )
 
     def __repr__(self):
         fmt = 'Opt({}, opt_type = {}, nargs = {})'
         return fmt.format(self.option, self.opt_type, self.nargs)
+
+    @property
+    def is_long_opt(self):
+        return self.opt_type == self.LONG_OPT
+
+    @property
+    def is_short_opt(self):
+        return self.opt_type == self.SHORT_OPT
+
+    @property
+    def is_positional_opt(self):
+        return self.opt_type == self.POS_OPT
 

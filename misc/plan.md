@@ -27,6 +27,13 @@ x Set up repo.
 x Zero-config use case.
 
 - Simple-spec use case.
+  - NEXT:
+    - Phrase.parse()
+    - Need plan for:
+      - keeping track of partially-parsed results
+      - pruning no-longer-eligible subphrases
+      - keeping track of alternatives
+      - backtracking using those alternatives
 
 - API use case, core features: option, nargs, repeatable, tolerant, required.
 
@@ -1024,7 +1031,7 @@ Example 5:
 
     # Grammar:
 
-    (-a -x | -b... | -c -d) [-e | -f] [-g] <h> [<i>...] ([-j -k]... | -m -n)
+    (-a -x | -b... | [-a] -c -d) [-e | -f] [-g] <h> [<i>...] ([-j -k]... | -m -n)
 
     # Phrase tree:
 
@@ -1033,12 +1040,13 @@ Example 5:
         PHR (1,1) OR
 
             PHR (1,1) AND
-                OPT -a 1
+                OPT -a 1        # Note: -a could go here.
                 OPT -x 1
 
             OPT -b (1,None)
 
-            PHR (1,1)
+            PHR (1,1) AND
+                OPT -a (0,1)    # Note: or here.
                 OPT -c 1
                 OPT -d 1
 

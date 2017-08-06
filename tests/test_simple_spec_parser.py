@@ -1,16 +1,9 @@
-from opto_py.regex_lexer import RegexLexer
 from opto_py.simple_spec_parser import SimpleSpecParser
-from opto_py.token import (
-    LONG_OPT,
-    POS_OPT,
-    SHORT_OPT,
-    SIMPLE_SPEC_TOKENS,
-)
+from opto_py.token import LONG_OPT, POS_OPT, SHORT_OPT
 
 def test_simple_spec_parser():
     text = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
-    lexer = RegexLexer(text, SIMPLE_SPEC_TOKENS)
-    parser = SimpleSpecParser(lexer)
+    parser = SimpleSpecParser(text)
     opts = list(parser.parse())
     got = [(o.token_type, o.option_spec, o.nargs) for o in opts]
     exp = [

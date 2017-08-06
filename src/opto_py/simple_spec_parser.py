@@ -9,7 +9,9 @@ from .token import (
     POS_OPT,
     OPT_ARG,
     EOF,
+    SIMPLE_SPEC_TOKENS,
 )
+
 
 class SimpleSpecParser(GenericParser):
 
@@ -27,7 +29,8 @@ class SimpleSpecParser(GenericParser):
     #
     ####
 
-    def __init__(self, lexer):
+    def __init__(self, text):
+        lexer = RegexLexer(text, SIMPLE_SPEC_TOKENS)
         super(SimpleSpecParser, self).__init__(lexer)
         self.parser_functions = (
             self.long_opt,

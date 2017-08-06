@@ -3,6 +3,8 @@ import json
 import re
 
 from .opt import Opt
+from .simple_spec_parser import SimpleSpecParser
+from .phrase import Phrase
 
 PATTERNS = dict(
     simple = dict(
@@ -25,25 +27,47 @@ class Parser(object):
     def __init__(self,
                  simple_spec = None,
                  zero = None):
-        if simple_spec:
-            self.simple_spec = SimpleSpec(simple_spec)
-            self.opts = self.simple_spec.opts
+        self.simple_spec = simple_spec
+        self.zero = zero
+        self.opts = []
+
+    def do_parse_simple_mode(self, args):
+        ssp = SimpleSpecParser(self.simple_spec)
+        sps = [Phrase(opt = o) for o in ssp.parse()]
+        phrase = Phrase(subphrases = sps)
+        return phrase.parse(args)
+
+    @property
+    def zero(self):
+        # If user has not set the zero-mode, we infer
+        # the mode by the presense or absense of opts.
+        # Otherwise, we do what the user asked for.
+        if self._zero is None:
+            if self.simple_spec or self.opts:
+                return False
+            else:
+                return True
         else:
-            self.simple_spec = None
-            self.opts = {}
-        self.zero = bool(
-            zero or
-            (zero is None and not self.opts)
-        )
+            return self._zero
+
+    @zero.setter
+    def zero(self, val):
+        if val is None:
+            self._zero = None
+        else:
+            self._zero = bool(val)
 
     def parse(self, args = None):
         args = list(args or [])
         if self.zero:
-            return self.do_zero_parse(args)
+            return self.do_parse_zero_mode(args)
+        elif self.simple_spec:
+            return self.do_parse_simple_mode(args)
         else:
-            return self.do_parse(args)
+            return self.do_parse_full_mode(args)
 
-    def do_zero_parse(self, args):
+    def do_parse_zero_mode(self, args):
+        # TODO: return ParsedOptions, use Phrase, etc.
         positionals = []
         options = {}
         for a in args:
@@ -60,7 +84,16 @@ class Parser(object):
         options['positionals'] = positionals
         return options
 
-    def do_parse(self, args):
+    def do_parse_full_mode(self, args):
+        # TODO: return ParsedOptions, use Phrase, etc.
+
+        return None
+
+        def is_option(arg):
+            return (
+                arg.startswith('--') or
+                arg.startswith('-')
+            )
 
         opts = {}
         positionals = []
@@ -108,12 +141,6 @@ class Parser(object):
 
         return opts
 
-def is_option(arg):
-    return (
-        arg.startswith('--') or
-        arg.startswith('-')
-    )
-
 def parse_single_arg(patt, arg, hyphens = True, anchored = True, prefix = False):
     k = 'anchored' if anchored else 'simple'
     rgx = re.compile(PATTERNS[k][patt])
@@ -131,49 +158,4 @@ def parse_single_arg(patt, arg, hyphens = True, anchored = True, prefix = False)
         return name
     else:
         return None
-
-class SimpleSpec(object):
-    # TODO: not needed.
-
-    def __init__(self, spec):
-        tokens = self.get_tokens(spec)
-        opts = self.get_opts(tokens)
-        self.spec = spec
-        self.tokens = tokens
-        self.opts = opts
-
-    def get_tokens(self, spec):
-        toks = []
-        ks = ('long_opt', 'short_opt', 'opt_arg', 'pos_arg')
-        for i, a in enumerate(spec.split()):
-            t = None
-            for k in ks:
-                name = parse_single_arg(k, a, prefix = True)
-                if name:
-                    t = (k, name, i)
-                    break
-            toks.append(t or ('unknown', a, i))
-        return toks
-
-    def get_opts(self, tokens):
-        i = 0
-        len_tokens = len(tokens)
-        curr_opt = None
-        opts = []
-        while i < len_tokens:
-            k, name, index = tokens[i]
-            if k.endswith('_opt'):
-                curr_opt = Opt(option_spec = name)
-                opts.append(curr_opt)
-            elif k == 'opt_arg':
-                curr_opt.nargs += 1
-            elif k == 'pos_arg':
-                curr_opt = Opt(option_spec = name, nargs = 1)
-                opts.append(curr_opt)
-                curr_opt = None
-            else:
-                raise ValueError(tokens[i])
-            i += 1
-        return opts
-
 
