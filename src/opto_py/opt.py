@@ -16,8 +16,8 @@ class Opt(object):
         self.option = option_spec
         self.destination = self.option.replace('-', '_')
         self.opt_type = (
-            OptType.LONG if option_spec.startswith('--') else
-            OptType.SHORT if option_spec.startswith('-') else
+            OptType.LONG if self.option.startswith('--') else
+            OptType.SHORT if self.option.startswith('-') else
             OptType.POS
         )
 

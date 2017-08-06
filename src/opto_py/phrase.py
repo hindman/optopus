@@ -2,6 +2,12 @@ from .opt import Opt
 from .parsed_options import ParsedOptions
 from .enums import PhraseType, PhraseLogicType
 
+def is_option(arg):
+    return (
+        arg.startswith('--') or
+        arg.startswith('-')
+    )
+
 class Phrase(object):
 
     def __init__(self,
@@ -22,4 +28,26 @@ class Phrase(object):
     def parse(self, args):
         pos = ParsedOptions()
         return {}
+
+        i = -1
+        max_i = len(args) - 1
+
+        while i < max_i:
+            i += 1
+            arg = args[i]
+
+            # if option:
+            #   if there is prev-opt needed nargs:
+            #     error
+            #   elif option matches:
+            #     bind
+            #     set prev-opt
+            #   else:
+            #     error
+            # elif there is a prev-opt needing nargs:
+            #   bind
+            # elif there are remaining positional slots:
+            #   bind
+            # else:
+            #   error
 
