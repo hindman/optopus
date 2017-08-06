@@ -1,15 +1,8 @@
 from .opt import Opt
 from .parsed_options import ParsedOptions
+from .enums import PhraseType, PhraseLogicType
 
 class Phrase(object):
-
-    OPT = 'OPT'
-    POS = 'POS'
-    PHRASE = 'PHRASE'
-    ZONE = 'ZONE'
-
-    AND = 'AND'
-    OR = 'OR'
 
     def __init__(self,
                  subphrases = None,
@@ -20,11 +13,11 @@ class Phrase(object):
     @property
     def phrase_type(self):
         if self.opt is None:
-            return self.PHRASE
+            return PhraseType.PHRASE
         elif self.opt.is_positional_opt:
-            return self.POS
+            return PhraseType.POS
         else:
-            return self.OPT
+            return PhraseType.OPT
 
     def parse(self, args):
         pos = ParsedOptions()

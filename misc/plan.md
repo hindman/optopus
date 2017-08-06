@@ -32,12 +32,13 @@ x Zero-config use case.
     - Assume no backtracking.
 
 - Zero-config use case: rewrite.
+  - Change this to wildcard Opt.
 
 - API use case: basic features: option, tolerant, static nargs, static ntimes.
 
 - Basic help text creation.
 
-- Basic grammar configuration.
+- Basic GrammarSpec parsing.
 
 - Complex Phrase parsing.
   - Varying nargs and ntimes.

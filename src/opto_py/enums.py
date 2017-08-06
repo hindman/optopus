@@ -43,6 +43,16 @@ class EnumMember(object):
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, EnumMember) and
+            self.value == other.value
+        )
+
+    def __ne__(self, other):
+        return not self == other
 
 OptType = Enum('OptType', 'LONG', 'SHORT', 'POS')
+PhraseType = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'ZONE')
+PhraseLogicType = Enum('PhraseLogicType', 'AND', 'OR')
 
