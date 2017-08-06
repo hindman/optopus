@@ -15,7 +15,6 @@ Motto:
 
 Mascot: an octopus.
 
-
 --------
 
 # Road map
@@ -28,18 +27,25 @@ x Zero-config use case.
 
 - Simple-spec use case.
   - NEXT:
-    - Phrase.parse()
-    - Need plan for:
-      - keeping track of partially-parsed results
-      - pruning no-longer-eligible subphrases
-      - keeping track of alternatives
-      - backtracking using those alternatives
+    - Implement basic Phrase.parse()
+    - Assume static nargs/ntimes.
+    - Assume no backtracking.
 
-- API use case, core features: option, nargs, repeatable, tolerant, required.
+- Zero-config use case: rewrite.
 
-- Grammar configuration.
+- API use case: basic features: option, tolerant, static nargs, static ntimes.
 
-- Help text creation.
+- Basic help text creation.
+
+- Basic grammar configuration.
+
+- Complex Phrase parsing.
+  - Varying nargs and ntimes.
+  - Complex grammars.
+    - keeping track of partially-parsed results
+    - pruning no-longer-eligible subphrases
+    - keeping track of alternatives
+    - backtracking using those alternatives
 
 - API-config: most other opt-level configurations.
 
@@ -183,7 +189,6 @@ Help text sections:
     - Usage text: conveys the CLI grammar.
     - Options text: documents the options and positional arguments, perhaps in groups.
     - Custom sections.
-
 
 --------
 
@@ -380,7 +385,6 @@ parse -- both the ability to fully merge those two sets of options or to keep
 them separately namespaced (eg, Git uses `-C` both and the top level and in
 subcommands like `git-diff`).
 
-
 --------
 
 ## CLI grammars
@@ -530,7 +534,6 @@ Handling literal option-arg choices.
             (-x (b|c) d <x1>)
             (-x a     e <x1> <x2>)
             (-x a     d <x1> <x2> <x3>)
-
 
 --------
 
@@ -704,7 +707,6 @@ Handling literal option-arg choices.
     - CLI grammars.
     - Lots more.
 
-
 --------
 
 ## Grammar-configuration syntax
@@ -749,7 +751,6 @@ Handling literal option-arg choices.
 
         ;         # zone boundary
         !         # anchor
-
 
 --------
 
@@ -908,7 +909,6 @@ Handling literal option-arg choices.
         frob [-x] [-y] all
         frob [-x] [-y] <pos>...
 
-
 --------
 
 ## Phrase objects
@@ -942,6 +942,12 @@ and, in more limited ways, to OPT nodes that have a varying nargs attribute.
   policy. In this case, one possible policy is the use of `--` to signal
   the boundary between options and positional arguments.
 
+- Similar issues arrive if an option resides in multiple leaves in the Phrase
+  tree and if those Opt instances have varying ntimes attributes. For example,
+  if -x is in one leaf with ntimes=(1,3) and also in another leave with
+  ntimes=(1,3), and if there are 4 -x options in the CLI args, there is not an
+  unambiguous way to bind those CLI args to the leaves.
+
 Example 1:
 
     # Grammar:
@@ -964,6 +970,14 @@ Example 1:
             OPT -x (0,1)
             OPT -y (0,1)
 
+    # Phrase alternatives:
+
+        -b  [0,0]
+        -a  [1,0]
+        -c  [1,1]
+        -x  [0,1]  [1,2]
+        -y  [0,2]  [1,3]
+
 Example 2:
 
     # Grammar:
@@ -985,7 +999,14 @@ Example 2:
             OPT -x 1
             OPT -z (0,1)
             POS a  1
-            POS a  (0,1)
+            POS b  (0,1)
+
+    # Phrase alternatives:
+
+        -x  [0,0]  [1,1]
+        -z  [0,1]  [1,2]
+        -y  [1,0]
+        pos [0,1]  [1,3]  [1,4]
 
 Example 3:
 
@@ -1005,6 +1026,12 @@ Example 3:
             POS a  1
             POS b  1
             POS c  1
+
+    # Phrase alternatives:
+
+        -x  [0,0]
+        -y  [1,0]
+        pos [2,0]  [2,1]  [2,2]
 
 Example 4:
 
@@ -1176,8 +1203,80 @@ Example 8:
 
 --------
 
-## Other tools
+## Phrase.parse()
 
+What causes the parsing to require alternatives and backtracking?
+
+- Options that reside in multiple alternative locations in the Phrase tree. For
+  example, when we encounter an -x among the CLI args, we do not know in
+  advance which subphrase to bind it with:
+
+        PHR OR
+            PHR AND
+                -x
+                -z
+            PHR AND
+                -x
+                -y
+
+- Options that reside in multiple non-alternative locations in the Phrase tree,
+  and where one of those leaves has a varying ntimes attribute. In this
+  example, we do not know in advance how greedily to bind -x CLI args to the
+  first leaf in the tree.
+
+        PHR AND
+            PHR AND
+                -x  ntimes=(1,3)
+            PHR OR
+                PHR AND
+                    -x  ntimes=1
+                    -y
+                PHR AND
+                    -z
+                    a
+
+- Destinations for positional arguments with varying ntimes attributes or
+  (closely related) options with varying nargs attributes. In these two
+  examples, when we encounter a non-option CLI arg, we do not know in advance
+  whether to bind it greedily:
+
+        PHR AND
+            POS a (1,3)
+            POS b 1
+            POS c 1
+
+        PHR AND
+            OPT -x nargs=(1,3)
+            POS b 1
+            POS c 1
+
+Decisions when processing a CLI arg:
+
+- Is it an option or non-option?
+
+  - Option:
+
+    - If it can bind to only one leaf in the Phrase tree, do so.
+
+    - If there are alternatives leaves, collect them and prepare for possible
+      backtracking. We will try each leaf in order.
+
+  - Non-option:
+
+    - Is there a current-option that can take args?
+
+      - No: do not bind.
+      - Yes, static: just bind.
+      - Yes, variable: bind with possible backtracking.
+
+    - Otherwise, we will bind to positional Opts.
+
+      - Static: just bind.
+      - Variable: bind with possible backtracking.
+
+--------
+
+## Other tools
 
 App::Cmd
 
@@ -1187,7 +1286,6 @@ App::Cmd
 
 - The module is uses Params::Validate and Getopt::Long::Descriptive, and it
   does not appear to be flexible in that regard.
-
 
 Getopt::Long::Descriptive
 
@@ -1206,7 +1304,6 @@ Getopt::Long::Descriptive
 
 - Support concept of a hidden option (not in help text).
 
-
 Getopt::Tabular
 
 - Tabular spec definition
@@ -1218,7 +1315,6 @@ Getopt::Tabular
 - Can parse an array besides ARGV
 
 - Looks unmaintained.
-
 
 Getopt::Lucid:
 
@@ -1232,7 +1328,6 @@ Getopt::Lucid:
 
 - does not produce help text
 
-
 Getopt::Euclid
 
 - Creates parser from your application's POD, specifically:
@@ -1245,13 +1340,11 @@ Getopt::Euclid
 
 - I don't like the fact that it uses globals and is non-OO
 
-
 Getopt::Simple
 
 - Wrapper around Getopt::Long
 
 - Produces help text.
-
 
 Getopt::Declare
 
@@ -1261,7 +1354,6 @@ Getopt::Declare
 
 - Requires a special syntax to define the spec and that syntax is embedded in
   the help string
-
 
 Other Perl modules I briefly checked:
 
@@ -1312,7 +1404,6 @@ Pod::Usage
   GetOptions and invoke your own help(); then invoke pod2usage if --help or
   --man are requested.
 
-
 MooseX::GetOpt
 
 - front end for Geopt::Long
@@ -1320,7 +1411,6 @@ MooseX::GetOpt
 - requires using Moose
 
 - not many new ideas here
-
 
 Python plac module
 
@@ -1333,18 +1423,15 @@ Python plac module
   create all of the awkward-looking annotations, it seems like argparse would
   have been simpler.
 
-
 Ruby Trollop
 
 - Very simple to use
 
 - Not much customizability.
 
-
 Python argparse module
 
 - Important concept: the module should parse/validate arguments or options
-
 
 Python's docopt:
 
@@ -1380,7 +1467,6 @@ Python's docopt:
   would produce a dict like `{'-C': True, 'PATH', '/tmp/blah'}`. That seems
   like a fundamental problem.
 
-
 Python: Click
 
 - interesting but opinionated
@@ -1406,14 +1492,11 @@ Python: Click
   keyboard input; screen clearing; finding config paths; launching apps and
   editors.
 
-
 Ruby Thor
 
 - Similar to Fabric in its approach.
 
-
 Ruby GLI
-
 
 Python invoke:
 

@@ -1,31 +1,24 @@
+from .enums import OptType
 
 class Opt(object):
 
-    LONG_OPT   = 'LONG_OPT'
-    SHORT_OPT  = 'SHORT_OPT'
-    POS_OPT    = 'POS_OPT'
-
     def __init__(self,
                  option_spec,
-                 token_type = None,
                  nargs = 0,
-                 repeatable = False,
-                 tolerant = False,
-                 required = False):
+                 ntimes = (0, 1),
+                 tolerant = False):
 
         self.option_spec = option_spec
-        self.token_type = token_type
         self.nargs = nargs
-        self.repeatable = repeatable
+        self.ntimes = ntimes
         self.tolerant = tolerant
-        self.required = required
 
         self.option = option_spec
         self.destination = self.option.replace('-', '_')
         self.opt_type = (
-            self.LONG_OPT if option_spec.startswith('--') else
-            self.SHORT_OPT if option_spec.startswith('-') else
-            self.POS_OPT
+            OptType.LONG if option_spec.startswith('--') else
+            OptType.SHORT if option_spec.startswith('-') else
+            OptType.POS
         )
 
     def __repr__(self):
@@ -34,13 +27,13 @@ class Opt(object):
 
     @property
     def is_long_opt(self):
-        return self.opt_type == self.LONG_OPT
+        return self.opt_type == OptType.LONG
 
     @property
     def is_short_opt(self):
-        return self.opt_type == self.SHORT_OPT
+        return self.opt_type == OptType.SHORT
 
     @property
     def is_positional_opt(self):
-        return self.opt_type == self.POS_OPT
+        return self.opt_type == OptType.POS
 

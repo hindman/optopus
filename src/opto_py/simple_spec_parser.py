@@ -47,7 +47,7 @@ class SimpleSpecParser(GenericParser):
     def pos_opt(self):
         tok = self.eat(POS_OPT)
         if tok:
-            return Opt(tok.value, token_type = tok.token_type)
+            return Opt(tok.value)
         else:
             return None
 
@@ -57,7 +57,7 @@ class SimpleSpecParser(GenericParser):
         tok = self.eat(opt_type)
         if not tok:
             return None
-        opt = Opt(tok.value, token_type = tok.token_type)
+        opt = Opt(tok.value)
         while tok:
             tok = self.eat(OPT_ARG)
             if tok:
