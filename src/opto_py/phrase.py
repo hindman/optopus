@@ -26,28 +26,76 @@ class Phrase(object):
             return PhraseType.OPT
 
     def parse(self, args):
-        pos = ParsedOptions()
         return {}
 
-        i = -1
-        max_i = len(args) - 1
+        # TODO:
+        # - needed_args is on ParsedOpt, but I'm dealing with Opt instances here.
+        # - bind
+        # - error
 
-        while i < max_i:
-            i += 1
-            arg = args[i]
+        pos = ParsedOptions()
 
-            # if option:
-            #   if there is prev-opt needed nargs:
-            #     error
-            #   elif option matches:
-            #     bind
-            #     set prev-opt
-            #   else:
-            #     error
-            # elif there is a prev-opt needing nargs:
-            #   bind
-            # elif there are remaining positional slots:
-            #   bind
-            # else:
-            #   error
+        used = set()
+        pos_i = -1
+        arg_i = -1
+        prev = None
+
+        pos_opts = [
+            sph.opt
+            for sph in self.subphrases
+            if sph.phrase_type == PhraseType.POS
+        ]
+
+        while True:
+            # Get the next arg.
+            arg_i += 1
+            try:
+                arg = args[arg_i]
+            except IndexError:
+                break
+
+            # The arg is an option.
+            if is_option(arg):
+                if prev and prev.needed_args:
+                    # error
+                    pass
+
+                prev = None
+                for sph in self.subphrases:
+                    if sph.phrase_type == PhraseType.OPT:
+                        if sph.opt.option == arg:
+                            prev = sph.opt
+                            break
+
+                if prev is None:
+                    # error
+                    pass
+                elif prev.destination in used:
+                    # error
+                    pass
+                else:
+                    # bind
+                    used.add(prev.destination)
+                    pass
+
+            # The arg is not an option, and the
+            # previous option still needs opt-args.
+            elif prev and prev.needed_args:
+                # bind
+                pass
+
+            # Otherwise, we treat the arg as a positional.
+            pos_i += 1
+            try:
+                prev = pos_opts[pos_i]
+            except IndexError:
+                prev = None
+            if prev:
+                # bind
+                pass
+            else:
+                # error
+                pass
+
+        return {}
 

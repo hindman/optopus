@@ -14,7 +14,8 @@ class Opt(object):
         self.tolerant = tolerant
 
         self.option = option_spec
-        self.destination = self.option.replace('-', '_')
+        self.destination = self.option.strip('--<>')
+
         self.opt_type = (
             OptType.LONG if self.option.startswith('--') else
             OptType.SHORT if self.option.startswith('-') else
