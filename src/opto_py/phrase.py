@@ -1,6 +1,7 @@
+from .enums import PhraseType, PhraseLogicType
+from .errors import OptoPyError
 from .opt import Opt
 from .parsed_options import ParsedOptions
-from .enums import PhraseType, PhraseLogicType
 
 def is_option(arg):
     return (
@@ -26,28 +27,29 @@ class Phrase(object):
             return PhraseType.OPT
 
     def parse(self, args):
-        return {}
 
-        # TODO:
-        # - needed_args is on ParsedOpt, but I'm dealing with Opt instances here.
-        # - bind
-        # - error
+        # Set up the ParsedOptions that we will return.
+        opts = [sph.opt for sph in self.subphrases]
+        popts = ParsedOptions(opts = opts)
 
-        pos = ParsedOptions()
-
-        used = set()
-        pos_i = -1
-        arg_i = -1
-        prev = None
-
+        # The expected positional Opt instances.
         pos_opts = [
             sph.opt
             for sph in self.subphrases
             if sph.phrase_type == PhraseType.POS
         ]
 
+        # Bookkeeping variables.
+        # - Indexes to args and pos_opts.
+        # - The most recently seen Opt.
+        # - A set of already seen Opt.destination values.
+        arg_i = -1
+        pos_i = -1
+        prev = None
+        seen = set()
+
+        # Process the args.
         while True:
-            # Get the next arg.
             arg_i += 1
             try:
                 arg = args[arg_i]
@@ -56,46 +58,68 @@ class Phrase(object):
 
             # The arg is an option.
             if is_option(arg):
-                if prev and prev.needed_args:
-                    # error
-                    pass
 
+                # Make sure we are not expecting and option-arg.
+                if prev and popts[prev].needed_args:
+                    fmt = 'Found option, but expected option-argument: {}'
+                    msg = fmt.format(arg)
+                    raise OptoPyError(msg)
+
+                # Try to find a matching Opt.
                 prev = None
                 for sph in self.subphrases:
                     if sph.phrase_type == PhraseType.OPT:
                         if sph.opt.option == arg:
-                            prev = sph.opt
+                            prev = sph.opt.destination
                             break
 
+                # Failed to find a match.
                 if prev is None:
-                    # error
-                    pass
-                elif prev.destination in used:
-                    # error
-                    pass
-                else:
-                    # bind
-                    used.add(prev.destination)
-                    pass
+                    fmt = 'Found unexpected option: {}'
+                    msg = fmt.format(arg)
+                    raise OptoPyError(msg)
+
+                # Found a match, but we've already seen it.
+                if prev in seen:
+                    fmt = 'Found repeated option: {}'
+                    msg = fmt.format(arg)
+                    raise OptoPyError(msg)
+
+                # Valid Opt.
+                seen.add(prev)
+                po = popts[prev]
+                if po.opt.nargs == 0:
+                    po.value = True
+                continue
 
             # The arg is not an option, and the
             # previous option still needs opt-args.
-            elif prev and prev.needed_args:
-                # bind
-                pass
+            elif prev and popts[prev].needed_args:
+                po = popts[prev]
+                if po.opt.nargs == 1:
+                    po.value = arg
+                else:
+                    po.value.append(arg)
+                continue
 
-            # Otherwise, we treat the arg as a positional.
+            # Otherwise, treat the arg as a positional.
+            # Try to get a matching Opt.
             pos_i += 1
             try:
-                prev = pos_opts[pos_i]
+                prev = pos_opts[pos_i].destination
             except IndexError:
                 prev = None
-            if prev:
-                # bind
-                pass
-            else:
-                # error
-                pass
 
-        return {}
+            # No more positional args are expected.
+            if not prev:
+                fmt = 'Found unexpected positional argument: {}'
+                msg = fmt.format(arg)
+                raise OptoPyError(msg)
+
+            # Valid positional.
+            po = popts[prev]
+            po.value = arg
+
+        # Boom!
+        return popts
 

@@ -21,7 +21,6 @@ def test_zero_config_parser():
     assert got == exp
 
 def test_simple_spec_parser():
-    # Setup.
     spec = '-n NAME --foo --bar B1 B2 <x> <y>'
     p = Parser(simple_spec = spec)
     args = [
@@ -31,5 +30,14 @@ def test_simple_spec_parser():
         'phasers',
         'beam',
     ]
-    assert p.parse(args) == {}
+    exp = dict(
+        n = 'Spock',
+        foo = True,
+        bar = ['12', '13'],
+        x = 'phasers',
+        y = 'beam',
+    )
+    popts = p.parse(args)
+    got = dict(popts)
+    assert got == exp
 

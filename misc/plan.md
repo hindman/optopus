@@ -27,9 +27,7 @@ x Zero-config use case.
 
 - Simple-spec use case.
   - NEXT:
-    - Implement basic Phrase.parse()
-    - Assume static nargs/ntimes.
-    - Assume no backtracking.
+    - a few more tests
 
 - Zero-config use case: rewrite.
   - Change this to wildcard Opt.
@@ -39,6 +37,8 @@ x Zero-config use case.
 - Basic help text creation.
 
 - Basic GrammarSpec parsing.
+
+- Better exception strategy.
 
 - Complex Phrase parsing.
   - Varying nargs and ntimes.
