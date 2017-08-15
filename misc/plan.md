@@ -25,9 +25,7 @@ x Set up repo.
 
 x Zero-config use case.
 
-- Simple-spec use case.
-  - NEXT:
-    - a few more tests
+x Simple-spec use case.
 
 - Zero-config use case: rewrite.
   - Change this to wildcard Opt.

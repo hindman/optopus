@@ -33,8 +33,8 @@ class Parser(object):
 
     def do_parse_simple_mode(self, args):
         ssp = SimpleSpecParser(self.simple_spec)
-        sps = [Phrase(opt = o) for o in ssp.parse()]
-        phrase = Phrase(subphrases = sps)
+        subphrases = [Phrase(opt = o) for o in ssp.parse()]
+        phrase = Phrase(subphrases = subphrases)
         return phrase.parse(args)
 
     @property

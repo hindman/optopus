@@ -18,7 +18,3 @@ def test_simple_spec_parser():
     ]
     assert got == exp
 
-    # print()
-    # for o in opts:
-    #     print(o.option, o.destination)
-

@@ -59,7 +59,7 @@ class Phrase(object):
             # The arg is an option.
             if is_option(arg):
 
-                # Make sure we are not expecting and option-arg.
+                # Make sure we are not expecting an option-arg.
                 if prev and popts[prev].needed_args:
                     fmt = 'Found option, but expected option-argument: {}'
                     msg = fmt.format(arg)
