@@ -1,6 +1,6 @@
 from .enums import PhraseType, PhraseLogicType
 from .errors import OptoPyError
-from .opt import Opt
+from .opt import Opt, ZERO_TUPLE, ONE_TUPLE
 from .parsed_options import ParsedOptions
 
 def is_option(arg):
@@ -60,7 +60,7 @@ class Phrase(object):
             if is_option(arg):
 
                 # Make sure we are not expecting an option-arg.
-                if prev and popts[prev].needed_args:
+                if prev and popts[prev].requires_args:
                     fmt = 'Found option, but expected option-argument: {}'
                     msg = fmt.format(arg)
                     raise OptoPyError(msg)
@@ -88,18 +88,15 @@ class Phrase(object):
                 # Valid Opt.
                 seen.add(prev)
                 po = popts[prev]
-                if po.opt.nargs == 0:
-                    po.value = True
+                if po.opt.nargs == ZERO_TUPLE:
+                    po.add_value(True)
                 continue
 
             # The arg is not an option, and the
             # previous option still needs opt-args.
-            elif prev and popts[prev].needed_args:
+            elif prev and popts[prev].can_take_args:
                 po = popts[prev]
-                if po.opt.nargs == 1:
-                    po.value = arg
-                else:
-                    po.value.append(arg)
+                po.add_value(arg)
                 continue
 
             # Otherwise, treat the arg as a positional.
@@ -118,7 +115,7 @@ class Phrase(object):
 
             # Valid positional.
             po = popts[prev]
-            po.value = arg
+            po.add_value(arg)
 
         # Boom!
         return popts

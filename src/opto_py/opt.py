@@ -1,10 +1,18 @@
 from .enums import OptType
 
+ZERO_TUPLE = (0, 0)
+ONE_TUPLE = (1, 1)
+MAX_INT = 999999
+
+def nargs_incremented(nargs):
+    m, n = nargs
+    return (m + 1, n + 1)
+
 class Opt(object):
 
     def __init__(self,
                  option_spec,
-                 nargs = 0,
+                 nargs = ZERO_TUPLE,
                  ntimes = (0, 1),
                  tolerant = False):
 
@@ -37,4 +45,28 @@ class Opt(object):
     @property
     def is_positional_opt(self):
         return self.opt_type == OptType.POS
+
+    @property
+    def nargs(self):
+        return self._nargs
+
+    @nargs.setter
+    def nargs(self, val):
+        # TODO: validate m<=n.
+        # TODO: factor out common parts in setters for nargs/ntimes.
+        if isinstance(val, (list, tuple)):
+            self._nargs = val
+        else:
+            self._nargs = (val, val)
+
+    @property
+    def ntimes(self):
+        return self._ntimes
+
+    @ntimes.setter
+    def ntimes(self, val):
+        if isinstance(val, (list, tuple)):
+            self._ntimes = val
+        else:
+            self._ntimes = (val, val)
 

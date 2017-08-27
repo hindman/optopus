@@ -2,7 +2,7 @@ import sys
 import json
 import re
 
-from .opt import Opt
+from .opt import Opt, MAX_INT
 from .simple_spec_parser import SimpleSpecParser
 from .phrase import Phrase
 
@@ -31,34 +31,8 @@ class Parser(object):
         self.zero = zero
         self.opts = []
 
-    def do_parse_simple_mode(self, args):
-        ssp = SimpleSpecParser(self.simple_spec)
-        subphrases = [Phrase(opt = o) for o in ssp.parse()]
-        phrase = Phrase(subphrases = subphrases)
-        return phrase.parse(args)
-
-    @property
-    def zero(self):
-        # If user has not set the zero-mode, we infer
-        # the mode by the presense or absense of opts.
-        # Otherwise, we do what the user asked for.
-        if self._zero is None:
-            if self.simple_spec or self.opts:
-                return False
-            else:
-                return True
-        else:
-            return self._zero
-
-    @zero.setter
-    def zero(self, val):
-        if val is None:
-            self._zero = None
-        else:
-            self._zero = bool(val)
-
     def parse(self, args = None):
-        args = list(args or [])
+        args = list(sys.argv[1:] if args is None else args)
         if self.zero:
             return self.do_parse_zero_mode(args)
         elif self.simple_spec:
@@ -66,7 +40,19 @@ class Parser(object):
         else:
             return self.do_parse_full_mode(args)
 
+    def do_parse_simple_mode(self, args):
+        ssp = SimpleSpecParser(self.simple_spec)
+        subphrases = [Phrase(opt = opt) for opt in ssp.parse()]
+        phrase = Phrase(subphrases = subphrases)
+        return phrase.parse(args)
+
     def do_parse_zero_mode(self, args):
+
+        pos = Opt('<positionals>', nargs = (0, MAX_INT))
+
+
+
+
         # TODO: return ParsedOptions, use Phrase, etc.
         positionals = []
         options = {}
@@ -140,6 +126,26 @@ class Parser(object):
                     # error
 
         return opts
+
+    @property
+    def zero(self):
+        # If user has not set the zero-mode, we infer
+        # the mode by the presense or absense of opts.
+        # Otherwise, we do what the user asked for.
+        if self._zero is None:
+            if self.simple_spec or self.opts:
+                return False
+            else:
+                return True
+        else:
+            return self._zero
+
+    @zero.setter
+    def zero(self, val):
+        if val is None:
+            self._zero = None
+        else:
+            self._zero = bool(val)
 
 def parse_single_arg(patt, arg, hyphens = True, anchored = True, prefix = False):
     k = 'anchored' if anchored else 'simple'

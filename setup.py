@@ -24,6 +24,7 @@ author_email = 'mhindman@gmail.com'
 ####
 
 reqs = [
+    'six>=1.10.0',
 ]
 
 extras = {

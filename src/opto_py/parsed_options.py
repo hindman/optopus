@@ -1,5 +1,7 @@
 from collections import OrderedDict
 
+from .opt import ONE_TUPLE
+
 class ParsedOptions(object):
 
     def __init__(self, opts = None):
@@ -22,24 +24,35 @@ class ParsedOpt(object):
     def __init__(self, opt, value):
         self.destination = opt.destination
         self.opt = opt
-        if opt.nargs > 1:
-            self.value = []
-        else:
-            self.value = value
+        self._values = []
 
     def __iter__(self):
         tup = (self.destination, self.value)
         return iter(tup)
 
+    def add_value(self, val):
+        self._values.append(val)
+
     @property
-    def needed_args(self):
-        n = self.opt.nargs
-        if self.value is None:
-            return n
-        elif n < 2:
-            return 0
+    def value(self):
+        if self.opt.nargs > ONE_TUPLE:
+            return self._values
+        elif len(self._values) == 0:
+            return None
         else:
-            return len(self.value) - n
+            return self._values[0]
+
+    @property
+    def requires_args(self):
+        m, n = self.opt.nargs
+        v = len(self._values)
+        return m > v
+
+    @property
+    def can_take_args(self):
+        m, n = self.opt.nargs
+        v = len(self._values)
+        return v < n
 
     def __str__(self):
         fmt = 'ParsedOpt({}, {!r})'

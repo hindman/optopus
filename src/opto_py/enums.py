@@ -44,10 +44,7 @@ class EnumMember(object):
         return self.__str__()
 
     def __eq__(self, other):
-        return (
-            isinstance(other, EnumMember) and
-            self.value == other.value
-        )
+        return self is other
 
     def __ne__(self, other):
         return not self == other

@@ -1,5 +1,5 @@
 from .generic_parser import GenericParser
-from .opt import Opt
+from .opt import Opt, nargs_incremented
 from .regex_lexer import RegexLexer
 from .token import (
     Token,
@@ -61,6 +61,6 @@ class SimpleSpecParser(GenericParser):
         while tok:
             tok = self.eat(OPT_ARG)
             if tok:
-                opt.nargs += 1
+                opt.nargs = nargs_incremented(opt.nargs)
         return opt
 
