@@ -21,6 +21,8 @@ class Phrase(object):
     def phrase_type(self):
         if self.opt is None:
             return PhraseType.PHRASE
+        elif self.opt.is_wildcard_opt:
+            return PhraseType.WILD
         elif self.opt.is_positional_opt:
             return PhraseType.POS
         else:
@@ -45,7 +47,8 @@ class Phrase(object):
         # - A set of already seen Opt.destination values.
         arg_i = -1
         pos_i = -1
-        prev = None
+        prev_opt = None
+        prev_pos = None
         seen = set()
 
         # Process the args.
@@ -60,61 +63,70 @@ class Phrase(object):
             if is_option(arg):
 
                 # Make sure we are not expecting an option-arg.
-                if prev and popts[prev].requires_args:
+                if prev_opt and popts[prev_opt].requires_args:
                     fmt = 'Found option, but expected option-argument: {}'
                     msg = fmt.format(arg)
                     raise OptoPyError(msg)
 
                 # Try to find a matching Opt.
-                prev = None
+                prev_opt = None
                 for sph in self.subphrases:
-                    if sph.phrase_type == PhraseType.OPT:
+                    if sph.phrase_type == PhraseType.WILD:
+                        opt = Opt(arg)
+                        popts.add_opt(opt)
+                        prev_opt = opt.destination
+                        break
+                    elif sph.phrase_type == PhraseType.OPT:
                         if sph.opt.option == arg:
-                            prev = sph.opt.destination
+                            prev_opt = sph.opt.destination
                             break
 
                 # Failed to find a match.
-                if prev is None:
+                if prev_opt is None:
                     fmt = 'Found unexpected option: {}'
                     msg = fmt.format(arg)
                     raise OptoPyError(msg)
 
                 # Found a match, but we've already seen it.
-                if prev in seen:
+                if prev_opt in seen:
                     fmt = 'Found repeated option: {}'
                     msg = fmt.format(arg)
                     raise OptoPyError(msg)
 
                 # Valid Opt.
-                seen.add(prev)
-                po = popts[prev]
+                seen.add(prev_opt)
+                po = popts[prev_opt]
                 if po.opt.nargs == ZERO_TUPLE:
                     po.add_value(True)
                 continue
 
-            # The arg is not an option, and the
-            # previous option still needs opt-args.
-            elif prev and popts[prev].can_take_args:
-                po = popts[prev]
+            # The arg is not an option, but the previous option
+            # can still take opt-args.
+            elif prev_opt and popts[prev_opt].can_take_args:
+                po = popts[prev_opt]
                 po.add_value(arg)
                 continue
 
             # Otherwise, treat the arg as a positional.
-            # Try to get a matching Opt.
-            pos_i += 1
-            try:
-                prev = pos_opts[pos_i].destination
-            except IndexError:
-                prev = None
+            # - Either use the previous positional (if it can take more args).
+            # - Or use the next positional (if there is one).
+            if prev_pos and popts[prev_pos].can_take_args:
+                pass
+            else:
+                pos_i += 1
+                try:
+                    prev_pos = pos_opts[pos_i].destination
+                except IndexError:
+                    prev_pos = None
 
             # No more positional args are expected.
-            if not prev:
+            if not prev_pos:
                 fmt = 'Found unexpected positional argument: {}'
                 msg = fmt.format(arg)
                 raise OptoPyError(msg)
 
             # Valid positional.
-            po = popts[prev]
+            po = popts[prev_pos]
             po.add_value(arg)
 
         # Boom!

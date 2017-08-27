@@ -4,6 +4,8 @@ ZERO_TUPLE = (0, 0)
 ONE_TUPLE = (1, 1)
 MAX_INT = 999999
 
+WILDCARD_OPTION = '*'
+
 def nargs_incremented(nargs):
     m, n = nargs
     return (m + 1, n + 1)
@@ -17,18 +19,21 @@ class Opt(object):
                  tolerant = False):
 
         self.option_spec = option_spec
+        self.option = option_spec
         self.nargs = nargs
         self.ntimes = ntimes
         self.tolerant = tolerant
 
-        self.option = option_spec
-        self.destination = self.option.strip('--<>')
-
-        self.opt_type = (
-            OptType.LONG if self.option.startswith('--') else
-            OptType.SHORT if self.option.startswith('-') else
-            OptType.POS
-        )
+        if self.option == WILDCARD_OPTION:
+            self.destination = None
+            self.opt_type = OptType.WILD
+        else:
+            self.destination = self.option.strip('--<>').replace('-', '_')
+            self.opt_type = (
+                OptType.LONG if self.option.startswith('--') else
+                OptType.SHORT if self.option.startswith('-') else
+                OptType.POS
+            )
 
     def __repr__(self):
         fmt = 'Opt({}, opt_type = {}, nargs = {})'
@@ -45,6 +50,10 @@ class Opt(object):
     @property
     def is_positional_opt(self):
         return self.opt_type == OptType.POS
+
+    @property
+    def is_wildcard_opt(self):
+        return self.opt_type == OptType.WILD
 
     @property
     def nargs(self):

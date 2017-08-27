@@ -10,6 +10,13 @@ class ParsedOptions(object):
             po = ParsedOpt(opt, None)
             self.parsed_opts[opt.destination] = po
 
+    def add_opt(self, opt):
+        po = ParsedOpt(opt, None)
+        self.parsed_opts[opt.destination] = po
+
+    def del_opt(self, opt):
+        del self.parsed_opts[opt.destination]
+
     def __getitem__(self, destination):
         return self.parsed_opts[destination]
 
@@ -35,7 +42,8 @@ class ParsedOpt(object):
 
     @property
     def value(self):
-        if self.opt.nargs > ONE_TUPLE:
+        m, n = self.opt.nargs
+        if n > 1:
             return self._values
         elif len(self._values) == 0:
             return None

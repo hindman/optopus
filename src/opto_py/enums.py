@@ -49,7 +49,7 @@ class EnumMember(object):
     def __ne__(self, other):
         return not self == other
 
-OptType = Enum('OptType', 'LONG', 'SHORT', 'POS')
-PhraseType = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'ZONE')
+OptType = Enum('OptType', 'LONG', 'SHORT', 'POS', 'WILD')
+PhraseType = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'WILD', 'ZONE')
 PhraseLogicType = Enum('PhraseLogicType', 'AND', 'OR')
 

@@ -27,10 +27,12 @@ x Zero-config use case.
 
 x Simple-spec use case.
 
-- Zero-config use case: rewrite.
-  - Change this to wildcard Opt.
+x Zero-config use case: rewrite to use Phrase.parse() with wildcard Opt.
 
 - API use case: basic features: option, tolerant, static nargs, static ntimes.
+
+- Rename zero-config to wildcard: should be able to combine API usage with
+  either positional or option wildcards.
 
 - Basic help text creation.
 

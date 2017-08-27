@@ -14,8 +14,8 @@ def test_simple_spec_parser():
         (OptType.SHORT, '-x',      (0, 0)),
         (OptType.LONG,  '--blort', (0, 0)),
         (OptType.SHORT, '-z',      (2, 2)),
-        (OptType.POS,   '<qq>',    (0, 0)),
-        (OptType.POS,   '<rr>',    (0, 0)),
+        (OptType.POS,   '<qq>',    (1, 1)),
+        (OptType.POS,   '<rr>',    (1, 1)),
         (OptType.LONG,  '--debug', (0, 0)),
     ]
     for g, e in zip_longest(got, exp):

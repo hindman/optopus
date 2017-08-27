@@ -7,9 +7,9 @@ def test_zero_config_parser():
     args = [
         'tigers',
         'Bees',
-        '12.34',
         '--spy',
-        '--end-run',
+        '--end_run',
+        '12.34',
         '--fbi-and-cia',
         'x99',
     ]
@@ -20,7 +20,8 @@ def test_zero_config_parser():
         'positionals': ['tigers', 'Bees', '12.34', 'x99'],
     }
     p = Parser()
-    got = p.parse(args)
+    popts = p.parse(args)
+    got = dict(popts)
     assert got == exp
 
 def test_simple_spec_parser():

@@ -2,7 +2,7 @@ import sys
 import json
 import re
 
-from .opt import Opt, MAX_INT
+from .opt import Opt, MAX_INT, WILDCARD_OPTION
 from .simple_spec_parser import SimpleSpecParser
 from .phrase import Phrase
 
@@ -20,7 +20,6 @@ PATTERNS['anchored'] = {
     k : r'\A' + v + r'\Z'
     for k, v in PATTERNS['simple'].items()
 }
-
 
 class Parser(object):
 
@@ -47,85 +46,17 @@ class Parser(object):
         return phrase.parse(args)
 
     def do_parse_zero_mode(self, args):
-
         pos = Opt('<positionals>', nargs = (0, MAX_INT))
-
-
-
-
-        # TODO: return ParsedOptions, use Phrase, etc.
-        positionals = []
-        options = {}
-        for a in args:
-            k = parse_single_arg('long_opt', a)
-            if k:
-                options[k] = True
-                continue
-            k = parse_single_arg('short_opts', a)
-            if k:
-                for char in k:
-                    options[char] = True
-                continue
-            positionals.append(a)
-        options['positionals'] = positionals
-        return options
+        wild = Opt(WILDCARD_OPTION)
+        subphrases = [Phrase(opt = opt) for opt in [wild, pos]]
+        phrase = Phrase(subphrases = subphrases)
+        popts = phrase.parse(args)
+        popts.del_opt(wild)
+        return popts
 
     def do_parse_full_mode(self, args):
-        # TODO: return ParsedOptions, use Phrase, etc.
-
+        # TODO.
         return None
-
-        def is_option(arg):
-            return (
-                arg.startswith('--') or
-                arg.startswith('-')
-            )
-
-        opts = {}
-        positionals = []
-
-        exp_opts = {
-            o.option : o
-            for o in self.opts
-            if not o.opt_type == o.POSITIONAL
-        }
-        exp_positionals = [
-            o for o in self.opts
-            if o.opt_type == o.POSITIONAL
-        ]
-
-        rargs = list(reversed(args))
-        while rargs:
-            a = pop(rargs)
-
-            if is_option(a):
-                if a in exp_opts:
-                    opt = exp_opts[a]
-                    if not opt.repeatable:
-                        del exp_opts[a]
-                    if opt.nargs:
-                        opts[opt.destination] = []
-                        for _ in range(0, opt.nargs or 0):
-                            if rargs:
-                                opts[opt.destination].append(rargs.pop())
-                            else:
-                                pass
-                                # error
-                        if opt.nargs == 1:
-                            opts[opt.destination] = opts[opt.destination][0]
-                    else:
-                        opts[opt.destination] = True
-                else:
-                    pass
-                    # error
-            else:
-                if expected:
-                    accectp
-                else:
-                    pass
-                    # error
-
-        return opts
 
     @property
     def zero(self):
@@ -146,22 +77,4 @@ class Parser(object):
             self._zero = None
         else:
             self._zero = bool(val)
-
-def parse_single_arg(patt, arg, hyphens = True, anchored = True, prefix = False):
-    k = 'anchored' if anchored else 'simple'
-    rgx = re.compile(PATTERNS[k][patt])
-    m = rgx.search(arg)
-    if m:
-        full = m.group(0)
-        name = m.group(1)
-        if hyphens:
-            name = name.replace('-', '_')
-        if prefix:
-            if patt == 'long_opt':
-                name = '--' + name
-            elif patt.startswith('short_opt'):
-                name = '-' + name
-        return name
-    else:
-        return None
 
