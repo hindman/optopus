@@ -29,11 +29,9 @@ x Simple-spec use case.
 
 x Zero-config use case: rewrite to use Phrase.parse() with wildcard Opt.
 
-- API use case: basic features:
+x API use case: basic features:
   x basic option behavior
   x nargs (static)
-  - ntimes (static)
-  - tolerant
 
 - Basic help text creation.
 
@@ -44,6 +42,15 @@ x Zero-config use case: rewrite to use Phrase.parse() with wildcard Opt.
 - Rename zero-config to wildcard: should be able to combine API usage with
   either positional or option wildcards.
 
+- API: handle other common behaviors:
+  - Handle --opt=val.
+  - Opt: allow option or option_spec.
+  - Opt: allow 'x' in addition to '<x>'
+  - Check argparse for other behaviors.
+  - Handle Opt(option_spec = '-x ARG')
+  - Support ntimes (how should data be stored).
+  - Support tolerant.
+
 - Complex Phrase parsing.
   - Varying nargs and ntimes.
   - Complex grammars.
@@ -51,13 +58,6 @@ x Zero-config use case: rewrite to use Phrase.parse() with wildcard Opt.
     - pruning no-longer-eligible subphrases
     - keeping track of alternatives
     - backtracking using those alternatives
-
-- API: handle other common behaviors:
-  - Handle --opt=val.
-  - Opt: allow option or option_spec.
-  - Opt: allow 'x' in addition to '<x>'
-  - Check argparse for other behaviors.
-  - Handle Opt(option_spec = '-x ARG')
 
 - API-config: most other opt-level configurations.
 
@@ -475,7 +475,7 @@ program as follows:
     - comm3
       - Three positionals must appear first, and then normal rules.
 
-  - You do not need a way to anchor itmes to the end of a zone.
+  - You do not need a way to anchor items to the end of a zone.
 
     - Imagine that we wanted to adjust the grammar to require two positionals
       at the end of the comm2 zone:

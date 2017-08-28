@@ -177,3 +177,18 @@ def test_basic_api_usage():
     assert 'expected N of arguments' in msg
     assert '-n' in msg
 
+    # Invalid.
+    args = [
+        'phasers',
+        'beam',
+        '--foo',
+        '--foo',
+        '--bar', '11', '12', '13', '14', '15',
+        '-n',
+    ]
+    with pytest.raises(OptoPyError) as einfo:
+        popts = p.parse(args)
+    msg = str(einfo.value)
+    assert 'Found repeated option' in msg
+    assert '--foo' in msg
+

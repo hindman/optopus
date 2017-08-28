@@ -1,4 +1,5 @@
 from .enums import OptType
+from collections import Iterable
 
 ZERO_TUPLE = (0, 0)
 ONE_TUPLE = (1, 1)
@@ -21,7 +22,7 @@ class Opt(object):
         self.option_spec = option_spec
         self.option = option_spec
         self.nargs = nargs
-        self.ntimes = ntimes
+        self.ntimes = ntimes      # Not supported now.
         self.tolerant = tolerant
 
         if self.option == WILDCARD_OPTION:
@@ -64,12 +65,7 @@ class Opt(object):
 
     @nargs.setter
     def nargs(self, val):
-        # TODO: validate m<=n.
-        # TODO: factor out common parts in setters for nargs/ntimes.
-        if isinstance(val, (list, tuple)):
-            self._nargs = val
-        else:
-            self._nargs = (val, val)
+        self._nargs = self._get_nx_tuple(val, 'nargs')
 
     @property
     def ntimes(self):
@@ -77,8 +73,28 @@ class Opt(object):
 
     @ntimes.setter
     def ntimes(self, val):
-        if isinstance(val, (list, tuple)):
-            self._ntimes = val
+        self._ntimes = self._get_nx_tuple(val, 'ntimes')
+
+    def _get_nx_tuple(self, val, attr_name):
+        #
+        # Convert val to a tuple. For example, these are
+        # valid inputs: (0, 1), (1, 1), 1, 2, etc.
+        if isinstance(val, Iterable):
+            tup = tuple(val)
         else:
-            self._ntimes = (val, val)
+            tup = (val, val)
+        #
+        # Get m, n values from the tuple.
+        try:
+            m, n = map(int, tup)
+        except Exception:
+            m, n = (None, None)
+        #
+        # Return the valid tuple or raise.
+        if m is None or m < 0 or m > n:
+            fmt = 'Invalid {}: {}'
+            msg = fmt.format(attr_name, val)
+            raise OptoPyError(msg)
+        else:
+            return tup
 
