@@ -1,7 +1,8 @@
 import pytest
 
-from opto_py import Parser
-from opto_py import OptoPyError
+from opto_py import Parser, OptoPyError, Opt
+
+from opto_py.simple_spec_parser import SimpleSpecParser
 
 def test_zero_config_parser():
     args = [
@@ -105,4 +106,74 @@ def test_simple_spec_parser():
     with pytest.raises(OptoPyError) as einfo:
         popts = p.parse(args)
     assert 'unexpected option' in str(einfo.value)
+
+def test_basic_api_usage():
+
+    p = Parser(
+        Opt('-n', nargs = 1),
+        Opt('--foo'),
+        dict(option_spec = '--bar', nargs = 5),
+        Opt('<x>'),
+        Opt('<y>'),
+    )
+
+    # Valid.
+    args = [
+        '-n', 'Spock',
+        '--foo',
+        '--bar', '11', '12', '13', '14', '15',
+        'phasers',
+        'beam',
+    ]
+    exp = dict(
+        n = 'Spock',
+        foo = True,
+        bar = ['11', '12', '13', '14', '15'],
+        x = 'phasers',
+        y = 'beam',
+    )
+    popts = p.parse(args)
+    got = dict(popts)
+    assert got == exp
+
+    # Invalid.
+    args = [
+        'phasers',
+        'beam',
+        '-n', 'Spock',
+        '--foo',
+        '--bar', '11', '12',
+    ]
+    with pytest.raises(OptoPyError) as einfo:
+        popts = p.parse(args)
+    msg = str(einfo.value)
+    assert 'expected N of arguments' in msg
+    assert '--bar' in msg
+
+    # Invalid.
+    args = [
+        'phasers',
+        '-n', 'Spock',
+        '--foo',
+        '--bar', '11', '12', '13', '14', '15',
+    ]
+    with pytest.raises(OptoPyError) as einfo:
+        popts = p.parse(args)
+    msg = str(einfo.value)
+    assert 'expected N of arguments' in msg
+    assert '<y>' in msg
+
+    # Invalid.
+    args = [
+        'phasers',
+        'beam',
+        '--foo',
+        '--bar', '11', '12', '13', '14', '15',
+        '-n',
+    ]
+    with pytest.raises(OptoPyError) as einfo:
+        popts = p.parse(args)
+    msg = str(einfo.value)
+    assert 'expected N of arguments' in msg
+    assert '-n' in msg
 

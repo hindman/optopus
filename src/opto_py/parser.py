@@ -5,6 +5,7 @@ import re
 from .opt import Opt, MAX_INT, WILDCARD_OPTION
 from .simple_spec_parser import SimpleSpecParser
 from .phrase import Phrase
+from .errors import OptoPyError
 
 PATTERNS = dict(
     simple = dict(
@@ -23,40 +24,57 @@ PATTERNS['anchored'] = {
 
 class Parser(object):
 
-    def __init__(self,
-                 simple_spec = None,
-                 zero = None):
-        self.simple_spec = simple_spec
-        self.zero = zero
-        self.opts = []
+    VALID_KWARGS = {
+        'opts',
+        'simple_spec',
+        'zero',
+    }
+
+    def __init__(self, *xs, **kws):
+
+        for k in kws:
+            if k not in self.VALID_KWARGS:
+                fmt = 'Parser(): invalid keyword argument: {}'
+                msg = fmt.format(k)
+                raise OptoPyError(msg)
+
+        self.simple_spec = kws.get('simple_spec', None)
+        self.zero = kws.get('zero', None)
+
+        if self.simple_spec:
+            ssp = SimpleSpecParser(self.simple_spec)
+            self.opts = [opt for opt in ssp.parse()]
+
+        else:
+            opts = list(xs) + list(kws.get('opts', []))
+            self.opts = []
+            for x in opts:
+                if isinstance(x, Opt):
+                    opt = x
+                elif isinstance(x, dict):
+                    opt = Opt(**x)
+                else:
+                    fmt = 'Parser(): invalid Opt: must be Opt or dict: {}'
+                    msg = fmt.format(x)
+                    raise OptoPyError(msg)
+                self.opts.append(opt)
 
     def parse(self, args = None):
-        args = list(sys.argv[1:] if args is None else args)
         if self.zero:
-            return self.do_parse_zero_mode(args)
-        elif self.simple_spec:
-            return self.do_parse_simple_mode(args)
-        else:
-            return self.do_parse_full_mode(args)
+            self.add_wildcard_opts()
+        args = list(sys.argv[1:] if args is None else args)
+        return self.do_parse(args)
 
-    def do_parse_simple_mode(self, args):
-        ssp = SimpleSpecParser(self.simple_spec)
-        subphrases = [Phrase(opt = opt) for opt in ssp.parse()]
+    def do_parse(self, args):
+        subphrases = [Phrase(opt = opt) for opt in self.opts]
         phrase = Phrase(subphrases = subphrases)
         return phrase.parse(args)
 
-    def do_parse_zero_mode(self, args):
-        pos = Opt('<positionals>', nargs = (0, MAX_INT))
-        wild = Opt(WILDCARD_OPTION)
-        subphrases = [Phrase(opt = opt) for opt in [wild, pos]]
-        phrase = Phrase(subphrases = subphrases)
-        popts = phrase.parse(args)
-        popts.del_opt(wild)
-        return popts
-
-    def do_parse_full_mode(self, args):
-        # TODO.
-        return None
+    def add_wildcard_opts(self):
+        self.opts.extend([
+            Opt('<positionals>', nargs = (0, MAX_INT)),
+            Opt(WILDCARD_OPTION),
+        ])
 
     @property
     def zero(self):

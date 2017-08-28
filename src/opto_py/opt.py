@@ -35,6 +35,9 @@ class Opt(object):
                 OptType.POS
             )
 
+        if self.opt_type == OptType.POS and self.nargs == ZERO_TUPLE:
+            self.nargs = ONE_TUPLE
+
     def __repr__(self):
         fmt = 'Opt({}, opt_type = {}, nargs = {})'
         return fmt.format(self.option, self.opt_type, self.nargs)

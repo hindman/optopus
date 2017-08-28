@@ -43,7 +43,7 @@ class Phrase(object):
 
         # Bookkeeping variables.
         # - Indexes to args and pos_opts.
-        # - The most recently seen Opt.
+        # - The most recently seen Opt (non-positional).
         # - A set of already seen Opt.destination values.
         arg_i = -1
         pos_i = -1
@@ -129,6 +129,22 @@ class Phrase(object):
             po = popts[prev_pos]
             po.add_value(arg)
 
-        # Boom!
+        # Delete the wildcard Opt from ParsedOptions.
+        wild = None
+        for po in popts:
+            if po.opt.is_wildcard_opt:
+                wild = po.opt
+                break
+        if wild:
+            popts.del_opt(wild)
+
+        # Check that all Opt instances got the required nargs.
+        for po in popts:
+            if po.requires_args:
+                fmt = 'Did not get expected N of arguments: {}'
+                msg = fmt.format(po.opt.option)
+                raise OptoPyError(msg)
+
+        # Return the ParsedOptions.
         return popts
 

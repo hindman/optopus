@@ -30,19 +30,19 @@ x Simple-spec use case.
 x Zero-config use case: rewrite to use Phrase.parse() with wildcard Opt.
 
 - API use case: basic features:
-  - basic option behavior
-  - nargs (static)
+  x basic option behavior
+  x nargs (static)
   - ntimes (static)
   - tolerant
-
-- Rename zero-config to wildcard: should be able to combine API usage with
-  either positional or option wildcards.
 
 - Basic help text creation.
 
 - Basic GrammarSpec parsing.
 
 - Better exception strategy.
+
+- Rename zero-config to wildcard: should be able to combine API usage with
+  either positional or option wildcards.
 
 - Complex Phrase parsing.
   - Varying nargs and ntimes.
@@ -51,6 +51,13 @@ x Zero-config use case: rewrite to use Phrase.parse() with wildcard Opt.
     - pruning no-longer-eligible subphrases
     - keeping track of alternatives
     - backtracking using those alternatives
+
+- API: handle other common behaviors:
+  - Handle --opt=val.
+  - Opt: allow option or option_spec.
+  - Opt: allow 'x' in addition to '<x>'
+  - Check argparse for other behaviors.
+  - Handle Opt(option_spec = '-x ARG')
 
 - API-config: most other opt-level configurations.
 
