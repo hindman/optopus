@@ -56,6 +56,16 @@ p = Parser(
         desc    = "Odin environment ('production' for most users).",
     ),
 
+    parsing_config = {
+        allow_abbrev = True,
+        opt_prefix_rgx = ...,
+    },
+
+    formatter_config = {
+        program_name = '...',
+        etc ...
+    },
+
 )
 
 ####

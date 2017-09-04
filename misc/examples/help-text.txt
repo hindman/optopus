@@ -1,0 +1,338 @@
+--------
+CLI style: example
+--------
+
+Usage:
+  odin-client [general-options] COMMAND [options]
+
+  odin-client configure --odin-env ENV --od-user USER
+
+  odin-client submit --job-config-file PATH --requests-file PATH [--start-job]
+  odin-client upload --job-id ID --requests-file PATH [--resume N]
+  odin-client start --job-id ID
+  odin-client get --job-id ID
+  odin-client stop --job-id ID
+  odin-client download --job-id ID [download-options]
+  odin-client find [--job-id ID] [--user USER] [--job-status S]
+
+  odin-client --help
+  odin-client --version
+  odin-client --examples
+  odin-client --autocomplete
+
+General options:
+  --odin-env ENV     Odin environment ('production' for most users).
+  --od-user USER     Open Directory user name.
+  --log-level LEVEL  DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].
+  --disable-logging  Disable logging.
+
+Special options:
+  --examples         Display configuration and usage examples.
+  --autocomplete     Display instructions for enabling autocomplete.
+  --version          Display version information.
+  --help             Display the help message.
+
+Commands:
+  configure          Set up the default configurations for odin-client.
+  submit             Submit the config file for a new job.
+  upload             Upload requests for a submitted job.
+  start              Start a submitted job.
+  stop               Stop a job.
+  download           Download OdinItem data for a job.
+  get                Get information about a job.
+  find               Find jobs.
+
+Command options:
+  --job-id ID        The Odin job id.
+  --user USER        Open Directory user who submitted the job.
+  --job-status S     Job status.
+  --job-config-file PATH
+                     Path to job configuration file, which should contain an
+                     OdinJobConfig, either base64-encoded or as JSON.
+  --requests-file PATH
+                     Path to the job's requests file, which should contain
+                     OdinItem objects, base64-encoded, one per line. If
+                     this option is given, odin-client will upload after
+                     submitting the OdinJobConfig.
+  --start-job        After submitting job and uploading requests, start job.
+  --resume N         Resume upload, starting at line N [1].
+
+Download options:
+  --output-file PATH Output file path [STDOUT].
+  --start-index N    Start index [1].
+  --stop-index N     Stop index, inclusive.
+  --force            Download even if job is not finished.
+
+Short options:
+  -h --help
+  -c --job-config-file
+  -r --requests-file
+  -j --job-id
+  -o --output-file
+  -f --force
+  -u --user
+
+--------
+Formatting details
+--------
+
+Widths:
+
+    - git help appears to respect terminal width, up to a point.
+
+        - At short widths (less than 70), the behavior is a bit balky,
+          but Git does try. For example, I see reasonable looking output
+          at 50 width.
+
+        - At extremely short widths, things become ridiculous, so it's
+          not worth worrying about.
+
+        - With very wide terminals (eg 200 or more), Git appears to keep
+          widening the output, but it does so in a chunky way, leaving
+          quite a bit of unused real estate on the right side.
+
+        - But there is no apparent max width. For example, I observed Git
+          widths of 360 or more as I kept widening and shrinking font size.
+
+    - By default, operate within these boundaries:
+
+        min_width = 40
+        max_width = 100
+
+    - Within those parameters, respect the current terminal width, if known.
+
+User-supplied text:
+
+    - Break into paragraphs (but preserve info about N of blank lines between
+      paragraphs).
+
+    - Rewrap to the desired width (probably using textwrap module).
+
+    - Leave indented paragraphs as-is.
+
+--------
+MAN-page style: components
+--------
+
+NAME
+
+    $program_name - $program_summary
+
+SYNOPSIS
+
+    $program_name $opt_spec ...
+
+DESCRIPTION
+
+    $description
+
+OPTIONS
+
+    $opt_spec
+        $opt_help_text
+
+    ...
+
+--------
+CLI style components
+--------
+
+Usage:
+    $program_name $opt_spec ...
+
+$group_label:
+    $opt_spec     $opt_help_text
+    ...
+
+$group_label:
+    $opt_spec     $opt_help_text
+    ...
+
+Short options:
+    -h --help
+    ...
+
+Default sections:
+
+    Usage
+
+    Option groups
+    
+        - Default groups, if none supplied:
+
+            Positional arguments
+            Options
+
+    Short options [if short_options_section is True]
+
+--------
+API
+--------
+
+p = Parser(
+
+    Opt(
+        '--blort',
+        text = '',
+        sections = ['foo', 'bar'],             # Can be str or list/tuple/set.
+    ),
+
+    formatter_config = FormatterConfig(
+
+        # Either Section or iterable.
+        # Default label: "Foo options"
+        Section('usage', label = '...'),
+        Section('foo'),
+        Section('bar'),
+        Section('short-opts'),
+        Section(SPECIAL_NOTES, label = 'Special notes'),
+        Section(WARNINGS, label = 'Warnings'),
+
+        program_name        = '',
+        section_label_punct = ':',
+        after_section_label = '',
+        after_section       = '\n',
+
+        program_summary    = '',
+        style              = CLI|MAN,
+        opt_style          = CLI|MAN,
+
+    ),
+
+)
+
+Section
+    name  | Short; used symbolically (eg in grammar).
+    label | Used in help text
+
+--------
+MAN-page style: git-merge
+--------
+
+GIT-MERGE(1)                                 Git Manual                                GIT-MERGE(1)
+
+NAME
+       git-merge - Join two or more development histories together
+
+SYNOPSIS
+       git merge [-n] [--stat] [--no-commit] [--squash] [--[no-]edit]
+               [-s <strategy>] [-X <strategy-option>] [-S[<keyid>]]
+               [--[no-]allow-unrelated-histories]
+               [--[no-]rerere-autoupdate] [-m <msg>] [<commit>...]
+       git merge --abort
+       git merge --continue
+
+DESCRIPTION
+       Incorporates changes from the named commits (since the time their histories diverged from
+       the current branch) into the current branch. This command is used by git pull to incorporate
+       changes from another repository and can be used by hand to merge changes from one branch
+       into another.
+
+       Assume the following history exists and the current branch is "master":
+
+                     A---B---C topic
+                    /
+               D---E---F---G master
+
+OPTIONS
+       --commit, --no-commit
+           Perform the merge and commit the result. This option can be used to override
+           --no-commit.
+
+           With --no-commit perform the merge but pretend the merge failed and do not autocommit,
+           to give the user a chance to inspect and further tweak the merge result before
+           committing.
+
+       --edit, -e, --no-edit
+           Invoke an editor before committing successful mechanical merge to further edit the
+           auto-generated merge message, so that the user can explain and justify the merge. The
+           --no-edit option can be used to accept the auto-generated message (this is generally
+           discouraged). The --edit (or -e) option is still useful if you are giving a draft
+           message with the -m option from the command line and want to edit it in the editor.
+
+           Older scripts may depend on the historical behaviour of not allowing the user to edit
+           the merge log message. They will see an editor opened when they run git merge. To make
+           it easier to adjust such scripts to the updated behaviour, the environment variable
+           GIT_MERGE_AUTOEDIT can be set to no at the beginning of them.
+
+       --log[=<n>], --no-log
+           In addition to branch names, populate the log message with one-line descriptions from at
+           most <n> actual commits that are being merged. See also git-fmt-merge-msg(1).
+
+           With --no-log do not list one-line descriptions from the actual commits being merged.
+
+       --stat, -n, --no-stat
+           Show a diffstat at the end of the merge. The diffstat is also controlled by the
+           configuration option merge.stat.
+
+           With -n or --no-stat do not show a diffstat at the end of the merge.
+
+       --squash, --no-squash
+           Produce the working tree and index state as if a real merge happened (except for the
+           merge information), but do not actually make a commit, move the HEAD, or record
+           $GIT_DIR/MERGE_HEAD (to cause the next git commit command to create a merge commit).
+           This allows you to create a single commit on top of the current branch whose effect is
+           the same as merging another branch (or more in case of an octopus).
+
+           With --no-squash perform the merge and commit the result. This option can be used to
+           override --squash.
+
+       -v, --verbose
+           Be verbose.
+
+--------
+MAN-page style: grep
+--------
+
+GREP(1)                   BSD General Commands Manual                  GREP(1)
+
+NAME
+     grep, egrep, fgrep, zgrep, zegrep, zfgrep -- file pattern searcher
+
+SYNOPSIS
+     grep [-abcdDEFGHhIiJLlmnOopqRSsUVvwxZ] [-A num] [-B num] [-C[num]] [-e pattern] [-f file]
+          [--binary-files=value] [--color[=when]] [--colour[=when]] [--context[=num]] [--label]
+          [--line-buffered] [--null] [pattern] [file ...]
+
+DESCRIPTION
+     The grep utility searches any given input files, selecting lines that match one or more pat-
+     terns.  By default, a pattern matches an input line if the regular expression (RE) in the pat-
+     tern matches the input line without its trailing newline.  An empty expression matches every
+     line.  Each input line that matches at least one of the patterns is written to the standard
+     output.
+
+     The following options are available:
+
+     -A num, --after-context=num
+             Print num lines of trailing context after each match.  See also the -B and -C options.
+
+     -a, --text
+             Treat all files as ASCII text.  Normally grep will simply print ``Binary file ...
+             matches'' if files contain binary characters.  Use of this option forces grep to out-
+             put lines matching the specified pattern.
+
+     -B num, --before-context=num
+             Print num lines of leading context before each match.  See also the -A and -C options.
+
+     -b, --byte-offset
+             The offset in bytes of a matched pattern is displayed in front of the respective
+             matched line.
+
+     -C[num, --context=num]
+             Print num lines of leading and trailing context surrounding each match.  The default
+             is 2 and is equivalent to -A 2 -B 2.  Note: no whitespace may be given between the
+             option and its argument.
+
+     --exclude-dir
+             If -R is specified, it excludes directories matching the given filename pattern from
+             the search.  Note that --exclude-dir patterns take priority over --include-dir pat-
+             terns, and if no --include-dir pattern is specified, all directories are searched that
+             are not excluded.
+
+     -V, --version
+             Display version information and exit.
+
+EXIT STATUS
+     The grep utility exits with one of the following values:
+
+     0     One or more lines were selected.
