@@ -192,3 +192,22 @@ def test_basic_api_usage():
     assert 'Found repeated option' in msg
     assert '--foo' in msg
 
+def test_basic_help_text():
+
+    p = Parser(
+        Opt('-n', nargs = 1),
+        Opt('--foo'),
+        dict(option_spec = '--bar', nargs = 5),
+        Opt('<x>'),
+        Opt('<y>'),
+    )
+
+    exp = 'Usage: blort\n'
+    got = p.help_text()
+    assert exp == got
+
+    return
+    print('\n-----------------')
+    print(got)
+    print('-----------------')
+

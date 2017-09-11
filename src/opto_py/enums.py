@@ -52,4 +52,6 @@ class EnumMember(object):
 OptType = Enum('OptType', 'LONG', 'SHORT', 'POS', 'WILD')
 PhraseType = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'WILD', 'ZONE')
 PhraseLogicType = Enum('PhraseLogicType', 'AND', 'OR')
+HelpTextStyle = Enum('HelpTextStyle', 'CLI', 'MAN')
+OptTextStyle = Enum('OptTextStyle', 'CLI', 'MAN')
 

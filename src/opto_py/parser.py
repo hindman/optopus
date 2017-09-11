@@ -6,6 +6,7 @@ from .opt import Opt, MAX_INT, WILDCARD_OPTION
 from .simple_spec_parser import SimpleSpecParser
 from .phrase import Phrase
 from .errors import OptoPyError
+from .formatter_config import FormatterConfig, Section
 
 PATTERNS = dict(
     simple = dict(
@@ -28,6 +29,8 @@ class Parser(object):
         'opts',
         'simple_spec',
         'zero',
+        'sections',
+        'formatter_config',
     }
 
     def __init__(self, *xs, **kws):
@@ -40,6 +43,8 @@ class Parser(object):
 
         self.simple_spec = kws.get('simple_spec', None)
         self.zero = kws.get('zero', None)
+        self.sections = kws.get('sections', None)
+        self.formatter_config = kws.get('formatter_config', None)
 
         if self.simple_spec:
             ssp = SimpleSpecParser(self.simple_spec)
@@ -95,4 +100,30 @@ class Parser(object):
             self._zero = None
         else:
             self._zero = bool(val)
+
+    def help_text(self, *section_names):
+
+        # Get sections.
+        # - Either user supplied them.
+        # - Or we use defaults.
+        default_sections = (
+            Section('usage', 'Usage'),
+            Section('positionals', 'Positional arguments'),
+            Section('opts', 'Options'),
+        )
+
+        # Get names of sections for this invocation of help_text().
+        # - Either user supplied some.
+        # - Or we will use all section names (based on the Sections above).
+        if not section_names:
+            opt_section_names = set(nm for opt in self.opts for nm in opt.sections)
+            section_names = opt_section_names or tuple(s.name for s in default_sections)
+
+        # Create a FormatterConfig instance.
+        # - The formatting-config dict supplied by user
+        # - The Sections that we are going to use.
+        fc_dict = self.formatter_config or {}
+        fc = FormatterConfig(**fc_dict)
+
+        return 'Usage: blort\n'
 

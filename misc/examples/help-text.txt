@@ -111,29 +111,6 @@ User-supplied text:
     - Leave indented paragraphs as-is.
 
 --------
-MAN-page style: components
---------
-
-NAME
-
-    $program_name - $program_summary
-
-SYNOPSIS
-
-    $program_name $opt_spec ...
-
-DESCRIPTION
-
-    $description
-
-OPTIONS
-
-    $opt_spec
-        $opt_help_text
-
-    ...
-
---------
 CLI style components
 --------
 
@@ -166,6 +143,29 @@ Default sections:
     Short options [if short_options_section is True]
 
 --------
+MAN-page style: components
+--------
+
+NAME
+
+    $program_name - $program_summary
+
+SYNOPSIS
+
+    $program_name $opt_spec ...
+
+DESCRIPTION
+
+    $description
+
+OPTIONS
+
+    $opt_spec
+        $opt_help_text
+
+    ...
+
+--------
 API
 --------
 
@@ -185,8 +185,8 @@ p = Parser(
         Section('foo'),
         Section('bar'),
         Section('short-opts'),
-        Section(SPECIAL_NOTES, label = 'Special notes'),
-        Section(WARNINGS, label = 'Warnings'),
+        Section('special-notes', text = SPECIAL_NOTES, label = 'Special notes'),
+        Section('warnings', text = WARNINGS, label = 'Warnings'),
 
         program_name        = '',
         section_label_punct = ':',

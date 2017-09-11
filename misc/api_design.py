@@ -68,6 +68,15 @@ p = Parser(
 
 )
 
+# All help-text section, in order.
+p.help_text()
+
+# Specific help-text sections, in the requested order.
+p.help_text('usage')
+p.help_text('section-foo')
+p.help_text('section-foo', 'section-bar')
+
+
 ####
 # SimpleSpec.
 ####
