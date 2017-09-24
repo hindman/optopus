@@ -31,7 +31,7 @@ class Opt(object):
         self.nargs = nargs
         self.ntimes = ntimes      # Not supported now.
         self.text = text
-        self.sections = sections or tuple()
+        self.sections = list(sections or [])
         self.tolerant = tolerant
 
         if self.option == WILDCARD_OPTION:

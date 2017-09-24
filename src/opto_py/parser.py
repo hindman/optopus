@@ -103,15 +103,33 @@ class Parser(object):
 
     def help_text(self, *section_names):
 
-        # Get sections.
-        # - Either user supplied them.
-        # - Or we use defaults.
+        # Example usages:
+
+        # All help-text section, in order.
+        #
+        #   p.help_text()
+
+        # Specific help-text sections, in the requested order.
+        #
+        #   p.help_text('usage')
+        #   p.help_text('section-foo')
+        #   p.help_text('section-foo', 'section-bar')
+
+        # Also see misc/examples/help-text.txt : API section.
+
+        # Default sections.
+        # TODO: link Opts to them here.
         default_sections = (
             Section('usage', 'Usage'),
             Section('positionals', 'Positional arguments'),
             Section('opts', 'Options'),
         )
 
+        # TODO: keep track of which variant we are in.
+        #
+        # help_text() received names : Y/N
+        # Opt instances have user-assigned names : Y/N
+        #
         # Get names of sections for this invocation of help_text().
         # - Either user supplied some.
         # - Or we will use all section names (based on the Sections above).

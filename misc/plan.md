@@ -33,9 +33,8 @@ x API use case: basic features:
   x basic option behavior
   x nargs (static)
 
-- Check https://adambard.com/blog/back-from-clojure-python/
-
 - Basic help text creation.
+  - see Parser.help_text().
 
 - Basic GrammarSpec parsing.
 
