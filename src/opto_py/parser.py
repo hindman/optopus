@@ -1,7 +1,9 @@
 import sys
 import json
 import re
+from collections import defaultdict, OrderedDict
 
+from .enums import OptType
 from .opt import Opt, MAX_INT, WILDCARD_OPTION
 from .simple_spec_parser import SimpleSpecParser
 from .phrase import Phrase
@@ -103,45 +105,97 @@ class Parser(object):
 
     def help_text(self, *section_names):
 
-        # Example usages:
-
-        # All help-text section, in order.
+        ####
+        # NOTES:
         #
-        #   p.help_text()
-
-        # Specific help-text sections, in the requested order.
+        #   Example usages:
         #
-        #   p.help_text('usage')
-        #   p.help_text('section-foo')
-        #   p.help_text('section-foo', 'section-bar')
-
-        # Also see misc/examples/help-text.txt : API section.
-
-        # Default sections.
-        # TODO: link Opts to them here.
-        default_sections = (
-            Section('usage', 'Usage'),
-            Section('positionals', 'Positional arguments'),
-            Section('opts', 'Options'),
-        )
-
-        # TODO: keep track of which variant we are in.
+        #   All help-text section, in order.
         #
-        # help_text() received names : Y/N
-        # Opt instances have user-assigned names : Y/N
+        #       p.help_text()
         #
-        # Get names of sections for this invocation of help_text().
-        # - Either user supplied some.
-        # - Or we will use all section names (based on the Sections above).
-        if not section_names:
-            opt_section_names = set(nm for opt in self.opts for nm in opt.sections)
-            section_names = opt_section_names or tuple(s.name for s in default_sections)
+        #   Specific help-text sections, in the requested order.
+        #
+        #       p.help_text('usage')
+        #       p.help_text('section-foo')
+        #       p.help_text('section-foo', 'section-bar')
+        #
+        #   Also see misc/examples/help-text.txt : API section.
+        ####
 
-        # Create a FormatterConfig instance.
-        # - The formatting-config dict supplied by user
-        # - The Sections that we are going to use.
+        # Set up the default Section instances.
+        default_sections = OrderedDict([
+            ('_usage', Section(
+                name = '_usage',
+                label = 'Usage',
+                opts = [],
+            )),
+            ('_positionals', Section(
+                name = '_positionals',
+                label = 'Positional arguments',
+                opts = [o for o in self.opts if o.opt_type == OptType.POS],
+            )),
+            ('_opts', Section(
+                name = '_opts',
+                label = 'Options',
+                opts = [o for o in self.opts if o.opt_type != OptType.POS],
+            )),
+        ])
+
+        # Set up the Section instances declared at the parser-level by the user.
         fc_dict = self.formatter_config or {}
-        fc = FormatterConfig(**fc_dict)
+        user_sections = OrderedDict([
+            (s.name, s)
+            for s in fc_dict.get('sections', [])
+        ])
+
+        # TODO: I don't want to use the user_sections directly.
+        # At the parser level the user will just declare the name and label.
+        # Here we need new Section instances, and we need to attach the Opt
+        # instances to them.
+        #
+        # TODO: maybe sects should map names to Section instances, and it
+        # could be used directly when we need to assemble the `sections` list.
+
+        # Create a dict mapping all known Section names to their Opt instance.
+        # - (a) The defaults.
+        # - (b) Those declared by the user at the Parser level.
+        # - (c) Those declared by the user at the Opt level.
+        sects = defaultdict(list)
+        for nm, s in default_sections.items():
+            sects[nm].extend(s.opts)
+        for nm, s in user_sections.items():
+            sects[nm].extend(s.opts)
+        for opt in self.opts:
+            for s in opt.sections:
+                sects[s].append(opt)
+
+        # Determine which section names we are using.
+        # - If none are given, use the defaults.
+        # - Otherwise, use the names from the user, if valid.
+        if not section_names:
+            section_names = list(default_sections)
+        else:
+            for nm in section_names:
+                if nm not in sects:
+                    fmt = 'Parser.help_text(): invalid section name: {}'
+                    msg = fmt.format(nm)
+                    raise OptoPyError(msg)
+
+        # Get the Section instances that we will use.
+        sections = []
+        for nm in section_names:
+            if nm in default_sections:
+                sections.append(default_sections[nm])
+            elif nm in user_sections:
+                sections.append(user_sections[nm])
+            else:
+                label = nm.replace('-', ' ').replace('_', ' ').capitalize() + ' options'
+                s = Section(
+                    name = nm,
+                    label = label,
+                    opts = sects[nm],
+                )
 
         return 'Usage: blort\n'
 
