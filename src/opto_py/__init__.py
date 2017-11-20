@@ -1,5 +1,13 @@
-from .parser import Parser
-from .errors import OptoPyError
-from .opt import Opt
-from .formatter_config import FormatterConfig, Section
+from .parser import (
+    FormatterConfig,
+    Opt,
+    OptoPyError,
+    Parser,
+    Section,
+)
+
+from .version import (
+    __git_revision__,
+    __version__,
+)
 

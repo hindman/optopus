@@ -1,8 +1,17 @@
 import pytest
+from six.moves import zip_longest
 
-from opto_py import Parser, OptoPyError, Opt
-
-from opto_py.simple_spec_parser import SimpleSpecParser
+from opto_py import (
+    FormatterConfig,
+    Opt,
+    OptoPyError,
+    Parser,
+    Section,
+)
+from opto_py.parser import (
+    OptType,
+    SimpleSpecParser,
+)
 
 def test_zero_config_parser():
     args = [
@@ -210,4 +219,25 @@ def test_basic_help_text():
     print('\n-----------------')
     print(got)
     print('-----------------')
+
+def test_formatter_config():
+    fc = FormatterConfig()
+    s = Section('fubbs', 'Fubb options')
+
+def test_simple_spec_parser():
+    text = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
+    parser = SimpleSpecParser(text)
+    opts = list(parser.parse())
+    got = [(o.opt_type, o.option_spec, o.nargs) for o in opts]
+    exp = [
+        (OptType.LONG,  '--foo',   (2, 2)),
+        (OptType.SHORT, '-x',      (0, 0)),
+        (OptType.LONG,  '--blort', (0, 0)),
+        (OptType.SHORT, '-z',      (2, 2)),
+        (OptType.POS,   '<qq>',    (1, 1)),
+        (OptType.POS,   '<rr>',    (1, 1)),
+        (OptType.LONG,  '--debug', (0, 0)),
+    ]
+    for g, e in zip_longest(got, exp):
+        assert g == e
 

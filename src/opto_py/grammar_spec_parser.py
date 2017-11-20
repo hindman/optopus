@@ -1,4 +1,0 @@
-
-class GrammarSpecParser(object):
-    pass
-
