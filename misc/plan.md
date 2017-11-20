@@ -83,7 +83,6 @@ x API use case: basic features:
 - http://effbot.org/zone/simple-iterator-parser.htm
 - http://jayconrod.com/posts/37/a-simple-interpreter-from-scratch-in-python-part-1
 - Language Implementation Patterns: Create Your Own Domain-Specific and General Programming Languages
-
 - https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
 
 --------
@@ -244,7 +243,7 @@ The octo-py library combines the approaches:
       command-line programs -- conventions that few developers have studied in
       depth and would rather not worry about.
 
-    - Example confirming these points:
+    - Examples confirming these points:
 
         # Simple programs.
         examples/daily-reading
@@ -292,21 +291,21 @@ The octo-py library combines the approaches:
 Although opto-py is primarily an API-driven library, it also aims to address
 some key weaknesses found in most parsing libraries.
 
-  - Providing users with simple ways to handle CLI grammars and usage
-    variants (just noted).
+  - Providing users with simple ways to handle CLI grammars and usage variants
+    (just noted).
 
   - Supporting everything from quick-and-dirty scripts to complex, highly
     customized CLI programs, with other variants in between.
 
-    - At once extreme, opto-py allows you to parse a standard command line
-      with zero configuration. Just import and go.
+    - At once extreme, opto-py allows you to parse a standard command line with
+      zero configuration. Just import and go.
 
             import opto_py
             opts = opto_py.parse_args()
 
     - At the other extreme, you could build the next Git or a variety of
-      programs with idiosyncratic grammars, heavily customized
-      help text, and many other features.
+      programs with idiosyncratic grammars, heavily customized help text, and
+      many other features.
 
     - Sitting between the two extremes are numerous conveniences and sensible
       defaults to make option parsing easy, no matter what level of control
@@ -327,36 +326,35 @@ some key weaknesses found in most parsing libraries.
     - Ability to supply hand-crafted sections whenever needed.
 
     - Ability to control virtually every aspect of the help text contruction
-      process via basic functions (no need to subclass or dig into the
-      parser's private methods and attributes).
+      process via basic functions (no need to subclass or dig into the parser's
+      private methods and attributes).
 
   - Allowing users to enhance usage-text readability by being able to refer to
     groups of options and to omit either short or long options.
 
-    - API-generated usage text tends to be poor not only because it lacks
-      usage variants but also because the generated text exhaustively lists
-      all options in all of their permutations (short and long).
+    - API-generated usage text tends to be poor not only because it lacks usage
+      variants but also because the generated text exhaustively lists all
+      options in all of their permutations (short and long).
 
     - Especially as the number of options grows, readability can be improved
-      greatly by referring to sets of options by symbolic names rather than
-      by enumerating every possibility.
+      greatly by referring to sets of options by symbolic names rather than by
+      enumerating every possibility.
 
-    - Similarly, readability can be enhance by focusing the usage text on
-      just the long-options or just the short-options and then providing a
-      mapping between short and long options latter in the help text.
+    - Similarly, readability can be enhanced by focusing the usage text on just
+      the long-options (or just the short-options) and then providing a mapping
+      between short and long options latter in the help text.
 
   - Allowing users to define their arguments and options in ways that encourage
     modularity.
 
-    - In opto-py a user defines options and arguments at atomic units,
-      separate from the issues of CLI grammar, usage variants, and options
-      help text.
+    - In opto-py a user defines options and arguments at atomic units, separate
+      from the issues of CLI grammar, usage variants, and options help text.
 
     - Each of those atomic units can be assigned to one or more groups of
       related options.
 
-    - Then those options or option-groups can be leveraged when defining
-      the CLI grammar, when expressing the generated usage text, and when
+    - Then those options or option-groups can be leveraged when defining the
+      CLI grammar, when expressing the generated usage text, and when
       organizing the options text into sections.
 
   - Providing users with full access to the parser configuration. both via the
@@ -368,14 +366,11 @@ some key weaknesses found in most parsing libraries.
 
 Adding the subcommand/subparser concept to an option parsing brings a bunch of
 new syntax. And ultimately, the subparser concept is much less flexible (and
-less intuitive) than supporting the key concepts noted above:
-
-- Usage variants.
-- Command line grammar.
+less intuitive) than supporting the key concepts noted above: (1) usage
+variants, and (2) command line grammar.
 
 Very few CLI tools need a full-blown subparser strategy, especially if the
-option parsing library provides good support for variants and basic CLI
-grammars.
+option parsing library provides good support for variants and CLI grammars.
 
 And even if we were building the next Git, we would not need the subparser
 in an option parsing library. We would just do this instead:
@@ -389,7 +384,7 @@ in an option parsing library. We would just do this instead:
   general-options with the subcommand-options, there is no benefit
   to modeling the library to include a subparser concept.
 
-In other words, a program like Git does not need subparsers; in just needs N
+In other words, a complex program does not need subparsers; in just needs N
 parsers.
 
 The opto-py library will support use cases like this by providing easy ways to
@@ -402,7 +397,7 @@ subcommands like `git-diff`).
 
 ## CLI grammars
 
-First start with the normal rules of CLI grammar:
+First start with the normal rules of CLI grammar, as commonly understood:
 
   - Positional arguments are ordered among each other:
 
@@ -625,14 +620,14 @@ Handling literal option-arg choices.
 - Make it easy to test the option parser.
 
 - Error handling should be under the user's control, if they want it. This is a
-  serious flaw in many parsers (eg argparse). The systems should support both
+  serious flaw in some parsers (eg argparse). The library should support both
   "automatic" mode (where the parser will eagerly print help or error-msg and
   quit) or non-automatic mode (where the parser will simply return an object
-  containing all information and allow the programmer to decide what to do).
+  containing all information and allow the user to decide what to do).
 
 - If possible, allow users to customize by writing simple functions or hooks
-  rather than having to subclass everything. Eg, consider using the pluggy
-  library so that users can implement simple function hooks.
+  rather than having to subclass everything. Consider using the pluggy library
+  so that users can implement simple function hooks.
 
 - Start simple: begin with core behaviors; don't support more flexibility until
   a basic working system is in place.
@@ -648,8 +643,7 @@ Handling literal option-arg choices.
   and most other systems); and (2) thematic configuration (eg, set several
   default values at once, or several data-types at once).
 
-- Allow the user to have stealth options: undocumented (eg for developers
-  only).
+- Allow the user to have hidden options (eg for developers only).
 
 - The Click documentation criticizes the docopt approach, because the help text
   cannot be rewrapped in the face of different terminal widths. Point taken ...
@@ -657,33 +651,27 @@ Handling literal option-arg choices.
   80 chars or less, for readability. And almost no one uses terminals less than
   80 characters wide.
 
-- Usage text in man-page or CLI style
+- Usage text in man-page or CLI style.
 
-- for file args, handle `-` as stdin or stdout
+- For file args, handle `-` as stdin or stdout.
 
 - Add a --bash-completion option.
 
-- Good support for using config-file info for parsing defaults.
+- Support @somefile.txt: user supplies CLI args via a file.
 
-- Support @somefile.txt : user supplies CLI ars via a file
+- Support file and dir types.
 
-- Support file, dir types.
+- Support parse_known_args() and parse_tolerant().
 
-- parse_known_args()  parse_tolerant()
+- Support allow_abbreviation boolean.
 
-- allow_abbreviation : True/False
+- Flexible parse: just accept any `--key VAL` pairs on the command line.
 
-- flexible_parse: just accept any `--key VAL` pairs on the command line
+- Late parser config: configure parser; get args; call user's code; user can
+  check args, and modify the parser at run-time
 
-- late-parser-config
-  - configure parser
-  - get args
-  - call user's code.
-  - user can check args, and modify the parser at run-time
-
-- when building usage text allow control over behaviors:
-  - opts-then-positionals
-  - positionals-then-opts
+- When building usage text, allow control over opts-then-positionals vs
+  positionals-then-opts.
 
 - The continuum of use cases:
 
@@ -957,7 +945,7 @@ and, in more limited ways, to OPT nodes that have a varying nargs attribute.
 
 - Similar issues arrive if an option resides in multiple leaves in the Phrase
   tree and if those Opt instances have varying ntimes attributes. For example,
-  if -x is in one leaf with ntimes=(1,3) and also in another leave with
+  if -x is in one leaf with ntimes=(1,3) and also in another leaf with
   ntimes=(1,3), and if there are 4 -x options in the CLI args, there is not an
   unambiguous way to bind those CLI args to the leaves.
 
