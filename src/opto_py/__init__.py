@@ -4,6 +4,7 @@ from .parser import (
     OptoPyError,
     Parser,
     Section,
+    SectionName,
 )
 
 from .version import (

@@ -103,7 +103,7 @@ class Parser(object):
         self.simple_spec = kws.get('simple_spec', None)
         self.zero = kws.get('zero', None)
         self.sections = kws.get('sections', None)
-        self.formatter_config = kws.get('formatter_config', None)
+        self.formatter_config = kws.get('formatter_config', FormatterConfig())
 
         if self.simple_spec:
             ssp = SimpleSpecParser(self.simple_spec)
@@ -167,7 +167,7 @@ class Parser(object):
         #
         #   Example usages:
         #
-        #   All help-text section, in order.
+        #   All help-text sections, in order.
         #
         #       p.help_text()
         #
@@ -179,6 +179,80 @@ class Parser(object):
         #
         #   Also see misc/examples/help-text.txt : API section.
         ####
+
+        '''
+
+        - Section names: general notes:
+            - Declared implicitly via Opt instances.
+            - Declared explicitly via FormatterConfig.
+            - Defaults via SectionName.
+
+            - Opt lacking sections:
+                - allocate to SectionName.OPT or SectionName.POS.
+
+            - FormatterConfig section lacking matching Opt instances:
+                - prevent via validation
+
+            - Section ordering:
+                - SectionName.USAGE [unless declared in FormatterConfig]
+                - FormatterConfig sections, in order
+                - SectionName.POS [ditto]
+                - SectionName.OPT [ditto]
+
+        x Determine which section names to use:
+            - those passed as args by caller
+            - those inferred from defaults + Opt instances
+
+        - Validate the section names. Valid names include:
+            - section names attached to Opt instances
+            - default section names
+
+        - Create list of Section instances that we will use
+            - attach relevant Opt instances to them
+
+        - Generate text; return.
+
+        '''
+
+        # Determine which section names to use.
+        section_names = list(section_names)
+        if section_names:
+            # TODO: validate the names.
+            pass
+        else:
+
+            # TODO: shift to an OrderedDict, and drop seen.
+
+            seen = set()
+
+            def add_name(nm):
+                if nm not in seen:
+                    seen.add(nm)
+                    section_names.append(nm)
+
+            # First the USAGE section, unless the user explicitly
+            # declared its position in the FormatterConfig.
+            if SectionName.USAGE not in set(s.name for s in self.formatter_config.sections):
+                add_name(SectionName.USAGE)
+
+            # Then any sections declared in FormatterConfig.
+            for s in self.formatter_config.sections:
+                add_name(s.name)
+
+            # Then sections inferred from the Opt instances.
+            # - Either those declared by the user.
+            # - Or the default POS or OPT sections.
+            for o in self.opts:
+                if o.sections:
+                    for nm in o.sections:
+                        add_name(nm)
+                else:
+                    if o.opt_type == OptType.POS:
+                        add_name(SectionName.POS)
+                    else:
+                        add_name(SectionName.OPT)
+
+        return 'Usage: blort\n'
 
         # Set up the default Section instances.
         default_sections = OrderedDict([
@@ -201,10 +275,10 @@ class Parser(object):
 
         # Set up the Section instances declared at the parser-level by the user.
         fc_dict = self.formatter_config or {}
-        user_sections = OrderedDict([
+        user_sections = OrderedDict(
             (s.name, s)
             for s in fc_dict.get('sections', [])
-        ])
+        )
 
         # TODO: I don't want to use the user_sections directly.
         # At the parser level the user will just declare the name and label.
@@ -253,8 +327,6 @@ class Parser(object):
                     label = label,
                     opts = sects[nm],
                 )
-
-        return 'Usage: blort\n'
 
 ################
 # Enum.
@@ -313,15 +385,19 @@ class EnumMember(object):
     def __ne__(self, other):
         return not self == other
 
+    def __hash__(self):
+        return self.value
+
 ################
 # Enum instances.
 ################
 
-OptType = Enum('OptType', 'LONG', 'SHORT', 'POS', 'WILD')
-PhraseType = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'WILD', 'ZONE')
+OptType         = Enum('OptType', 'LONG', 'SHORT', 'POS', 'WILD')
+PhraseType      = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'WILD', 'ZONE')
 PhraseLogicType = Enum('PhraseLogicType', 'AND', 'OR')
-HelpTextStyle = Enum('HelpTextStyle', 'CLI', 'MAN')
-OptTextStyle = Enum('OptTextStyle', 'CLI', 'MAN')
+HelpTextStyle   = Enum('HelpTextStyle', 'CLI', 'MAN')
+OptTextStyle    = Enum('OptTextStyle', 'CLI', 'MAN')
+SectionName     = Enum('SectionName', 'USAGE', 'POS', 'OPT')
 
 ################
 # Errors.

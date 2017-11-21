@@ -7,6 +7,7 @@ from opto_py import (
     OptoPyError,
     Parser,
     Section,
+    SectionName,
 )
 from opto_py.parser import (
     OptType,
@@ -209,6 +210,13 @@ def test_basic_help_text():
         dict(option_spec = '--bar', nargs = 5),
         Opt('<x>'),
         Opt('<y>'),
+        formatter_config = FormatterConfig(
+            Section('foo', 'Foo options'),
+            Section(SectionName.POS, 'Positionals'),
+            Section('bar', 'Bar options'),
+            Section(SectionName.OPT, 'Some Options'),
+            Section(SectionName.USAGE, 'USAGE'),
+        ),
     )
 
     exp = 'Usage: blort\n'
