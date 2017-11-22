@@ -205,8 +205,8 @@ def test_basic_api_usage():
 def test_basic_help_text():
 
     p = Parser(
-        Opt('-n', nargs = 1),
-        Opt('--foo'),
+        Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort']),
+        Opt('--foo', sections = ['foo']),
         dict(option_spec = '--bar', nargs = 5),
         Opt('<x>'),
         Opt('<y>'),
@@ -221,6 +221,10 @@ def test_basic_help_text():
 
     exp = 'Usage: blort\n'
     got = p.help_text()
+    assert exp == got
+
+    exp = 'Usage: blort\n'
+    got = p.help_text('foo', 'bar')
     assert exp == got
 
     return

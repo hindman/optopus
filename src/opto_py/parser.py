@@ -177,156 +177,152 @@ class Parser(object):
         #       p.help_text('section-foo')
         #       p.help_text('section-foo', 'section-bar')
         #
+        #   Section names: general notes:
+        #       - Declared implicitly via Opt instances.
+        #       - Declared explicitly via FormatterConfig.
+        #       - Defaults via SectionName.
+        #
+        #       - Opt lacking sections:
+        #           - allocate to SectionName.OPT or SectionName.POS.
+        #
+        #       - FormatterConfig section lacking matching Opt instances:
+        #           - prevent via validation
+        #
+        #       - Section ordering:
+        #           - SectionName.USAGE [unless declared in FormatterConfig]
+        #           - FormatterConfig sections, in order
+        #           - SectionName.POS [ditto]
+        #           - SectionName.OPT [ditto]
+        #
         #   Also see misc/examples/help-text.txt : API section.
+        #
         ####
 
-        '''
+        ####
+        # Setup the default sections.
+        ####
 
-        - Section names: general notes:
-            - Declared implicitly via Opt instances.
-            - Declared explicitly via FormatterConfig.
-            - Defaults via SectionName.
+        default_sections = {
+            nm : Section(name = nm, label = lab)
+            for nm, lab in (
+                (SectionName.USAGE, 'Usage'),
+                (SectionName.POS, 'Positional arguments'),
+                (SectionName.OPT, 'Options'),
+            )
+        }
 
-            - Opt lacking sections:
-                - allocate to SectionName.OPT or SectionName.POS.
+        ####
+        # Setup all sections that are eligible for use.
+        ####
 
-            - FormatterConfig section lacking matching Opt instances:
-                - prevent via validation
+        # Maps section names to Section instances.
+        all_sections = OrderedDict()
 
-            - Section ordering:
-                - SectionName.USAGE [unless declared in FormatterConfig]
-                - FormatterConfig sections, in order
-                - SectionName.POS [ditto]
-                - SectionName.OPT [ditto]
+        # First the USAGE section, unless the user explicitly
+        # declared its position in the FormatterConfig.
+        nm = SectionName.USAGE
+        if nm not in set(s.name for s in self.formatter_config.sections):
+            all_sections[nm] = default_sections[nm]
 
-        x Determine which section names to use:
-            - those passed as args by caller
-            - those inferred from defaults + Opt instances
+        # Then any sections declared in FormatterConfig.
+        for s in self.formatter_config.sections:
+            all_sections[s.name] = s
 
-        - Validate the section names. Valid names include:
-            - section names attached to Opt instances
-            - default section names
-
-        - Create list of Section instances that we will use
-            - attach relevant Opt instances to them
-
-        - Generate text; return.
-
-        '''
-
-        # Determine which section names to use.
-        section_names = list(section_names)
-        if section_names:
-            # TODO: validate the names.
-            pass
-        else:
-
-            # TODO: shift to an OrderedDict, and drop seen.
-
-            seen = set()
-
-            def add_name(nm):
-                if nm not in seen:
-                    seen.add(nm)
-                    section_names.append(nm)
-
-            # First the USAGE section, unless the user explicitly
-            # declared its position in the FormatterConfig.
-            if SectionName.USAGE not in set(s.name for s in self.formatter_config.sections):
-                add_name(SectionName.USAGE)
-
-            # Then any sections declared in FormatterConfig.
-            for s in self.formatter_config.sections:
-                add_name(s.name)
-
-            # Then sections inferred from the Opt instances.
-            # - Either those declared by the user.
-            # - Or the default POS or OPT sections.
-            for o in self.opts:
-                if o.sections:
-                    for nm in o.sections:
-                        add_name(nm)
+        # Then sections inferred from the Opt instances.
+        # - Either those declared by the user.
+        # - Or the default POS or OPT sections.
+        for o in self.opts:
+            if o.sections:
+                for nm in o.sections:
+                    all_sections[nm] = Section(name = nm)
+            else:
+                if o.opt_type == OptType.POS:
+                    nm = SectionName.POS
+                    all_sections[nm] = default_sections[nm]
                 else:
-                    if o.opt_type == OptType.POS:
-                        add_name(SectionName.POS)
-                    else:
-                        add_name(SectionName.OPT)
+                    nm = SectionName.OPT
+                    all_sections[nm] = default_sections[nm]
 
-        return 'Usage: blort\n'
+        ####
+        # Validate the section names passed by the caller.
+        ####
 
-        # Set up the default Section instances.
-        default_sections = OrderedDict([
-            ('_usage', Section(
-                name = '_usage',
-                label = 'Usage',
-                opts = [],
-            )),
-            ('_positionals', Section(
-                name = '_positionals',
-                label = 'Positional arguments',
-                opts = [o for o in self.opts if o.opt_type == OptType.POS],
-            )),
-            ('_opts', Section(
-                name = '_opts',
-                label = 'Options',
-                opts = [o for o in self.opts if o.opt_type != OptType.POS],
-            )),
-        ])
+        invalid = [nm for nm in section_names if nm not in all_sections]
+        if invalid:
+            fmt = 'Parser.help_text(): invalid sections: {}'
+            msg = fmt.format(' '.join(invalid))
+            raise OptoPyError(msg)
 
-        # Set up the Section instances declared at the parser-level by the user.
-        fc_dict = self.formatter_config or {}
-        user_sections = OrderedDict(
-            (s.name, s)
-            for s in fc_dict.get('sections', [])
+        ####
+        # Setup the sections for which we will build help text.
+        ####
+
+        sections = OrderedDict(
+            (nm, all_sections[nm])
+            for nm in (section_names or all_sections)
         )
 
-        # TODO: I don't want to use the user_sections directly.
-        # At the parser level the user will just declare the name and label.
-        # Here we need new Section instances, and we need to attach the Opt
-        # instances to them.
-        #
-        # TODO: maybe sects should map names to Section instances, and it
-        # could be used directly when we need to assemble the `sections` list.
+        ####
+        # Attach Opt instances to those sections.
+        ####
 
-        # Create a dict mapping all known Section names to their Opt instance.
-        # - (a) The defaults.
-        # - (b) Those declared by the user at the Parser level.
-        # - (c) Those declared by the user at the Opt level.
-        sects = defaultdict(list)
-        for nm, s in default_sections.items():
-            sects[nm].extend(s.opts)
-        for nm, s in user_sections.items():
-            sects[nm].extend(s.opts)
-        for opt in self.opts:
-            for s in opt.sections:
-                sects[s].append(opt)
-
-        # Determine which section names we are using.
-        # - If none are given, use the defaults.
-        # - Otherwise, use the names from the user, if valid.
-        if not section_names:
-            section_names = list(default_sections)
-        else:
-            for nm in section_names:
-                if nm not in sects:
-                    fmt = 'Parser.help_text(): invalid section name: {}'
-                    msg = fmt.format(nm)
-                    raise OptoPyError(msg)
-
-        # Get the Section instances that we will use.
-        sections = []
-        for nm in section_names:
-            if nm in default_sections:
-                sections.append(default_sections[nm])
-            elif nm in user_sections:
-                sections.append(user_sections[nm])
+        for o in self.opts:
+            if o.sections:
+                for nm in o.sections:
+                    if nm in sections:
+                        sections[nm].opts.append(o)
             else:
-                label = nm.replace('-', ' ').replace('_', ' ').capitalize() + ' options'
-                s = Section(
-                    name = nm,
-                    label = label,
-                    opts = sects[nm],
-                )
+                nm = SectionName.POS if o.opt_type == OptType.POS else SectionName.OPT
+                if nm in sections:
+                    sections[nm].opts.append(o)
+
+        ####
+        # Assemble help text.
+        ####
+
+        # Usage:
+        #   odin-client [general-options] COMMAND [options]
+        #
+        #   odin-client configure --odin-env ENV --od-user USER
+        #
+        #   odin-client submit --job-config-file PATH --requests-file PATH [--start-job]
+        #   odin-client upload --job-id ID --requests-file PATH [--resume N]
+        #   odin-client start --job-id ID
+        #   odin-client get --job-id ID
+        #   odin-client stop --job-id ID
+        #   odin-client download --job-id ID [download-options]
+        #   odin-client find [--job-id ID] [--user USER] [--job-status S]
+
+        # Command options:
+        #   --job-id ID        The Odin job id.
+        #   --user USER        Open Directory user who submitted the job.
+        #   --job-status S     Job status.
+        #   --job-config-file PATH
+        #                      Path to job configuration file, which should contain an
+        #                      OdinJobConfig, either base64-encoded or as JSON.
+        #   --requests-file PATH
+        #                      Path to the job's requests file, which should contain
+        #                      OdinItem objects, base64-encoded, one per line. If
+        #                      this option is given, odin-client will upload after
+        #                      submitting the OdinJobConfig.
+        #   --start-job        After submitting job and uploading requests, start job.
+        #   --resume N         Resume upload, starting at line N [1].
+
+        for nm, s in sections.items():
+
+            # usage
+            if nm is SectionName.USAGE:
+                pass
+
+            # text
+            elif s.text:
+                pass
+
+            # opts
+            else:
+                pass
+
+        return 'Usage: blort\n'
 
 ################
 # Enum.
@@ -437,13 +433,25 @@ class FormatterConfig(object):
 
 class Section(object):
 
-    def __init__(self, name, label, text = None, opts = None):
+    def __init__(self, name, label = None, text = None, opts = None):
         self.name = name
-        self.label = label
+        self.label = self._default_label if label is None else label
         self.text = text
-        self.opts = opts
+        self.opts = opts or []
 
         # TODO: validation: require either text or opts, and not both.
+
+    def __repr__(self):
+        return 'Section({})'.format(self.name)
+
+    @property
+    def _default_label(self):
+        return (
+            self.name.
+            replace('-', ' ').
+            replace('_', ' ').
+            capitalize() + ' options'
+        )
 
 ################
 # GenericParser.
@@ -526,8 +534,8 @@ class Opt(object):
             self.nargs = ONE_TUPLE
 
     def __repr__(self):
-        fmt = 'Opt({}, opt_type = {}, nargs = {})'
-        return fmt.format(self.option, self.opt_type, self.nargs)
+        fmt = 'Opt({})'
+        return fmt.format(self.option)
 
     @property
     def is_long_opt(self):
@@ -944,4 +952,24 @@ class Token(object):
 
     def __repr__(self):
         return self.__str__()
+
+################
+# Temporary stuff.
+################
+
+def dump_em(xs):
+    print('\n')
+    for x in xs:
+        dump(*x, tight = True)
+    print('\n')
+
+def dump(x, label = None, tight = False):
+    if not tight:
+        print('\n')
+    if label:
+        print(label, '=>', x)
+    else:
+        print(x)
+    if not tight:
+        print('\n')
 
