@@ -205,12 +205,21 @@ def test_basic_api_usage():
 
 def test_basic_help_text():
 
+    long_help = 'The N of times to do the operation that needs to be done, either now or in the future'
+
     p = Parser(
-        Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort'], text = 'N of times to do it'),
+        Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort'], text = long_help),
         Opt('--foo', sections = ['foo'], text = 'Some Foo behavior'),
         dict(option_spec = '--bar', nargs = 5),
         Opt('<x>', text = 'The X file'),
         Opt('<y>', text = 'The Y file'),
+        Opt('--some_long_opt1'),
+        Opt('--some_long_opt2'),
+        Opt('--some_long_opt3'),
+        Opt('--some_long_opt4'),
+        Opt('--some_long_opt5'),
+        Opt('--some_long_opt6'),
+        Opt('--some_long_opt7'),
         formatter_config = FormatterConfig(
             Section('foo', 'Foo options'),
             Section(SectionName.POS, 'Positionals'),
@@ -222,7 +231,8 @@ def test_basic_help_text():
 
     exp = dedent('''
         Foo options:
-          -n                   N of times to do it
+          -n                   The N of times to do the operation that needs to be done,
+                               either now or in the future
           --foo                Some Foo behavior
 
         Positional arguments:
@@ -230,16 +240,26 @@ def test_basic_help_text():
           <y>                  The Y file
 
         Bar options:
-          -n                   N of times to do it
+          -n                   The N of times to do the operation that needs to be done,
+                               either now or in the future
 
         Options:
           --bar
+          --some_long_opt1
+          --some_long_opt2
+          --some_long_opt3
+          --some_long_opt4
+          --some_long_opt5
+          --some_long_opt6
+          --some_long_opt7
 
         Usage:
-          cli -n --foo --bar <x> <y>
+          cli -n --foo --bar <x> <y> --some_long_opt1 --some_long_opt2 --some_long_opt3
+              --some_long_opt4 --some_long_opt5 --some_long_opt6 --some_long_opt7
 
         Blort options:
-          -n                   N of times to do it
+          -n                   The N of times to do the operation that needs to be done,
+                               either now or in the future
     ''')
 
     got = p.help_text()
@@ -247,11 +267,13 @@ def test_basic_help_text():
 
     exp = dedent('''
         Foo options:
-          -n                   N of times to do it
+          -n                   The N of times to do the operation that needs to be done,
+                               either now or in the future
           --foo                Some Foo behavior
 
         Bar options:
-          -n                   N of times to do it
+          -n                   The N of times to do the operation that needs to be done,
+                               either now or in the future
     ''')
     got = p.help_text('foo', 'bar')
     assert exp == got

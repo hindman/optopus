@@ -1,6 +1,7 @@
 import json
 import re
 import sys
+import textwrap
 from collections import defaultdict, OrderedDict, Iterable
 
 ################
@@ -282,7 +283,9 @@ class Parser(object):
         # Assemble the lines of help text.
         ####
 
+        MAX_WID = 80
         lines = []
+
         for nm, s in sections.items():
 
             # Section label.
@@ -291,10 +294,21 @@ class Parser(object):
 
             # The usage section.
             if nm is SectionName.USAGE:
-                parts = [' ', self.program or 'cli']
+                parts = []
                 for o in self.opts:
                     parts.append(o.option_spec)
-                lines.append(' '.join(map(str, parts)))
+
+                prog = self.program or 'cli'
+                wid = MAX_WID - len(prog) - 1
+                txt = ' '.join(map(str, parts))
+                usage_lines = textwrap.wrap(txt, wid)
+
+                fmt = '  {} {}'
+                pad = prog
+                for i, ln in enumerate(usage_lines):
+                    lines.append(fmt.format(pad, ln))
+                    if i == 0:
+                        pad = ' ' * len(prog)
 
             # A Section with literal text.
             elif s.text:
@@ -302,9 +316,15 @@ class Parser(object):
 
             # Section with Opt instances.
             else:
+                wid = MAX_WID - 23
+                fmt = '  {:<20} {}'
                 for o in s.opts:
-                    fmt = '  {:<20} {}'
-                    lines.append(fmt.format(o.option_spec, o.text or ''))
+                    opt_lines = textwrap.wrap(o.text or '', wid) or ['']
+                    pad = o.option_spec
+                    for i, ln in enumerate(opt_lines):
+                        lines.append(fmt.format(pad, ln))
+                        if i == 0:
+                            pad = ' ' * len(o.option_spec)
 
         ####
         # Return the help text.
@@ -941,6 +961,10 @@ class Token(object):
 
     def __repr__(self):
         return self.__str__()
+
+################
+# Helpers.
+################
 
 ################
 # Temporary stuff.

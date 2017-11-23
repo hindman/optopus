@@ -33,9 +33,9 @@ x API use case: basic features:
   x basic option behavior
   x nargs (static)
 
-- Basic help text creation.
+x Basic help text creation.
   x Parser.help_text(): minimal implementation
-  - Parser.help_text(): basic wrapping
+  x Parser.help_text(): basic wrapping
 
 - Basic GrammarSpec parsing.
 
