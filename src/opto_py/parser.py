@@ -90,6 +90,7 @@ class Parser(object):
         'zero',
         'sections',
         'formatter_config',
+        'program',
     }
 
     def __init__(self, *xs, **kws):
@@ -100,10 +101,11 @@ class Parser(object):
                 msg = fmt.format(k)
                 raise OptoPyError(msg)
 
-        self.simple_spec = kws.get('simple_spec', None)
-        self.zero = kws.get('zero', None)
-        self.sections = kws.get('sections', None)
+        self.simple_spec      = kws.get('simple_spec', None)
+        self.zero             = kws.get('zero', None)
+        self.sections         = kws.get('sections', None)
         self.formatter_config = kws.get('formatter_config', FormatterConfig())
+        self.program          = kws.get('program', None)
 
         if self.simple_spec:
             ssp = SimpleSpecParser(self.simple_spec)
@@ -163,38 +165,38 @@ class Parser(object):
     def help_text(self, *section_names):
 
         ####
-        # NOTES:
         #
-        #   Example usages:
+        # Example usages:
         #
-        #   All help-text sections, in order.
+        #   - All help-text sections, in order.
         #
-        #       p.help_text()
+        #     p.help_text()
         #
-        #   Specific help-text sections, in the requested order.
+        #   - Specific help-text sections, in the requested order.
         #
-        #       p.help_text('usage')
-        #       p.help_text('section-foo')
-        #       p.help_text('section-foo', 'section-bar')
+        #     p.help_text('usage')
+        #     p.help_text('section-foo')
+        #     p.help_text('section-foo', 'section-bar')
         #
-        #   Section names: general notes:
-        #       - Declared implicitly via Opt instances.
-        #       - Declared explicitly via FormatterConfig.
-        #       - Defaults via SectionName.
+        # Sections:
+        #   - Declared implicitly via Opt instances.
+        #   - Declared explicitly via FormatterConfig.
+        #   - Defaults via SectionName.
         #
-        #       - Opt lacking sections:
-        #           - allocate to SectionName.OPT or SectionName.POS.
+        # Section ordering:
+        #   - SectionName.USAGE [unless declared in FormatterConfig]
+        #   - FormatterConfig sections, in order
+        #   - SectionName.POS [ditto]
+        #   - SectionName.OPT [ditto]
         #
-        #       - FormatterConfig section lacking matching Opt instances:
-        #           - prevent via validation
+        # Issues:
+        #   - Opt lacking sections:
+        #       - allocate to SectionName.OPT or SectionName.POS.
         #
-        #       - Section ordering:
-        #           - SectionName.USAGE [unless declared in FormatterConfig]
-        #           - FormatterConfig sections, in order
-        #           - SectionName.POS [ditto]
-        #           - SectionName.OPT [ditto]
+        #   - FormatterConfig section lacking matching Opt instances:
+        #       - prevent via validation
         #
-        #   Also see misc/examples/help-text.txt : API section.
+        # Also see misc/examples/help-text.txt : API section.
         #
         ####
 
@@ -215,7 +217,7 @@ class Parser(object):
         # Setup all sections that are eligible for use.
         ####
 
-        # Maps section names to Section instances.
+        # A map of section names to Section instances.
         all_sections = OrderedDict()
 
         # First the USAGE section, unless the user explicitly
@@ -277,52 +279,39 @@ class Parser(object):
                     sections[nm].opts.append(o)
 
         ####
-        # Assemble help text.
+        # Assemble the lines of help text.
         ####
 
-        # Usage:
-        #   odin-client [general-options] COMMAND [options]
-        #
-        #   odin-client configure --odin-env ENV --od-user USER
-        #
-        #   odin-client submit --job-config-file PATH --requests-file PATH [--start-job]
-        #   odin-client upload --job-id ID --requests-file PATH [--resume N]
-        #   odin-client start --job-id ID
-        #   odin-client get --job-id ID
-        #   odin-client stop --job-id ID
-        #   odin-client download --job-id ID [download-options]
-        #   odin-client find [--job-id ID] [--user USER] [--job-status S]
-
-        # Command options:
-        #   --job-id ID        The Odin job id.
-        #   --user USER        Open Directory user who submitted the job.
-        #   --job-status S     Job status.
-        #   --job-config-file PATH
-        #                      Path to job configuration file, which should contain an
-        #                      OdinJobConfig, either base64-encoded or as JSON.
-        #   --requests-file PATH
-        #                      Path to the job's requests file, which should contain
-        #                      OdinItem objects, base64-encoded, one per line. If
-        #                      this option is given, odin-client will upload after
-        #                      submitting the OdinJobConfig.
-        #   --start-job        After submitting job and uploading requests, start job.
-        #   --resume N         Resume upload, starting at line N [1].
-
+        lines = []
         for nm, s in sections.items():
 
-            # usage
+            # Section label.
+            lines.append('')
+            lines.append(s.label + ':')
+
+            # The usage section.
             if nm is SectionName.USAGE:
-                pass
+                parts = [' ', self.program or 'cli']
+                for o in self.opts:
+                    parts.append(o.option_spec)
+                lines.append(' '.join(map(str, parts)))
 
-            # text
+            # A Section with literal text.
             elif s.text:
-                pass
+                lines.extend(s.text.split('\n'))
 
-            # opts
+            # Section with Opt instances.
             else:
-                pass
+                for o in s.opts:
+                    fmt = '  {:<20} {}'
+                    lines.append(fmt.format(o.option_spec, o.text or ''))
 
-        return 'Usage: blort\n'
+        ####
+        # Return the help text.
+        ####
+
+        lines.append('')
+        return '\n'.join(ln.rstrip() for ln in lines)
 
 ################
 # Enum.

@@ -34,11 +34,10 @@ x API use case: basic features:
   x nargs (static)
 
 - Basic help text creation.
-  - see Parser.help_text().
+  x Parser.help_text(): minimal implementation
+  - Parser.help_text(): basic wrapping
 
 - Basic GrammarSpec parsing.
-
-- Better exception strategy.
 
 - Rename zero-config to wildcard: should be able to combine API usage with
   either positional or option wildcards.
@@ -65,6 +64,8 @@ x API use case: basic features:
 - API thematic configuration.
 
 - Help text customization.
+
+- Better exception strategy.
 
 - Man-page support.
 

@@ -1,5 +1,6 @@
 import pytest
 from six.moves import zip_longest
+from textwrap import dedent
 
 from opto_py import (
     FormatterConfig,
@@ -205,32 +206,88 @@ def test_basic_api_usage():
 def test_basic_help_text():
 
     p = Parser(
-        Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort']),
-        Opt('--foo', sections = ['foo']),
+        Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort'], text = 'N of times to do it'),
+        Opt('--foo', sections = ['foo'], text = 'Some Foo behavior'),
         dict(option_spec = '--bar', nargs = 5),
-        Opt('<x>'),
-        Opt('<y>'),
+        Opt('<x>', text = 'The X file'),
+        Opt('<y>', text = 'The Y file'),
         formatter_config = FormatterConfig(
             Section('foo', 'Foo options'),
             Section(SectionName.POS, 'Positionals'),
             Section('bar', 'Bar options'),
             Section(SectionName.OPT, 'Some Options'),
-            Section(SectionName.USAGE, 'USAGE'),
+            Section(SectionName.USAGE, 'Usage'),
         ),
     )
 
-    exp = 'Usage: blort\n'
+    exp = dedent('''
+        Foo options:
+          -n                   N of times to do it
+          --foo                Some Foo behavior
+
+        Positional arguments:
+          <x>                  The X file
+          <y>                  The Y file
+
+        Bar options:
+          -n                   N of times to do it
+
+        Options:
+          --bar
+
+        Usage:
+          cli -n --foo --bar <x> <y>
+
+        Blort options:
+          -n                   N of times to do it
+    ''')
+
     got = p.help_text()
     assert exp == got
 
-    exp = 'Usage: blort\n'
+    exp = dedent('''
+        Foo options:
+          -n                   N of times to do it
+          --foo                Some Foo behavior
+
+        Bar options:
+          -n                   N of times to do it
+    ''')
     got = p.help_text('foo', 'bar')
     assert exp == got
 
-    return
-    print('\n-----------------')
-    print(got)
-    print('-----------------')
+    p = Parser(
+        Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort'], text = 'N of times to do it'),
+        Opt('--foo', sections = ['foo'], text = 'Some Foo behavior'),
+        dict(option_spec = '--bar', nargs = 5),
+        Opt('<x>', text = 'The X file'),
+        Opt('<y>', text = 'The Y file'),
+        program = 'frob',
+    )
+
+    exp = dedent('''
+        Usage:
+          frob -n --foo --bar <x> <y>
+
+        Foo options:
+          -n                   N of times to do it
+          --foo                Some Foo behavior
+
+        Bar options:
+          -n                   N of times to do it
+
+        Blort options:
+          -n                   N of times to do it
+
+        Options:
+          --bar
+
+        Positional arguments:
+          <x>                  The X file
+          <y>                  The Y file
+    ''')
+    got = p.help_text()
+    assert exp == got
 
 def test_formatter_config():
     fc = FormatterConfig()
