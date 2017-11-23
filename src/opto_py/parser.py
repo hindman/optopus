@@ -88,7 +88,7 @@ class Parser(object):
     VALID_KWARGS = {
         'opts',
         'simple_spec',
-        'zero',
+        'wildcards',
         'sections',
         'formatter_config',
         'program',
@@ -103,7 +103,7 @@ class Parser(object):
                 raise OptoPyError(msg)
 
         self.simple_spec      = kws.get('simple_spec', None)
-        self.zero             = kws.get('zero', None)
+        self.wildcards        = kws.get('wildcards', None)
         self.sections         = kws.get('sections', None)
         self.formatter_config = kws.get('formatter_config', FormatterConfig())
         self.program          = kws.get('program', None)
@@ -127,7 +127,7 @@ class Parser(object):
                 self.opts.append(opt)
 
     def parse(self, args = None):
-        if self.zero:
+        if self.wildcards:
             self.add_wildcard_opts()
         args = list(sys.argv[1:] if args is None else args)
         return self.do_parse(args)
@@ -144,24 +144,23 @@ class Parser(object):
         ])
 
     @property
-    def zero(self):
-        # If user has not set the zero-mode, we infer
-        # the mode by the presense or absense of opts.
-        # Otherwise, we do what the user asked for.
-        if self._zero is None:
+    def wildcards(self):
+        # If user has not set the wildcards-mode, we infer it via the presense
+        # or absense of opts. Otherwise, we do what the user asked for.
+        if self._wildcards is None:
             if self.simple_spec or self.opts:
                 return False
             else:
                 return True
         else:
-            return self._zero
+            return self._wildcards
 
-    @zero.setter
-    def zero(self, val):
+    @wildcards.setter
+    def wildcards(self, val):
         if val is None:
-            self._zero = None
+            self._wildcards = None
         else:
-            self._zero = bool(val)
+            self._wildcards = bool(val)
 
     def help_text(self, *section_names):
 

@@ -37,8 +37,7 @@ x Basic help text creation.
   x Parser.help_text(): minimal implementation
   x Parser.help_text(): basic wrapping
 
-- Rename zero-config to wildcard: should be able to combine API usage with
-  either positional or option wildcards.
+x Rename zero-config to wildcards mode.
 
 - API: handle other common behaviors:
   - Handle --opt=val.
@@ -48,6 +47,8 @@ x Basic help text creation.
   - Handle Opt(option_spec = '-x ARG')
   - Support ntimes (how should data be stored).
   - Support tolerant.
+  - Wildcards mode: allow user to specify pos/opt/both/True. Make sure
+    wildcards mode can be combined with other API features.
 
 - Basic GrammarSpec parsing.
 

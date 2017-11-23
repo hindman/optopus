@@ -15,7 +15,7 @@ from opto_py.parser import (
     SimpleSpecParser,
 )
 
-def test_zero_config_parser():
+def test_parser_using_wildcards():
     args = [
         'tigers',
         'Bees',
