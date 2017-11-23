@@ -897,11 +897,19 @@ class SimpleSpecParser(GenericParser):
     #
     # - Inherit from GenericParser.
     #
+    # - Pass a TOKENS data structure to the RegexLexer.
+    #
     # - Define one or more parser_functions.
     #
     # - Each of those functions should return some data element
     #   appropriate for the grammar (if the current Token matches)
     #   or None.
+    #
+    # Usage example:
+    #
+    #   txt = '--foo FF GG -x --blort -z Z1 Z2 <q> <r> --debug'
+    #   ssp = SimpleSpecParser(txt)
+    #   tokens = list(ssp.parse())
     #
     ####
 

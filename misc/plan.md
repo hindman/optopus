@@ -37,8 +37,6 @@ x Basic help text creation.
   x Parser.help_text(): minimal implementation
   x Parser.help_text(): basic wrapping
 
-- Basic GrammarSpec parsing.
-
 - Rename zero-config to wildcard: should be able to combine API usage with
   either positional or option wildcards.
 
@@ -50,6 +48,8 @@ x Basic help text creation.
   - Handle Opt(option_spec = '-x ARG')
   - Support ntimes (how should data be stored).
   - Support tolerant.
+
+- Basic GrammarSpec parsing.
 
 - Complex Phrase parsing.
   - Varying nargs and ntimes.
