@@ -46,6 +46,7 @@ PATTERNS['anchored'] = {
 
 ZERO_TUPLE = (0, 0)
 ONE_TUPLE = (1, 1)
+ZERO_OR_ONE_TUPLE = (0, 1)
 MAX_INT = 999999
 
 OPT_PREFIX = '-'
@@ -514,14 +515,40 @@ class Opt(object):
     def __init__(self,
                  option_spec,
                  nargs = ZERO_TUPLE,
-                 ntimes = (0, 1),
+                 ntimes = ZERO_OR_ONE_TUPLE,
                  text = None,
                  sections = None,
                  tolerant = False):
 
+        # self.option_spec = '--input PATH SIZE'
+        # self.option      = '--input'
+        # self.nargs       = (2, 2)
+        # self.arg_names   = ('PATH', 'SIZE')
+
+        if option_spec == WILDCARD_OPTION:
+            self.option_spec = option_spec
+            self.option = option_spec
+            self.nargs = nargs
+        else:
+            opts = list(SimpleSpecParser(option_spec).parse())
+
+            if len(opts) == 1:
+                o = opts[0]
+            else:
+                fmt = 'Opt: invalid option_spec: {}'
+                msg = fmt.format(option_spec)
+                raise OptoPyError(msg)
+
+            self.option_spec = o.option_spec
+            self.option = o.option
+            self.nargs = o.nargs
+            self.arg_names = o.arg_names
+
+        # TODO: remove this. Currently causes test failure.
         self.option_spec = option_spec
         self.option = option_spec
         self.nargs = nargs
+
         self.ntimes = ntimes      # Not supported now.
         self.text = text
         self.sections = list(sections or [])
@@ -930,17 +957,28 @@ class SimpleSpecParser(GenericParser):
     def pos_opt(self):
         tok = self.eat(POS_OPT)
         if tok:
-            return Opt(tok.value, nargs = 1)
+            opt = OptToken()
+            opt.option = tok.value
+            opt.option_spec = tok.value
+            opt.nargs = ONE_TUPLE
+            opt.opt_type = OptType.POS
+            opt.arg_names = []
+            return opt
         else:
             return None
 
     def _opt(self, opt_type):
         # If the current Token is not the expected option type, bail out.
-        # Otherwise, count the N of OPT_ARG that the Opt takes.
+        # Otherwise, count the N of OPT_ARG that the OptToken takes.
         tok = self.eat(opt_type)
         if not tok:
             return None
-        opt = Opt(tok.value)
+        opt = OptToken()
+        opt.option = tok.value
+        opt.option_spec = tok.value
+        opt.nargs = ZERO_TUPLE
+        opt.opt_type = OptType.SHORT if opt_type == SHORT_OPT else OptType.LONG
+        opt.arg_names = []
         while tok:
             tok = self.eat(OPT_ARG)
             if tok:
@@ -968,6 +1006,9 @@ class Token(object):
 
     def __repr__(self):
         return self.__str__()
+
+class OptToken(object):
+    pass
 
 ################
 # Helpers.

@@ -39,13 +39,17 @@ x Basic help text creation.
 
 x Rename zero-config to wildcards mode.
 
+- SimpleSpecParser:
+  - Opt: incorporate SimpleSpecParser: eg, '--input PATH SIZE'
+        self.option_spec = '--input PATH SIZE'
+        self.option      = '--input'
+        self.nargs       = (2, 2)
+        self.arg_names   = ('PATH', 'SIZE')
+  - Opt: allow `x` or `<x>`
+
 - API: handle other common behaviors:
+  - Support ntimes.
   - Handle --opt=val.
-  - Opt: allow option or option_spec.
-  - Opt: allow 'x' in addition to '<x>'
-  - Check argparse for other behaviors.
-  - Handle Opt(option_spec = '-x ARG')
-  - Support ntimes (how should data be stored).
   - Support tolerant.
   - Wildcards mode: allow user to specify pos/opt/both/True. Make sure
     wildcards mode can be combined with other API features.
@@ -61,6 +65,7 @@ x Rename zero-config to wildcards mode.
     - backtracking using those alternatives
 
 - API-config: most other opt-level configurations.
+  - Check argparse for other behaviors.
 
 - API thematic configuration.
 

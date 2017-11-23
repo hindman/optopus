@@ -22,11 +22,11 @@
 
 p = parser(
     dict(
-        option   = 'task',
-        groups   = 'task',
-        arg_name = 'TASK',
-        choices  = 'configure submit upload start get stop download find'.split(),
-        desc     = 'The odin-client task to run',
+        option    = 'task',
+        groups    = 'task',
+        arg_names = 'TASK',
+        choices   = 'configure submit upload start get stop download find'.split(),
+        desc      = 'The odin-client task to run',
     ),
     dict(
         option  = '--odin-env ENV',
@@ -84,12 +84,12 @@ p = parser(
     ),
     dict(
         # Fully explicit example.
-        option         = '--job-id',                # Or string with option, aliases, and arg_name.
+        option         = '--job-id',                # Or string with option, aliases, and arg_names.
         aliases        = ['-j', '-J', '--jid'],     # Or just one string.
-        arg_name       = 'ID',
+        arg_names      = 'ID',
         destination    = 'job_id',                  # Or `dest`.
         groups         = ['command'],               # Or just one string.
-        n_args          = 1,
+        n_args         = 1,
         repeatable     = False,                     # If true, append values.
         default        = None,
         type           = str,
