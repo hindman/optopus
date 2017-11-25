@@ -111,7 +111,13 @@ class Parser(object):
 
         if self.simple_spec:
             ssp = SimpleSpecParser(self.simple_spec)
-            self.opts = [opt for opt in ssp.parse()]
+            self.opts = []
+            for otok in ssp.parse():
+                o = Opt(otok.option_spec)
+                o.option = otok.option
+                o.nargs = otok.nargs
+                o.arg_names = otok.arg_names
+                self.opts.append(o)
 
         else:
             opts = list(xs) + list(kws.get('opts', []))
@@ -514,50 +520,36 @@ class Opt(object):
 
     def __init__(self,
                  option_spec,
-                 nargs = ZERO_TUPLE,
+                 nargs = None,
                  ntimes = ZERO_OR_ONE_TUPLE,
                  text = None,
                  sections = None,
                  tolerant = False):
 
-        # self.option_spec = '--input PATH SIZE'
-        # self.option      = '--input'
-        # self.nargs       = (2, 2)
-        # self.arg_names   = ('PATH', 'SIZE')
-
         if option_spec == WILDCARD_OPTION:
             self.option_spec = option_spec
             self.option = option_spec
-            self.nargs = nargs
-        else:
-            opts = list(SimpleSpecParser(option_spec).parse())
+            self.nargs = nargs or ZERO_TUPLE
+            self.destination = None
+            self.opt_type = OptType.WILD
 
+        else:
+            # Parse the option_spec. This should give us exactly one OptToken.
+            opts = list(SimpleSpecParser(option_spec).parse())
             if len(opts) == 1:
-                o = opts[0]
+                otok = opts[0]
             else:
                 fmt = 'Opt: invalid option_spec: {}'
                 msg = fmt.format(option_spec)
                 raise OptoPyError(msg)
 
-            self.option_spec = o.option_spec
-            self.option = o.option
-            self.nargs = o.nargs
-            self.arg_names = o.arg_names
+            # Assign values from the OptToken to the Opt.
+            self.option_spec = otok.option_spec
+            self.option = otok.option
+            self.nargs = nargs or otok.nargs
+            self.arg_names = otok.arg_names
 
-        # TODO: remove this. Currently causes test failure.
-        self.option_spec = option_spec
-        self.option = option_spec
-        self.nargs = nargs
-
-        self.ntimes = ntimes      # Not supported now.
-        self.text = text
-        self.sections = list(sections or [])
-        self.tolerant = tolerant
-
-        if self.option == WILDCARD_OPTION:
-            self.destination = None
-            self.opt_type = OptType.WILD
-        else:
+            # Determine the OptType.
             self.destination = self.option.strip(OPT_SPEC_STRIP_CHARS).replace(OPT_PREFIX, UNDERSCORE)
             self.opt_type = (
                 OptType.LONG if self.option.startswith(LONG_OPT_PREFIX) else
@@ -565,8 +557,10 @@ class Opt(object):
                 OptType.POS
             )
 
-        if self.opt_type == OptType.POS and self.nargs == ZERO_TUPLE:
-            self.nargs = ONE_TUPLE
+        self.ntimes = ntimes
+        self.text = text
+        self.sections = list(sections or [])
+        self.tolerant = tolerant
 
     def __repr__(self):
         fmt = 'Opt({})'
@@ -957,13 +951,13 @@ class SimpleSpecParser(GenericParser):
     def pos_opt(self):
         tok = self.eat(POS_OPT)
         if tok:
-            opt = OptToken()
-            opt.option = tok.value
-            opt.option_spec = tok.value
-            opt.nargs = ONE_TUPLE
-            opt.opt_type = OptType.POS
-            opt.arg_names = []
-            return opt
+            otok = OptToken()
+            otok.option = tok.value
+            otok.option_spec = tok.value
+            otok.nargs = ONE_TUPLE
+            otok.opt_type = OptType.POS
+            otok.arg_names = []
+            return otok
         else:
             return None
 
@@ -973,18 +967,20 @@ class SimpleSpecParser(GenericParser):
         tok = self.eat(opt_type)
         if not tok:
             return None
-        opt = OptToken()
-        opt.option = tok.value
-        opt.option_spec = tok.value
-        opt.nargs = ZERO_TUPLE
-        opt.opt_type = OptType.SHORT if opt_type == SHORT_OPT else OptType.LONG
-        opt.arg_names = []
+        otok = OptToken()
+        otok.option = tok.value
+        otok.option_spec = tok.value
+        otok.nargs = ZERO_TUPLE
+        otok.opt_type = OptType.SHORT if opt_type == SHORT_OPT else OptType.LONG
+        otok.arg_names = []
         while tok:
             tok = self.eat(OPT_ARG)
             if tok:
-                m, n = opt.nargs
-                opt.nargs = (m + 1, n + 1)
-        return opt
+                m, n = otok.nargs
+                otok.nargs = (m + 1, n + 1)
+                otok.arg_names.append(tok.value)
+                otok.option_spec += ' {}'.format(tok.value)
+        return otok
 
 ################
 # Token.

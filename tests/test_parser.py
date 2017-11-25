@@ -120,10 +120,14 @@ def test_simple_spec_parser():
 
 def test_basic_api_usage():
 
+    # Scenarios exercised:
+    # - Can pass nargs as keyword arg.
+    # - Can also pass nargs implicitly via the option_spec.
+    # - Can pass an Opt directly or via a dict.
     p = Parser(
         Opt('-n', nargs = 1),
         Opt('--foo'),
-        dict(option_spec = '--bar', nargs = 5),
+        dict(option_spec = '--bar B1 B2 B3 B4 B5'),
         Opt('<x>'),
         Opt('<y>'),
     )
@@ -315,19 +319,19 @@ def test_formatter_config():
     fc = FormatterConfig()
     s = Section('fubbs', 'Fubb options')
 
-def test_simple_spec_parser():
+def test_simple_spec_parsing():
     text = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
     parser = SimpleSpecParser(text)
     opts = list(parser.parse())
     got = [(o.opt_type, o.option_spec, o.nargs) for o in opts]
     exp = [
-        (OptType.LONG,  '--foo',   (2, 2)),
-        (OptType.SHORT, '-x',      (0, 0)),
-        (OptType.LONG,  '--blort', (0, 0)),
-        (OptType.SHORT, '-z',      (2, 2)),
-        (OptType.POS,   '<qq>',    (1, 1)),
-        (OptType.POS,   '<rr>',    (1, 1)),
-        (OptType.LONG,  '--debug', (0, 0)),
+        (OptType.LONG,  '--foo FF GG', (2, 2)),
+        (OptType.SHORT, '-x',          (0, 0)),
+        (OptType.LONG,  '--blort',     (0, 0)),
+        (OptType.SHORT, '-z Z1 Z2',    (2, 2)),
+        (OptType.POS,   '<qq>',        (1, 1)),
+        (OptType.POS,   '<rr>',        (1, 1)),
+        (OptType.LONG,  '--debug',     (0, 0)),
     ]
     for g, e in zip_longest(got, exp):
         assert g == e

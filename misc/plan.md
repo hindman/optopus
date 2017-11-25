@@ -19,53 +19,26 @@ Mascot: an octopus.
 
 # Road map
 
-x Draft plan for the core API.
+- Write some integration tests to assess state of project.
 
-x Set up repo.
-
-x Zero-config use case.
-
-x Simple-spec use case.
-
-x Zero-config use case: rewrite to use Phrase.parse() with wildcard Opt.
-
-x API use case: basic features:
-  x basic option behavior
-  x nargs (static)
-
-x Basic help text creation.
-  x Parser.help_text(): minimal implementation
-  x Parser.help_text(): basic wrapping
-
-x Rename zero-config to wildcards mode.
-
-- SimpleSpecParser:
-  - Opt: incorporate SimpleSpecParser: eg, '--input PATH SIZE'
-        self.option_spec = '--input PATH SIZE'
-        self.option      = '--input'
-        self.nargs       = (2, 2)
-        self.arg_names   = ('PATH', 'SIZE')
-  - Opt: allow `x` or `<x>`
-
-- API: handle other common behaviors:
+- GrammarSpecParser and complex Phrase parsing.
+  - Basic GrammarSpecParser implementation.
   - Support ntimes.
-  - Handle --opt=val.
-  - Support tolerant.
-  - Wildcards mode: allow user to specify pos/opt/both/True. Make sure
-    wildcards mode can be combined with other API features.
-
-- Basic GrammarSpec parsing.
-
-- Complex Phrase parsing.
   - Varying nargs and ntimes.
+  - Support tolerant.
   - Complex grammars.
     - keeping track of partially-parsed results
     - pruning no-longer-eligible subphrases
     - keeping track of alternatives
     - backtracking using those alternatives
 
-- API-config: most other opt-level configurations.
-  - Check argparse for other behaviors.
+- Check argparse for other behaviors.
+
+- Opt: allow `x` or `<x>`
+
+- Handle --opt=val.
+
+- Wildcards mode: allow user to specify pos/opt/both/True.
 
 - API thematic configuration.
 
@@ -295,6 +268,9 @@ The octo-py library combines the approaches:
       configuring a CLI grammar. The grammar is also configurable via an API,
       but most users will prefer the simple text syntax.
 
+    - Also, for most use cases a simple specification like `--foo F1 F2` is an
+      easy way to declare an option --foo with nargs=2 and arg names F1 and F2.
+
 Although opto-py is primarily an API-driven library, it also aims to address
 some key weaknesses found in most parsing libraries.
 
@@ -507,7 +483,7 @@ Handling literal option-arg choices.
 - Both raise ambiguities: are `--type` and `--group` flags or options that take
   literal args?
 
-- Or here: is --group a flag or an option taking 1, or even 2, args?
+- Or here: is --group a flag or an option taking one, or even two, args?
 
         frob --group <g> (x|y)
 
@@ -549,6 +525,14 @@ Handling literal option-arg choices.
             (-x (b|c) d <x1>)
             (-x a     e <x1> <x2>)
             (-x a     d <x1> <x2> <x3>)
+
+- The SimpleSpecParser glosses over these issues via some assumptions:
+
+  - It does not support literal args.
+
+  - It uses different syntaxes for variable args: option vs positional:
+
+        --foo F1 F2 <x1> <x2>
 
 --------
 
