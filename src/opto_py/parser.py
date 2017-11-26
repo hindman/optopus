@@ -237,20 +237,20 @@ class Parser(object):
         for s in self.formatter_config.sections:
             all_sections[s.name] = s
 
-        # Then sections inferred from the Opt instances.
-        # - Either those declared by the user.
-        # - Or the default POS or OPT sections.
+        # Then sections declared indirectly in Opt instances.
         for o in self.opts:
-            if o.sections:
-                for nm in o.sections:
-                    all_sections[nm] = Section(name = nm)
-            else:
-                if o.opt_type == OptType.POS:
-                    nm = SectionName.POS
-                    all_sections[nm] = default_sections[nm]
-                else:
-                    nm = SectionName.OPT
-                    all_sections[nm] = default_sections[nm]
+            for nm in o.sections:
+                all_sections[nm] = Section(name = nm)
+
+        # Then the default POS and OPT sections, if there are Opt instances lacking sections.
+        homeless = [o for o in self.opts if not o.sections]
+        needed = [
+            (SectionName.POS, any(o for o in homeless if o.opt_type == OptType.POS)),
+            (SectionName.OPT, any(o for o in homeless if o.opt_type != OptType.POS)),
+        ]
+        for nm, has_opts in needed:
+            if has_opts and nm not in all_sections:
+                all_sections[nm] = default_sections[nm]
 
         ####
         # Validate the section names passed by the caller.

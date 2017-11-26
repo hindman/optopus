@@ -207,7 +207,7 @@ def test_basic_api_usage():
     assert 'Found repeated option' in msg
     assert '--foo' in msg
 
-def test_basic_help_text():
+def test_basic_help_text1():
 
     long_help = 'The N of times to do the operation that needs to be done, either now or in the future'
 
@@ -226,7 +226,7 @@ def test_basic_help_text():
         Opt('--some_long_opt7'),
         formatter_config = FormatterConfig(
             Section('foo', 'Foo options'),
-            Section(SectionName.POS, 'Positionals'),
+            Section(SectionName.POS, 'Positional entries'),
             Section('bar', 'Bar options'),
             Section(SectionName.OPT, 'Some Options'),
             Section(SectionName.USAGE, 'Usage'),
@@ -239,7 +239,7 @@ def test_basic_help_text():
                                either now or in the future
           --foo                Some Foo behavior
 
-        Positional arguments:
+        Positional entries:
           <x>                  The X file
           <y>                  The Y file
 
@@ -247,7 +247,7 @@ def test_basic_help_text():
           -n                   The N of times to do the operation that needs to be done,
                                either now or in the future
 
-        Options:
+        Some Options:
           --bar
           --some_long_opt1
           --some_long_opt2
@@ -282,6 +282,8 @@ def test_basic_help_text():
     got = p.help_text('foo', 'bar')
     assert exp == got
 
+def test_basic_help_text2():
+
     p = Parser(
         Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort'], text = 'N of times to do it'),
         Opt('--foo', sections = ['foo'], text = 'Some Foo behavior'),
@@ -305,12 +307,12 @@ def test_basic_help_text():
         Blort options:
           -n                   N of times to do it
 
-        Options:
-          --bar
-
         Positional arguments:
           <x>                  The X file
           <y>                  The Y file
+
+        Options:
+          --bar
     ''')
     got = p.help_text()
     assert exp == got

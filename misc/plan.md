@@ -21,8 +21,6 @@ Mascot: an octopus.
 
 - help_text() adjustments:
 
-  - help_text(): usage section: list positionals before options.
-
   - help_text: if the option is long, the Opt's help text should start on the
     next line.
 
