@@ -563,11 +563,16 @@ class Opt(object):
             self.opt_type = OptType.WILD
 
         else:
-            # Parse the option_spec. This should give us exactly one OptToken.
-            opts = list(SimpleSpecParser(option_spec).parse())
-            if len(opts) == 1:
+            # Try to parse the option_spec.
+            try:
+                opts = list(SimpleSpecParser(option_spec).parse())
+                assert len(opts) == 1
                 otok = opts[0]
-            else:
+            except (RegexLexerError, AssertionError) as e:
+                otok = None
+
+            # Raise if we did not get exactly one OptToken.
+            if otok is None:
                 fmt = 'Opt: invalid option_spec: {}'
                 msg = fmt.format(option_spec)
                 raise OptoPyError(msg)

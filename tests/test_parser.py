@@ -349,3 +349,8 @@ def test_parser_validations():
         p = Parser(Opt('-n'), Opt('--bar'), Opt('-n'))
     assert 'duplicate Opt' in str(einfo.value)
 
+def test_opt_validations():
+    with pytest.raises(OptoPyError) as einfo:
+        Opt('--foo=X'),
+    assert 'invalid option_spec' in str(einfo.value)
+

@@ -21,9 +21,6 @@ Mascot: an octopus.
 
 - Validation and errors:
 
-  - If user supplies an invalid option_spec (eg `--foo=BAR`) the error message
-    is unhelpful.
-
   - By default, parse() should print error message and quit.
 
 - Short options: support.
