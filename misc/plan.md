@@ -19,18 +19,54 @@ Mascot: an octopus.
 
 # Road map
 
-- Write some integration tests to assess state of project.
+- help_text() adjustments:
+
+  - help_text(): usage section: list positionals before options.
+
+  - help_text: if the option is long, the Opt's help text should start on the
+    next line.
+
+  - help_text(): usage section: convey optional vs required. More generally,
+    enclose options in brackets with their option args.
+
+  - This breaks: `Section(SectionName.POS)`.
+
+- Validation and errors:
+
+  - Validation: prevent duplicate Opt names.
+
+  - If user supplies an invalid option_spec (eg `--foo=BAR`) the error message
+    is unhelpful.
+
+  - By default, parse() should print error message and quit.
+
+- Short options: support.
+
+  - Add support for short options in the option_spec.
+  
+  - Add support for a short-options section.
+
+  - FormatterConfig: allow user to control USAGE text: show long-opts,
+    short-opts, or both. Default: long-opt.
+
+- Required/optional and ntimes: support.
+
+  - Add `required` param, as a convenience, but implement the behavior via
+    ntimes.
+
+  - Current code has a bug: some confusion between nargs and ntimes. Currently,
+    a nargs=(0,1) causes the option to be non-required. That's incorrect.
+
+- Support tolerant.
 
 - GrammarSpecParser and complex Phrase parsing.
   - Basic GrammarSpecParser implementation.
-  - Support ntimes.
   - Varying nargs and ntimes.
-  - Support tolerant.
-  - Complex grammars.
-    - keeping track of partially-parsed results
-    - pruning no-longer-eligible subphrases
-    - keeping track of alternatives
-    - backtracking using those alternatives
+  - Complex grammars:
+    - Keeping track of partially-parsed results.
+    - Pruning no-longer-eligible subphrases.
+    - Keeping track of alternatives.
+    - Backtracking using those alternatives.
 
 - Check argparse for other behaviors.
 
@@ -38,11 +74,26 @@ Mascot: an octopus.
 
 - Handle --opt=val.
 
+- Constructors should support dict-based configuration. Parser does, but not
+  FormatterConfig and Section.
+
+- help_text(): usage section: when wrapping, keep options together with their
+  option args.
+
 - Wildcards mode: allow user to specify pos/opt/both/True.
+
+- nargs and ntimes: support regex-style quantifiers, both in specs and in the
+  generated USAGE help-text.
+
+- Negatable options: `--smart-case` and `--no-smart-case`.
 
 - API thematic configuration.
 
 - Help text customization.
+
+- Support allow_abbreviation boolean.
+
+- Option customization: eg, the regex to identify long opt, short opt, etc.
 
 - Better exception strategy.
 
