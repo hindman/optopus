@@ -212,12 +212,8 @@ class Parser(object):
         ####
 
         default_sections = {
-            nm : Section(name = nm, label = lab)
-            for nm, lab in (
-                (SectionName.USAGE, 'Usage'),
-                (SectionName.POS, 'Positional arguments'),
-                (SectionName.OPT, 'Options'),
-            )
+            nm : Section(name = nm, label = nm.label)
+            for nm in SectionName
         }
 
         ####
@@ -299,10 +295,15 @@ class Parser(object):
             lines.append(s.label + ':')
 
             # The usage section.
+            fmt = '({})'
             if nm is SectionName.USAGE:
                 parts = []
                 for o in self.opts:
-                    parts.append(o.option_spec)
+                    val = o.option_spec
+                    if ' ' in val:
+                        parts.append(fmt.format(val))
+                    else:
+                        parts.append(val)
 
                 prog = self.program or 'cli'
                 wid = MAX_WID - len(prog) - 1
@@ -351,10 +352,14 @@ class Enum(object):
 
     def __init__(self, enum_name, *members):
         self._enum_name = enum_name
-        self._members = OrderedDict(
-            (name, EnumMember(enum_name, name, value))
-            for value, name in enumerate(members)
-        )
+        self._members = OrderedDict()
+        for value, name in enumerate(members):
+            if isinstance(name, (tuple, list)):
+                name, label = name
+            else:
+                label = None
+            em = EnumMember(enum_name, name, value, label = label)
+            self._members[name] = em
         self._rmembers = OrderedDict(
             (em.value, em)
             for em in self._members.values()
@@ -381,10 +386,11 @@ class Enum(object):
 
 class EnumMember(object):
 
-    def __init__(self, enum_name, name, value):
+    def __init__(self, enum_name, name, value, label = None):
         self.enum_name = enum_name
         self.name = name
         self.value = value
+        self.label = label
 
     def __str__(self):
         fmt = '{}({}, {!r})'
@@ -412,7 +418,13 @@ PhraseType      = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'WILD', 'ZONE')
 PhraseLogicType = Enum('PhraseLogicType', 'AND', 'OR')
 HelpTextStyle   = Enum('HelpTextStyle', 'CLI', 'MAN')
 OptTextStyle    = Enum('OptTextStyle', 'CLI', 'MAN')
-SectionName     = Enum('SectionName', 'USAGE', 'POS', 'OPT')
+
+SectionName = Enum(
+    'SectionName',
+    ('USAGE', 'Usage'),
+    ('POS', 'Positional arguments'),
+    ('OPT', 'Options'),
+)
 
 ################
 # Errors.
@@ -465,12 +477,15 @@ class Section(object):
 
     @property
     def _default_label(self):
-        return (
-            self.name.
-            replace('-', ' ').
-            replace('_', ' ').
-            capitalize() + ' options'
-        )
+        if isinstance(self.name, EnumMember):
+            return self.name.label
+        else:
+            return (
+                self.name.
+                replace('-', ' ').
+                replace('_', ' ').
+                capitalize() + ' options'
+            )
 
 ################
 # GenericParser.

@@ -19,13 +19,6 @@ Mascot: an octopus.
 
 # Road map
 
-- help_text() adjustments:
-
-  - help_text(): usage section: convey optional vs required. More generally,
-    enclose options in brackets with their option args.
-
-  - This breaks: `Section(SectionName.POS)`.
-
 - Validation and errors:
 
   - Validation: prevent duplicate Opt names.
@@ -51,6 +44,8 @@ Mascot: an octopus.
 
   - Current code has a bug: some confusion between nargs and ntimes. Currently,
     a nargs=(0,1) causes the option to be non-required. That's incorrect.
+
+  - help_text(): USAGE: use [] or () brackets, based on optional vs required.
 
 - Support tolerant.
 

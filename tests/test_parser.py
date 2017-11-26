@@ -214,9 +214,8 @@ def test_basic_help_text1():
     p = Parser(
         Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort'], text = long_help),
         Opt('--foo', sections = ['foo'], text = 'Some Foo behavior'),
+        Opt('--xy X Y', sections = ['foo'], text = 'Some xy behavior'),
         dict(option_spec = '--bar', nargs = 5),
-        Opt('<x>', text = 'The X file'),
-        Opt('<y>', text = 'The Y file'),
         Opt('--some_long_opt1'),
         Opt('--some_crazy_insane_long_opt2', text = long_help),
         Opt('--some_long_opt3'),
@@ -224,9 +223,11 @@ def test_basic_help_text1():
         Opt('--some_long_opt5'),
         Opt('--some_long_opt6'),
         Opt('--some_long_opt7'),
+        Opt('<x>', text = 'The X file'),
+        Opt('<y>', text = 'The Y file'),
         formatter_config = FormatterConfig(
             Section('foo', 'Foo options'),
-            Section(SectionName.POS, 'Positional entries'),
+            Section(SectionName.POS),
             Section('bar', 'Bar options'),
             Section(SectionName.OPT, 'Some Options'),
             Section(SectionName.USAGE, 'Usage'),
@@ -238,8 +239,9 @@ def test_basic_help_text1():
           -n                   The N of times to do the operation that needs to be done,
                                either now or in the future
           --foo                Some Foo behavior
+          --xy X Y             Some xy behavior
 
-        Positional entries:
+        Positional arguments:
           <x>                  The X file
           <y>                  The Y file
 
@@ -260,9 +262,9 @@ def test_basic_help_text1():
           --some_long_opt7
 
         Usage:
-          cli -n --foo --bar <x> <y> --some_long_opt1 --some_crazy_insane_long_opt2
+          cli -n --foo (--xy X Y) --bar --some_long_opt1 --some_crazy_insane_long_opt2
               --some_long_opt3 --some_long_opt4 --some_long_opt5 --some_long_opt6
-              --some_long_opt7
+              --some_long_opt7 <x> <y>
 
         Blort options:
           -n                   The N of times to do the operation that needs to be done,
@@ -277,6 +279,7 @@ def test_basic_help_text1():
           -n                   The N of times to do the operation that needs to be done,
                                either now or in the future
           --foo                Some Foo behavior
+          --xy X Y             Some xy behavior
 
         Bar options:
           -n                   The N of times to do the operation that needs to be done,
