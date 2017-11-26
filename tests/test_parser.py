@@ -218,7 +218,7 @@ def test_basic_help_text1():
         Opt('<x>', text = 'The X file'),
         Opt('<y>', text = 'The Y file'),
         Opt('--some_long_opt1'),
-        Opt('--some_long_opt2'),
+        Opt('--some_crazy_insane_long_opt2', text = long_help),
         Opt('--some_long_opt3'),
         Opt('--some_long_opt4'),
         Opt('--some_long_opt5'),
@@ -250,7 +250,9 @@ def test_basic_help_text1():
         Some Options:
           --bar
           --some_long_opt1
-          --some_long_opt2
+          --some_crazy_insane_long_opt2
+                               The N of times to do the operation that needs to be done,
+                               either now or in the future
           --some_long_opt3
           --some_long_opt4
           --some_long_opt5
@@ -258,8 +260,9 @@ def test_basic_help_text1():
           --some_long_opt7
 
         Usage:
-          cli -n --foo --bar <x> <y> --some_long_opt1 --some_long_opt2 --some_long_opt3
-              --some_long_opt4 --some_long_opt5 --some_long_opt6 --some_long_opt7
+          cli -n --foo --bar <x> <y> --some_long_opt1 --some_crazy_insane_long_opt2
+              --some_long_opt3 --some_long_opt4 --some_long_opt5 --some_long_opt6
+              --some_long_opt7
 
         Blort options:
           -n                   The N of times to do the operation that needs to be done,

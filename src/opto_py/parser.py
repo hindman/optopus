@@ -310,11 +310,12 @@ class Parser(object):
                 usage_lines = textwrap.wrap(txt, wid)
 
                 fmt = '  {} {}'
-                pad = prog
+                val = prog
+                blank = ' ' * len(prog)
                 for i, ln in enumerate(usage_lines):
-                    lines.append(fmt.format(pad, ln))
+                    lines.append(fmt.format(val, ln))
                     if i == 0:
-                        pad = ' ' * len(prog)
+                        val = blank
 
             # A Section with literal text.
             elif s.text:
@@ -326,11 +327,14 @@ class Parser(object):
                 fmt = '  {:<20} {}'
                 for o in s.opts:
                     opt_lines = textwrap.wrap(o.text or '', wid) or ['']
-                    pad = o.option_spec
+                    val = o.option_spec
+                    if len(val) > 20:
+                        lines.append('  {}'.format(val))
+                        val = ''
                     for i, ln in enumerate(opt_lines):
-                        lines.append(fmt.format(pad, ln))
+                        lines.append(fmt.format(val, ln))
                         if i == 0:
-                            pad = ' ' * len(o.option_spec)
+                            val = ''
 
         ####
         # Return the help text.

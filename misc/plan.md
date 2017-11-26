@@ -21,9 +21,6 @@ Mascot: an octopus.
 
 - help_text() adjustments:
 
-  - help_text: if the option is long, the Opt's help text should start on the
-    next line.
-
   - help_text(): usage section: convey optional vs required. More generally,
     enclose options in brackets with their option args.
 
