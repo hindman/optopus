@@ -344,3 +344,8 @@ def test_simple_spec_parsing():
     for g, e in zip_longest(got, exp):
         assert g == e
 
+def test_parser_validations():
+    with pytest.raises(OptoPyError) as einfo:
+        p = Parser(Opt('-n'), Opt('--bar'), Opt('-n'))
+    assert 'duplicate Opt' in str(einfo.value)
+

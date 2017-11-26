@@ -21,8 +21,6 @@ Mascot: an octopus.
 
 - Validation and errors:
 
-  - Validation: prevent duplicate Opt names.
-
   - If user supplies an invalid option_spec (eg `--foo=BAR`) the error message
     is unhelpful.
 

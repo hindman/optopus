@@ -133,6 +133,16 @@ class Parser(object):
                     raise OptoPyError(msg)
                 self.opts.append(opt)
 
+        seen = set()
+        for o in self.opts:
+            nm = o.option
+            if nm in seen:
+                fmt = 'Parser(): duplicate Opt: {}'
+                msg = fmt.format(nm)
+                raise OptoPyError(msg)
+            else:
+                seen.add(nm)
+
     def parse(self, args = None):
         if self.wildcards:
             self.add_wildcard_opts()
