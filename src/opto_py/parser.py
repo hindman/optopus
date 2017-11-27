@@ -596,6 +596,7 @@ class Opt(object):
                  ntimes = ZERO_OR_ONE_TUPLE,
                  text = None,
                  sections = None,
+                 aliases = None,
                  tolerant = False):
 
         if option_spec == WILDCARD_OPTION:
@@ -638,6 +639,7 @@ class Opt(object):
         self.text = text
         self.sections = list(sections or [])
         self.tolerant = tolerant
+        self.aliases = set(aliases or [])
 
     def __repr__(self):
         fmt = 'Opt({})'
@@ -841,12 +843,13 @@ class Phrase(object):
                 prev_opt = None
                 for sph in self.subphrases:
                     if sph.phrase_type == PhraseType.WILD:
+                        # Maybe this branch should occur last, not first.
                         opt = Opt(arg)
                         popts.add_opt(opt)
                         prev_opt = opt.destination
                         break
                     elif sph.phrase_type == PhraseType.OPT:
-                        if sph.opt.option == arg:
+                        if sph.opt.option == arg or arg in sph.opt.aliases:
                             prev_opt = sph.opt.destination
                             break
 

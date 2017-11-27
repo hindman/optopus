@@ -370,3 +370,18 @@ def test_parse_exit(std_streams):
     assert 'Errors:' in output
     assert 'Found unexpected option: --blort' in output
 
+def test_aliases():
+    p = Parser(
+        Opt('-n N'),
+        Opt('--foo', aliases = ['-f', '-x']),
+    )
+    exp = dict(
+        n = 'Spock',
+        foo = True,
+    )
+    for val in ('--foo', '-f', '-x'):
+        args = ['-n', 'Spock'] + [val]
+        popts = p.parse(args, should_exit = False)
+        got = dict(popts)
+        assert got == exp
+
