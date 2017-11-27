@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals, print_function
+
 import pytest
 from six.moves import zip_longest
 from textwrap import dedent
@@ -13,6 +15,7 @@ from opto_py import (
 from opto_py.parser import (
     OptType,
     SimpleSpecParser,
+    ExitCode,
 )
 
 def test_parser_using_wildcards():
@@ -32,7 +35,7 @@ def test_parser_using_wildcards():
         'positionals': ['tigers', 'Bees', '12.34', 'x99'],
     }
     p = Parser()
-    popts = p.parse(args)
+    popts = p.parse(args, should_exit = False)
     got = dict(popts)
     assert got == exp
 
@@ -55,7 +58,7 @@ def test_simple_spec_parser():
         x = 'phasers',
         y = 'beam',
     )
-    popts = p.parse(args)
+    popts = p.parse(args, should_exit = False)
     got = dict(popts)
     assert got == exp
 
@@ -72,7 +75,7 @@ def test_simple_spec_parser():
         y = 'beam',
         a = 'hi bye',
     )
-    popts = p.parse(args)
+    popts = p.parse(args, should_exit = False)
     got = dict(popts)
     assert got == exp
 
@@ -86,7 +89,7 @@ def test_simple_spec_parser():
         '-a', 'hi bye',
     ]
     with pytest.raises(OptoPyError) as einfo:
-        popts = p.parse(args)
+        popts = p.parse(args, should_exit = False)
     assert 'unexpected positional' in str(einfo.value)
 
     # Invalid.
@@ -100,7 +103,7 @@ def test_simple_spec_parser():
         'beam',
     ]
     with pytest.raises(OptoPyError) as einfo:
-        popts = p.parse(args)
+        popts = p.parse(args, should_exit = False)
     assert 'expected option-argument' in str(einfo.value)
 
     # Invalid.
@@ -115,7 +118,7 @@ def test_simple_spec_parser():
         '--fuzz',
     ]
     with pytest.raises(OptoPyError) as einfo:
-        popts = p.parse(args)
+        popts = p.parse(args, should_exit = False)
     assert 'unexpected option' in str(einfo.value)
 
 def test_basic_api_usage():
@@ -147,7 +150,7 @@ def test_basic_api_usage():
         x = 'phasers',
         y = 'beam',
     )
-    popts = p.parse(args)
+    popts = p.parse(args, should_exit = False)
     got = dict(popts)
     assert got == exp
 
@@ -160,7 +163,7 @@ def test_basic_api_usage():
         '--bar', '11', '12',
     ]
     with pytest.raises(OptoPyError) as einfo:
-        popts = p.parse(args)
+        popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'expected N of arguments' in msg
     assert '--bar' in msg
@@ -173,7 +176,7 @@ def test_basic_api_usage():
         '--bar', '11', '12', '13', '14', '15',
     ]
     with pytest.raises(OptoPyError) as einfo:
-        popts = p.parse(args)
+        popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'expected N of arguments' in msg
     assert '<y>' in msg
@@ -187,7 +190,7 @@ def test_basic_api_usage():
         '-n',
     ]
     with pytest.raises(OptoPyError) as einfo:
-        popts = p.parse(args)
+        popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'expected N of arguments' in msg
     assert '-n' in msg
@@ -202,7 +205,7 @@ def test_basic_api_usage():
         '-n',
     ]
     with pytest.raises(OptoPyError) as einfo:
-        popts = p.parse(args)
+        popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'Found repeated option' in msg
     assert '--foo' in msg
@@ -329,8 +332,8 @@ def test_formatter_config():
 
 def test_simple_spec_parsing():
     text = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
-    parser = SimpleSpecParser(text)
-    opts = list(parser.parse())
+    ssp = SimpleSpecParser(text)
+    opts = list(ssp.parse())
     got = [(o.opt_type, o.option_spec, o.nargs) for o in opts]
     exp = [
         (OptType.LONG,  '--foo FF GG', (2, 2)),
@@ -353,4 +356,17 @@ def test_opt_validations():
     with pytest.raises(OptoPyError) as einfo:
         Opt('--foo=X'),
     assert 'invalid option_spec' in str(einfo.value)
+
+def test_parse_exit(std_streams):
+    # Create Parser and pass it invalid args to parse.
+    # We should get a SystemExit.
+    p = Parser(Opt('--foo'))
+    args = ['--blort']
+    with pytest.raises(SystemExit) as einfo:
+        popts = p.parse(args)
+    assert str(einfo.value) == str(ExitCode.PARSE_FAIL.code)
+    # And stdout should contain expected content.
+    output = std_streams['stdout'].getvalue()
+    assert 'Errors:' in output
+    assert 'Found unexpected option: --blort' in output
 

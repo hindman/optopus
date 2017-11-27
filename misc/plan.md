@@ -19,10 +19,6 @@ Mascot: an octopus.
 
 # Road map
 
-- Validation and errors:
-
-  - By default, parse() should print error message and quit.
-
 - Short options: support.
 
   - Add support for short options in the option_spec.
@@ -39,6 +35,11 @@ Mascot: an octopus.
 
   - Current code has a bug: some confusion between nargs and ntimes. Currently,
     a nargs=(0,1) causes the option to be non-required. That's incorrect.
+
+  - Current code also gives misleading error messages. For example, if a
+    required option is missing, the error message mistakenly conveys that the
+    problem is 'Did not get expected N of arguments'. In fact, the problem is
+    that that option was missing entirely.
 
   - help_text(): USAGE: use [] or () brackets, based on optional vs required.
 

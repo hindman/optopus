@@ -56,10 +56,21 @@ p = Parser(
     program = 'blort',
 )
 
-args = sys.argv[1:]
+DEFAULT_ARGS = '''
+    --lines 12
+    --output X
+    --max-count 2
+    --after-context 1
+    --before-context 2
+    --context 3
+    --pager 12
+    FILE1 FILE2
+'''.split()
+
+args = sys.argv[1:] or DEFAULT_ARGS
 
 try:
-    parsed_opts = p.parse()
+    parsed_opts = p.parse(args)
 except OptoPyError as e:
     print(p.help_text())
     print(e)

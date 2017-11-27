@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals, print_function
+
 import json
 import re
 import sys
@@ -143,11 +145,29 @@ class Parser(object):
             else:
                 seen.add(nm)
 
-    def parse(self, args = None):
+    def parse(self, args = None, should_exit = True):
+        # If given no args, get them from sys.argv.
+        args = list(sys.argv[1:] if args is None else args)
+
+        # Add the wildcard Opt instances.
         if self.wildcards:
             self.add_wildcard_opts()
-        args = list(sys.argv[1:] if args is None else args)
-        return self.do_parse(args)
+
+        # Try to parse the args.
+        try:
+            return self.do_parse(args)
+        except OptoPyError as e:
+            if should_exit:
+                error_msg = e.args[0]
+            else:
+                raise
+
+        # If we did not return or raise above, it means an
+        # error occurred while parsing, and the user was the
+        # default behavior: print USAGE and exit.
+        txt = self._get_help_text(SectionName.USAGE, error_msg = error_msg)
+        print(txt, end = '')
+        sys.exit(ExitCode.PARSE_FAIL.code)
 
     def do_parse(self, args):
         subphrases = [Phrase(opt = opt) for opt in self.opts]
@@ -180,6 +200,9 @@ class Parser(object):
             self._wildcards = bool(val)
 
     def help_text(self, *section_names):
+        return self._get_help_text(*section_names)
+
+    def _get_help_text(self, *section_names, **kws):
 
         ####
         #
@@ -278,6 +301,17 @@ class Parser(object):
         )
 
         ####
+        # Add an errors section, if needed.
+        ####
+
+        error_msg = kws.get('error_msg', None)
+        if error_msg:
+            nm = SectionName.ERR
+            s = default_sections[nm]
+            s.text = error_msg
+            sections[nm] = s
+
+        ####
         # Attach Opt instances to those sections.
         ####
 
@@ -330,7 +364,10 @@ class Parser(object):
 
             # A Section with literal text.
             elif s.text:
-                lines.extend(s.text.split('\n'))
+                fmt = '  {}'
+                txt_lines = s.text.split('\n')
+                for ln in txt_lines:
+                    lines.append(fmt.format(ln))
 
             # Section with Opt instances.
             else:
@@ -363,13 +400,11 @@ class Enum(object):
     def __init__(self, enum_name, *members):
         self._enum_name = enum_name
         self._members = OrderedDict()
-        for value, name in enumerate(members):
-            if isinstance(name, (tuple, list)):
-                name, label = name
-            else:
-                label = None
-            em = EnumMember(enum_name, name, value, label = label)
-            self._members[name] = em
+        for value, d in enumerate(members):
+            if not isinstance(d, dict):
+                d = dict(name = d)
+            em = EnumMember(enum_name, value = value, **d)
+            self._members[d['name']] = em
         self._rmembers = OrderedDict(
             (em.value, em)
             for em in self._members.values()
@@ -396,11 +431,12 @@ class Enum(object):
 
 class EnumMember(object):
 
-    def __init__(self, enum_name, name, value, label = None):
+    def __init__(self, enum_name, name, value, **kws):
         self.enum_name = enum_name
         self.name = name
         self.value = value
-        self.label = label
+        for k, v in kws.items():
+            setattr(self, k, v)
 
     def __str__(self):
         fmt = '{}({}, {!r})'
@@ -431,9 +467,16 @@ OptTextStyle    = Enum('OptTextStyle', 'CLI', 'MAN')
 
 SectionName = Enum(
     'SectionName',
-    ('USAGE', 'Usage'),
-    ('POS', 'Positional arguments'),
-    ('OPT', 'Options'),
+    dict(name = 'USAGE', label = 'Usage'),
+    dict(name = 'POS', label = 'Positional arguments'),
+    dict(name = 'OPT', label = 'Options'),
+    dict(name = 'ERR', label = 'Errors'),
+)
+
+ExitCode = Enum(
+    'ExitCode',
+    dict(name = 'SUCCESS', code = 0),
+    dict(name = 'PARSE_FAIL', code = 2),
 )
 
 ################
