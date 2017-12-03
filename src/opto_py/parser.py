@@ -609,13 +609,16 @@ class Opt(object):
         else:
             # Try to parse the option_spec.
             try:
+                # TODO: validation. The last OptToken is authoritative.
+                # Elements 0..-1 are used only for aliases.
                 opts = list(SimpleSpecParser(option_spec).parse())
-                assert len(opts) == 1
-                otok = opts[0]
+                assert opts
+                otok = opts[-1]
+                otok.aliases = set(otok.option for otok in opts[0:-1])
             except (RegexLexerError, AssertionError) as e:
                 otok = None
 
-            # Raise if we did not get exactly one OptToken.
+            # Raise if we did not get an OptToken.
             if otok is None:
                 fmt = 'Opt: invalid option_spec: {}'
                 msg = fmt.format(option_spec)
@@ -626,6 +629,7 @@ class Opt(object):
             self.option = otok.option
             self.nargs = nargs or otok.nargs
             self.arg_names = otok.arg_names
+            self.aliases = set(aliases or []).union(otok.aliases)
 
             # Determine the OptType.
             self.destination = self.option.strip(OPT_SPEC_STRIP_CHARS).replace(OPT_PREFIX, UNDERSCORE)
@@ -639,7 +643,6 @@ class Opt(object):
         self.text = text
         self.sections = list(sections or [])
         self.tolerant = tolerant
-        self.aliases = set(aliases or [])
 
     def __repr__(self):
         fmt = 'Opt({})'
@@ -1084,7 +1087,10 @@ class Token(object):
         return self.__str__()
 
 class OptToken(object):
-    pass
+
+    def __repr__(self):
+        fmt = 'OptToken({})'
+        return fmt.format(self.option)
 
 ################
 # Helpers.

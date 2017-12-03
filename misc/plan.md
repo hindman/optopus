@@ -21,7 +21,7 @@ Mascot: an octopus.
 
 - Short options: support.
   x When parsing, accept either long or short option (via aliases).
-  - Add support for short options in the option_spec.
+  x Add support for short options in the option_spec.
   - FormatterConfig: USAGE: show long-opts, short-opts, or both.
   - Add support for a short-options section.
 

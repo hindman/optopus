@@ -15,7 +15,7 @@ from opto_py import (
 p = Parser(
 
     # Searching optionss.
-    Opt('--ignore-case', sections = ['searching'], text = 'Ignore case distinctions in PATTERN'),
+    Opt('-i --ignore-case', sections = ['searching'], text = 'Ignore case distinctions in PATTERN'),
     Opt('--smart-case', sections = ['searching'], text = 'Ignore case distinctions in PATTERN, only if PATTERN contains no upper case. Ignored if -i is specified'),
     Opt('--invert-match', sections = ['searching'], text = 'Invert match: select non-matching lines'),
     Opt('--work-regexp', sections = ['searching'], text = 'Force PATTERN to match only whole words'),
@@ -34,7 +34,7 @@ p = Parser(
     Opt('--count', sections = ['output'], text = 'Show number of lines matching per file'),
     Opt('--column', sections = ['output'], text = 'Show the column number of the first match'),
     Opt('--after-context NUM', sections = ['output'], text = 'Print NUM lines of trailing context after matching lines.'),
-    Opt('--before-context NUM', sections = ['output'], text = 'Print NUM lines of leading context before matching lines.'),
+    Opt('-b --before-context NUM', sections = ['output'], text = 'Print NUM lines of leading context before matching lines.'),
     Opt('--context NUM', sections = ['output'], text = 'Print NUM lines (default 2) of output context.'),
 
     # File presentation options.
@@ -61,7 +61,7 @@ DEFAULT_ARGS = '''
     --output X
     --max-count 2
     --after-context 1
-    --before-context 2
+    -b 2
     --context 3
     --pager 12
     FILE1 FILE2
