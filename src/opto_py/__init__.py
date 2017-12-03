@@ -5,6 +5,7 @@ from .parser import (
     Parser,
     Section,
     SectionName,
+    AliasStyle,
 )
 
 from .version import (

@@ -10,6 +10,7 @@ from opto_py import (
     Section,
     SectionName,
     OptoPyError,
+    AliasStyle,
 )
 
 p = Parser(
@@ -25,13 +26,13 @@ p = Parser(
     Opt('--lines NUM', sections = ['output'], text = 'Only print line(s) NUM of each file'),
     Opt('--files-with-matches', sections = ['output'], text = 'Only print filenames containing matches'),
     Opt('--files-without-matches', sections = ['output'], text = 'Only print filenames with no matches'),
-    Opt('--output EXPR', sections = ['output'], text = 'Output the evaluation of expr for each line (turns off text highlighting)'),
+    Opt('-o --output EXPR', sections = ['output'], text = 'Output the evaluation of expr for each line (turns off text highlighting)'),
     Opt('--passthru', sections = ['output'], text = 'Print all lines, whether matching or not'),
     Opt('--match', sections = ['output'], text = 'Specify PATTERN explicitly.'),
     Opt('--max-count NUM', sections = ['output'], text = 'Stop searching in each file after NUM matches'),
     Opt('--with-filename', sections = ['output'], text = 'Print the filename for each match (default: on unless explicitly searching a single file)'),
     Opt('--no-filename', sections = ['output'], text = 'Suppress the prefixing filename on output'),
-    Opt('--count', sections = ['output'], text = 'Show number of lines matching per file'),
+    Opt('-c -k --count', sections = ['output'], text = 'Show number of lines matching per file'),
     Opt('--column', sections = ['output'], text = 'Show the column number of the first match'),
     Opt('--after-context NUM', sections = ['output'], text = 'Print NUM lines of trailing context after matching lines.'),
     Opt('-b --before-context NUM', sections = ['output'], text = 'Print NUM lines of leading context before matching lines.'),
@@ -50,6 +51,7 @@ p = Parser(
         Section('searching', label = 'Searching'),
         Section('output', label = 'Search output'),
         Section('files', label = 'File presentation'),
+        alias_style = AliasStyle.SEPARATE,
     ),
 
     # Other.
@@ -69,12 +71,16 @@ DEFAULT_ARGS = '''
 
 args = sys.argv[1:] or DEFAULT_ARGS
 
-try:
-    parsed_opts = p.parse(args)
-except OptoPyError as e:
-    print(p.help_text())
-    print(e)
+if args == ['-h']:
+    print(p.help_text(), end = '')
     quit()
+else:
+    try:
+        parsed_opts = p.parse(args)
+    except OptoPyError as e:
+        print(p.help_text())
+        print(e)
+        quit()
 
 d = dict(parsed_opts)
 

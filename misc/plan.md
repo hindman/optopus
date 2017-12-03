@@ -19,11 +19,7 @@ Mascot: an octopus.
 
 # Road map
 
-- Short options: support.
-  x When parsing, accept either long or short option (via aliases).
-  x Add support for short options in the option_spec.
-  - FormatterConfig: USAGE: show long-opts, short-opts, or both.
-  - Add support for a short-options section.
+- Support --help functionality.
 
 - Adjust names for non-user-facing functions, methods, and attributes.
 

@@ -295,7 +295,7 @@ def test_basic_help_text2():
 
     p = Parser(
         Opt('-n', nargs = 1, sections = ['foo', 'bar', 'blort'], text = 'N of times to do it'),
-        Opt('--foo', sections = ['foo'], text = 'Some Foo behavior'),
+        Opt('-f -x --foo', sections = ['foo'], text = 'Some Foo behavior'),
         dict(option_spec = '--bar', nargs = 5),
         Opt('<x>', text = 'The X file'),
         Opt('<y>', text = 'The Y file'),
@@ -322,6 +322,9 @@ def test_basic_help_text2():
 
         Options:
           --bar
+
+        Aliases:
+          --foo -f -x
     ''')
     got = p.help_text()
     assert exp == got

@@ -281,6 +281,12 @@ class Parser(object):
             if has_opts and nm not in all_sections:
                 all_sections[nm] = default_sections[nm]
 
+        # Then an aliases section.
+        if self.formatter_config.alias_style == AliasStyle.SEPARATE:
+            if any(o.aliases for o in self.opts):
+                nm = SectionName.ALIASES
+                all_sections[nm] = default_sections[nm]
+
         ####
         # Validate the section names passed by the caller.
         ####
@@ -362,6 +368,14 @@ class Parser(object):
                     if i == 0:
                         val = blank
 
+            # Aliases section.
+            elif nm is SectionName.ALIASES:
+                fmt = '  {} {}'
+                for o in self.opts:
+                    if o.aliases:
+                        val = fmt.format(o.option, ' '.join(o.aliases))
+                        lines.append(val)
+
             # A Section with literal text.
             elif s.text:
                 fmt = '  {}'
@@ -375,7 +389,17 @@ class Parser(object):
                 fmt = '  {:<20} {}'
                 for o in s.opts:
                     opt_lines = textwrap.wrap(o.text or '', wid) or ['']
-                    val = o.option_spec
+                    if self.formatter_config.alias_style == AliasStyle.SEPARATE:
+                        val = o.option_spec
+                    else:
+                        # TODO: sloppy code; clean up.
+                        val = o.option_spec
+                        rest = ' '.join(val.split()[1:])
+                        vals = [val]
+                        for a in o.aliases:
+                            vals.append('{} {}'.format(a, rest))
+                        val = ', '.join(vals)
+
                     if len(val) > 20:
                         lines.append('  {}'.format(val))
                         val = ''
@@ -464,12 +488,14 @@ PhraseType      = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'WILD', 'ZONE')
 PhraseLogicType = Enum('PhraseLogicType', 'AND', 'OR')
 HelpTextStyle   = Enum('HelpTextStyle', 'CLI', 'MAN')
 OptTextStyle    = Enum('OptTextStyle', 'CLI', 'MAN')
+AliasStyle      = Enum('AliasStyle', 'SEPARATE', 'MERGED')
 
 SectionName = Enum(
     'SectionName',
     dict(name = 'USAGE', label = 'Usage'),
     dict(name = 'POS', label = 'Positional arguments'),
     dict(name = 'OPT', label = 'Options'),
+    dict(name = 'ALIASES', label = 'Aliases'),
     dict(name = 'ERR', label = 'Errors'),
 )
 
@@ -503,6 +529,7 @@ class FormatterConfig(object):
         program_summary     = '',
         style               = HelpTextStyle.CLI,
         opt_style           = OptTextStyle.CLI,
+        alias_style         = AliasStyle.SEPARATE,
     )
 
     def __init__(self, *sections, **kws):
@@ -614,7 +641,7 @@ class Opt(object):
                 opts = list(SimpleSpecParser(option_spec).parse())
                 assert opts
                 otok = opts[-1]
-                otok.aliases = set(otok.option for otok in opts[0:-1])
+                otok.aliases = [otok.option for otok in opts[0:-1]]
             except (RegexLexerError, AssertionError) as e:
                 otok = None
 
@@ -629,7 +656,7 @@ class Opt(object):
             self.option = otok.option
             self.nargs = nargs or otok.nargs
             self.arg_names = otok.arg_names
-            self.aliases = set(aliases or []).union(otok.aliases)
+            self.aliases = otok.aliases + (aliases or [])
 
             # Determine the OptType.
             self.destination = self.option.strip(OPT_SPEC_STRIP_CHARS).replace(OPT_PREFIX, UNDERSCORE)
