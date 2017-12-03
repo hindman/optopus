@@ -19,9 +19,11 @@ Mascot: an octopus.
 
 # Road map
 
-- Support --help functionality.
+- ParsedOptions. Usage seems awkward: don't force users to dictify
+  the returned value.
 
-- Adjust names for non-user-facing functions, methods, and attributes.
+- std_streams fixture: add reset behavior, so you can run multiple scenarios
+  within one test. Example: test_add_help().
 
 - Required/optional and ntimes: support.
 
@@ -39,6 +41,8 @@ Mascot: an octopus.
   - help_text(): USAGE: use [] or () brackets, based on optional vs required.
 
 - Support tolerant.
+
+- Adjust names for non-user-facing functions, methods, and attributes.
 
 - GrammarSpecParser and complex Phrase parsing.
   - Basic GrammarSpecParser implementation.

@@ -56,6 +56,7 @@ p = Parser(
 
     # Other.
     program = 'blort',
+    add_help = True,
 )
 
 DEFAULT_ARGS = '''
@@ -71,16 +72,12 @@ DEFAULT_ARGS = '''
 
 args = sys.argv[1:] or DEFAULT_ARGS
 
-if args == ['-h']:
-    print(p.help_text(), end = '')
+try:
+    parsed_opts = p.parse(args)
+except OptoPyError as e:
+    print(p.help_text())
+    print(e)
     quit()
-else:
-    try:
-        parsed_opts = p.parse(args)
-    except OptoPyError as e:
-        print(p.help_text())
-        print(e)
-        quit()
 
 d = dict(parsed_opts)
 

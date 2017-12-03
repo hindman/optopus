@@ -95,6 +95,7 @@ class Parser(object):
         'sections',
         'formatter_config',
         'program',
+        'add_help',
     }
 
     def __init__(self, *xs, **kws):
@@ -110,6 +111,7 @@ class Parser(object):
         self.sections         = kws.get('sections', None)
         self.formatter_config = kws.get('formatter_config', FormatterConfig())
         self.program          = kws.get('program', None)
+        self.add_help         = kws.get('add_help', False)
 
         if self.simple_spec:
             ssp = SimpleSpecParser(self.simple_spec)
@@ -135,6 +137,10 @@ class Parser(object):
                     raise OptoPyError(msg)
                 self.opts.append(opt)
 
+        if self.add_help:
+            opt = Opt('-h --help', text = 'Print help and exit.', tolerant = True)
+            self.opts.append(opt)
+
         seen = set()
         for o in self.opts:
             nm = o.option
@@ -154,20 +160,32 @@ class Parser(object):
             self.add_wildcard_opts()
 
         # Try to parse the args.
+        HELP = ('HELP',)
         try:
-            return self.do_parse(args)
+            popts = self.do_parse(args)
+            if self.add_help and popts['help'].value:
+                raise OptoPyError(HELP)
+            return popts
         except OptoPyError as e:
             if should_exit:
-                error_msg = e.args[0]
+                if self.add_help and ('-h' in args or '--help' in args):
+                    error_msg = HELP
+                else:
+                    error_msg = e.args[0]
             else:
                 raise
 
         # If we did not return or raise above, it means an
-        # error occurred while parsing, and the user was the
+        # error occurred while parsing, and the user wanted the
         # default behavior: print USAGE and exit.
-        txt = self._get_help_text(SectionName.USAGE, error_msg = error_msg)
-        print(txt, end = '')
-        sys.exit(ExitCode.PARSE_FAIL.code)
+        if error_msg == HELP:
+            txt = self._get_help_text()
+            print(txt, end = '')
+            sys.exit(ExitCode.PARSE_HELP.code)
+        else:
+            txt = self._get_help_text(SectionName.USAGE, error_msg = error_msg)
+            print(txt, end = '')
+            sys.exit(ExitCode.PARSE_FAIL.code)
 
     def do_parse(self, args):
         subphrases = [Phrase(opt = opt) for opt in self.opts]
@@ -502,6 +520,7 @@ SectionName = Enum(
 ExitCode = Enum(
     'ExitCode',
     dict(name = 'SUCCESS', code = 0),
+    dict(name = 'PARSE_HELP', code = 0),
     dict(name = 'PARSE_FAIL', code = 2),
 )
 

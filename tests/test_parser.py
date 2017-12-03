@@ -411,3 +411,36 @@ def test_aliases():
         got = dict(popts)
         assert got == exp
 
+def test_add_help(std_streams):
+
+    p = Parser(
+        Opt('-n N'),
+        Opt('--foo'),
+        add_help = True,
+    )
+
+    exp = dedent('''
+        Usage:
+          cli (-n N) --foo --help
+
+        Options:
+          -n N
+          --foo
+          --help               Print help and exit.
+
+        Aliases:
+          --help -h
+    ''')
+
+    # TODO: adjust std_streams so we can run several
+    # scenarios in one test function.
+    tests = [
+        ['--help'],
+    ]
+    for args in tests:
+        with pytest.raises(SystemExit) as einfo:
+            popts = p.parse(args)
+        assert str(einfo.value) == str(ExitCode.PARSE_HELP.code)
+        output = std_streams['stdout'].getvalue()
+        assert output == exp
+
