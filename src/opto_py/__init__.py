@@ -1,11 +1,15 @@
 from .parser import (
+    # Classes.
     FormatterConfig,
     Opt,
     OptoPyError,
     Parser,
     Section,
-    SectionName,
+    # Enumerations.
     AliasStyle,
+    HelpTextStyle,
+    OptTextStyle,
+    SectionName,
 )
 
 from .version import (

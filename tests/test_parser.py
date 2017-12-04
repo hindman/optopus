@@ -342,8 +342,8 @@ def test_formatter_config():
 def test_simple_spec_parsing():
     text = ' --foo FF GG  -x --blort -z Z1 Z2 <qq> <rr>  --debug  '
     ssp = SimpleSpecParser(text)
-    opts = list(ssp.parse())
-    got = [(o.opt_type, o.option_spec, o.nargs) for o in opts]
+    otoks = list(ssp.parse())
+    got = [(o.opt_type, o.option_spec, o.nargs) for o in otoks]
     exp = [
         (OptType.LONG,  '--foo FF GG', (2, 2)),
         (OptType.SHORT, '-x',          (0, 0)),

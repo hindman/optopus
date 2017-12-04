@@ -34,10 +34,6 @@ Mascot: an octopus.
 
   - help_text(): USAGE: use [] or () brackets, based on optional vs required.
 
-- Support tolerant.
-
-- Adjust names for non-user-facing functions, methods, and attributes.
-
 - GrammarSpecParser and complex Phrase parsing.
   - Basic GrammarSpecParser implementation.
   - Varying nargs and ntimes.
@@ -46,6 +42,8 @@ Mascot: an octopus.
     - Pruning no-longer-eligible subphrases.
     - Keeping track of alternatives.
     - Backtracking using those alternatives.
+
+- Support tolerant.
 
 - Check argparse for other behaviors.
 

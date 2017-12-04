@@ -7,27 +7,6 @@ import textwrap
 from collections import defaultdict, OrderedDict, Iterable
 
 ################
-# Classes.
-################
-
-# Parser
-# Enum
-# EnumMember
-# RegexLexerError
-# OptoPyError
-# FormatterConfig
-# Section
-# GenericParser
-# GrammarSpecParser
-# Opt
-# ParsedOptions
-# ParsedOpt
-# Phrase
-# RegexLexer
-# SimpleSpecParser
-# Token
-
-################
 # Constants.
 ################
 
@@ -87,6 +66,8 @@ SIMPLE_SPEC_TOKENS = (
 ################
 
 class Parser(object):
+    '''
+    '''
 
     VALID_KWARGS = {
         'opts',
@@ -157,12 +138,12 @@ class Parser(object):
 
         # Add the wildcard Opt instances.
         if self.wildcards:
-            self.add_wildcard_opts()
+            self._add_wildcard_opts()
 
         # Try to parse the args.
         HELP = ('HELP',)
         try:
-            popts = self.do_parse(args)
+            popts = self._do_parse(args)
             if self.add_help and popts['help'].value:
                 raise OptoPyError(HELP)
             return popts
@@ -187,12 +168,12 @@ class Parser(object):
             print(txt, end = '')
             sys.exit(ExitCode.PARSE_FAIL.code)
 
-    def do_parse(self, args):
+    def _do_parse(self, args):
         subphrases = [Phrase(opt = opt) for opt in self.opts]
         phrase = Phrase(subphrases = subphrases)
         return phrase.parse(args)
 
-    def add_wildcard_opts(self):
+    def _add_wildcard_opts(self):
         self.opts.extend([
             Opt('<positionals>', nargs = (0, MAX_INT)),
             Opt(WILDCARD_OPTION),
@@ -292,8 +273,8 @@ class Parser(object):
         # Then the default POS and OPT sections, if there are Opt instances lacking sections.
         homeless = [o for o in self.opts if not o.sections]
         needed = [
-            (SectionName.POS, any(o for o in homeless if o.opt_type == OptType.POS)),
-            (SectionName.OPT, any(o for o in homeless if o.opt_type != OptType.POS)),
+            (SectionName.POS, any(o for o in homeless if o.is_positional_opt)),
+            (SectionName.OPT, any(o for o in homeless if not o.is_positional_opt)),
         ]
         for nm, has_opts in needed:
             if has_opts and nm not in all_sections:
@@ -345,7 +326,7 @@ class Parser(object):
                     if nm in sections:
                         sections[nm].opts.append(o)
             else:
-                nm = SectionName.POS if o.opt_type == OptType.POS else SectionName.OPT
+                nm = SectionName.POS if o.is_positional_opt else SectionName.OPT
                 if nm in sections:
                     sections[nm].opts.append(o)
 
@@ -498,15 +479,12 @@ class EnumMember(object):
         return self.value
 
 ################
-# Enum instances.
+# Enum instances: user facing.
 ################
 
-OptType         = Enum('OptType', 'LONG', 'SHORT', 'POS', 'WILD')
-PhraseType      = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'WILD', 'ZONE')
-PhraseLogicType = Enum('PhraseLogicType', 'AND', 'OR')
-HelpTextStyle   = Enum('HelpTextStyle', 'CLI', 'MAN')
-OptTextStyle    = Enum('OptTextStyle', 'CLI', 'MAN')
-AliasStyle      = Enum('AliasStyle', 'SEPARATE', 'MERGED')
+AliasStyle = Enum('AliasStyle', 'SEPARATE', 'MERGED')
+HelpTextStyle = Enum('HelpTextStyle', 'CLI', 'MAN')
+OptTextStyle = Enum('OptTextStyle', 'CLI', 'MAN')
 
 SectionName = Enum(
     'SectionName',
@@ -516,6 +494,14 @@ SectionName = Enum(
     dict(name = 'ALIASES', label = 'Aliases'),
     dict(name = 'ERR', label = 'Errors'),
 )
+
+################
+# Enum instances: not user facing.
+################
+
+OptType = Enum('OptType', 'LONG', 'SHORT', 'POS', 'WILD')
+PhraseLogicType = Enum('PhraseLogicType', 'AND', 'OR')
+PhraseType = Enum('PhraseType', 'OPT', 'POS', 'PHRASE', 'WILD', 'ZONE')
 
 ExitCode = Enum(
     'ExitCode',
@@ -532,6 +518,8 @@ class RegexLexerError(Exception):
     pass
 
 class OptoPyError(Exception):
+    '''
+    '''
     pass
 
 ################
@@ -539,6 +527,8 @@ class OptoPyError(Exception):
 ################
 
 class FormatterConfig(object):
+    '''
+    '''
 
     DEFAULTS = dict(
         program_name        = '',
@@ -562,6 +552,8 @@ class FormatterConfig(object):
 ################
 
 class Section(object):
+    '''
+    '''
 
     def __init__(self, name, label = None, text = None, opts = None):
         self.name = name
@@ -635,6 +627,8 @@ class GrammarSpecParser(object):
 ################
 
 class Opt(object):
+    '''
+    '''
 
     def __init__(self,
                  option_spec,
@@ -650,7 +644,7 @@ class Opt(object):
             self.option = option_spec
             self.nargs = nargs or ZERO_TUPLE
             self.destination = None
-            self.opt_type = OptType.WILD
+            self._opt_type = OptType.WILD
 
         else:
             # Try to parse the option_spec.
@@ -679,7 +673,7 @@ class Opt(object):
 
             # Determine the OptType.
             self.destination = self.option.strip(OPT_SPEC_STRIP_CHARS).replace(OPT_PREFIX, UNDERSCORE)
-            self.opt_type = (
+            self._opt_type = (
                 OptType.LONG if self.option.startswith(LONG_OPT_PREFIX) else
                 OptType.SHORT if self.option.startswith(SHORT_OPT_PREFIX) else
                 OptType.POS
@@ -696,19 +690,19 @@ class Opt(object):
 
     @property
     def is_long_opt(self):
-        return self.opt_type == OptType.LONG
+        return self._opt_type == OptType.LONG
 
     @property
     def is_short_opt(self):
-        return self.opt_type == OptType.SHORT
+        return self._opt_type == OptType.SHORT
 
     @property
     def is_positional_opt(self):
-        return self.opt_type == OptType.POS
+        return self._opt_type == OptType.POS
 
     @property
     def is_wildcard_opt(self):
-        return self.opt_type == OptType.WILD
+        return self._opt_type == OptType.WILD
 
     @property
     def nargs(self):
@@ -754,6 +748,8 @@ class Opt(object):
 ################
 
 class ParsedOptions(object):
+    '''
+    '''
 
     def __init__(self, opts = None):
         self.parsed_opts = OrderedDict()
@@ -788,6 +784,8 @@ class ParsedOptions(object):
 ################
 
 class ParsedOpt(object):
+    '''
+    '''
 
     def __init__(self, opt, value):
         self.destination = opt.destination
@@ -798,7 +796,7 @@ class ParsedOpt(object):
         tup = (self.destination, self.value)
         return iter(tup)
 
-    def add_value(self, val):
+    def _add_value(self, val):
         self._values.append(val)
 
     @property
@@ -812,13 +810,13 @@ class ParsedOpt(object):
             return self._values[0]
 
     @property
-    def requires_args(self):
+    def _requires_args(self):
         m, n = self.opt.nargs
         v = len(self._values)
         return m > v
 
     @property
-    def can_take_args(self):
+    def _can_take_args(self):
         m, n = self.opt.nargs
         v = len(self._values)
         return v < n
@@ -889,7 +887,7 @@ class Phrase(object):
             if arg.startswith('--') or arg.startswith('-'):
 
                 # Make sure we are not expecting an option-arg.
-                if prev_opt and popts[prev_opt].requires_args:
+                if prev_opt and popts[prev_opt]._requires_args:
                     fmt = 'Found option, but expected option-argument: {}'
                     msg = fmt.format(arg)
                     raise OptoPyError(msg)
@@ -924,20 +922,20 @@ class Phrase(object):
                 seen.add(prev_opt)
                 po = popts[prev_opt]
                 if po.opt.nargs == ZERO_TUPLE:
-                    po.add_value(True)
+                    po._add_value(True)
                 continue
 
             # The arg is not an option, but the previous option
             # can still take opt-args.
-            elif prev_opt and popts[prev_opt].can_take_args:
+            elif prev_opt and popts[prev_opt]._can_take_args:
                 po = popts[prev_opt]
-                po.add_value(arg)
+                po._add_value(arg)
                 continue
 
             # Otherwise, treat the arg as a positional.
             # - Either use the previous positional (if it can take more args).
             # - Or use the next positional (if there is one).
-            if prev_pos and popts[prev_pos].can_take_args:
+            if prev_pos and popts[prev_pos]._can_take_args:
                 pass
             else:
                 pos_i += 1
@@ -954,7 +952,7 @@ class Phrase(object):
 
             # Valid positional.
             po = popts[prev_pos]
-            po.add_value(arg)
+            po._add_value(arg)
 
         # Delete the wildcard Opt from ParsedOptions.
         wild = None
@@ -967,7 +965,7 @@ class Phrase(object):
 
         # Check that all Opt instances got the required nargs.
         for po in popts:
-            if po.requires_args:
+            if po._requires_args:
                 fmt = 'Did not get expected N of arguments: {}'
                 msg = fmt.format(po.opt.option)
                 raise OptoPyError(msg)
