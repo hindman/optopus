@@ -375,7 +375,7 @@ def test_parse_exit(std_streams):
         popts = p.parse(args)
     assert str(einfo.value) == str(ExitCode.PARSE_FAIL.code)
     # And stdout should contain expected content.
-    output = std_streams['stdout'].getvalue()
+    output = std_streams.stdout
     assert 'Errors:' in output
     assert 'Found unexpected option: --blort' in output
 
@@ -438,15 +438,16 @@ def test_add_help(std_streams):
           --help -h
     ''')
 
-    # TODO: adjust std_streams so we can run several
-    # scenarios in one test function.
     tests = [
         ['--help'],
+        ['-h'],
+        ['--foo', '--help', '-n', '99']
     ]
     for args in tests:
         with pytest.raises(SystemExit) as einfo:
             popts = p.parse(args)
         assert str(einfo.value) == str(ExitCode.PARSE_HELP.code)
-        output = std_streams['stdout'].getvalue()
+        output = std_streams.stdout
         assert output == exp
+        std_streams.reset()
 

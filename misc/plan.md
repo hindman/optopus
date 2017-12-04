@@ -19,9 +19,6 @@ Mascot: an octopus.
 
 # Road map
 
-- std_streams fixture: add reset behavior, so you can run multiple scenarios
-  within one test. Example: test_add_help().
-
 - Required/optional and ntimes: support.
 
   - Add `required` param, as a convenience, but implement the behavior via
