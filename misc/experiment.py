@@ -82,4 +82,5 @@ except OptoPyError as e:
 d = dict(parsed_opts)
 
 print(json.dumps(d, indent = 4))
+print(('lines', parsed_opts.lines))
 

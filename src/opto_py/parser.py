@@ -761,12 +761,18 @@ class ParsedOptions(object):
             po = ParsedOpt(opt, None)
             self.parsed_opts[opt.destination] = po
 
-    def add_opt(self, opt):
+    def _add_opt(self, opt):
         po = ParsedOpt(opt, None)
         self.parsed_opts[opt.destination] = po
 
-    def del_opt(self, opt):
+    def _del_opt(self, opt):
         del self.parsed_opts[opt.destination]
+
+    def __getattr__(self, a):
+        if a in self.parsed_opts:
+            return self.parsed_opts[a].value
+        else:
+            raise AttributeError(a)
 
     def __getitem__(self, destination):
         return self.parsed_opts[destination]
@@ -894,7 +900,7 @@ class Phrase(object):
                     if sph.phrase_type == PhraseType.WILD:
                         # Maybe this branch should occur last, not first.
                         opt = Opt(arg)
-                        popts.add_opt(opt)
+                        popts._add_opt(opt)
                         prev_opt = opt.destination
                         break
                     elif sph.phrase_type == PhraseType.OPT:
@@ -957,7 +963,7 @@ class Phrase(object):
                 wild = po.opt
                 break
         if wild:
-            popts.del_opt(wild)
+            popts._del_opt(wild)
 
         # Check that all Opt instances got the required nargs.
         for po in popts:

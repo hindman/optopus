@@ -19,9 +19,6 @@ Mascot: an octopus.
 
 # Road map
 
-- ParsedOptions. Usage seems awkward: don't force users to dictify
-  the returned value.
-
 - std_streams fixture: add reset behavior, so you can run multiple scenarios
   within one test. Example: test_add_help().
 

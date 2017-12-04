@@ -34,10 +34,16 @@ def test_parser_using_wildcards():
         'fbi_and_cia': True,
         'positionals': ['tigers', 'Bees', '12.34', 'x99'],
     }
+    # Parse.
     p = Parser()
     popts = p.parse(args, should_exit = False)
+    # The dict of the ParsedOptions is correct.
     got = dict(popts)
     assert got == exp
+    # And we can also access options directly as attributes on the ParsedOptions.
+    for k, v in exp.items():
+        got = getattr(popts, k)
+        assert (k, got) == (k, v)
 
 def test_simple_spec_parser():
 
