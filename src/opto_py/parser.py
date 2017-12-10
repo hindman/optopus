@@ -25,10 +25,14 @@ PATTERNS['anchored'] = {
     for k, v in PATTERNS['simple'].items()
 }
 
-ZERO_TUPLE = (0, 0)
-ONE_TUPLE = (1, 1)
-ZERO_OR_ONE_TUPLE = (0, 1)
-MAX_INT = 999999
+N_ZERO = 0
+N_ONE = 1
+N_MAX = 999999
+
+ZERO_TUPLE = (N_ZERO, N_ZERO)
+ONE_TUPLE = (N_ONE, N_ONE)
+ZERO_OR_ONE_TUPLE = (N_ZERO, N_ONE)
+ANY_TUPLE = (N_ZERO, N_MAX)
 
 OPT_PREFIX = '-'
 UNDERSCORE = '_'
@@ -175,7 +179,7 @@ class Parser(object):
 
     def _add_wildcard_opts(self):
         self.opts.extend([
-            Opt('<positionals>', nargs = (0, MAX_INT)),
+            Opt('<positionals>', nargs = (N_ZERO, N_MAX)),
             Opt(WILDCARD_OPTION),
         ])
 
@@ -633,7 +637,8 @@ class Opt(object):
     def __init__(self,
                  option_spec,
                  nargs = None,
-                 ntimes = ZERO_OR_ONE_TUPLE,
+                 ntimes = None,
+                 required = None,
                  text = None,
                  sections = None,
                  aliases = None,
@@ -679,7 +684,26 @@ class Opt(object):
                 OptType.POS
             )
 
-        self.ntimes = ntimes
+        # Set self.ntimes.
+        if required is not None and ntimes is not None:
+            msg = 'Opt: do not set both required and ntimes'
+            raise OptoPyError(msg)
+        elif ntimes is not None:
+            # If ntimes was given, just set it.
+            self.ntimes = ntimes
+        elif required is not None:
+            # If required was given, use it to set ntimes.
+            v0 = N_ONE if required else N_ZERO
+            v1 = N_MAX if self.is_wildcard_opt else N_ONE
+            self.ntimes = (v0, v1)
+        else:
+            # Neither was given, so use the defaults.
+            self.ntimes = (
+                ONE_TUPLE if self.is_positional_opt else
+                ANY_TUPLE if self.is_wildcard_opt else
+                ZERO_OR_ONE_TUPLE
+            )
+
         self.text = text
         self.sections = list(sections or [])
         self.tolerant = tolerant
@@ -710,7 +734,7 @@ class Opt(object):
 
     @nargs.setter
     def nargs(self, val):
-        self._nargs = self._get_nx_tuple(val, 'nargs')
+        self._nargs = self._get_ntuple(val, 'nargs')
 
     @property
     def ntimes(self):
@@ -718,9 +742,13 @@ class Opt(object):
 
     @ntimes.setter
     def ntimes(self, val):
-        self._ntimes = self._get_nx_tuple(val, 'ntimes')
+        self._ntimes = self._get_ntuple(val, 'ntimes')
 
-    def _get_nx_tuple(self, val, attr_name):
+    @property
+    def required(self):
+        return self.ntimes[0] > N_ZERO
+
+    def _get_ntuple(self, val, attr_name):
         #
         # Convert val to a tuple. For example, these are
         # valid inputs: (0, 1), (1, 1), 1, 2, etc.
@@ -736,7 +764,7 @@ class Opt(object):
             m, n = (None, None)
         #
         # Return the valid tuple or raise.
-        if m is None or m < 0 or m > n:
+        if m is None or m < N_ZERO or m > n:
             fmt = 'Invalid {}: {}'
             msg = fmt.format(attr_name, val)
             raise OptoPyError(msg)
@@ -895,16 +923,15 @@ class Phrase(object):
                 # Try to find a matching Opt.
                 prev_opt = None
                 for sph in self.subphrases:
-                    if sph.phrase_type == PhraseType.WILD:
-                        # Maybe this branch should occur last, not first.
+                    if sph.phrase_type == PhraseType.OPT:
+                        if sph.opt.option == arg or arg in sph.opt.aliases:
+                            prev_opt = sph.opt.destination
+                            break
+                    elif sph.phrase_type == PhraseType.WILD:
                         opt = Opt(arg)
                         popts._add_opt(opt)
                         prev_opt = opt.destination
                         break
-                    elif sph.phrase_type == PhraseType.OPT:
-                        if sph.opt.option == arg or arg in sph.opt.aliases:
-                            prev_opt = sph.opt.destination
-                            break
 
                 # Failed to find a match.
                 if prev_opt is None:

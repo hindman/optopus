@@ -21,16 +21,20 @@ Mascot: an octopus.
 
 - Required/optional and ntimes: support.
 
-  - Add `required` param, as a convenience, but implement the behavior via
-    ntimes.
+  x Add `required` convenience param, implemented via ntimes.
 
-  - Current code has a bug: some confusion between nargs and ntimes. Currently,
-    a nargs=(0,1) causes the option to be non-required. That's incorrect.
+  - ParsedOpt._values: convert to 2D array, and adjust ParsedOpt.value
+    accordingly to respect nargs and ntimes.
 
-  - Current code also gives misleading error messages. For example, if a
-    required option is missing, the error message mistakenly conveys that the
-    problem is 'Did not get expected N of arguments'. In fact, the problem is
-    that that option was missing entirely.
+  - Adjust Phrase.parse() to respect both nargs and ntimes, and to fix known
+    bugs/problems.
+
+    - Bug: nargs=(0,1) causes the option to be non-required. That's incorrect.
+
+    - Misleading error messages. For example, if a required option is missing,
+      the error message mistakenly conveys that the problem is 'Did not get
+      expected N of arguments'. In fact, the problem is that that option was
+      missing entirely.
 
   - help_text(): USAGE: use [] or () brackets, based on optional vs required.
 
@@ -1293,6 +1297,118 @@ Decisions when processing a CLI arg:
 
       - Static: just bind.
       - Variable: bind with possible backtracking.
+
+--------
+
+## nargs, ntimes, and the returned data structures
+
+General principles:
+
+  - ntimes controlls optional/required behavior: is the thing (an option or
+    positional) present and, if so, how many times?
+
+  - nargs is straightforward for options: how many args does the option take?
+
+  - For positionals, the nargs/ntimes distinction is not quite as obvious, but
+    the optional/required note above points us in the right direction. For
+    example:
+
+        frob <x> <y> <y> [<z>]
+
+        opt   nargs   ntimes
+        --------------------
+        x     1       1       # A typical positional: required with 1 arg.
+        y     2       1       # Also required, but 2 args.
+        z     1       (0,1)   # Optional, with 1 arg.
+
+  - In other words, for positionals:
+
+    - Optional/required behavior is governed by ntimes.
+    - Adjacent-repetition of a positional is governed by nargs.
+    - Positionals always have a nargs of at least 1.
+
+  - Internally, a ParsedOpt will store values as a 2D array:
+
+      self._values = [
+          [a1, a2, ...],  # First time.
+          ...             # Etc.
+      ]
+
+  - But ParsedOpt.value will return a value flat as possible, based on nargs
+    and ntimes. See the examples below.
+
+Options:
+
+  - nargs 0
+
+        # ntimes 0 or 1
+        foo: True
+
+        # ntimes 2+
+        foo: [
+            True,  # First time.
+            True,  # Second time.
+            ...    # Etc.
+        ]
+
+  - nargs 1
+
+        # ntimes 0 or 1
+        foo: a1
+
+        # ntimes 2+
+        foo: [
+            a1,   # First time.
+            a2,   # Second time.
+        ]
+
+  - nargs 2+
+
+        # ntimes 0 or 1
+        foo: [a1, a2, ...]
+
+        # ntimes 2+
+        foo: [
+            [a1, a2, a3, ...],  # First time.
+            [a1, a2, ...],      # Second time.
+            ...                 # Etc.
+        ]
+
+Positionals:
+
+  - Example grammar and corresponding params:
+
+        frob (<a> <a> <b> <c>){3} <d> [<e>]
+
+            nargs  ntimes
+        -----------------
+        a   2      3
+        b   1      3
+        c   1      3
+        d   1      1
+        e   1      (0,1)
+
+  - Example usage and returned data:
+
+        frob  10 11 20 30  100 101 200 300  1000 1001 2000 3000  DD
+
+        a: [
+            [10, 11],      # First time.
+            [100, 101],    # Second time.
+            [1000, 1001],  # Third time.
+        ],
+        b: [
+            20,
+            200,
+            2000,
+        ],
+        c: [
+            30,
+            300,
+            3000,
+        ],
+        d: DD
+        e: None
 
 --------
 
