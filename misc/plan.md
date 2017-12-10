@@ -19,32 +19,6 @@ Mascot: an octopus.
 
 # Road map
 
-- Required/optional and ntimes: support.
-
-  x Add `required` convenience param, implemented via ntimes.
-
-  x ParsedOpt._values: convert to 2D array, and adjust ParsedOpt.value
-    accordingly to respect nargs and ntimes.
-
-  x Adjust Phrase.parse() to respect both nargs and ntimes, and to fix known
-    bugs/problems.
-
-    x Bug: nargs=(0,1) causes the option to be non-required. That's incorrect.
-
-    x Misleading error messages. For example, if a required option is missing,
-      the error message mistakenly conveys that the problem is 'Did not get
-      expected N of arguments'. In fact, the problem is that that option was
-      missing entirely.
-
-  x If an Opt has nargs=(0,1), the user has no way to know the meaning of None:
-    it might mean the end-user didn't supply the option; or it might mean the
-    option was supplied with zero args. One possibility: return None for
-    option-not-supplied, True for supplied-with-zero-args, and VAL for
-    supplied-with-args. Another possibility: return list (here the theory is to
-    use a list when nargs is anything other than 0,0 or 1,1)
-
-  - help_text(): USAGE: use [] or () brackets, based on optional vs required.
-
 - Usability limitation. When parsing error occurs, user has no way to get
   metadata about the problem. For example: the state of ParsedOptions, and the
   N of args processed up to that point.

@@ -366,7 +366,7 @@ def test_basic_help_text1():
           --some_long_opt7
 
         Usage:
-          cli -n --foo (--xy X Y) --bar --some_long_opt1 --some_crazy_insane_long_opt2
+          cli -n --foo [--xy X Y] --bar --some_long_opt1 --some_crazy_insane_long_opt2
               --some_long_opt3 --some_long_opt4 --some_long_opt5 --some_long_opt6
               --some_long_opt7 <x> <y>
 
@@ -516,16 +516,18 @@ def test_add_help(std_streams):
 
     p = Parser(
         Opt('-n N'),
+        Opt('--zoo Z1 Z2', required = True),
         Opt('--foo'),
         add_help = True,
     )
 
     exp = dedent('''
         Usage:
-          cli (-n N) --foo --help
+          cli [-n N] (--zoo Z1 Z2) --foo --help
 
         Options:
           -n N
+          --zoo Z1 Z2
           --foo
           --help               Print help and exit.
 

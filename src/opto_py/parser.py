@@ -348,12 +348,12 @@ class Parser(object):
             lines.append(s.label + ':')
 
             # The usage section.
-            fmt = '({})'
             if nm is SectionName.USAGE:
                 parts = []
                 for o in self.opts:
                     val = o.option_spec
                     if ' ' in val:
+                        fmt = '({})' if o.required else '[{}]'
                         parts.append(fmt.format(val))
                     else:
                         parts.append(val)
