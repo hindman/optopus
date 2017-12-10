@@ -764,7 +764,14 @@ class Opt(object):
             m, n = (None, None)
         #
         # Return the valid tuple or raise.
-        if m is None or m < N_ZERO or m > n:
+        invalids = [
+            m is None,
+            n is None,
+            m < N_ZERO,
+            n < m,
+            (n == N_ZERO and attr_name == 'ntimes'),
+        ]
+        if any(invalids):
             fmt = 'Invalid {}: {}'
             msg = fmt.format(attr_name, val)
             raise OptoPyError(msg)
@@ -807,6 +814,12 @@ class ParsedOptions(object):
         # ParsedOptions instance can be converted directly to a dict.
         return iter(self.parsed_opts.values())
 
+    def _dump(self):
+        return {
+            dest : po._values
+            for dest, po in self.parsed_opts.items()
+        }
+
 ################
 # ParsedOpt.
 ################
@@ -824,30 +837,83 @@ class ParsedOpt(object):
         tup = (self.destination, self.value)
         return iter(tup)
 
+    def _add_occurrence(self):
+        self._values.append([])
+
     def _add_value(self, val):
-        self._values.append(val)
+        try:
+            assert self._values
+            vs = self._values[-1]
+            assert isinstance(vs, list)
+            vs.append(val)
+        except AssertionError:
+            msg = 'ParsedOpt: cannot _add_value() without any occurrences'
+            raise OptoPyError(msg)
 
     @property
     def value(self):
-        m, n = self.opt.nargs
-        if n > 1:
-            return self._values
-        elif len(self._values) == 0:
-            return None
+        # Setup.
+        mt, nt = self.opt.ntimes
+        ma, na = self.opt.nargs
+        vs = self._values
+        # Multiple ntimes and nargs: return a 2D list.
+        if nt > 1 and na > 1:
+            return vs or None
+        # Multiple ntimes. Return a flat list.
+        elif nt > 1:
+            return [xs[0] for xs in vs] if vs else None
+        # Multiple nargs. Return a flat list.
+        elif nt > 1 or na > 1:
+            return vs[0] if vs else None
+        # Dual option (flag or take a single arg). Return flat list, so that the
+        # user can distinguish option-not-given (None) from no-args (empty list).
+        elif self.opt.nargs == ZERO_OR_ONE_TUPLE:
+            return vs[0] if vs else None
+        # Single ntimes and simple option (flag or single-arg). Just return a value.
         else:
-            return self._values[0]
+            if vs:
+                xs = vs[0]
+                return xs[0] if xs else None
+            else:
+                return None
+
+    @property
+    def _requires_occurrences(self):
+        vs = self._values
+        mt, nt = self.opt.ntimes
+        n = len(vs)
+        return n < mt
+
+    @property
+    def _can_occur_again(self):
+        vs = self._values
+        mt, nt = self.opt.ntimes
+        n = len(vs)
+        return n < nt
 
     @property
     def _requires_args(self):
-        m, n = self.opt.nargs
-        v = len(self._values)
-        return m > v
+        vs = self._values
+        if vs:
+            xs = vs[-1]
+            ma, na = self.opt.nargs
+            n = len(xs)
+            return ma > n
+        else:
+            msg = 'ParsedOpt: cannot _requires_args() without any occurrences'
+            raise OptoPyError(msg)
 
     @property
     def _can_take_args(self):
-        m, n = self.opt.nargs
-        v = len(self._values)
-        return v < n
+        vs = self._values
+        if vs:
+            xs = vs[-1]
+            ma, na = self.opt.nargs
+            n = len(xs)
+            return n < na
+        else:
+            msg = 'ParsedOpt: cannot _can_take_args() without any occurrences'
+            raise OptoPyError(msg)
 
     def __str__(self):
         fmt = 'ParsedOpt({}, {!r})'
@@ -948,6 +1014,7 @@ class Phrase(object):
                 # Valid Opt.
                 seen.add(prev_opt)
                 po = popts[prev_opt]
+                po._add_occurrence()
                 if po.opt.nargs == ZERO_TUPLE:
                     po._add_value(True)
                 continue
@@ -963,11 +1030,13 @@ class Phrase(object):
             # - Either use the previous positional (if it can take more args).
             # - Or use the next positional (if there is one).
             if prev_pos and popts[prev_pos]._can_take_args:
-                pass
+                po = popts[prev_pos]
             else:
                 pos_i += 1
                 try:
                     prev_pos = pos_opts[pos_i].destination
+                    po = popts[prev_pos]
+                    po._add_occurrence()
                 except IndexError:
                     prev_pos = None
 
@@ -978,7 +1047,6 @@ class Phrase(object):
                 raise OptoPyError(msg)
 
             # Valid positional.
-            po = popts[prev_pos]
             po._add_value(arg)
 
         # Delete the wildcard Opt from ParsedOptions.
@@ -990,12 +1058,19 @@ class Phrase(object):
         if wild:
             popts._del_opt(wild)
 
+        # Check that all Opt instances occurred the required ntimes.
+        problems = sorted(po.opt.option for po in popts if po._requires_occurrences)
+        if problems:
+            fmt = 'Did not get expected N of occurrences: {}'
+            msg = fmt.format(', '.join(problems))
+            raise OptoPyError(msg)
+
         # Check that all Opt instances got the required nargs.
-        for po in popts:
-            if po._requires_args:
-                fmt = 'Did not get expected N of arguments: {}'
-                msg = fmt.format(po.opt.option)
-                raise OptoPyError(msg)
+        problems = sorted(po.opt.option for po in popts if po._requires_args)
+        if problems:
+            fmt = 'Did not get expected N of arguments: {}'
+            msg = fmt.format(', '.join(problems))
+            raise OptoPyError(msg)
 
         # Return the ParsedOptions.
         return popts

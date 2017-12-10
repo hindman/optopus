@@ -184,7 +184,7 @@ def test_basic_api_usage():
     with pytest.raises(OptoPyError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
-    assert 'expected N of arguments' in msg
+    assert 'Did not get expected N of occurrences' in msg
     assert '<y>' in msg
 
     # Invalid.
@@ -215,6 +215,101 @@ def test_basic_api_usage():
     msg = str(einfo.value)
     assert 'Found repeated option' in msg
     assert '--foo' in msg
+
+    # Invalid.
+    p = Parser(
+        Opt('-n', nargs = 1),
+        Opt('--foo', required = True),
+        dict(option_spec = '--bar B1 B2 B3 B4 B5'),
+        Opt('<x>'),
+        Opt('<y>'),
+    )
+    args = [
+        'phasers',
+        '--bar', '11', '12', '13', '14', '15',
+    ]
+    with pytest.raises(OptoPyError) as einfo:
+        popts = p.parse(args, should_exit = False)
+    msg = str(einfo.value)
+    assert 'Did not get expected N of occurrences' in msg
+    assert '--foo, <y>' in msg
+
+    # Invalid.
+    p = Parser(
+        Opt('-n', nargs = 1),
+        Opt('--foo', required = True),
+        dict(option_spec = '--bar B1 B2 B3 B4 B5'),
+        Opt('<x>'),
+        Opt('<y>'),
+    )
+    args = [
+        'X',
+        'Y',
+        '-n', 'N1',
+        '--foo',
+        '--bar', '11',
+    ]
+    with pytest.raises(OptoPyError) as einfo:
+        popts = p.parse(args, should_exit = False)
+    msg = str(einfo.value)
+    assert 'Did not get expected N of arguments' in msg
+    assert '--bar' in msg
+
+    # Invalid.
+    p = Parser(
+        Opt('-n', nargs = (0,1), required = True),
+        Opt('--foo', required = True),
+        Opt('<x>'),
+    )
+    args = [
+        'X',
+        '--foo',
+    ]
+    with pytest.raises(OptoPyError) as einfo:
+        popts = p.parse(args, should_exit = False)
+    msg = str(einfo.value)
+    assert 'Did not get expected N of occurrences' in msg
+    assert '-n' in msg
+
+    # Valid.
+    p = Parser(
+        Opt('-n', nargs = (0,1), required = True),
+        Opt('--foo', required = True),
+        Opt('<x>'),
+    )
+    args = [
+        'X',
+        '--foo',
+        '-n', '1',
+    ]
+    exp = dict(
+        n = ['1'],
+        foo = True,
+        x = 'X',
+    )
+    popts = p.parse(args, should_exit = False)
+    got = dict(popts)
+    assert got == exp
+
+    # Valid.
+    p = Parser(
+        Opt('-n', nargs = (0,1), required = True),
+        Opt('--foo', required = True),
+        Opt('<x>'),
+    )
+    args = [
+        'X',
+        '--foo',
+        '-n',
+    ]
+    exp = dict(
+        n = [],
+        foo = True,
+        x = 'X',
+    )
+    popts = p.parse(args, should_exit = False)
+    got = dict(popts)
+    assert got == exp
 
 def test_basic_help_text1():
 
