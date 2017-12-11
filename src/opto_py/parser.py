@@ -175,7 +175,8 @@ class Parser(object):
     def _do_parse(self, args):
         subphrases = [Phrase(opt = opt) for opt in self.opts]
         phrase = Phrase(subphrases = subphrases)
-        return phrase.parse(args)
+        self.parsed_options = ParsedOptions(opts = self.opts, args = args)
+        return phrase.parse(args, parsed_options = self.parsed_options)
 
     def _add_wildcard_opts(self):
         self.opts.extend([
@@ -786,8 +787,10 @@ class ParsedOptions(object):
     '''
     '''
 
-    def __init__(self, opts = None):
+    def __init__(self, opts = None, args = None):
         self.parsed_opts = OrderedDict()
+        self.args_index = -1
+        self.args = args
         for opt in (opts or []):
             po = ParsedOpt(opt, None)
             self.parsed_opts[opt.destination] = po
@@ -815,10 +818,15 @@ class ParsedOptions(object):
         return iter(self.parsed_opts.values())
 
     def _dump(self):
-        return {
-            dest : po._values
-            for dest, po in self.parsed_opts.items()
-        }
+        return dict(
+            args = self.args,
+            args_index = self.args_index,
+            parsed_opts = dict(self),
+            parsed_opts_raw = {
+                dest : po._values
+                for dest, po in self.parsed_opts.items()
+            },
+        )
 
 ################
 # ParsedOpt.
@@ -946,11 +954,14 @@ class Phrase(object):
         else:
             return PhraseType.OPT
 
-    def parse(self, args):
+    def parse(self, args, parsed_options = None):
 
         # Set up the ParsedOptions that we will return.
-        opts = [sph.opt for sph in self.subphrases]
-        popts = ParsedOptions(opts = opts)
+        if parsed_options is None:
+            opts = [sph.opt for sph in self.subphrases]
+            popts = ParsedOptions(opts = opts)
+        else:
+            popts = parsed_options
 
         # The expected positional Opt instances.
         pos_opts = [
@@ -963,7 +974,6 @@ class Phrase(object):
         # - Indexes to args and pos_opts.
         # - The most recently seen Opt (non-positional).
         # - A set of already seen Opt.destination values.
-        arg_i = -1
         pos_i = -1
         prev_opt = None
         prev_pos = None
@@ -971,9 +981,9 @@ class Phrase(object):
 
         # Process the args.
         while True:
-            arg_i += 1
+            popts.args_index += 1
             try:
-                arg = args[arg_i]
+                arg = args[popts.args_index]
             except IndexError:
                 break
 
@@ -1267,4 +1277,8 @@ def dump(x, label = None, tight = False):
         print(x)
     if not tight:
         print('\n')
+
+def jdump(d):
+    print(json.dumps(d, indent = 4))
+
 

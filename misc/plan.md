@@ -19,14 +19,11 @@ Mascot: an octopus.
 
 # Road map
 
-- Usability limitation. When parsing error occurs, user has no way to get
-  metadata about the problem. For example: the state of ParsedOptions, and the
-  N of args processed up to that point.
-
 - GrammarSpecParser and complex Phrase parsing.
+  - Planning.
   - Basic GrammarSpecParser implementation.
-  - Varying nargs and ntimes.
   - Complex grammars:
+    - Varying nargs and ntimes.
     - Keeping track of partially-parsed results.
     - Pruning no-longer-eligible subphrases.
     - Keeping track of alternatives.

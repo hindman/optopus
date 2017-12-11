@@ -16,6 +16,7 @@ from opto_py.parser import (
     OptType,
     SimpleSpecParser,
     ExitCode,
+    jdump,
 )
 
 def test_parser_using_wildcards():
@@ -96,7 +97,16 @@ def test_simple_spec_parser():
     ]
     with pytest.raises(OptoPyError) as einfo:
         popts = p.parse(args, should_exit = False)
-    assert 'unexpected positional' in str(einfo.value)
+    msg = str(einfo.value)
+    assert 'unexpected positional' in msg
+    assert 'foo' in msg
+    popts = p.parsed_options
+    d = p.parsed_options._dump()
+    assert popts.args == args
+    assert popts.args_index == 2
+    assert popts.x == 'phasers'
+    assert popts.y == 'beam'
+    assert popts.a is None
 
     # Invalid.
     spec = '-n NAME --foo --bar B1 B2 <x> <y>'
