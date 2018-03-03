@@ -782,7 +782,7 @@ Handling literal option-arg choices.
 
             - Option takes 2 args.
                 - The 1st arg must be A|B|C.
-                - The 2nd arg must be A|B|C.
+                - The 2nd arg must be X|Y|Z.
 
             frob [-a {A,B,C} {X,Y,Z}]
             frob -h
@@ -808,7 +808,7 @@ Handling literal option-arg choices.
 
         Grammar needed:
 
-            frob -o [-x]
+            frob -o           [-x]
             frob -r (-p | -s) [-x]
 
         Grammar needed:
