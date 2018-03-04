@@ -415,6 +415,25 @@ In addition, a CLI grammar can have boundary points:
   - Within a zone, the grammar can require that one or more positional
     arguments and/or options appear first, in order.
 
+Side note on CLI grammars relative to regexes:
+
+  - opto-py will borrow many concepts from regular expressions.
+
+  - But CLI grammar parsing seems not directly amenable to handling via regex
+    parsing approaches.
+
+  - The crucial difference:
+
+    - Positionals are ordered among themselves.
+    - Options can appear in any order (ignoring boundaries and anchors).
+
+  - That special flexibility makes it not very intuitive to convert a CLI
+    grammar into a corresponding regex-style grammar.
+
+      - At every stage, any of the options are possible.
+      - But then once an option appears, it cannot appear again.
+      - That means CLI parsing is highly context-sensitive.
+  
 Within those rules in mind, we can handle the grammar of a typical subcommand
 program as follows:
 

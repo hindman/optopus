@@ -146,59 +146,82 @@ Example: from spec to Opt() instances to parsing logic:
 
 For example:
 
-    configure    : [general-options] ; !task=configure --odin-env --od-user
-    submit       : [general-options] ; !task=submit -c -r [--start-job]
-    get          : [general-options] ; !task=get -j [--json [--indent] | --b64 | --yaml]
-    help         : * --help
-    other1       : [-x] [-y] (<a> <b> <c> [-z])...{2,7}
+    `general      : [--verbose] [--log-file <path>]
+    `other        : [--hi] [--bye]
 
-    Notes about the `other1` variant:
-        - A sequence of options/positionals can be occur 2 to 7 times.
-        - If the -z option appears at a group boundary, we attach it
-          to the group eagerly.
-        - For exampler:
+    configure     : `general ; !task=configure --odin-env --od-user
+    submit        : `general ; !task=submit -c -r [--start-job]
+    get           : `general ; !task=get -j [--json [--indent] | --b64 | --yaml]
+    drop          : `general ; !task=drop !what=(first|last|random) [--print] <n>
+    help          : --help **
+    other1        : [-a] [-b] `other <fubb>...
+    other2        : [-x] [-y] `other (<a> <b> <c> [-z]){2,7}
 
-            # Input.
-            A1 B1 C1 -z A2 B2 C2
-
-            # ParseOption info.
-            a : [A1,   A2]
-            b : [B1,   B2]
-            c : [C1,   C2]
-            z : [True, False]
-
-    Notes about repeating positions:
-
-        - Only 1 positional can repeat a variable N of times.
-        - Otherwise, we cannot allocate the values unambiguously.
-        - For example, all of these are ambiguous:
-            <a>... <b>... <c>
-            <a>...{3} <b> <c>...{2} <d>
-            (<a> <b>... <c>){2}
-
-Elements:
+Naming:
 
     short opt
     long opt
     opt arg
     positional
     variant
+    partial
     destination
-    literal
+    literal 
     option group name
+    zone
 
-    :   variant divider
-    []  square: grouping, optional
-    ()  round: grouping, required
-    <>  angle: variable
-    {}  curly: quantification
-    ;   boundary
-    !   anchor
-    =   dest-assign
-    |   alternatation
-    *   tolerant
-    -   option-prefix
-    ... repetition
+Overall structure:
+
+    `foo : PARTIAL_DEFINITION
+    bar  : VARIANT_DEFINITION
+
+Definition syntax:
+
+    `foo      Insert the "foo" partial definition.
+    ;         Divider between zones.
+    !         Anchor item(s) to the front of a zone.
+
+    -x        Short-option.
+    --xy      Long-option.
+
+    []        Grouping, optional.
+    ()        Grouping, required.
+    |         Alternatation.
+
+    <xy>      Variable text; assigned to "xy" in results.
+    foo=bar   Literal text "bar"; assigned to "foo" in results.
+
+    ...       Repetition: 1+ or 0+ depending on parens.
+    {m,n}     Repetition: m to n, inclusive.
+
+    **        Wildcard: parse variant tolerantly.
+
+Notes about the `other2` variant:
+
+    - A sequence of options/positionals can be occur 2 to 7 times.
+
+    - If the -z option appears at a group boundary, we attach it
+      to the group eagerly.
+
+    - For example:
+
+        # Input.
+        A1 B1 C1 -z A2 B2 C2
+
+        # ParseOption info.
+        a : [A1,   A2]
+        b : [B1,   B2]
+        c : [C1,   C2]
+        z : [True, False]
+
+Notes about repeating positions:
+
+    - Only 1 positional can repeat a variable N of times.
+    - Otherwise, we cannot allocate the values unambiguously.
+    - For example, all of these are ambiguous:
+        <a>... <b>... <c>
+        <a>...{3} <b> <c>...{2} <d>
+        (<a> <b>... <c>){2}
 
 '''
 
