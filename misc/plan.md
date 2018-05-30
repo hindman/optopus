@@ -425,6 +425,7 @@ Side note on CLI grammars relative to regexes:
   - The crucial difference:
 
     - Positionals are ordered among themselves.
+
     - Options can appear in any order (ignoring boundaries and anchors).
 
   - That special flexibility makes it not very intuitive to convert a CLI
@@ -501,8 +502,7 @@ program as follows:
 
             frob [optsA]
                  ; !<comm1> !<a> <b> <c> [optsB]
-                 ; <comm2> <d> <e> [optsC]
-                 ; <f> <g>
+                 ; <comm2> <d> <e> [optsC] ; <f> <g>
                  ; !<comm3> !<h> !<i> [optsD]
 
 Handling literal option-arg choices.
@@ -538,9 +538,6 @@ Handling literal option-arg choices.
         (-x <x1> <x2>)
         [-y Y]
         [-z Z1...]
-
-    - With that convention in place, the args themselves can be represented
-      using either syntax, whatever the user prefers: <x> or X.
 
     - The CLI grammar rule is that if brackets begin with an option, the
       remaining args inside the brackets are option-args, not positionals.
@@ -1336,7 +1333,8 @@ General principles:
       ]
 
   - But ParsedOpt.value will return a value flat as possible, based on nargs
-    and ntimes. See the examples below.
+    and ntimes (unless user requests non-flattened data). See the examples
+    below.
 
 Options:
 

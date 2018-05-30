@@ -214,14 +214,25 @@ Notes about the `other2` variant:
         c : [C1,   C2]
         z : [True, False]
 
-Notes about repeating positions:
+Notes about varying positionals:
 
-    - Only 1 positional can repeat a variable N of times.
+    - Only 1 positional can occur a variable N of times.
+
     - Otherwise, we cannot allocate the values unambiguously.
+
     - For example, all of these are ambiguous:
+
         <a>... <b>... <c>
         <a>...{3} <b> <c>...{2} <d>
         (<a> <b>... <c>){2}
+
+    - Similarly a varying positional cannot be used with an option taking a
+    varying nargs, unless the user tells opto-py to allow it.
+    
+        - In that case, opt-py will attach arguments eagerly.
+        
+        - And users should advise their end-user to use the double-hyphen to
+        designate the start of positional arguments.
 
 '''
 
