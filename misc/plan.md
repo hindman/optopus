@@ -19,6 +19,28 @@ Mascot: an octopus.
 
 # Road map
 
+- A different parsing idea.
+
+    - At run time, get the list of args to be parsed. That list will have N
+      elements in it.
+
+    - Start with the phrases.
+
+    - For elements that have no inherent boundaries (eg, an option taking 1 or
+      more args), interpret them in as bounded by using N as the upper limit.
+
+    - Generate a full list of every concrete permutation (a) allowed by the
+      phrases and (b) subject to the limit N.
+
+    - Iterate over those permutations and see if any of them match the args we
+      are parsing.
+
+    - The complexity lies not in doing highly-contextual parsing (which seems
+      hard), but in generating the permutations (seems not too difficult) and
+      then testing each permutation against the args (also not too difficult).
+
+    - Search for "Concrete alternatives" below for an example.
+
 - GrammarSpecParser and complex Phrase parsing.
   - Planning.
   - Basic GrammarSpecParser implementation.
@@ -434,7 +456,7 @@ Side note on CLI grammars relative to regexes:
       - At every stage, any of the options are possible.
       - But then once an option appears, it cannot appear again.
       - That means CLI parsing is highly context-sensitive.
-  
+
 Within those rules in mind, we can handle the grammar of a typical subcommand
 program as follows:
 
@@ -992,13 +1014,27 @@ Example 1:
             OPT -x (0,1)
             OPT -y (0,1)
 
-    # Phrase alternatives:
+    # Concrete alternatives:
 
-        -b  [0,0]
-        -a  [1,0]
-        -c  [1,1]
-        -x  [0,1]  [1,2]
-        -y  [0,2]  [1,3]
+          -b -x -y -a -c
+        ----------------
+
+        #                 No args.
+
+        #  .              -b scenarios
+        #  .  .
+        #  .     .
+        #  .  .  .
+
+        #           .     -a scenarios, without -c
+        #     .     .
+        #        .  .
+        #     .  .  .
+
+        #           .  .  -a scenarios, with -c
+        #     .     .  .
+        #        .  .  .
+        #     .  .  .  .
 
 Example 2:
 
@@ -1023,13 +1059,6 @@ Example 2:
             POS a  1
             POS b  (0,1)
 
-    # Phrase alternatives:
-
-        -x  [0,0]  [1,1]
-        -z  [0,1]  [1,2]
-        -y  [1,0]
-        pos [0,1]  [1,3]  [1,4]
-
 Example 3:
 
     # Grammar:
@@ -1048,12 +1077,6 @@ Example 3:
             POS a  1
             POS b  1
             POS c  1
-
-    # Phrase alternatives:
-
-        -x  [0,0]
-        -y  [1,0]
-        pos [2,0]  [2,1]  [2,2]
 
 Example 4:
 
