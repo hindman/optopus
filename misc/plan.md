@@ -39,7 +39,62 @@ Mascot: an octopus.
       hard), but in generating the permutations (seems not too difficult) and
       then testing each permutation against the args (also not too difficult).
 
-    - Search for "Concrete alternatives" below for an example.
+    - Search for "concrete alternatives" below for an example.
+
+    - How would "tolerant" options be handled in this plan?
+
+- Tolerant options raise some questions:
+
+    - Search for "example 8".
+
+    - In a case like that, if --help is among the args, a user still wants
+      opto-py to parse as much as possible (eg, so the user can distinguish
+      general help from help for a specific subcommand).
+
+    - In other words, opto-py should attempt to parse the variants in the
+      usual way, but if --help is present it should disregard end-user
+      mistakes and keep parsing.
+
+    - Some end-user mistakes will cause opto-py to misinterpret the
+      situation. For example, `--fubb X configure` would cause opto-py to
+      ignore --fubb (an unknown option) and then treat X as the first
+      positional, assigning it to task.
+
+    - Nonetheless, opto-py should do what it can.
+
+    - And will tolerant options be fairly limited (eg, `* --help`, which
+      means "accept anything if --help is present") or will users be allow
+      to define more complex grammars that trigger tolerant parsing (eg `*
+      --foo X task=blort --info`, when means "accept anything if several
+      things are present).
+
+    - More broadly, should tolerance be an attribute of the variant or of
+      an opt?
+
+    - This discussion makes me think tolerance should not be a variant
+      attribute. What users want is for opto-py to parse options in the normal
+      way (to the extent feasible) while overlooking end-user mistakes if a
+      specific opt is present (--help, --version, etc). If this is sound logic,
+      the "example 8" grammar should not have a help-variant; rather, something
+      like [* --help] should be added to all of the other variants.
+
+    - If we use that approach, how does the user express the grammar? For
+      example, appending `[* --help]` to the end of every variant seems
+      incorrect, because we should allow --help to be present in either zone or
+      even as the first element of the second zone.
+
+    - At least in complex cases (with variants and anchors), requiring the user
+      to express tolerant opts within the grammar would be unhelpful,
+      cluttering things up with little benefit. Meanwhile, in simple cases,
+      adding a tolerant opt to the grammar would be easy. And it's conceivable
+      that a user might want a tolerant opt only for certain variants.
+
+    - Maybe there is a middle ground: have users express tolerant opts in the
+      grammar variants (consistent with the overall approach), but don't
+      require them to do it in a fully-explicit manner. In other words, if `[*
+      --help]` were appended to a variant, opto-py would allow the opt to be
+      present in any zone or at the start of a zone that normally required
+      anchored elements.
 
 - GrammarSpecParser and complex Phrase parsing.
   - Planning.
