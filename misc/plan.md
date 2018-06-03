@@ -19,6 +19,25 @@ Mascot: an octopus.
 
 # Road map
 
+- Next:
+
+    - Implement a proof-of-concept for the new parsing approach.
+
+    - Start with a more complex grammar from one of the unit tests.
+
+    - That grammar will produce a top-level Phrase.
+
+    - Process the Phrase to generate a list of all possible ConcretePhrase
+      instances for a given max N, where N is the N of command line args
+      given by an end-user.
+
+    - A phrase is concrete if it is "static": no alternatives or varying
+      nargs/ntimes.
+
+    - If that's relatively easy to do, then try to implement a parser that
+      checks every ConcretePhrase against the command-line args and returns all
+      either the one ConcretePhrase that matches or raises an error.
+
 - A different parsing idea.
 
     - At run time, get the list of args to be parsed. That list will have N
@@ -41,7 +60,13 @@ Mascot: an octopus.
 
     - Search for "concrete alternatives" below for an example.
 
-    - How would "tolerant" options be handled in this plan?
+    - What causes a grammer to generate multiple possibilities?
+
+        .              | Where expressed | Note
+        -----------------------------------------------------
+        Varying nargs  | Opt             | .
+        Varying ntimes | Opt or Phrase   | Includes required.
+        Alternatives   | Phrase          | Includes variants.
 
 - Tolerant options raise some questions:
 
@@ -55,18 +80,20 @@ Mascot: an octopus.
       usual way, but if --help is present it should disregard end-user
       mistakes and keep parsing.
 
-    - Some end-user mistakes will cause opto-py to misinterpret the
-      situation. For example, `--fubb X configure` would cause opto-py to
-      ignore --fubb (an unknown option) and then treat X as the first
-      positional, assigning it to task.
+    - Some end-user mistakes will cause opto-py to misinterpret the situation.
+      For example, `--fubb X configure` would cause opto-py to treat --fubb as
+      an unknown option having nargs=0 and then treat X as the first
+      positional, assigning it to task. (The user's code could still do the
+      right thing by checking whether `configure` is among the positionals
+      rather than just looking at task-positional).
 
     - Nonetheless, opto-py should do what it can.
 
-    - And will tolerant options be fairly limited (eg, `* --help`, which
-      means "accept anything if --help is present") or will users be allow
-      to define more complex grammars that trigger tolerant parsing (eg `*
-      --foo X task=blort --info`, when means "accept anything if several
-      things are present).
+    - And will tolerant options be fairly limited (eg, `* --help`, which means
+      "accept anything if --help is present") or will users be allowed to
+      define more complex grammars that trigger tolerant parsing: for example,
+      `* --foo X task=blort --info`, when means "accept anything if several
+      things are present.
 
     - More broadly, should tolerance be an attribute of the variant or of
       an opt?
@@ -85,16 +112,25 @@ Mascot: an octopus.
 
     - At least in complex cases (with variants and anchors), requiring the user
       to express tolerant opts within the grammar would be unhelpful,
-      cluttering things up with little benefit. Meanwhile, in simple cases,
+      cluttering things up with little benefit. Although in the actual case of
+      "Example 8", the problem is easy for the user, who could also include a
+      tolerant --help in the general-options. Meanwhile, in simple cases,
       adding a tolerant opt to the grammar would be easy. And it's conceivable
       that a user might want a tolerant opt only for certain variants.
 
-    - Maybe there is a middle ground: have users express tolerant opts in the
-      grammar variants (consistent with the overall approach), but don't
-      require them to do it in a fully-explicit manner. In other words, if `[*
-      --help]` were appended to a variant, opto-py would allow the opt to be
-      present in any zone or at the start of a zone that normally required
-      anchored elements.
+    - One approach might be the following:
+
+        - If a user need fine-grained control, they can specify tolerant opts
+          in the grammar.
+
+        - But also let then add tolerant opts via API convenience methods that
+          would do things like add this tolerant opt to (a) all zones in a
+          variant, or (b) to everything.
+
+        - Additionally, the grammar could support a syntax for those
+          conveniences: `[* --help]` (normal), `[** --help]` (all zones), or
+          `[*** --help]` (everywhere; in this case, such an opt would be
+          specified in its own pseudo-variant).
 
 - GrammarSpecParser and complex Phrase parsing.
   - Planning.
@@ -1400,8 +1436,8 @@ General principles:
   - In other words, for positionals:
 
     - Optional/required behavior is governed by ntimes.
-    - Adjacent-repetition of a positional is governed by nargs.
     - Positionals always have a nargs of at least 1.
+    - Adjacent-repetition of a positional is governed by nargs.
 
   - Internally, a ParsedOpt will store values as a 2D array:
 
