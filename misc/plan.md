@@ -38,6 +38,9 @@ Mascot: an octopus.
       checks every ConcretePhrase against the command-line args and returns all
       either the one ConcretePhrase that matches or raises an error.
 
+    - See Parser._do_alternative_parse(). This approach is not correct. I need
+      to generate the cross-product from the top-level (not the Opt-level).
+
 - A different parsing idea.
 
     - At run time, get the list of args to be parsed. That list will have N
@@ -66,6 +69,7 @@ Mascot: an octopus.
         -----------------------------------------------------
         Varying nargs  | Opt             | .
         Varying ntimes | Opt or Phrase   | Includes required.
+        Aliases        | Opt             | .
         Alternatives   | Phrase          | Includes variants.
 
 - Tolerant options raise some questions:

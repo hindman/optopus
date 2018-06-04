@@ -5,6 +5,8 @@ import re
 import sys
 import textwrap
 from collections import defaultdict, OrderedDict, Iterable
+from copy import deepcopy
+from itertools import product
 
 ################
 # Constants.
@@ -136,7 +138,7 @@ class Parser(object):
             else:
                 seen.add(nm)
 
-    def parse(self, args = None, should_exit = True):
+    def parse(self, args = None, should_exit = True, alt = False):
         # If given no args, get them from sys.argv.
         args = list(sys.argv[1:] if args is None else args)
 
@@ -147,7 +149,10 @@ class Parser(object):
         # Try to parse the args.
         HELP = ('HELP',)
         try:
-            popts = self._do_parse(args)
+            if alt:
+                popts = self._do_alternative_parse(args)
+            else:
+                popts = self._do_parse(args)
             if self.add_help and popts['help'].value:
                 raise OptoPyError(HELP)
             return popts
@@ -177,6 +182,12 @@ class Parser(object):
         phrase = Phrase(subphrases = subphrases)
         self.parsed_options = ParsedOptions(opts = self.opts, args = args)
         return phrase.parse(args, parsed_options = self.parsed_options)
+
+    def _do_alternative_parse(self, args):
+        subphrases = [Phrase(opt = opt) for opt in self.opts]
+        self.phrase = Phrase(subphrases = subphrases)
+        self.parsed_options = ParsedOptions(opts = self.opts, args = args)
+        return self.phrase.parse(args, parsed_options = self.parsed_options)
 
     def _add_wildcard_opts(self):
         self.opts.extend([
@@ -709,9 +720,35 @@ class Opt(object):
         self.sections = list(sections or [])
         self.tolerant = tolerant
 
-    def __repr__(self):
+    def _concrete_opts(self):
+
+        # TODO: this isn't correct. The cross-product does not make sense at
+        # the Opt-level. Rather, it must be done from the top level -- the full
+        # cross product of all possibilities (including those where an Opt
+        # might appear ntimes=0, which isn't a valid Opt).
+
+        xs = list(range(self.nargs[0], self.nargs[1] + 1))
+        ys = list(range(self.ntimes[0], self.ntimes[1] + 1))
+        zs = self.aliases or [self.option]
+
+        for nargs, ntimes, option in product(xs, ys, zs):
+
+            if ntimes:
+                o = Opt(
+                     option,
+                     nargs = nargs,
+                     ntimes = ntimes,
+                     text = self.text,
+                     sections = self.sections,
+                )
+                # print(o)
+
+    def __str__(self):
         fmt = 'Opt({})'
         return fmt.format(self.option)
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def is_long_opt(self):
@@ -942,6 +979,17 @@ class Phrase(object):
                  opt = None):
         self.subphrases = subphrases or []
         self.opt = opt
+
+    def __str__(self):
+        if self.opt:
+            fmt = '{}'
+            return fmt.format(self.opt)
+        else:
+            fmt = 'Phrase({})'
+            return fmt.format(self.subphrases)
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def phrase_type(self):

@@ -558,3 +558,34 @@ def test_add_help(std_streams):
         assert output == exp
         std_streams.reset()
 
+def test_new_parsing_strategy():
+
+    p = Parser(
+        Opt('-n', nargs = 1),
+        Opt('--trek', nargs = (2, 4)),
+        Opt('--bones', nargs = (3, 5)),
+        Opt('<x>'),
+        Opt('<y>'),
+    )
+
+    args = [
+        '-n', 'Spock',
+        '--trek', 't1', 't2',
+        '--bones', 'b11', 'b12', 'b13', 'b14', 'b15',
+        'phasers',
+        'beam',
+    ]
+    exp = dict(
+        n = 'Spock',
+        trek = ['t1', 't2'],
+        bones = ['b11', 'b12', 'b13', 'b14', 'b15'],
+        x = 'phasers',
+        y = 'beam',
+    )
+    popts = p.parse(args, should_exit = False, alt = True)
+    got = dict(popts)
+    assert got == exp
+
+    o = Opt('--bones', nargs = (3, 5))
+    o._concrete_opts()
+
