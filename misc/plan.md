@@ -17,6 +17,29 @@ Mascot: an octopus.
 
 --------
 
+# Examples from odin-client where we fought against argparse
+
+Allow for extra options for Odin devs, based on env var.
+
+Special options that exit-with-msg (without griping about other issues):
+    --version
+    --examples
+    --autocomplete
+
+General and task-specific help (without griping about other issues):
+    odin-client -h
+    odin-client TASK -h
+    odin-client -h TASK -h
+
+Using a YAML config file:
+
+    - Settings from the config file should control the `default` settings for
+      the argument parser.
+
+    - When running `odin-client configure`, you do not want to load the
+      existing config file.
+
+
 # Road map
 
 - Next:
