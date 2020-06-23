@@ -19,6 +19,10 @@ Mascot: an octopus.
 
 # Examples from odin-client where we fought against argparse
 
+Recently encountered use case not supported by argparse:
+
+    https://stackoverflow.com/questions/62524681/python-using-diferent-options-multiple-times-with-argparse
+
 Allow for extra options for Odin devs, based on env var.
 
 Special options that exit-with-msg (without griping about other issues):
