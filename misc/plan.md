@@ -17,33 +17,6 @@ Mascot: an octopus.
 
 --------
 
-# Examples from odin-client where we fought against argparse
-
-Recently encountered use case not supported by argparse:
-
-    https://stackoverflow.com/questions/62524681/python-using-diferent-options-multiple-times-with-argparse
-
-Allow for extra options for Odin devs, based on env var.
-
-Special options that exit-with-msg (without griping about other issues):
-    --version
-    --examples
-    --autocomplete
-
-General and task-specific help (without griping about other issues):
-    odin-client -h
-    odin-client TASK -h
-    odin-client -h TASK -h
-
-Using a YAML config file:
-
-    - Settings from the config file should control the `default` settings for
-      the argument parser.
-
-    - When running `odin-client configure`, you do not want to load the
-      existing config file.
-
-
 # Road map
 
 - Next:
@@ -498,7 +471,7 @@ some key weaknesses found in most parsing libraries.
       CLI grammar, when expressing the generated usage text, and when
       organizing the options text into sections.
 
-  - Providing users with full access to the parser configuration. both via the
+  - Providing users with full access to the parser configuration, both via the
     API and in the form of standard, serializable data structures.
 
 --------
@@ -1074,6 +1047,39 @@ Handling literal option-arg choices.
 
         frob [-x] [-y] all
         frob [-x] [-y] <pos>...
+
+    https://stackoverflow.com/questions/62524681
+
+        - wants a grammar where each -C option resets the configuration
+
+        - the desired end result is a list of configurations
+
+        frob -w 100 -c 50 -C -w 1000 -c 500 -p /foo -C -w 5% -c 3% -p /bar
+             ----(3)-----    ---------(1)----------    --------(2)--------
+
+--------
+
+# Examples from odin-client where we fought against argparse
+
+Allow for extra options for Odin devs, based on env var.
+
+Special options that exit-with-msg (without griping about other issues):
+    --version
+    --examples
+    --autocomplete
+
+General and task-specific help (without griping about other issues):
+    odin-client -h
+    odin-client TASK -h
+    odin-client -h TASK -h
+
+Using a YAML config file:
+
+    - Settings from the config file should control the `default` settings for
+      the argument parser.
+
+    - When running `odin-client configure`, you do not want to load the
+      existing config file.
 
 --------
 
