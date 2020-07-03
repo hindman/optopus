@@ -96,7 +96,7 @@ Mascot: an octopus.
     - And will tolerant options be fairly limited (eg, `* --help`, which means
       "accept anything if --help is present") or will users be allowed to
       define more complex grammars that trigger tolerant parsing: for example,
-      `* --foo X task=blort --info`, when means "accept anything if several
+      `* --foo X task=blort --info`, which means "accept anything if several
       things are present.
 
     - More broadly, should tolerance be an attribute of the variant or of

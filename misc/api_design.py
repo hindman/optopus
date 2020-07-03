@@ -186,7 +186,7 @@ Definition syntax:
 
     []        Grouping, optional.
     ()        Grouping, required.
-    |         Alternatation.
+    |         Alternation.
 
     <xy>      Variable text; assigned to "xy" in results.
     foo=bar   Literal text "bar"; assigned to "foo" in results.
