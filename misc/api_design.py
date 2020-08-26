@@ -9,7 +9,7 @@ p.parse_known(args = None)
 p.help_text(section = None)
 p.error_text()
 p.warn(msg)
-p.error(msg = None, code = None))
+p.error(code = None, msg = None))
 p.exit(code = None, msg = None)
 
 ####
@@ -166,7 +166,7 @@ Naming:
     variant
     partial
     destination
-    literal 
+    literal
     option group name
     zone
 
@@ -228,9 +228,9 @@ Notes about varying positionals:
 
     - Similarly a varying positional cannot be used with an option taking a
     varying nargs, unless the user tells opto-py to allow it.
-    
+
         - In that case, opt-py will attach arguments eagerly.
-        
+
         - And users should advise their end-user to use the double-hyphen to
         designate the start of positional arguments.
 

@@ -21,6 +21,8 @@ Mascot: an octopus.
 
 - Next:
 
+    - Why opto-py rather than optopy?
+
     - Implement a proof-of-concept for the new parsing approach.
 
     - Start with a more complex grammar from one of the unit tests.
@@ -1109,16 +1111,34 @@ and, in more limited ways, to OPT nodes that have a varying nargs attribute.
   ntimes. But at least in the default case (ie, without such a policy)
   only one POS can have a variable ntimes.
 
-- In addition, a POS node with variable ntimes and an OPT node with variable
-  nargs raise similar ambituities -- at least in the absence of a
-  policy. In this case, one possible policy is the use of `--` to signal
-  the boundary between options and positional arguments.
-
 - Similar issues arrive if an option resides in multiple leaves in the Phrase
   tree and if those Opt instances have varying ntimes attributes. For example,
   if -x is in one leaf with ntimes=(1,3) and also in another leaf with
   ntimes=(1,3), and if there are 4 -x options in the CLI args, there is not an
   unambiguous way to bind those CLI args to the leaves.
+
+- A fairly obvious policy to resolve many such ambiguities:
+
+  - Do not try to enforce against parser definitions with the possibility for
+    ambiguous end-usages.
+
+  - Instead, let programmers use the library as they see fit.
+
+  - The consequence of that freedom: they will place some burden on end-users
+    to arrange their command line in a non-ambiguous fashion (through opt and
+    arg ordering and the use of the `--` marker).
+
+  - Default to greedy left-to-right parsing (similar to regex), with back-off
+    until the overall parse succeeds. Do not worry about possible alternative
+    parses of the same arguments.
+
+  - A later feature addition could be to have the parser find every successful
+    parse and report an error if there is not exactly one.
+
+- In addition, a POS node with variable ntimes and an OPT node with variable
+  nargs raise similar ambituities -- at least in the absence of a
+  policy. In this case, one possible policy is the use of `--` to signal
+  the boundary between options and positional arguments.
 
 Example 1:
 
