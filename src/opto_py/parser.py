@@ -4,7 +4,8 @@ import json
 import re
 import sys
 import textwrap
-from collections import defaultdict, OrderedDict, Iterable
+from collections import defaultdict, OrderedDict
+from six.moves.collections_abc import Iterable
 from copy import deepcopy
 from itertools import product
 
@@ -86,6 +87,8 @@ class Parser(object):
     }
 
     def __init__(self, *xs, **kws):
+        # This signature is bad for documentation.
+
 
         for k in kws:
             if k not in self.VALID_KWARGS:

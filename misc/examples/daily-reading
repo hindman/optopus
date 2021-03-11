@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# Compares two different setups for a simple script:
+# Compares different setups for a simple script:
 #
 # - opto-py : usage text
 # - opto-py : API
@@ -41,7 +41,7 @@ p = parser(
 # API: simple spec.
 ####
 
-# Bare minimum.
+# Spec.
 spec = '--sleep SEC --dryrun <url_group>...'
 p = parser(simple = spec)
 

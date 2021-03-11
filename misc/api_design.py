@@ -24,6 +24,7 @@ o = Opt(
     choices    = ('A', 'B', 'C', 'D'),
     required   = False,
     tolerant   = False,                 # Setting option makes grammar fully tolerant.
+    high       = False,                 # A high-precedence option (eg --help).
 )
 
 ####
@@ -32,7 +33,7 @@ o = Opt(
 
 p = Parser(
     # Via simple Opt.
-    Opt('--since TERM', type = int, default = lib.last_updated + 1),
+    Opt('--since TERM', type = int, default = 123),
     Opt('--limit N', type = int, default = 0),
     Opt('--rebuild'),
     Opt('--experiment EXP'),
@@ -146,16 +147,16 @@ Example: from spec to Opt() instances to parsing logic:
 
 For example:
 
-    `general      : [--verbose] [--log-file <path>]
-    `other        : [--hi] [--bye]
+    general`      : [--verbose] [--log-file <path>]
+    other`        : [--hi] [--bye]
 
-    configure     : `general ; !task=configure --odin-env --od-user
-    submit        : `general ; !task=submit -c -r [--start-job]
-    get           : `general ; !task=get -j [--json [--indent] | --b64 | --yaml]
-    drop          : `general ; !task=drop !what=(first|last|random) [--print] <n>
-    help          : --help **
-    other1        : [-a] [-b] `other <fubb>...
-    other2        : [-x] [-y] `other (<a> <b> <c> [-z]){2,7}
+    configure     : general` ; task=configure! --odin-env --od-user
+    submit        : general` ; task=submit! -c -r [--start-job]
+    get           : general` ; task=get! -j [--json [--indent] | --b64 | --yaml]
+    drop          : general` ; task=drop! what=(first|last|random)! [--print] <n>
+    help          : --help*
+    other1        : [-a] [-b] other` <fubb>...
+    other2        : [-x] [-y] other` (<a> <b> <c> [-z]){2,7}
 
 Naming:
 
@@ -172,12 +173,12 @@ Naming:
 
 Overall structure:
 
-    `foo : PARTIAL_DEFINITION
+    foo` : PARTIAL_DEFINITION
     bar  : VARIANT_DEFINITION
 
 Definition syntax:
 
-    `foo      Insert the "foo" partial definition.
+    foo`      Insert the "foo" partial definition.
     ;         Divider between zones.
     !         Anchor item(s) to the front of a zone.
 
@@ -194,7 +195,9 @@ Definition syntax:
     ...       Repetition: 1+ or 0+ depending on parens.
     {m,n}     Repetition: m to n, inclusive.
 
-    **        Wildcard: parse variant tolerantly.
+    *         High precedence option: if present, do a best-effort parse
+              and dispatch to a callable rather that executing the
+              normal program or halting on bad input.
 
 Notes about the `other2` variant:
 
@@ -206,7 +209,7 @@ Notes about the `other2` variant:
     - For example:
 
         # Input.
-        A1 B1 C1 -z A2 B2 C2
+        A1 B1 C1 -z A2 B2 C2      # -z with first group
 
         # ParseOption info.
         a : [A1,   A2]

@@ -21,27 +21,40 @@ Mascot: an octopus.
 
 - Next:
 
-    - Why opto-py rather than optopy?
+    - Remind myself how to run things and write it down.
+
+        pytest -s -v tests/
+
+    - Start getting all of the notes and plans organized and clarified.
+
+        - Keep an up-to-date current design plan: syntax, key terminology,
+          class names and relationships, etc.
+
+        - Read current code to get back up to speed. Take notes on the key
+          points.
+
+        - Keep long explanations and evaluations out of the core road map
+          and design docs.
+
+    - After collecting all important class, function, and attribute names
+      assess the overall naming plan. The codes read very heavy. Can we lighten
+      things up without loss of meaning? A lot of the names look very similar
+      -- hard to read.
+
+    - Project name: change to optopuss.
+
+    - Going forward, aim for small, immutable data objects where possible.
+      There's no problem including attrs as a dependency (it has no
+      dependencies and no CLI use case).
 
     - Implement a proof-of-concept for the new parsing approach.
 
-    - Start with a more complex grammar from one of the unit tests.
+    - Can we drop the elaborate Lexer/classic-parsing stuff. It's heavy.
+      Can't all of the needed parsing be done in one function with
+      various helper utility functions? Both spec-parsing and arg-parsing.
 
-    - That grammar will produce a top-level Phrase.
-
-    - Process the Phrase to generate a list of all possible ConcretePhrase
-      instances for a given max N, where N is the N of command line args
-      given by an end-user.
-
-    - A phrase is concrete if it is "static": no alternatives or varying
-      nargs/ntimes.
-
-    - If that's relatively easy to do, then try to implement a parser that
-      checks every ConcretePhrase against the command-line args and returns all
-      either the one ConcretePhrase that matches or raises an error.
-
-    - See Parser._do_alternative_parse(). This approach is not correct. I need
-      to generate the cross-product from the top-level (not the Opt-level).
+    - Why "simple spec". There is an option_spec: a spec for an option.
+      What is the "simple spec" a spec of?
 
 - A different parsing idea.
 
@@ -56,7 +69,7 @@ Mascot: an octopus.
     - Generate a full list of every concrete permutation (a) allowed by the
       phrases and (b) subject to the limit N.
 
-    - Iterate over those permutations and see if any of them match the args we
+    - Iterate over those permutations and see if any of them exactly match the args we
       are parsing.
 
     - The complexity lies not in doing highly-contextual parsing (which seems
@@ -74,7 +87,21 @@ Mascot: an octopus.
         Aliases        | Opt             | .
         Alternatives   | Phrase          | Includes variants.
 
+    - Some implementation notes:
+
+        - Start with a more complex grammar from one of the unit tests.
+
+        - Phrase
+        - ConcretePhrase     # Static: no alternatives or varying nargs/ntimes
+
+        - See Parser._do_alternative_parse(). This approach is not correct. I
+          need to generate the cross-product from the top-level (not the
+          Opt-level).
+
 - Tolerant options raise some questions:
+
+    - NOTE: see api_design.py for a more up-to-date decision making about this
+      concept.
 
     - Search for "example 8".
 
@@ -113,8 +140,8 @@ Mascot: an octopus.
 
     - If we use that approach, how does the user express the grammar? For
       example, appending `[* --help]` to the end of every variant seems
-      incorrect, because we should allow --help to be present in either zone or
-      even as the first element of the second zone.
+      incorrect, because we should allow --help to be present in any zone of of
+      each variant.
 
     - At least in complex cases (with variants and anchors), requiring the user
       to express tolerant opts within the grammar would be unhelpful,
@@ -126,17 +153,19 @@ Mascot: an octopus.
 
     - One approach might be the following:
 
-        - If a user need fine-grained control, they can specify tolerant opts
+        - If a user needs fine-grained control, they can specify tolerant opts
           in the grammar.
 
-        - But also let then add tolerant opts via API convenience methods that
+        - But also let them add tolerant opts via API convenience methods that
           would do things like add this tolerant opt to (a) all zones in a
           variant, or (b) to everything.
 
         - Additionally, the grammar could support a syntax for those
-          conveniences: `[* --help]` (normal), `[** --help]` (all zones), or
-          `[*** --help]` (everywhere; in this case, such an opt would be
-          specified in its own pseudo-variant).
+          conveniences:
+
+            [* --help]    # normal
+            [** --help]   # all zones
+            [*** --help]  # everywhere (would be set in its own pseudo-variant)
 
 - GrammarSpecParser and complex Phrase parsing.
   - Planning.
@@ -359,8 +388,8 @@ The octo-py library combines the approaches:
     - Examples confirming these points:
 
         # Simple programs.
-        examples/daily-reading
         examples/get-pocket-items
+        examples/daily-reading
 
         # More complex examples: contrast the API vs the two text examples.
         examples/odin-client-via-api
@@ -384,7 +413,7 @@ The octo-py library combines the approaches:
             git diff [options] <commit> <commit> [--] [<path>...]
 
     - API-driven parsers struggle with command-lines that need any grammar that
-      falls beyond the most typical cases (mainly mutually-exclusive groups and
+      falls beyond the most typical cases (eg, mutually-exclusive groups and
       subcommands). On stackoverflow and bugs.python.org, for example, one can
       find many CLI use cases (some of them quite simple) that are not
       supported easily by argparse but that are straightforward in docopt.
@@ -432,14 +461,15 @@ some key weaknesses found in most parsing libraries.
     to organize and fine-tune help text, but not necessarily to hand-craft it.
     Some examples:
 
-    - Simple top-level configurations to control basic layout and titling
-      features.
+    - Simple top-level configurations to control basic layout, capitalization,
+      punctuation, etc.
 
     - Support for common styles: CLI vs man-page.
 
     - Ability to group options into sections.
 
-    - Ability to supply hand-crafted sections whenever needed.
+    - Ability to supply hand-crafted sections whenever needed and to
+      locate those sections with precision in the output.
 
     - Ability to control virtually every aspect of the help text contruction
       process via basic functions (no need to subclass or dig into the parser's
@@ -500,7 +530,7 @@ in an option parsing library. We would just do this instead:
   general-options with the subcommand-options, there is no benefit
   to modeling the library to include a subparser concept.
 
-In other words, a complex program does not need subparsers; in just needs N
+In other words, a complex program does not need subparsers; it just needs N
 parsers.
 
 The opto-py library will support use cases like this by providing easy ways to
@@ -508,6 +538,27 @@ combine the opts obtained from both the top-level parse and the subcommand
 parse -- both the ability to fully merge those two sets of options or to keep
 them separately namespaced (eg, Git uses `-C` both and the top level and in
 subcommands like `git-diff`).
+
+--------
+
+## Does Opt class need an action attribute?
+
+No. The argparse library basically uses the action paramenter to
+control the option type and thus the grammar.
+
+    Action       | Option type       | Example         | Stored      | Notes
+    ----------------------------------------------------------------------------------
+    store_true   | 1 flag            | --frob          | True        | True == 1
+    count        | 1+ flags          | -v -v           | N           | .
+    store        | Single            | --foo F         | F           | .
+    append       | Repeatable single | -x A -x B       | [A, B]      | Overwrite on repeat
+    extend       | Repeatable multi  | -x A B -x C D E | [A B C D E] | .
+    help         | High precedence   | .               |             | .
+    version      | "    "            | .               | .           | .
+    ----------------------------------------------------------------------------------
+    store_false  | 1 flag            | --frob          | False       | Not necessary
+    store_const  | 1 flag            | --frob          | X           | Not necessary
+    append_const | 1+ flag           | --frob --frob   | [X x]       | Not necessary
 
 --------
 
@@ -551,7 +602,7 @@ Side note on CLI grammars relative to regexes:
     grammar into a corresponding regex-style grammar.
 
       - At every stage, any of the options are possible.
-      - But then once an option appears, it cannot appear again.
+      - But then once an option appears, it cannot appear again (ignoring repeatables).
       - That means CLI parsing is highly context-sensitive.
 
 Within those rules in mind, we can handle the grammar of a typical subcommand
@@ -607,7 +658,8 @@ program as follows:
     - comm3
       - Three positionals must appear first, and then normal rules.
 
-  - You do not need a way to anchor items to the end of a zone.
+  - You do not need a way to anchor items to the end of a zone. [I now
+    think this might be wrong; see last part of this example.]
 
     - Imagine that we wanted to adjust the grammar to require two positionals
       at the end of the comm2 zone:
@@ -623,6 +675,11 @@ program as follows:
                  ; !<comm1> !<a> <b> <c> [optsB]
                  ; <comm2> <d> <e> [optsC] ; <f> <g>
                  ; !<comm3> !<h> !<i> [optsD]
+
+    - The potential PROBLEM: in organizing the parsed data, the user probably
+      wants <f> and <g> linked to <comm2> -- at least that's my assumption. But
+      are such cross-zone data linkages the way most users want the parsing to
+      behave?
 
 Handling literal option-arg choices.
 
@@ -852,6 +909,8 @@ Handling literal option-arg choices.
 
 ## Grammar-configuration syntax
 
+- NOTE: see api_design.py for more detailed, up-to-date notes.
+
 - The grammar-configuration syntax will look roughly like usage text.
 
 - But it will be more compact, easier to type, and easier to scan visually and
@@ -882,6 +941,7 @@ Handling literal option-arg choices.
         []        # grouping + optional
         ()        # grouping + required
         |         # logical OR
+        {n1,n2}   # quantifier
 
         -x        # short option
         --zoo     # long option
@@ -934,7 +994,7 @@ Handling literal option-arg choices.
 
         Grammar needed: if -x if present, -a and -b are also required.
 
-            frob [-y] [-z]
+            frob          [-y] [-z]
             frob -x -a -b [-y] [-z]
 
     http://bugs.python.org/issue11588
@@ -979,7 +1039,7 @@ Handling literal option-arg choices.
 
         Approach:
 
-            - Allow positionals to be repeated, with append-like action.
+            - Allow groups of positionals to be repeated, with append-like action.
 
     https://stackoverflow.com/questions/19114652
 
@@ -1023,7 +1083,7 @@ Handling literal option-arg choices.
 
     https://stackoverflow.com/questions/27258173
 
-        - Required: -x, -y, or both
+        - Required: -x, -y, or both (but not neither).
 
         frob -x [-y] [-z]
         frob -y [-x] [-z]
@@ -1047,17 +1107,25 @@ Handling literal option-arg choices.
 
     https://stackoverflow.com/questions/4692556
 
+        Need just the literal 'all' or 1+ positions.
+
         frob [-x] [-y] all
         frob [-x] [-y] <pos>...
 
     https://stackoverflow.com/questions/62524681
 
-        - wants a grammar where each -C option resets the configuration
+        - Wants a grammar where each -C option resets the configuration,
+          and where the specifically declared configurations are linked
+          to the -p option.
 
-        - the desired end result is a list of configurations
+        - The desired end result is a list of configurations.
 
         frob -w 100 -c 50 -C -w 1000 -c 500 -p /foo -C -w 5% -c 3% -p /bar
              ----(3)-----    ---------(1)----------    --------(2)--------
+
+        1. Configuration for the /foo volume.
+        2. Ditto, for /bar volume.
+        3. Configuration settings for all other volumes.
 
 --------
 
@@ -1469,9 +1537,12 @@ Decisions when processing a CLI arg:
 
 --------
 
-## nargs, ntimes, and the returned data structures
+## Returned data: nargs, ntimes, etc
 
 General principles:
+
+  - The returned data will have attribute names corresponding to the configured
+    Opt instances.
 
   - ntimes controlls optional/required behavior: is the thing (an option or
     positional) present and, if so, how many times?
@@ -1496,7 +1567,7 @@ General principles:
     - Positionals always have a nargs of at least 1.
     - Adjacent-repetition of a positional is governed by nargs.
 
-  - Internally, a ParsedOpt will store values as a 2D array:
+  - Internally, a ParsedOpt will store all values in a 2D array:
 
       self._values = [
           [a1, a2, ...],  # First time.
@@ -1507,42 +1578,52 @@ General principles:
     and ntimes (unless user requests non-flattened data). See the examples
     below.
 
-Options:
+Various nargs-ntimes combos and the returned data:
+
+    nargs | ntimes | data | Note
+    ----------------------------
+    0     | 0, 1   | .    | .
+    0     | 2+     | .    | .
+    1     | 0, 1   | .    | .
+    1     | 2+     | .    | .
+    2+    | 0, 1   | .    | .
+    2+    | 2+     | .    | .
 
   - nargs 0
 
-        # ntimes 0 or 1
+        # ntimes 0 or 1     # ntimes 2+
         foo: True
 
-        # ntimes 2+
-        foo: [
-            True,  # First time.
-            True,  # Second time.
-            ...    # Etc.
-        ]
+                            foo: [                        Flattened
+                                True,       First time
+                                True,       Second
+                                ...         Etc
+                            ]
+
+                            foo: [                        Non-flattened
+                                [True],
+                                [True],
+                                ...
+                            ]
 
   - nargs 1
 
-        # ntimes 0 or 1
         foo: a1
 
-        # ntimes 2+
-        foo: [
-            a1,   # First time.
-            a2,   # Second time.
-        ]
+                            foo: [
+                                a1,
+                                a2,
+                            ]
 
   - nargs 2+
 
-        # ntimes 0 or 1
         foo: [a1, a2, ...]
 
-        # ntimes 2+
-        foo: [
-            [a1, a2, a3, ...],  # First time.
-            [a1, a2, ...],      # Second time.
-            ...                 # Etc.
-        ]
+                            foo: [
+                                [a1, a2, a3, ...],
+                                [a1, a2, ...],
+                                ...
+                            ]
 
 Positionals:
 
