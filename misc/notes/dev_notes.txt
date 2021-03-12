@@ -1,0 +1,28 @@
+--------
+Dev notes
+--------
+
+Creating a new virtualenv:
+
+    V='2.7.18'
+    deactivate
+    pyenv shell $V
+    pyenv versions
+    mkvirtualenv opto-py-$V
+    full-venv
+    pip install -e .
+    pip install -e .[dev]
+    pip install -e .[test]
+
+Activate and run tests:
+
+    # Basic.
+
+    workon opto-py-3.8.5      # Or 2.7.18
+    pytest -s -v tests/
+
+    # With tox.
+
+    pyenv shell 3.8.5  2.7.18
+    tox
+
