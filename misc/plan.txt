@@ -1,62 +1,6 @@
 --------
 
-# Project name
-
-Project names in various languages:
-
-  - opto-py
-  - opto-sc
-  - opto-rb
-  - opto-pl
-
-Motto:
-
-  - The option parser that lends a hand.
-
-Mascot: an octopus.
-
---------
-
-# Road map
-
-- Next:
-
-    - Remind myself how to run things and write it down.
-
-        pytest -s -v tests/
-
-    - Start getting all of the notes and plans organized and clarified.
-
-        - Keep an up-to-date current design plan: syntax, key terminology,
-          class names and relationships, etc.
-
-        - Read current code to get back up to speed. Take notes on the key
-          points.
-
-        - Keep long explanations and evaluations out of the core road map
-          and design docs.
-
-    - After collecting all important class, function, and attribute names
-      assess the overall naming plan. The codes read very heavy. Can we lighten
-      things up without loss of meaning? A lot of the names look very similar
-      -- hard to read.
-
-    - Project name: change to optopuss.
-
-    - Going forward, aim for small, immutable data objects where possible.
-      There's no problem including attrs as a dependency (it has no
-      dependencies and no CLI use case).
-
-    - Implement a proof-of-concept for the new parsing approach.
-
-    - Can we drop the elaborate Lexer/classic-parsing stuff. It's heavy.
-      Can't all of the needed parsing be done in one function with
-      various helper utility functions? Both spec-parsing and arg-parsing.
-
-    - Why "simple spec". There is an option_spec: a spec for an option.
-      What is the "simple spec" a spec of?
-
-- A different parsing idea.
+# New parsing idea:
 
     - At run time, get the list of args to be parsed. That list will have N
       elements in it.
@@ -98,7 +42,87 @@ Mascot: an octopus.
           need to generate the cross-product from the top-level (not the
           Opt-level).
 
-- Tolerant options raise some questions:
+        - Can we drop the elaborate Lexer/classic-parsing stuff. It's heavy.
+          Can't all of the needed parsing be done in one function with various
+          helper utility functions? Both spec-parsing and arg-parsing.
+
+    - Potentially fatal(?) problem:
+
+        How does this approach allow the parser to provide good
+        error messages back to to end-user?
+
+        The errors from any failed parse based on a ConcretePhrase won't
+        necessarily be appropriate.
+
+        Perhaps I should try to enumerate the ways that users can make a
+        mistake (will be useful info no mater which design I select) and
+        whether this parsing strategy could handle those situations.
+
+            - Three examples:
+
+                - Completely unknown options.
+
+                - Too many arguments: more no-prefix args than can be
+                  allocated to the positional slots and the option-args.
+
+                - Incompatible options: eg, the parser knows about --foo,
+                  but it cannot occur when --bar is present.
+
+            - I should try to enumerate all types of errors.
+
+                - Do this and come up with specific examples based
+                  on the complex use case in api_design.py
+
+            - However, I'm starting to wonder if the complexity
+              arrives when there are variants.
+
+                - If parsing fails, each variant will have its
+                  own failure reason.
+
+                - Which one should be reported?
+
+                - Some ideas:
+
+                    - Solve by policy: use ordering of variants and select
+                      first one; or let user configure things.
+
+                        - I bet that could be bad.
+
+                        - User might have intended variant 3, so seeing
+                          an error for a different scenario would be odd.
+
+                        - Remember that the end-user does not explicitly
+                          know about the concept of variants (although they
+                          will be implied by the help text)
+
+                    - Report first variant's error, but provide a mechanism
+                      for end-user to see them all.
+
+                        - Environment variable? How would the end-use know
+                          to do it?
+
+                        - Special --help behavior? For example, take an
+                          optional opt-arg: `--help errors`. Again, how would
+                          end-user know about it. Moreoever, some users won't
+                          ask for the default opto-py help feature.
+
+                    - Analyze the variant errors to infer the intended
+                      variant.
+
+                        - Measure how "close" the user came: for example,
+                          each variant has a collection of Opt instances.
+                          Closeness for a variant would be something like:
+
+                            N Opt instances matched / N instances total
+
+                        - And/or check the variant errors for similarity. For
+                          example, 6 variants and 4 of them have the same type
+                          of error. So report that one. Not sure this would
+                          work: it might end up favoring the *wrong* variants.
+
+--------
+
+# Tolerant options
 
     - NOTE: see api_design.py for a more up-to-date decision making about this
       concept.
@@ -167,55 +191,6 @@ Mascot: an octopus.
             [** --help]   # all zones
             [*** --help]  # everywhere (would be set in its own pseudo-variant)
 
-- GrammarSpecParser and complex Phrase parsing.
-  - Planning.
-  - Basic GrammarSpecParser implementation.
-  - Complex grammars:
-    - Varying nargs and ntimes.
-    - Keeping track of partially-parsed results.
-    - Pruning no-longer-eligible subphrases.
-    - Keeping track of alternatives.
-    - Backtracking using those alternatives.
-
-- Support tolerant.
-
-- Check argparse for other behaviors.
-
-- Opt: allow `x` or `<x>`
-
-- Handle --opt=val.
-
-- Constructors should support dict-based configuration. Parser does, but not
-  FormatterConfig and Section.
-
-- help_text(): usage section: when wrapping, keep options together with their
-  option args.
-
-- Wildcards mode: allow user to specify pos/opt/both/True.
-
-- nargs and ntimes: support regex-style quantifiers, both in specs and in the
-  generated USAGE help-text.
-
-- Negatable options: `--smart-case` and `--no-smart-case`.
-
-- API thematic configuration.
-
-- Help text customization.
-
-- Support allow_abbreviation boolean.
-
-- Option customization: eg, the regex to identify long opt, short opt, etc.
-
-- Better exception strategy.
-
-- Man-page support.
-
-- Integration with configuration files.
-
-- Integration with ENV variables.
-
-- Miscellaneous.
-
 --------
 
 # Notes on parsing
@@ -226,74 +201,6 @@ Mascot: an octopus.
 - http://jayconrod.com/posts/37/a-simple-interpreter-from-scratch-in-python-part-1
 - Language Implementation Patterns: Create Your Own Domain-Specific and General Programming Languages
 - https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
-
---------
-
-# Object overview
-
-Parser:
-
-  - Command line option and argument parser.
-
-Opt:
-
-  - Configuration object used by the Parser.
-
-  - Each represents either an option or positional argument.
-
-ParsedOptions:
-
-  - Object returned by Parser.parse().
-
-  - Basic form: self.DESTINATION = VALUE.
-
-  - Also behaves like a collection: iterable, dictable, etc.
-
-ParsedOpt:
-
-  - Object used by the Parser to store parsing data.
-
-  - Represents one DESTINATION-VALUE pair.
-
-  - Holds those two attributes, plus a collection of all Opt instances that
-    played a role in arriving at that pair.
-
-  - The Parser will store a collection of ParsedOpt instances.
-
-  - That collection is the basis for ParsedOptions.
-
-Phrase:
-
-  - Object used by the parser to represent the CLI grammar and to do the
-    parsing work.
-
-  - Each Phrase can store subphrases, so the grammar forms a tree.
-
-  - The leaves of the tree will be Phrase objects corresponding to specific Opt
-    intances (ie, the options and positional arguments of interest to the
-    user).
-
-SimpleSpecParser:
-
-  - Used to parse a simple-spec given by the user.
-
-  - For example: `--foo FF GG -x --blort -z Z1 Z2 <q> <r> --debug`.
-
-  - The SimpleSpecParser.parse() method returns a Phrase representing the
-    CLI grammar desired by the user.
-
-GrammarSpecParser:
-
-  - Just like SimpleSpecParser, but can parse the more featureful variant-based
-    grammars.
-
-RegexLexer:
-
-  - General purpose lexer used by SimpleSpecParser and GrammarSpecParser.
-
-Token:
-
-  - Emitted by the RegexLexer.
 
 --------
 
@@ -505,6 +412,25 @@ some key weaknesses found in most parsing libraries.
 
   - Providing users with full access to the parser configuration, both via the
     API and in the form of standard, serializable data structures.
+
+Key insights from other tools:
+
+    - Tool must parse both options and positionals.
+
+    - Customizable help text.
+
+    - Need to support other formats (eg, POD or man pages).
+
+    - Use hooks for customization by the user, not subclasses.
+
+    - Prioritize the simple use cases. Yes, add features and customization
+      capability. But do that without sacrificing super super usage patterns.
+
+    - Tool must support conversion/validation. Without validation, providing
+      good user error information is impossible.
+
+    - Maybe support the tool's usages for simple conversion/validation of
+      arguments to functions.
 
 --------
 
@@ -952,204 +878,6 @@ Handling literal option-arg choices.
 
         ;         # zone boundary
         !         # anchor
-
---------
-
-## A collection of argparse problems and scenarios
-
-    https://stackoverflow.com/questions/18025646
-
-        Grammar needed:
-
-            frob -x [other-opts]
-            frob -y -z [other-opts]
-
-    https://stackoverflow.com/questions/4466197
-
-        Grammar needed:
-
-            frob [ -s | -f [-m] ] <host>
-            frob -h
-
-    https://stackoverflow.com/questions/28660992
-
-        Grammar needed:
-
-            - Option takes 2 args.
-                - The 1st arg must be A|B|C.
-                - The 2nd arg must be X|Y|Z.
-
-            frob [-a {A,B,C} {X,Y,Z}]
-            frob -h
-
-        Solvable if the parser allows `choices` to take a list:
-
-            dict(
-                option = '-a',
-                nargs = 2,
-                choices = [(A, B, C), (X, Y, Z)],
-            )
-
-    https://stackoverflow.com/questions/25626109
-
-        Grammar needed: if -x if present, -a and -b are also required.
-
-            frob          [-y] [-z]
-            frob -x -a -b [-y] [-z]
-
-    http://bugs.python.org/issue11588
-
-        "mutually inclusive group"
-
-        Grammar needed:
-
-            frob -o           [-x]
-            frob -r (-p | -s) [-x]
-
-        Grammar needed:
-
-            frob -a -b [-x]
-            frob -c -d [-x]
-
-    http://bugs.python.org/issue10984
-
-        Grammar needed:
-
-            - User has three flags: -a -b -c
-            - Plus some other flags: -x -y
-            - The -b flag is incompatible with both -a and -c.
-
-            frob [-b]      [-x] [-y]
-            frob [-a] [-c] [-x] [-y]
-
-    https://stackoverflow.com/questions/11455218
-
-        Grammar needed:
-
-            - If -y is given, -x is required.
-
-            frob [-x] [-z]
-            frob -y -x [-z]
-
-    https://stackoverflow.com/questions/27681718
-
-        Grammar needed:
-
-            frob [-x] [-y] (<a> <b> <c>)...
-
-        Approach:
-
-            - Allow groups of positionals to be repeated, with append-like action.
-
-    https://stackoverflow.com/questions/19114652
-
-        Grammar needed:
-
-            - The entire CLI grammar can be repeated.
-
-            frob (version <n> --file <p1> <p2>)...
-
-        Control how choices are listed in usage text:
-
-            - eg, don't repeat them.
-
-                -n {foo,bar,baz}, --name {foo,bar,baz}
-
-            - or refer to them by name, and then define the name later
-
-                --othername FOO
-
-                where FOO
-                    foo
-                    bar
-                    baz
-
-    Help text with subparsers:
-
-        frob -h
-            - some people want just top-level help
-            - others want all help : top-level all subparsers
-
-    https://stackoverflow.com/questions/4042452
-
-        If program has required args/options, but it is run
-        with zero args, provide help text, not error text.
-
-        It's trivial if you have a grammar:
-
-            frob <x> <y> [-z]
-            frob --help
-            frob
-
-    https://stackoverflow.com/questions/27258173
-
-        - Required: -x, -y, or both (but not neither).
-
-        frob -x [-y] [-z]
-        frob -y [-x] [-z]
-
-    https://stackoverflow.com/questions/5257403
-
-        - wants nargs to allow a range: eg, 1 to 3.
-
-        - this works, but starts to look ugly if N gets larger
-
-            frob -x A [B [C]]
-
-            frob -x A [B [C [D [E [F]]]]]
-
-        - other possibilities:
-
-            frob -x A...{7}
-            frob -x A...{1,3}
-            frob -x A...{0,3}
-            frob -x A...{3,}
-
-    https://stackoverflow.com/questions/4692556
-
-        Need just the literal 'all' or 1+ positions.
-
-        frob [-x] [-y] all
-        frob [-x] [-y] <pos>...
-
-    https://stackoverflow.com/questions/62524681
-
-        - Wants a grammar where each -C option resets the configuration,
-          and where the specifically declared configurations are linked
-          to the -p option.
-
-        - The desired end result is a list of configurations.
-
-        frob -w 100 -c 50 -C -w 1000 -c 500 -p /foo -C -w 5% -c 3% -p /bar
-             ----(3)-----    ---------(1)----------    --------(2)--------
-
-        1. Configuration for the /foo volume.
-        2. Ditto, for /bar volume.
-        3. Configuration settings for all other volumes.
-
---------
-
-# Examples from odin-client where we fought against argparse
-
-Allow for extra options for Odin devs, based on env var.
-
-Special options that exit-with-msg (without griping about other issues):
-    --version
-    --examples
-    --autocomplete
-
-General and task-specific help (without griping about other issues):
-    odin-client -h
-    odin-client TASK -h
-    odin-client -h TASK -h
-
-Using a YAML config file:
-
-    - Settings from the config file should control the `default` settings for
-      the argument parser.
-
-    - When running `odin-client configure`, you do not want to load the
-      existing config file.
 
 --------
 
@@ -1660,232 +1388,4 @@ Positionals:
         ],
         d: DD
         e: None
-
---------
-
-## Other tools
-
-App::Cmd
-
-- Conclusion: not sure that I'm sold on this.
-
-- The documentation is difficult.
-
-- The module is uses Params::Validate and Getopt::Long::Descriptive, and it
-  does not appear to be flexible in that regard.
-
-Getopt::Long::Descriptive
-
-- Front end for Getopt::Long
-
-- Promising in several respects.
-
-- One could write a subclass to modify help text output.
-
-- But it does not support the basic element of a option arg name (eg --logfile
-  PATH)
-
-- So subclassing will take you only so far.
-
-- Supports concept of "implies": if -X, then -Y and -Z are required.
-
-- Support concept of a hidden option (not in help text).
-
-Getopt::Tabular
-
-- Tabular spec definition
-
-- Validation
-
-- Help text -- not bad, but not controllable
-
-- Can parse an array besides ARGV
-
-- Looks unmaintained.
-
-Getopt::Lucid:
-
-- Interesting approach
-
-- emphasizes readability of specification
-
-- uses a chainable module when defining specs
-
-- also allows you to merge options with config
-
-- does not produce help text
-
-Getopt::Euclid
-
-- Creates parser from your application's POD, specifically:
-
-- The POD can also include validation assertions.
-
-- Still active.
-
-- Takes input from @ARGV and puts results in %ARGV
-
-- I don't like the fact that it uses globals and is non-OO
-
-Getopt::Simple
-
-- Wrapper around Getopt::Long
-
-- Produces help text.
-
-Getopt::Declare
-
-- Builds option parser from a help-text string
-
-- It's an interesting idea.
-
-- Requires a special syntax to define the spec and that syntax is embedded in
-  the help string
-
-Other Perl modules I briefly checked:
-
-- Abridged
-- Auto
-- Base
-- Chain
-- Clade
-- Compac
-- Complete::Args
-- Easy
-- Fancy
-- Flex
-- Helpful
-- Lazy
-- LL
-- OO
-- Param
-- Plus
-- Regex
-- Tiny
-- Usaginator
-- Params::Validate
-- Params::Smart
-- Getargs::Mixed
-- Getargs::Long
-- Pod::WikiDoc
-
-Pod::Usage
-
-- You document your application with POD.
-
-- Then you simply use  Getopt::Long and PodUsage.
-
-- In addition to getting a usage message, you get a man page (based on pod2man)
-  and your application is CPAN-ready.
-
-- As a result, you have a decent level of control over the look of the usage
-  and help text. To the extent that you can't control appearance, at least your
-  documentation looks standard.
-
-- When you invoke pod2usage, you can specify a verbosity level, which controls
-  the POD sections that are rendered.
-
-- The main drawback is POD itself.
-
-- You could wrap the module to simplify usage further: trap the WARN from
-  GetOptions and invoke your own help(); then invoke pod2usage if --help or
-  --man are requested.
-
-MooseX::GetOpt
-
-- front end for Geopt::Long
-
-- requires using Moose
-
-- not many new ideas here
-
-Python plac module
-
-- This module wraps argparse.
-
-- It deduces the needed parser based on: the signature of the main() function
-  (for positional arguments); annotations of the main() function (for options).
-
-- Advertises itself as being super easy to use and setup, but by the time you
-  create all of the awkward-looking annotations, it seems like argparse would
-  have been simpler.
-
-Ruby Trollop
-
-- Very simple to use
-
-- Not much customizability.
-
-Python argparse module
-
-- Important concept: the module should parse/validate arguments or options
-
-Python's docopt:
-
-- important concept: write good usage text; build opt parser from it
-
-- important (but ultimately flawed) concept: parsing should be separate from
-  validation
-
-- Explicitly does not provide data validation. Rather, it focuses on option
-  parsing and logical validation (ie, the presence/absence of args/options in
-  relation to each other).
-
-- tried to use it, but seems half-baked
-
-- seems to have a lofty goal (infer complex logic and arg/option
-  interdependencies and requires simply from a usage text), but it's not clear
-  that the parsing code is up to the task
-
-- It's easy, for example, to cause their demo example (naval_fate.py) to fail
-  just be making a few obvious changes to the configuration.
-
-- There is a fundament problem with separating arg parsing from data
-  validation. Because docopt does not validate, it lacks the concept like
-  argparse's `choices`. This is a fundamental problem: a library focused on
-  giving the user clear usage text has no mechanism for telling the user what
-  the allowed values are for an option-argument.
-
-- The library also has an awkward way of creating the returned opts dictionary,
-  with keys like `--foo` and `<path>`.
-
-- The library's returned dict also divorces an option's presence (a True/False
-  flag) from the value of its argument. For example, a spec like `-C PATH`
-  would produce a dict like `{'-C': True, 'PATH', '/tmp/blah'}`. That seems
-  like a fundamental problem.
-
-Python: Click
-
-- interesting but opinionated
-
-- explicitly rejects customizability of help output
-
-- option parsing configuration ends up spread widely across your code base,
-  next to the actual functions that do the work, rather than centralized
-
-- is lazily composable
-
-- follows the Unix command line conventions
-
-- supports loading values from environment variables
-
-- supports for prompting of custom values
-
-- nestable and composable
-
-- supports file handling
-
-- useful helpers: getting terminal dimensions; ANSI colors; fetching direct
-  keyboard input; screen clearing; finding config paths; launching apps and
-  editors.
-
-Ruby Thor
-
-- Similar to Fabric in its approach.
-
-Ruby GLI
-
-Python invoke:
-
-- Part of the Fabric ecosystem.
 

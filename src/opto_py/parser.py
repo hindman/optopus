@@ -1147,6 +1147,7 @@ class RegexLexer(object):
         self.token_types = token_types
         self.pos = 0
         self.max_pos = len(self.text) - 1
+        self.is_eof = None
 
     def get_next_token(self):
         # Starting at self.pos, try to emit the next Token.
@@ -1232,6 +1233,8 @@ class SimpleSpecParser(GenericParser):
     def __init__(self, text):
         lexer = RegexLexer(text, SIMPLE_SPEC_TOKENS)
         super(SimpleSpecParser, self).__init__(lexer)
+        # TODO: should not need to assign as an attribute on self,
+        # since GenericParser handles that.
         self.parser_functions = (
             self.long_opt,
             self.short_opt,
