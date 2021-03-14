@@ -31,6 +31,8 @@
         Aliases        | Opt             | .
         Alternatives   | Phrase          | Includes variants.
 
+    - The library should provide an API alternative to the text-based grammar.
+
     - Some implementation notes:
 
         - Start with a more complex grammar from one of the unit tests.
@@ -71,7 +73,7 @@
             - I should try to enumerate all types of errors.
 
                 - Do this and come up with specific examples based
-                  on the complex use case in api_design.py
+                  on the complex use case in api_design.txt
 
             - However, I'm starting to wonder if the complexity
               arrives when there are variants.
@@ -124,7 +126,7 @@
 
 # Tolerant options
 
-    - NOTE: see api_design.py for a more up-to-date decision making about this
+    - NOTE: see api_design.txt for a more up-to-date decision making about this
       concept.
 
     - Search for "example 8".
@@ -400,7 +402,7 @@ some key weaknesses found in most parsing libraries.
   - Allowing users to define their arguments and options in ways that encourage
     modularity.
 
-    - In opto-py a user defines options and arguments at atomic units, separate
+    - In opto-py a user defines options and arguments as atomic units, separate
       from the issues of CLI grammar, usage variants, and options help text.
 
     - Each of those atomic units can be assigned to one or more groups of
@@ -835,7 +837,7 @@ Handling literal option-arg choices.
 
 ## Grammar-configuration syntax
 
-- NOTE: see api_design.py for more detailed, up-to-date notes.
+- NOTE: see api_design.txt for more detailed, up-to-date notes.
 
 - The grammar-configuration syntax will look roughly like usage text.
 
@@ -1122,7 +1124,7 @@ Example 8:
     submit           : [general-options] ; !task=submit -c -r [--start-job]
     get              : [general-options] ; !task=get -j [--json [--indent] | --b64 | --yaml]
     help             : * --help
-    other1           : [-x] [-y] (<a> <b> <c> [-z])...{2,7}
+    zzz              : [-x] [-y] (<a> <b> <c> [-z])...{2,7}
 
     # Phrase tree:
 
@@ -1180,7 +1182,7 @@ Example 8:
         PHR (1, 1) AND
             OPT --help 1      tolerant=True
 
-        # other1
+        # zzz
         PHR (1, 1) AND
             OPT -x (0,1)
             OPT -y (0,1)

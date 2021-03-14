@@ -2,6 +2,30 @@
 Road map
 --------
 
+- NEXT:
+
+    - Things are getting bogged down again.
+    - Focus first on two things:
+
+    - Step 1:
+
+        - Mock up the grammar API calls needed for blort-maker.
+
+        - Try to do the same for neck-diagram and nab.
+
+    - Step 2:
+
+        - Try to enumerate the ways that the end-user can provide bad input.
+
+        - Assess whether the new parsing strategy would have trouble providing
+          good error messages.
+
+    - Step 3:
+
+        - Proceed to getting the planning docs/notes in order.
+        - Simplify the planning docs.
+        - Get a concrete plan and road map.
+
 - Organize notes/plans and nail down key decisions and naming:
 
     - Read current code to get back up to speed and take notes on:
