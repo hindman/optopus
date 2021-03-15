@@ -166,8 +166,8 @@ Python's docopt:
         - The parsing code is up to the task of achieving goal of infering
           complex logic and arg/option interdependencies from a usage text).
 
-        - It's easy to cause their demo example (naval_fate.py) to fail just be
-          making a few obvious changes to the configuration.
+        - It's easy to cause their demo example (misc/examples/naval-fate) to
+          fail just be making a few obvious changes to the configuration.
 
     - There is a fundamental problem with separating arg parsing from data
       validation. Because docopt does not validate, it lacks the concept like

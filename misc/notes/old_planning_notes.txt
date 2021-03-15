@@ -2,6 +2,21 @@
 
 # New parsing idea:
 
+    - Some additional questions:
+
+        - What is the problem with the current parsing approach?
+
+            - I don't know of a specific worry.
+
+            - That said, the shape of the current Phrase.parse() does not seem
+              capable of supporting anything other than a flat grammar.
+
+            - So we are talking about a full refactor or a new approach.
+
+        - The current approach follows classic algorithms (correction: this is
+          true for grammar/spec parsing, I think, but not for the current
+          Phrase.parse). Be wary of abondoning it in response to a vague worry.
+
     - At run time, get the list of args to be parsed. That list will have N
       elements in it.
 
@@ -47,82 +62,70 @@
         - Can we drop the elaborate Lexer/classic-parsing stuff. It's heavy.
           Can't all of the needed parsing be done in one function with various
           helper utility functions? Both spec-parsing and arg-parsing.
-
-    - Potentially fatal(?) problem:
-
-        How does this approach allow the parser to provide good
-        error messages back to to end-user?
-
-        The errors from any failed parse based on a ConcretePhrase won't
-        necessarily be appropriate.
-
-        Perhaps I should try to enumerate the ways that users can make a
-        mistake (will be useful info no mater which design I select) and
-        whether this parsing strategy could handle those situations.
-
-            - Three examples:
-
-                - Completely unknown options.
-
-                - Too many arguments: more no-prefix args than can be
-                  allocated to the positional slots and the option-args.
-
-                - Incompatible options: eg, the parser knows about --foo,
-                  but it cannot occur when --bar is present.
-
-            - I should try to enumerate all types of errors.
-
-                - Do this and come up with specific examples based
-                  on the complex use case in api_design.txt
-
-            - However, I'm starting to wonder if the complexity
-              arrives when there are variants.
-
-                - If parsing fails, each variant will have its
-                  own failure reason.
-
-                - Which one should be reported?
-
-                - Some ideas:
-
-                    - Solve by policy: use ordering of variants and select
-                      first one; or let user configure things.
-
-                        - I bet that could be bad.
-
-                        - User might have intended variant 3, so seeing
-                          an error for a different scenario would be odd.
-
-                        - Remember that the end-user does not explicitly
-                          know about the concept of variants (although they
-                          will be implied by the help text)
-
-                    - Report first variant's error, but provide a mechanism
-                      for end-user to see them all.
-
-                        - Environment variable? How would the end-use know
-                          to do it?
-
-                        - Special --help behavior? For example, take an
-                          optional opt-arg: `--help errors`. Again, how would
-                          end-user know about it. Moreoever, some users won't
-                          ask for the default opto-py help feature.
-
-                    - Analyze the variant errors to infer the intended
-                      variant.
-
-                        - Measure how "close" the user came: for example,
-                          each variant has a collection of Opt instances.
-                          Closeness for a variant would be something like:
-
-                            N Opt instances matched / N instances total
-
-                        - And/or check the variant errors for similarity. For
-                          example, 6 variants and 4 of them have the same type
-                          of error. So report that one. Not sure this would
-                          work: it might end up favoring the *wrong* variants.
+          [Not sure this is a sound idea].
 
 --------
+Items from prior road map
+--------
+
+- Don't worry about using simple dependencies: attrs, short_con.
+
+- tox: py27 tests fail under tox (they pass under development virtualenv).
+
+- Implement a proof-of-concept for the new parsing approach:
+
+- asserts in code: don't rely on them for error checking
+
+- GrammarSpecParser and complex Phrase parsing.
+  - Planning.
+  - Basic GrammarSpecParser implementation.
+  - Complex grammars:
+    - Varying nargs and ntimes.
+    - Keeping track of partially-parsed results.
+    - Pruning no-longer-eligible subphrases.
+    - Keeping track of alternatives.
+    - Backtracking using those alternatives.
+
+- Support tolerant.
+
+- Check argparse for other behaviors.
+
+- Opt: allow `x` or `<x>`
+
+- Handle --opt=val.
+
+- Constructors should support dict-based configuration. Parser does, but not
+  FormatterConfig and Section.
+
+- help_text(): usage section: when wrapping, keep options together with their
+  option args.
+
+- Wildcards mode: allow user to specify pos/opt/both/True.
+
+- nargs and ntimes: support regex-style quantifiers, both in specs and in the
+  generated USAGE help-text.
+
+- Negatable options: `--smart-case` and `--no-smart-case`.
+
+- API thematic configuration.
+
+- Help text customization.
+
+- Support allow_abbreviation boolean.
+
+- Option customization: eg, the regex to identify long opt, short opt, etc.
+
+- Better exception strategy.
+
+- Man-page support.
+
+- Integration with configuration files.
+
+- Integration with ENV variables.
+
+- Miscellaneous.
+
+----------------
 
 # Tolerant options
 
@@ -192,17 +195,6 @@
             [* --help]    # normal
             [** --help]   # all zones
             [*** --help]  # everywhere (would be set in its own pseudo-variant)
-
---------
-
-# Notes on parsing
-
-- https://github.com/rspivak/lsbasi
-- https://en.wikipedia.org/wiki/Recursive_descent_parser
-- http://effbot.org/zone/simple-iterator-parser.htm
-- http://jayconrod.com/posts/37/a-simple-interpreter-from-scratch-in-python-part-1
-- Language Implementation Patterns: Create Your Own Domain-Specific and General Programming Languages
-- https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
 
 --------
 
@@ -300,10 +292,11 @@ The octo-py library combines the approaches:
         examples/get-pocket-items
         examples/daily-reading
 
-        # More complex examples: contrast the API vs the two text examples.
-        examples/odin-client-via-api
-        examples/odin-client-via-text
-        examples/odin-client-via-text-subparsers
+        # More complex examples: contrast the API vs the text examples.
+        misc/examples/odin-client-via-api
+        misc/examples/odin-client-via-api-thematic
+        misc/examples/odin-client-via-text
+        misc/examples/odin-client-via-text-subparsers
 
   - Nonetheless, text-driven option parsers have some advantages:
 
@@ -433,6 +426,69 @@ Key insights from other tools:
 
     - Maybe support the tool's usages for simple conversion/validation of
       arguments to functions.
+
+------------------
+
+Page width formatting in help text:
+
+    - By default, operate within these boundaries:
+
+        min_width = 40
+        max_width = 100
+
+    - Within those parameters, respect the current terminal width, if known.
+
+    - User-supplied text:
+
+        - Break into paragraphs (but preserve info about N of blank lines between
+          paragraphs).
+
+        - Rewrap to the desired width (probably using textwrap module).
+
+        - Leave indented paragraphs as-is.
+
+        - Provide an easy syntax for users to suppress line wrapping
+          within the text (eg something borrowed from markdown)
+
+--------
+
+API: FormatterConfig example:
+
+    p = Parser(
+
+        Opt(
+            '--blort',
+            text = '',
+            sections = ['foo', 'bar'],             # Can be str or list/tuple/set.
+        ),
+
+        formatter_config = FormatterConfig(
+
+            # Either Section or iterable.
+            # Default label: "Foo options"
+            Section('usage', label = '...'),
+            Section('foo'),
+            Section('bar'),
+            Section('short-opts'),
+            Section('special-notes', text = SPECIAL_NOTES, label = 'Special notes'),
+            Section('warnings', text = WARNINGS, label = 'Warnings'),
+
+            program_name        = '',
+            section_label_punct = ':',
+            after_section_label = '',
+            after_section       = '\n',
+
+            program_summary    = '',
+            style              = CLI|MAN,
+            opt_style          = CLI|MAN,
+
+        ),
+
+    )
+
+    Section
+        name  | Short; used symbolically (eg in grammar).
+        label | Used in help text
 
 --------
 
@@ -1291,6 +1347,13 @@ General principles:
         y     2       1       # Also required, but 2 args.
         z     1       (0,1)   # Optional, with 1 arg.
 
+        Mnemonic:
+
+            - nargs always counts the number of non-option arguments.
+
+                --foo {} {}     # nargs = 2
+                {x} {x}         #
+
   - In other words, for positionals:
 
     - Optional/required behavior is governed by ntimes.
@@ -1390,4 +1453,853 @@ Positionals:
         ],
         d: DD
         e: None
+
+--------
+Notes formerly in api_design.txt
+--------
+
+####
+# Parser.
+####
+
+p = Parser()
+
+p.parse(args = None)
+p.parse_known(args = None)
+p.help_text(section = None)
+p.error_text()
+p.warn(msg)
+p.error(code = None, msg = None))
+p.exit(code = None, msg = None)
+
+####
+# Opts.
+####
+
+o = Opt(
+    option     = '--job-id',            # Or string-spec with option, aliases, and arg_name.
+    aliases    = ['-j', '-J', '--jid'], # Or just one string.
+    n_args     = 1,
+    repeatable = False,                 # If true, append values.
+    choices    = ('A', 'B', 'C', 'D'),
+    required   = False,
+    tolerant   = False,                 # Setting option makes grammar fully tolerant.
+    high       = False,                 # A high-precedence option (eg --help).
+    greedy     = True,                  # Affects options arg consumption.
+)
+
+####
+# Examples.
+####
+
+p = Parser(
+    # Via simple Opt.
+    Opt('--since TERM', type = int, default = 123),
+    Opt('--limit N', type = int, default = 0),
+    Opt('--rebuild'),
+    Opt('--experiment EXP'),
+    Opt('--stats'),
+    Opt('--month M'),
+    Opt('--search TERM', repeatable = True),
+    Opt('--get ITEM'),
+
+    # Via full Opts.
+    Opt(
+        'task',
+        choices = 'configure submit upload start get stop download find'.split(),
+        desc    = 'The odin-client task to run',
+    ),
+
+    # Via dict.
+    dict(
+        option  = '--odin-env ENV',
+        groups  = 'general',
+        default = 'dev',
+        desc    = "Odin environment ('production' for most users).",
+    ),
+
+    parsing_config = {
+        allow_abbrev = True,
+        opt_prefix_rgx = ...,
+    },
+
+    formatter_config = {
+        program_name = '...',
+        etc ...
+    },
+
+)
+
+# All help-text section, in order.
+p.help_text()
+
+# Specific help-text sections, in the requested order.
+p.help_text('usage')
+p.help_text('section-foo')
+p.help_text('section-foo', 'section-bar')
+
+
+####
+# SimpleSpec.
+####
+
+For example:
+
+    --verbose --type A <x> <y> -h -g
+
+    spec = '-n NAME --foo --bar B1 B2 <x> <y>'
+    p = parser(simple = spec)
+
+
+    expr        = (longoption | shortoption | posarg)+
+
+    longoption  = longopt optarg*
+    shortoption = shortopt optarg*
+    posarg      = "<" char+ ">"
+
+    longopt     = "--" char+
+    shortopt    = "-" char
+    optarg      = [A-Z_\-\d]+
+    char        = [\w\-]
+
+Elements:
+
+    short opt  | -h
+    long opt   | --type
+    opt arg    | A
+    positional | <x>
+
+
+Example: from spec to Opt() instances to parsing logic:
+
+    Spec:
+
+        -n NAME --foo --bar B1 B2 <x> <y>
+
+    Opt instances:
+
+        -n      nargs=1
+        --foo
+        --bar   nargs=2
+        x
+        y
+
+    Parsing logic:
+
+        # Initial grammar.
+        grammar = n | foo | bar | x | y
+
+        # Keep parsing until we have used all grammar elements.
+        while grammar.has_elements():
+            parse
+            if the ParsedOpt we got is not repeatable:
+                grammer = grammar - that Opt
+
+####
+# GrammarSpec.
+####
+
+For references in my notes, let's refer to this example script as blort-maker.
+
+For example:
+
+    general`      : [--verbose] [--log-file {}]
+    other`        : [--hi] [--bye]
+    help`         : --help* --syntax*
+
+    configure     : general` ; task=configure! --odin-env {} --od-user {}
+    submit        : general` ; task=submit! -c {} -r {} [--start-job] [--person {name} {age}]
+    get           : general` ; task=get! -j {} [--json [--indent {}] | --b64 | --yaml]
+    drop          : general` ; task=drop! what=(first|last|random)! [--print] <n>
+    fubb          : [-a] [-b] other` <fubb>... (--fast | --slow)
+    zzz           : [-x] [-y] other` (<a> <b> <c> [-z]){2,7}
+
+Naming:
+
+    short opt
+    long opt
+    opt arg
+    positional
+    variant
+    partial
+    destination
+    literal
+    option group name
+    zone
+
+Overall structure:
+
+    foo` : PARTIAL_DEFINITION                               # Use equal sign to mimic BNF?
+    bar  : VARIANT_DEFINITION
+
+Variant definition syntax:
+
+    Variants and zones:
+
+        foo`      Insert the "foo" partial definition.
+        ;         Divider between zones.                     # Use comma to mimic BNF?
+        !         Anchor item(s) to the front of a zone.
+
+    Grouping and alternatives:
+
+        []        Grouping, optional.
+        ()        Grouping, required.
+        |         Alternation.
+
+    Quantifiers:
+
+        ...       Repetition: 1+ or 0+ depending on brackets or question mark.
+        {m,n}     Repetition: m through n, inclusive.
+        ?         Non-greedy quantifier.
+
+    Options:
+
+        -x           Short.
+        --xy         Long.
+
+    Positional arguments and option arguments:
+
+        <xy>      Positional.
+        {xy}      Named option argument.
+        {}        Unnamed option argument.
+
+    Literals:
+
+        foo=bar   Literal arg (bar), assigned to "foo" in results.
+        bar       Literal arg, not assigned in regults (eg, for separators).
+        'bar'     Literal arg, when it conflicts with grammar punctuation.
+
+    Special options:
+
+        *         High precedence option: if present, do a best-effort parse
+                  and dispatch to a callable rather that executing the
+                  normal program or halting on bad input.
+
+Eager option attachment at repetition boundaries:
+
+    VERDICT: yes. Could be configurable if anyone ever needed.
+
+    - In the `zzz` variant, blort-maker, a sequence of options/positionals can
+      be occur 2 to 7 times.
+
+    - If the -z option is provided by the user at a repeated-group boundary,
+      we attach it to the first group eagerly.
+
+    - For example:
+
+        # Input.
+        A1 B1 C1 -z A2 B2 C2      # -z with first group
+
+        # ParseOption info.
+        a : [A1,   A2]
+        b : [B1,   B2]
+        c : [C1,   C2]
+        z : [True, False]
+
+Notes about varying positionals:
+
+    - Only 1 positional can occur a variable N of times.
+
+    - Otherwise, we cannot allocate the values unambiguously.
+
+    - For example, all of these are ambiguous:
+
+        <a>... <b>... <c>
+        <a>...{3} <b> <c>...{2} <d>
+        (<a> <b>... <c>){2}
+
+    - Varying positionals can be used with an option taking a
+      varying nargs, provided that a reasonable parsing approach
+      is used and users arrange their command-line arguments
+      to avoid ambiguity.
+
+Notes on --help:
+
+    - VERDICT: yes, this plan is reasonable.
+
+    - This example is premised on the idea that we are aiming for
+      the following:
+
+        frob --help              # Print general help.
+        frob configure --help    # Print help for the configure task.
+
+    - But how does the user configure this help dispatching. More generally,
+      what about supporting other help-printing scenarios that rely not on
+      `--help` but on some other options: for example, I've had programs where
+      I want --examples to print some usage examples for the end-user.
+
+        - Simple use case: standard help feature for a CLI program.
+
+            p = Parser(help = True|False)
+
+        - Help hook for ultimate flexibility: any time the library's help
+          feature is triggered, call the user's function with some params and
+          let them return something to tell the library which help section to
+          print, if any. This approach is probably powerful, but it does not
+          speak to simple use cases (standard help) or the most common type of
+          complex use case (a program with subcommands, where the subcommands
+          and help sections have a 1:1 correspondence).
+
+            p = Parser(help = CALLABLE)
+
+        - To support help dispatching base on subcommands.
+
+            - Simple configuration:
+
+                o = Opt('task', help = USE_SECTIONS)
+
+                - Set the Opt's help param to a constant provided by the
+                  library. If set, this tells the library to use the parsed
+                  value of the Opt to select the help section whenever help is
+                  triggered.
+
+            - More flexible configuration:
+
+                o = Opt('task', help = DICT)
+
+                - The user maps the task values to help section names.
+
+Grammar syntax: named and unnamed arguments:
+
+    Positionals must be named:
+
+        frob <a> <b> [<c>]
+
+    Option arguments can be named or unnamed:
+
+                                            # Value of parsed data in user code:
+        frob --mode {group} {name} {n}      # - Data object with attributes.
+        frob --mode {} {} {}                # - Tuple.
+
+    Literals can be named or not:
+
+        frob action=div <a> / <b>           # Literal forward slash.
+
+        Unnamed literals won't be in the returned data for now. But support
+        could be added later.
+
+Top-level validation: for variants and overall:
+
+    - VERDICT: maybe later.
+
+    - It's not strictly needed, because validators will have contextual
+      information about all other Opts.
+
+    - But it could be handy. Without support for overall validation, users must
+      do the validation and then call a method to emit the appropriate
+      usage/error message to the end-user. With support, the validation just
+      needs to return True/False.
+
+Function signature for converters and validators:
+
+    - The defaults:
+
+        Function  | Arity | Signature
+        ----------------------------------------------
+        Converter | 1     | STR           => OBJ
+        Validator | 2     | (PARSER, OBJ) => True/False
+
+    - If needed a future feature:
+
+        Opt(arity = (C, V))   # C and V can be 1 or 2.
+
+Error message configuration:
+
+    - An Opt should be able to control how conversion and/or validation
+      failures should be reported.
+
+API needs good syntax for retrieving grammar elements:
+
+    g.get(NAME, NAME, ...)          # Get one.
+    g.get(NAME, [NAME, ...], ...)   # Get multiple.
+
+    - Support bulk configuration.
+
+    - In user validation code, they need an easy way to get sibling Opt
+      information.
+
+Variants: are they needed?
+
+    - VERDICT: yes for the full grammar. But you don't need it if you have only
+      one variant -- no need for pointless variant naming.
+
+    - Why do the variants have names? More broadly, are they really needed if
+      we have alternation?
+
+    - Some not-especially-good reasons:
+
+        - Ability to refer to partials by name. This seems true, but
+          we could solve partials a different way.
+
+        - Better error reporting. Maybe, but you only need to report info
+          about the variant if variants exist.
+
+        - As a convenience for common subcommand use cases, help text could
+          be linked to variant names in an automatic way. Maybe, but it
+          probably makes more sense to do help-dispatch via the Opt rather
+          than the variant.
+
+    - Better reasons:
+
+        - They were useful in the API grammar configuration examples.
+
+        - The name is a useful handle, if nothing else and it might
+          be handly later for other features.
+
+Parsing must occur in phases:
+
+    - Phase 1: argument type and conversion:
+
+        - Correct arg type: positional, literal, option, option arg.
+        - Conversion success.
+
+    - Phase 2: validation.
+
+Separators:
+
+    VERDICT: grammar already support separators (eg nab).
+
+    - Consider the nab use case.
+
+        - Here we have a linear sequence commands:
+
+            nab grep <> [-c] / split <> <> / item 1 / print
+
+        - Because we don't know in advance what args the commands (grep, split,
+          etc) will take, we need a command separator. The command names are
+          not sufficient as separators, because some commands might have
+          arguments with the same names.
+
+    - How would the user convey the separators in the grammar? I think
+      a partial would work:
+
+        - notes elsewhere.
+
+        VERDICT: this works.
+
+    - That seems plausible, but how would returned data be organized?
+
+        - In this case we have a quantified variant? That's new.
+
+        - Two problems:
+
+            VERDICT: not a problem.
+
+            1. We need to link the repeated cmd to a name in the returned data.
+
+            2. And somehow the library needs to know that the first cmd and the
+            optional sequence of separator-plus-cmd should be unified under the
+            same collection in the returned data.
+
+                ### NOTE: not a problem. It's already the convention elsehwere
+                and in my planning notes.
+
+                - Thus, I don't think we need open-ending target assignment
+                  for the know use cases.
+
+        - This starts to seem awkward, but the first issue could be solved by
+          generalizing the storage-target naming convention we already have.
+          Let any element (or group of elements) in the grammar take a target
+          name.
+
+            VERDICT: general target assignment not needed
+
+            - For example:
+
+                main : config=([--size {}] [-x] [-z]) run=(<paths>... [--overwrite])
+
+                In returned data:
+
+                    opts.config : Data(size, x, z)
+                    opts.run    : Data(paths, overwrite)
+
+            - The nab use case:
+
+                main : commands=(cmd` [ / cmd` ]...)
+
+        - That might work but it's getting very complex visually. It this
+          a case where the underlying API should do the work?
+
+Variants: other possible features:
+
+    - Unnamed variants: in the neck-diagram example, the 'main' variant
+      isn't doing anything useful.
+
+        VERDICT: it's not required. Smaller parts of the syntax will be used
+        elsewhere. The parser needs to handle subsets of the full syntax.
+
+    - Sub-variants.
+
+        VERDICT: supportable, but not now.
+
+        - That might seem like extra complexity, but it might not alter the
+          difficulty by very much. We already have a tree-based approach for
+          the grammar. Sub-variants just an a new level in the recursion.
+
+        - Do we have any known use cases for subvariants? Not directly,
+          but the neck-diagram example is suggestive. For example, take
+          neck-diagram as an example, but add more restrictions:
+
+Simple spec vs grammar spec:
+
+    - VERDICT: abandon simple spec. Use the real grammar.
+
+    - Is this separation needed?
+
+    - Just convert simple spec to the official syntax
+
+        # Instead of this.
+        -n NAME --foo --bar B1 B2 <x> <y>
+
+        # Do this.
+        -n {} --foo --bar {} {} <x> <y>
+
+    - And then allow the grammar to use variants (the complex case) or not.
+
+Grammar syntax and the optionality of pure flags:
+
+    VERDICT: syntax should be explicit about flag optionality.
+
+    - On one hand, a flag option makes no sense being a required
+      input. That would imply that syntax diagrams don't need
+      square brackets around pure flags.
+
+    - However, the convention appears to show usage syntax in
+      explicit terms.
+
+    - In this case, following convention seems wise.
+
+Simplify the tentative syntax plan?
+
+    - VERDICT: no.
+
+    - Retain as archival planning thoughts.
+
+        - Target name assignment for literals:
+
+            for v in ('configure', 'submit', 'get', 'drop'):
+                o = g.variants[v].convert_to_literal('configure', 'task')
+
+            - That seems annoying and not intuitive.
+
+            - VERDICT: retain.
+
+        - Boolean OR:
+
+            - This is an easy call: syntax is intuitive and API
+              usage for this situation is annoying.
+
+            - VERDICT: retain.
+
+        - Quantifiers.
+
+            - The ... is intuitive and practically a convention.
+
+            - The {m,n} syntax directly mimics regex and is also
+              quite intutive.
+
+            - VERDICT: retain.
+
+        - Partials.
+
+            p1 = g.get('general')
+            p1.config(partial = True)
+            g.get('configure').insert('task', p1)
+
+            - Also annoying: user must make two configurations.
+
+            - And the partial syntax isn't heavy; in fact, I find the
+              syntax more intuitive.
+
+            - VERDICT: retain.
+
+        - Zones and anchoring.
+
+            names = ('configure', 'submit', 'get', 'drop')
+            get.get(names).insert_zone(anchor = True)
+
+            - API usage seems not too bad.
+
+            - The zone syntax not too obtrusive, and its a mixture of
+              intutive (zone) and not intuitive (anchor)
+
+            - However, there' no benefit to supporting zones in syntax
+              without anchors.
+
+            - I suspect the desire for zones and anchoring is moderately
+              low but still present.
+
+            - VERDICT: retain, but take care to phase the documentation.
+
+        - High precedence.
+
+            g.get(['help', 'syntax']).config(high = True)
+
+            - API is pretty easy.
+
+            - But the syntax is neither heavy nor unintuitive.
+
+            - Syntax is not hard to support.
+
+            - VERDICT: retain.
+
+Sytax example: neck-diagram script:
+
+    - This is a non-standard command line program.
+
+    - But the grammer will handle it fine.
+
+        (
+            cmd=snum   <snum>             |
+            cmd=fnum   <fnum>             |
+            cmd=number numbering=(on|off) |
+            cmd=tuning <notes>...         |
+            cmd=fret   <syms>...          |
+            cmd=invert <syms>...
+        )...
+
+Sytax example: nab:
+
+    cmd` :  (
+                cmd=chomp                          |
+                cmd=findall <rgx>                  |
+                cmd=grep <rgx> [-i] [-v] [-s]      |
+                cmd=range <start> <stop> [<step>]  |
+                cmd=run <code> [-g {}] [-a]
+            )
+
+    main : cmd` [ / cmd` ]...
+
+Grammar via API:
+
+    - Defining a grammar with the API is not unreasonable (shown below), but
+      it's also verbose, not easily read/scanned, and less intutive that
+      the text syntax.
+
+    - Furthermore, the simplicity compounds. Most command-line scripts have
+      simple needs. And those simple examples often shine under the syntax. The
+      simplest occurs even inside the API usage -- namely, when defining Opt
+      instances:
+
+        Opt('--foo {a} {b}')      # Simpler and more powerful.
+        Opt('-foo', nargs = 2)
+
+    - That said, I suspect some future grammar features won't fit very easily
+      in the syntax. So users need a way to create a grammar with syntax and
+      then tweak it with API.
+
+        - An example scenario and variant to illustrate: in order to group opts
+          under a child namespace within the returned data (not known to be
+          needed yet), we could generalize the target assignment syntax:
+
+                main : config=([--size {}] [-x] [-z]) run=(<paths>... [--overwrite])
+
+        - But that syntax solution is a bit noisy and opaque. An alternative is
+          to keep syntax simple and let more complex configuration happen via
+          API.
+
+            # Basic syntax:
+
+                main : [--size {}] -x -z <paths>... [--overwrite]
+
+            # Additional API configuration:
+
+                g = Grammar('SYNTAX ...')
+                main = g.variants['main']
+                main.group('--size', '-x', '-z', target = config)
+                main.group('paths', 'overwrite', target = run)
+
+    # The full API usage example:
+
+        general_opts = Partial(
+            'general',
+            Opt('--verbose'),
+            Opt('--log-file {}'),
+        )
+
+        other_opts = Partial(
+            'other',
+            Opt('--hi'),
+            Opt('--bye'),
+        )
+
+        task_opt = Opt(
+            'task',
+            choices = ('configure', 'submit', 'get', 'drop'),
+        )
+
+        general_zone = Zone(general_opts)
+
+        variants = [
+            Variant(
+                'configure',
+                general_zone,
+                Zone(
+                    Choice(task_opt, value = 'configure', anchor = True),
+                    Opt('--odin-env {}', required = True),
+                    Opt('--od-user {}', required = True),
+                ),
+            ),
+            Variant(
+                'submit',
+                general_zone,
+                Zone(
+                    Choice(task_opt, value = 'submit', anchor = True),
+                    Opt('-c {}', required = True),
+                    Opt('-r {}', required = True),
+                    Opt('--start-job'),
+                    Opt('--person {name} {age}'),
+                ),
+            ),
+            Variant(
+                'get',
+                general_zone,
+                Zone(
+                    Choice(task_opt, value = 'get', anchor = True),
+                    Opt('-j {}', required = True),
+                    Alternatives(
+                        Group(
+                            Opt('--json', required = True),
+                            Opt('--indent {}'),
+                        ),
+                        Opt('--b64'),
+                        Opt('--yaml'),
+                        required = False,
+                    ),
+                ),
+            ),
+            Variant(
+                'drop',
+                general_zone,
+                Zone(
+                    Choice(task_opt, value = 'drop', anchor = True),
+                    Opt('what', choices = ('first', 'last', 'random'), required = True),
+                    Opt('--print'),
+                    Opt('n'),
+                ),
+            ),
+            Variant(
+                'fubb',
+                Opt('-a'),
+                Opt('-b'),
+                other_opts,
+                Opt('fubb', nargs = (1, None)),
+                Alternatives(
+                    Opt('--fast'),
+                    Opt('--slow'),
+                ),
+            ),
+            Variant(
+                'zzz',
+                Opt('-x'),
+                Opt('-y'),
+                other_opts,
+                Group(
+                    Opt('a'),
+                    Opt('b'),
+                    Opt('c'),
+                    Opt('-z'),
+                    ntimes = (2, 7),
+                ),
+            ),
+            Variant(
+                'help',
+                Opt('--help', high = True),
+            ),
+        ]
+
+End-user input error scenarios:
+
+    VERDICT: this issue is manageable.
+
+    - Conclusions:
+
+        - Each parse() call will generate up to N failures (one per variant or,
+          under the new parsing idea, one per concrete permutation).
+
+        - Ideally, we would report the error most aligned with user intent.
+
+        - Error types can guide that logic. Some errors are specific and
+          telling with respect to intent; other tend to be disqualifying. And
+          one type of error is so egregrious that intent does not matter.
+
+    - Reporting precendence for errors:
+
+        - First consider error precendence:
+
+            - Global problems.
+            - Conversion and validation problems.
+            - Structural problems: non-options.
+            - Structural problems: options.
+
+        - Then check alignment between arguments and expectations.
+
+            - Greater alignment implies intent.
+            - Example metric: N Opts matched / N Opts
+
+        - Finally, use input ordering within the grammar.
+
+        - As a possible future feature, support verbose error reporting,
+          triggered by env variables and/or Parser config via API.
+
+    - Types of errors:
+
+        - NOTE: order of the errors is important, but I'm not certain
+          what the ordering trait is:
+
+            - Precedence?
+
+            - Specificity? Non-specific errors tend to be disqualifying
+              (meaning, the current variant or concrete permutation is probably
+              not applicable or intended) and specific errors tend to pull in
+              the opposite direction (we know what the user intended, but the
+              goofed up a detail).
+
+            - Also, errors related to options are more specific or telling (an
+              option is either known, compatible, and allowed ... or not) than
+              non-options (which could be positionals or option arguments).
+
+        - Global problems:
+
+            * Errors that are true across all variants and groups. Intent does
+              not matter. Reporting an unknown option is both true and helpful.
+
+            - Unknown option: overall.
+
+        - Structural problems: options:
+
+            * Unknown, incompatible, or disallowed options. Compared to
+              other error types, these are more disqualifying.
+
+            - Incompatible options: a known option is not in the current
+              variant/group. This means it is incompatible with whatever
+              argument or option told us which variant/group we are in.
+
+            - Mutually exclusive options: known options both belonging to the
+              same Alternation instance.
+
+            - Missing option: required option is not present.
+
+        - Structural problems: non-options:
+
+            * Invalid number of non-option arguments. Due to ambiguities
+              between positionals and option arguments under some scenarios,
+              these errors are somewhat less specific and more disqualifying
+              than structural problems for options.
+
+            - Too few/many arguments for an option (the latter applies when
+              supplied grammar has no positionals).
+
+            - Too few/many positionals.
+
+        - Conversion and validation problems:
+
+            * Here we have slotted all arguments into valid slots (none of the
+              structure problems listed below), but the actual values don't
+              pass muster. These failures are the most specific and telling
+              with respect to intent.
+
+            - Option arguments.
+
+            - Positionals.
 

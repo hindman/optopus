@@ -17,7 +17,7 @@ Opt
     # Configuration object used by the Parser.
     # Each represents either an option or positional argument.
 
-    option_spec
+    option_spec          # Rename to spec?
     nargs
     ntimes
     required
@@ -26,11 +26,21 @@ Opt
     aliases
     tolerant
     option
-    destination
+    destination          # Or dest?
     _opt_type
-    arg_names
-    aliases
+    arg_names            # Is the argparse metavar or something else?
     _nargs
+    default
+    factory              # Default for collections.
+    convert              # Callable(s)
+    validate             # Callable(s)
+    dispatch             # Callable(s)
+    choices
+    required             # A convenience; implemented as ntimes
+    description          # Or desc?
+    high
+    hide                 # Mechanism to hide option in usage and help text.
+    negated_by           # Mechanism to create flag negatives (when default is True, eg from config)
 
 ParsedOptions
     # Object returned by Parser.parse().

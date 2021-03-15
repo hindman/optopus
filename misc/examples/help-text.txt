@@ -73,42 +73,24 @@ Short options:
   -u --user
 
 --------
-Formatting details
+Git page width formatting behavior
 --------
 
-Widths:
+Git help respects terminal width, up to a point.
 
-    - git help appears to respect terminal width, up to a point.
+    - At short widths (less than 70), the behavior is a bit balky,
+      but Git does try. For example, I see reasonable looking output
+      at 50 width.
 
-        - At short widths (less than 70), the behavior is a bit balky,
-          but Git does try. For example, I see reasonable looking output
-          at 50 width.
+    - At extremely short widths, things become ridiculous, so it's
+      not worth worrying about.
 
-        - At extremely short widths, things become ridiculous, so it's
-          not worth worrying about.
+    - With very wide terminals (eg 200 or more), Git appears to keep
+      widening the output, but it does so in a chunky way, leaving
+      quite a bit of unused real estate on the right side.
 
-        - With very wide terminals (eg 200 or more), Git appears to keep
-          widening the output, but it does so in a chunky way, leaving
-          quite a bit of unused real estate on the right side.
-
-        - But there is no apparent max width. For example, I observed Git
-          widths of 360 or more as I kept widening and shrinking font size.
-
-    - By default, operate within these boundaries:
-
-        min_width = 40
-        max_width = 100
-
-    - Within those parameters, respect the current terminal width, if known.
-
-User-supplied text:
-
-    - Break into paragraphs (but preserve info about N of blank lines between
-      paragraphs).
-
-    - Rewrap to the desired width (probably using textwrap module).
-
-    - Leave indented paragraphs as-is.
+    - But there is no apparent max width. For example, I observed Git
+      widths of 360 or more as I kept widening and shrinking font size.
 
 --------
 CLI style components
@@ -164,46 +146,6 @@ OPTIONS
         $opt_help_text
 
     ...
-
---------
-API
---------
-
-p = Parser(
-
-    Opt(
-        '--blort',
-        text = '',
-        sections = ['foo', 'bar'],             # Can be str or list/tuple/set.
-    ),
-
-    formatter_config = FormatterConfig(
-
-        # Either Section or iterable.
-        # Default label: "Foo options"
-        Section('usage', label = '...'),
-        Section('foo'),
-        Section('bar'),
-        Section('short-opts'),
-        Section('special-notes', text = SPECIAL_NOTES, label = 'Special notes'),
-        Section('warnings', text = WARNINGS, label = 'Warnings'),
-
-        program_name        = '',
-        section_label_punct = ':',
-        after_section_label = '',
-        after_section       = '\n',
-
-        program_summary    = '',
-        style              = CLI|MAN,
-        opt_style          = CLI|MAN,
-
-    ),
-
-)
-
-Section
-    name  | Short; used symbolically (eg in grammar).
-    label | Used in help text
 
 --------
 MAN-page style: git-merge

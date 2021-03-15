@@ -2,111 +2,34 @@
 Road map
 --------
 
-- NEXT:
+Organize and simplify the planning docs/notes:
 
-    - Things are getting bogged down again.
-    - Focus first on two things:
+    old_planning_notes.txt
 
-    - Step 1:
+    classes_and_attributes.txt
+    road_map.txt
+    api_notes.txt
+    design_decisions.txt
+    dev_notes.txt
+    goals_and_reqs.txt
+    grammar_syntax_notes.txt
+    other_tools.txt
+    reference_material.txt
 
-        - Mock up the grammar API calls needed for blort-maker.
+Design plan.
 
-        - Try to do the same for neck-diagram and nab.
+    - Terminology and names.
+    - Class names and relationships.
+    - Spec syntax.
+    - API.
+    - Naming conventions.
 
-    - Step 2:
+    * The code currently reads as very heavy; try to lighten up naming.
 
-        - Try to enumerate the ways that the end-user can provide bad input.
+Road map.
 
-        - Assess whether the new parsing strategy would have trouble providing
-          good error messages.
+Rename project: optopuss:
 
-    - Step 3:
-
-        - Proceed to getting the planning docs/notes in order.
-        - Simplify the planning docs.
-        - Get a concrete plan and road map.
-
-- Organize notes/plans and nail down key decisions and naming:
-
-    - Read current code to get back up to speed and take notes on:
-
-        - Important issues.
-        - Key class, function, attribute names.
-
-    - Create an up-to-date current design plan:
-
-        - Terminology and names.
-        - Class names and relationships.
-        - Spec syntax.
-        - API.
-
-        * The code currently reads as very heavy.
-        * Try to lighten things up, if possible.
-        * Try to rely more on small, immutable data objects.
-        * Don't worry about using simple dependencies: attrs, short_con.
-        * The "simple spec" name isn't very good.
-
-    - Move long evaluations out of the action-oriented docs.
-
-- Rename name: optopuss:
-
-    - Git repo: remote, then local.
+    - Git repo: remote and local.
     - Package and module name.
-
-- tox: py27 tests fail under tox (they pass under development virtualenv).
-
-- Implement a proof-of-concept for the new parsing approach:
-
---------
-Items from prior road map
---------
-
-- GrammarSpecParser and complex Phrase parsing.
-  - Planning.
-  - Basic GrammarSpecParser implementation.
-  - Complex grammars:
-    - Varying nargs and ntimes.
-    - Keeping track of partially-parsed results.
-    - Pruning no-longer-eligible subphrases.
-    - Keeping track of alternatives.
-    - Backtracking using those alternatives.
-
-- Support tolerant.
-
-- Check argparse for other behaviors.
-
-- Opt: allow `x` or `<x>`
-
-- Handle --opt=val.
-
-- Constructors should support dict-based configuration. Parser does, but not
-  FormatterConfig and Section.
-
-- help_text(): usage section: when wrapping, keep options together with their
-  option args.
-
-- Wildcards mode: allow user to specify pos/opt/both/True.
-
-- nargs and ntimes: support regex-style quantifiers, both in specs and in the
-  generated USAGE help-text.
-
-- Negatable options: `--smart-case` and `--no-smart-case`.
-
-- API thematic configuration.
-
-- Help text customization.
-
-- Support allow_abbreviation boolean.
-
-- Option customization: eg, the regex to identify long opt, short opt, etc.
-
-- Better exception strategy.
-
-- Man-page support.
-
-- Integration with configuration files.
-
-- Integration with ENV variables.
-
-- Miscellaneous.
 
