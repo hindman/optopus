@@ -1,0 +1,209 @@
+--------
+API-driven vs text-driven
+--------
+
+Two fundamental configuration strategies for argument parsers:
+
+    - API-driven:
+
+        - User configures a parser via the programmatic API.
+        - The parser generates the help text.
+        - Typically allows user to override with literal help text, if desired.
+        - Examples: argparse and many others.
+
+    - Text-driven:
+
+        - User writes literal usage and options text.
+        - Library derives the parser from that text.
+        - This approach is much less common.
+        - Examples: docopt.
+
+The optopuss library combines the best of both approaches:
+
+    - API-driven.
+
+        - Tends to require less typing.
+
+        - Generated usage text is mostly fine, especially for simpler projects.
+
+        - Most developers probably prefer an API-driven approach over
+          hand-formatting help text themselves.
+
+        - API-generated help text will follow the conventions for documenting
+          command-line programs -- conventions that few developers have studied
+          in depth and would rather not worry about.
+
+    - Text-driven for grammar and naming:
+
+        - Even though my experiments configuring argument parsers of varyig
+          complexity via usage text convinced me of the benefits of an
+          API-driven approach, text-driven option parsers have notable
+          advantages. Those advantages are focused on command-line grammar and
+          the associated naming for parsed data returned to the caller.
+
+        - The text-driven approach emphasizes the idea of usage variants, a
+          technique that can greatly enhance usage-text readability --
+          especially for complex programs but also for small ones.
+
+                git diff [options] [<commit>] [--] [<path>...]
+                git diff [options] --cached [<commit>] [--] [<path>...]
+                git diff [options] <commit> <commit> [--] [<path>...]
+
+                frob [--debug] [--foo <f>] <path>...
+                frob --help
+                frob --version
+
+        - Usage variants open up a range of possibilities in the kinds of
+          command-line grammars that can be supported. API-driven parsers
+          struggle with command-lines that need any grammar falling beyond the
+          most typical cases. On stackoverflow and bugs.python.org, for
+          example, one can find many command-line use cases (some of them quite
+          simple) that are not supported easily by argparse but that are
+          straightforward in docopt.
+
+        - Finally, usage syntax is both efficient and intuitive. When internet
+          users discuss command-line grammar scenarios, they invariably use a
+          usage syntax to specify the desired grammar. In my own research, I
+          experimented with defining the needed grammars via an API, but I
+          consistently found the text-based approach simpler to express and
+          read.
+
+Configuration via usage syntax is focused on grammar:
+
+    - Optopuss keeps that syntax fairly clean, readable, and intutive by
+      focusing it solely on the grammar and naming -- the area where it excels.
+      Other details, if any, are handled via the API.
+
+    - The syntax is also intuitive because it relies heavily on common
+      conventions for documenting command-line programs.
+
+    - The syntax will look roughly like familiar usage text, plus a small
+      number of additional syntax elements focused on supporting flexible
+      command-line grammar.
+
+          - Usage variants. Discussed above.
+
+          - Zones and anchors to regulate argument ordering.
+
+          - High-precendence options, which are options (--help, --version,
+            --examples, and so forth) that must trigger some behavior if they
+            are present, even if the command line happens to have errors in it.
+            Most libraries insist on reporting the error rather than providing
+            the help.
+
+          - Partial variants, which use the variant concept to define a named
+            group of options and/or arguments that can then be inserted into
+            one or more usage variants -- avoiding repetition in the definition
+            of complex grammars.
+
+          - Destinations for literal-positionals.
+
+    - The syntax opens up a wide range of possibilities for complex programs or
+      unusual grammars 
+
+    - But it also helps at the micro scale, simplifying the configuration of
+      individual options.
+
+--------
+Addressing weaknesses common in other libraries
+--------
+
+Providing users with simple ways to handle command-line grammars and usage
+variants (just noted).
+
+Supporting everything from quick-and-dirty scripts to complex, highly
+customized command-line programs, with other variants in between.
+
+    - At once extreme, optopuss allows you to parse any default-behavior
+      command line, with zero configuration. Just import and go. This parser
+      won't enforce any rules, but it will tell you what the user entered --
+      which is good enough for many types of quick-and-dirty scripts, debugging
+      sessions, experiments, and even early prototypes.
+
+            import optopuss
+            opts = optopuss.parse_args()
+
+    - At the other extreme, you could build the next Git or a variety of
+      programs with idiosyncratic grammars, heavily customized help text, and
+      many other features.
+
+    - Sitting between the two extremes are numerous conveniences and sensible
+      defaults to make option parsing easy, no matter what level of control
+      your application needs.
+
+Allowing users to control the generated help text in a fine-grained manner.
+
+    - Program complexity increases the need to organize and fine-tune help
+      text, but not necessarily to write and layout the whole thing.
+
+    - Optopuss provides many mechanisms for that fine tuning:
+
+        - Simple top-level configurations to control basic layout,
+          capitalization, punctuation, etc.
+
+        - Support for common styles: command-line vs man-page.
+
+        - Ability to group options into sections.
+
+        - Ability to supply hand-crafted sections whenever needed and to locate
+          those sections with precision in the output.
+
+        - Ability to control nearly all parameters driving the help text
+          contruction process via configuration and, where necessary, through
+          the programmatic hooks. There should be no need to subclass optopuss
+          or delve into the parser's innards.
+
+Allowing users to enhance usage-text readability by being able to refer to
+groups of options and to omit either short or long options.
+
+    - API-generated usage text tends to be poor not only because it lacks usage
+      variants but also because the generated text exhaustively lists all
+      options in all of their permutations (short and long).
+
+    - Especially as the number of options grows, readability can be improved
+      greatly by referring to sets of options by symbolic names rather than by
+      enumerating every possibility.
+
+    - Similarly, readability can be enhanced by focusing the usage text on just
+      the long-options (or just the short-options) and then providing a mapping
+      between short and long options latter in the help text.
+
+Allowing users to define their arguments and options in ways that encourage
+modularity.
+
+    - In optopuss a user defines options and arguments as atomic units,
+      separate from the issues of command-line grammar, usage variants, and
+      options help text.
+
+    - Each of those atomic units can be assigned to one or more groups of
+      related options.
+
+    - Then those options or option-groups can be leveraged when defining the
+      command-line grammar, when expressing the generated usage text, and when
+      organizing the options text into sections.
+
+Providing users with full access to the parser configuration, both via the API
+and in the form of standard, serializable data structures.
+
+Providing users more conventient mechanisms to reduce repetition in
+the configuration of the parser.
+
+--------
+Key insights from other tools
+--------
+
+Prioritize the simple use cases. Yes, add features and customization
+capability. But do that without sacrificing super super usage patterns.
+
+Must parse both options and positionals.
+
+Customizable help text.
+
+Give users access to all tunable parameters.
+
+Use hooks for customization by the user, not subclasses.
+
+Support conversion/validation.
+
+Support dispatch mechanisms.
+

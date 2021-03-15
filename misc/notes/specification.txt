@@ -1,0 +1,535 @@
+--------
+Grammar syntax
+--------
+
+Overall structure:
+
+    foo` : PARTIAL_DEFINITION
+    bar  : VARIANT_DEFINITION
+
+Variant definition syntax:
+
+    Variants and zones:
+
+        foo`        Insert the "foo" partial definition.
+        ,           Divider between zones.
+        !           Anchor item(s) to the front of a zone.
+
+    Grouping and alternatives:
+
+        []          Grouping, optional.
+        ()          Grouping, required (if any contents are required).
+        |           Alternation.
+
+    Quantifiers:
+
+        ...         Repetition: 1+ or 0+ depending on brackets or question mark.
+        {m,n}       Repetition: m through n, inclusive.
+        ?           Non-greedy setting for preceding quantifier.
+
+    Options:
+
+        -x           Short.
+        --xy         Long.
+
+    Positional arguments and option arguments:
+
+        <xy>        Positional.
+        {xy}        Named option argument.
+        {}          Unnamed option argument.
+
+    Literals:
+
+        foo=bar     Literal arg (bar), assigned to "foo" in results.
+        bar         Literal arg, not assigned in regults (eg, for separators).
+        'bar'       Literal arg, when it conflicts with grammar punctuation.
+
+    Special options:
+
+        *           High precedence option: if present, do a best-effort parse
+                    and dispatch to a callable rather that executing the
+                    normal program or halting on bad input.
+
+    Destinations:
+
+        foo=(...)   In returned data, organize the inner data under under a
+                    foo attribute. Most applicable for literals and variants.
+
+--------
+Syntax examples
+--------
+
+blort-maker:
+
+    - This is generally a subcommand-style script, plus various bells and
+      whistles to exercise most of the full grammar syntax.
+
+    general`      : [--verbose] [--log-file {}]
+    other`        : [--hi] [--bye]
+    help`         : --help* --syntax*
+
+    configure     : general` , task=configure! --odin-env {} --od-user {}
+    submit        : general` , task=submit! -c {} -r {} [--start-job] [--person {name} {age}]
+    get           : general` , task=get! -j {} [--json [--indent {}] | --b64 | --yaml]
+    drop          : general` , task=drop! what=(first|last|random)! [--print] <n>
+    fubb          : [-a] [-b] other` <fubb>... (--fast | --slow)
+    zzz           : [-x] [-y] other` items=(<a> <b> <c> [-z]){2,7}
+
+neck-diagram:
+
+    - This is a non-standard command line program: its grammar consists of one
+      or more subcommands with a literal separator between them.
+
+    cmd` :  commands=(
+                cmd=snum   <snum>             |
+                cmd=fnum   <fnum>             |
+                cmd=number numbering=(on|off) |
+                cmd=tuning <notes>...         |
+                cmd=fret   <syms>...          |
+                cmd=invert <syms>...
+            )...
+
+    main : cmd` [ / cmd` ]...
+
+Sytax example: nab:
+
+    - Another separator-based grammar.
+
+    cmd` :  commands=(
+                cmd=chomp                          |
+                cmd=findall <rgx>                  |
+                cmd=grep <rgx> [-i] [-v] [-s]      |
+                cmd=range <start> <stop> [<step>]  |
+                cmd=run <code> [-g {}] [-a]
+            )
+
+    main : cmd` [ / cmd` ]...
+
+--------
+Terminology
+--------
+
+Users:
+
+    - Library: the opto-py code base.
+    - User: a developer using opto-py.
+    - End-user: a user running a program that uses opto-py.
+
+Command line argument types:
+
+    - Positionals:
+        - The typical non-option argument.
+        - Positionals can vary.
+
+    - Literals:
+        - A non-varying positional.
+        - For example, subcommand names or separators.
+
+
+    - Arguments: the strings directly from the command line.
+
+    - Options: arguments with an option prefix.
+
+        - Long
+        - Short
+
+        - Option (other names: regular option, parameter option)
+        - Flag
+
+    - Parameters: arguments for an option.
+        - Parameter
+        - Literal
+
+Help text sections:
+
+    - Terminology in this project:
+        - Usage text: conveys the command-line grammar.
+        - Options text: documents the options and positional arguments, perhaps in groups.
+        - Custom sections.
+
+    - Command line style:
+        - Usage.
+        - Positional arguments.
+        - Options and/or option groups.
+        - Custom sections.
+
+    - Man-page style:
+
+        - NAME
+        - SYNOPSIS
+        - DESCRIPTION
+        - OPTIONS
+        - Custom sections.
+
+--------
+Old examples: needs editing pass
+--------
+
+####
+# Parser.
+####
+
+p = Parser()
+
+p.parse(args = None)
+p.parse_known(args = None)
+p.help_text(section = None)
+p.error_text()
+p.warn(msg)
+p.error(code = None, msg = None))
+p.exit(code = None, msg = None)
+
+####
+# Opts.
+####
+
+o = Opt(
+    option     = '--job-id',            # Or string-spec with option, aliases, and arg_name.
+    aliases    = ['-j', '-J', '--jid'], # Or just one string.
+    n_args     = 1,
+    repeatable = False,                 # If true, append values.
+    choices    = ('A', 'B', 'C', 'D'),
+    required   = False,
+    tolerant   = False,                 # Setting option makes grammar fully tolerant.
+    high       = False,                 # A high-precedence option (eg --help).
+    greedy     = True,                  # Affects options arg consumption.
+)
+
+####
+# Examples.
+####
+
+p = Parser(
+    # Via simple Opt.
+    Opt('--since TERM', type = int, default = 123),
+    Opt('--limit N', type = int, default = 0),
+    Opt('--rebuild'),
+    Opt('--experiment EXP'),
+    Opt('--stats'),
+    Opt('--month M'),
+    Opt('--search TERM', repeatable = True),
+    Opt('--get ITEM'),
+
+    # Via full Opts.
+    Opt(
+        'task',
+        choices = 'configure submit upload start get stop download find'.split(),
+        desc    = 'The odin-client task to run',
+    ),
+
+    # Via dict.
+    dict(
+        option  = '--odin-env ENV',
+        groups  = 'general',
+        default = 'dev',
+        desc    = "Odin environment ('production' for most users).",
+    ),
+
+    parsing_config = {
+        allow_abbrev = True,
+        opt_prefix_rgx = ...,
+    },
+
+    formatter_config = {
+        program_name = '...',
+        etc ...
+    },
+
+)
+
+# All help-text section, in order.
+p.help_text()
+
+# Specific help-text sections, in the requested order.
+p.help_text('usage')
+p.help_text('section-foo')
+p.help_text('section-foo', 'section-bar')
+
+####
+# SimpleSpec.
+####
+
+VERDICT: dropping this concept.
+
+For example:
+
+    --verbose --type A <x> <y> -h -g
+
+    spec = '-n NAME --foo --bar B1 B2 <x> <y>'
+    p = parser(simple = spec)
+
+
+    expr        = (longoption | shortoption | posarg)+
+
+    longoption  = longopt optarg*
+    shortoption = shortopt optarg*
+    posarg      = "<" char+ ">"
+
+    longopt     = "--" char+
+    shortopt    = "-" char
+    optarg      = [A-Z_\-\d]+
+    char        = [\w\-]
+
+Elements:
+
+    short opt  | -h
+    long opt   | --type
+    opt arg    | A
+    positional | <x>
+
+
+# Creating a Grammar via the API
+
+    general_opts = Partial(
+        'general',
+        Opt('--verbose'),
+        Opt('--log-file {}'),
+    )
+
+    other_opts = Partial(
+        'other',
+        Opt('--hi'),
+        Opt('--bye'),
+    )
+
+    task_opt = Opt(
+        'task',
+        choices = ('configure', 'submit', 'get', 'drop'),
+    )
+
+    general_zone = Zone(general_opts)
+
+    variants = [
+        Variant(
+            'configure',
+            general_zone,
+            Zone(
+                Choice(task_opt, value = 'configure', anchor = True),
+                Opt('--odin-env {}', required = True),
+                Opt('--od-user {}', required = True),
+            ),
+        ),
+        Variant(
+            'submit',
+            general_zone,
+            Zone(
+                Choice(task_opt, value = 'submit', anchor = True),
+                Opt('-c {}', required = True),
+                Opt('-r {}', required = True),
+                Opt('--start-job'),
+                Opt('--person {name} {age}'),
+            ),
+        ),
+        Variant(
+            'get',
+            general_zone,
+            Zone(
+                Choice(task_opt, value = 'get', anchor = True),
+                Opt('-j {}', required = True),
+                Alternatives(
+                    Group(
+                        Opt('--json', required = True),
+                        Opt('--indent {}'),
+                    ),
+                    Opt('--b64'),
+                    Opt('--yaml'),
+                    required = False,
+                ),
+            ),
+        ),
+        Variant(
+            'drop',
+            general_zone,
+            Zone(
+                Choice(task_opt, value = 'drop', anchor = True),
+                Opt('what', choices = ('first', 'last', 'random'), required = True),
+                Opt('--print'),
+                Opt('n'),
+            ),
+        ),
+        Variant(
+            'fubb',
+            Opt('-a'),
+            Opt('-b'),
+            other_opts,
+            Opt('fubb', nargs = (1, None)),
+            Alternatives(
+                Opt('--fast'),
+                Opt('--slow'),
+            ),
+        ),
+        Variant(
+            'zzz',
+            Opt('-x'),
+            Opt('-y'),
+            other_opts,
+            Group(
+                Opt('a'),
+                Opt('b'),
+                Opt('c'),
+                Opt('-z'),
+                ntimes = (2, 7),
+            ),
+        ),
+        Variant(
+            'help',
+            Opt('--help', high = True),
+        ),
+    ]
+
+--------
+Classes and attributes
+--------
+
+Parser
+    # Command line option and argument parser.
+
+    opts
+    simple_spec
+    wildcards
+    sections
+    formatter_config
+    program
+    add_help
+
+Opt
+    # Configuration object used by the Parser.
+    # Each represents either an option or positional argument.
+
+    option_spec          # Rename to spec?
+    nargs
+    ntimes
+    required
+    text
+    sections
+    aliases
+    tolerant
+    option
+    destination          # Or dest? In a lot of planning notes I also use target.
+    _opt_type
+    arg_names            # Is the argparse metavar or something else?
+    _nargs
+    default
+    factory              # Default for collections.
+    convert              # Callable(s)
+    validate             # Callable(s)
+    dispatch             # Callable(s)
+    choices
+    required             # A convenience; implemented as ntimes
+    description          # Or desc?
+    high
+    hide                 # Mechanism to hide option in usage and help text.
+    negated_by           # Mechanism to create flag negatives (when default is True, eg from config)
+
+ParsedOptions
+    # Object returned by Parser.parse().
+    # Basic form: self.DESTINATION = VALUE.
+    # Also behaves like a collection: iterable, dictable, etc.
+
+    args
+    parsed_opts
+    args_index
+
+ParsedOpt
+    # Used by the Parser to store parsing results for an Opt.
+    # Each ParsedOpt represents one DESTINATION-VALUE pair.
+
+    destination
+    opt
+    _values
+
+FormatterConfig
+    # Object for the user to configure details about the generation
+    # of usage and help text.
+
+    sections
+    program_name
+    section_label_punct
+    after_section_label
+    after_section
+    program_summary
+    style
+    opt_style
+    alias_style
+
+Section
+    # Used to create labeled groups of Opt instances for the purposes
+    # of help text generation.
+
+    name
+    label
+    text
+    opts
+
+GenericParser
+    # A general-purpose parser meant to be sub-classed.
+    # The subclass provides a lexer and parsing functions.
+
+    lexer
+    parser_functions
+    current_token
+
+SimpleSpecParserGenericParser(GenericParser)
+    # Used to parse a simple grammar spec given by the user.
+    # The parse() method returns a Phrase representing the CLI grammar.
+
+GrammarSpecParser
+    # Like SimpleSpecParser, but for the full variant-based grammar.
+    # Not implemented yet.
+
+Phrase
+    # Object used by Parser to represent CLI grammar and do parsing work.
+    # Each Phrase can store subphrases, so the grammar forms a tree.
+    # Leaves are Phrase objects corresponding to Opt intances.
+
+    subphrases
+    opt
+
+RegexLexer
+    # General purpose lexer for use by SimpleSpecParser and GrammarSpecParser.
+
+    text
+    token_types
+    pos
+    max_pos
+    is_eof
+
+Token
+    # Simple data object emitted by the RegexLexer.
+
+    token_type
+    value
+
+OptToken
+    # A data object holding the parsed content of a Token.
+    # Lacks constructor; should add.
+    # Callers are using these attributes.
+
+    option
+    option_spec
+    nargs
+    opt_type
+    arg_names
+
+Enum
+    # Used for collections of constants.
+    # Should switch to short-con.
+
+    _enum_name
+    _members
+    _rmembers
+
+EnumMember
+    # Used by Enum.
+
+    enum_name
+    name
+    value
+    **kws    # Set as attributes on self
+
+RegexLexerErrorException(Exception)
+    pass
+
+OptoPyErrorException(Exception)
+    pass
+

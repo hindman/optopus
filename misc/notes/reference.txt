@@ -1,4 +1,125 @@
 --------
+Parsing resources
+--------
+
+Extended Backus–Naur form (EBNF):
+
+    https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
+
+Recursive descent parser:
+
+    https://en.wikipedia.org/wiki/Recursive_descent_parser
+
+Parsing expression grammar (PEG):
+
+    # Very useful on PEGs, packrat parsing, and CFGs (notes below).
+    https://stackoverflow.com/questions/1410477/what-is-packrat-parsing
+
+    https://en.wikipedia.org/wiki/Parsing_expression_grammar
+
+Code examples:
+
+    Pyparsing: https://github.com/pyparsing/pyparsing/
+
+    Build a simple interpreter: https://github.com/rspivak/lsbasi
+
+    http://jayconrod.com/posts/37/a-simple-interpreter-from-scratch-in-python-part-1
+
+Books:
+
+    Language Implementation Patterns: Create Your Own Domain-Specific and General Programming Languages
+
+--------
+Parsing process generally
+--------
+
+Given a grammar, generate an appropriate parser.
+
+Given input text, use a lexer to generate typed tokens.
+
+Feed the tokens into the parsers, which determines validity and returns a
+syntax tree.
+
+--------
+PEGs, CFGs, and packrat parsing
+--------
+
+Resource:
+
+    https://stackoverflow.com/questions/1410477/what-is-packrat-parsing
+
+Many parsers use context-free grammars (CFG). For example:
+
+    E -> E * E | E + E | (E) | N
+    N -> D | DN
+    D -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+
+    Rule 1: nonterminal E can be replaced E * E, etc.
+    Rule 2: nonterminal N can be replaced by D or DN.
+    Rule 3: nonterminal D can be replaced by any single digit.
+
+    The rules can generate any simple arithmetic expression using +, *, parens,
+    and single digits.
+
+CFGs are a compact way to represent a collection of strings and they have a
+rich and well-understood theory. However, they have two main drawbacks.
+
+    - A CFG defines a collection of strings, but doesn't tell you how to check
+      check a string for validity. This means that whether a particular CFG
+      will lend itself to a nice parser depends on the particulars of how the
+      parser works, meaning that the grammar author may need to familiarize
+      themselves with the internal workings of their parser generator to
+      understand what restrictions are placed on the sorts of grammar
+      structures can arise.
+
+    - Grammars can be ambiguous. For example, the above grammar generates the
+      string 2 + 3 * 4, but does so in two ways. In one way, we essentially get
+      the grouping 2 + (3 * 4), which is what's intended. The other one gives
+      us (2 + 3) * 4, which is not what's meant. This means that grammar
+      authors either need to ensure that the grammar is unambiguous or need to
+      introduce precedence declarations auxiliary to the grammar to tell the
+      parser how to resolve the conflicts. This can be a bit of a hassle.
+
+Parsing expression grammars (PEG) are alternatives to CFGs. Here's the same
+arithmetic example in PEG form:
+
+    E -> F + E | F
+    F -> T * F | T
+    T -> D* | (E)
+    D -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 / 9
+
+A key feature of PEGs is explicit ordering of parsing alternatives. The syntax
+can be read as "First try this, then this, etc". In that sense, PEGs directly
+encode into the grammar structure itself how the parsing is to be done. This
+approach resolves the ambiguity noted above and lends itself toward direct
+translation from grammar to parser generation.
+
+The Packrat Parsing Algorithm builds on the PEG approach. The algorithm is
+conceptually quite simple. At a high level, a packrat parser begins with the
+start symbol, then tries the ordered choices, one at a time, in sequence until
+it finds one that works. As it works through those choices, it may find that it
+needs to match another nonterminal, in which case it recursively tries matching
+that nonterminal on the rest of the string. If a particular choice fails, the
+parser backtracks and then tries the next production.
+
+The algorithm combines the PEG approach with memoization (essentially dynamic
+programming without the bookkeeping) to achieve linear performance.
+
+--------
+API-driven vs text-driven: examples:
+--------
+
+# Simple programs.
+examples/get-pocket-items
+examples/daily-reading
+
+# More complex examples: contrast the API vs the text examples.
+misc/examples/odin-client-via-api
+misc/examples/odin-client-via-api-thematic
+misc/examples/odin-client-via-text
+misc/examples/odin-client-via-text-subparsers
+
+--------
 Other tools
 --------
 

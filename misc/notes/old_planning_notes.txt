@@ -1,21 +1,20 @@
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
 --------
 
 # New parsing idea:
 
-    - Some additional questions:
+    - What is the problem with the current parsing approach?
 
-        - What is the problem with the current parsing approach?
+        - The current code is not the issue: it won't handle the full grammar.
+          A new implementation will be written one way or another.
 
-            - I don't know of a specific worry.
-
-            - That said, the shape of the current Phrase.parse() does not seem
-              capable of supporting anything other than a flat grammar.
-
-            - So we are talking about a full refactor or a new approach.
-
-        - The current approach follows classic algorithms (correction: this is
-          true for grammar/spec parsing, I think, but not for the current
-          Phrase.parse). Be wary of abondoning it in response to a vague worry.
+        - Keep in mind that this parsing task probably fits reasonably well
+          under the classic PEG algorithm. Be wary of abondoning that
+          approach without specific reasons.
 
     - At run time, get the list of args to be parsed. That list will have N
       elements in it.
@@ -64,66 +63,7 @@
           helper utility functions? Both spec-parsing and arg-parsing.
           [Not sure this is a sound idea].
 
---------
-Items from prior road map
---------
-
-- Don't worry about using simple dependencies: attrs, short_con.
-
-- tox: py27 tests fail under tox (they pass under development virtualenv).
-
-- Implement a proof-of-concept for the new parsing approach:
-
-- asserts in code: don't rely on them for error checking
-
-- GrammarSpecParser and complex Phrase parsing.
-  - Planning.
-  - Basic GrammarSpecParser implementation.
-  - Complex grammars:
-    - Varying nargs and ntimes.
-    - Keeping track of partially-parsed results.
-    - Pruning no-longer-eligible subphrases.
-    - Keeping track of alternatives.
-    - Backtracking using those alternatives.
-
-- Support tolerant.
-
-- Check argparse for other behaviors.
-
-- Opt: allow `x` or `<x>`
-
-- Handle --opt=val.
-
-- Constructors should support dict-based configuration. Parser does, but not
-  FormatterConfig and Section.
-
-- help_text(): usage section: when wrapping, keep options together with their
-  option args.
-
-- Wildcards mode: allow user to specify pos/opt/both/True.
-
-- nargs and ntimes: support regex-style quantifiers, both in specs and in the
-  generated USAGE help-text.
-
-- Negatable options: `--smart-case` and `--no-smart-case`.
-
-- API thematic configuration.
-
-- Help text customization.
-
-- Support allow_abbreviation boolean.
-
-- Option customization: eg, the regex to identify long opt, short opt, etc.
-
-- Better exception strategy.
-
-- Man-page support.
-
-- Integration with configuration files.
-
-- Integration with ENV variables.
-
-- Miscellaneous.
+        - Don't forget about the need to support the parse_known() use case.
 
 ----------------
 
@@ -197,235 +137,6 @@ Items from prior road map
             [*** --help]  # everywhere (would be set in its own pseudo-variant)
 
 --------
-
-# Terminology
-
-Users:
-
-  - Library: the opto-py code base.
-  - User: a developer using opto-py.
-  - End-user: a user running a program that uses opto-py.
-
-Command line components:
-
-  - For example:
-
-        frob (find | copy) <path> [--verbose] [--type (file | dir | link)] [--rgx <patt>]
-
-  - Positional arguments
-    - Literal: `(find | copy)`
-    - Variable: `<path>` or `PATH`
-
-  - Options
-    - Flags: `--verbose`
-    - Non-flags: `--type` and `--rgx`
-
-  - Option arguments
-    - Literal: `(file | dir | link)`
-    - Variable: `<patt>` or `PATT`
-
-Help text sections:
-
-  - CLI style:
-    - Usage.
-    - Positional arguments.
-    - Options and/or option groups.
-    - Custom sections.
-
-  - Man-page style:
-
-    - NAME
-    - SYNOPSIS
-    - DESCRIPTION
-    - OPTIONS
-    - Custom sections.
-
-  - Terminology in opto-py:
-    - Usage text: conveys the CLI grammar.
-    - Options text: documents the options and positional arguments, perhaps in groups.
-    - Custom sections.
-
---------
-
-## Key points
-
-There are two fundamental configuration strategies:
-
-  - API-driven:
-
-    - User configures a parser via the programmatic API.
-
-    - The parser generates the help text.
-
-    - Typically allows user to override with literal help text, if desired.
-
-    - Examples: argparse and many others.
-
-  - Text-driven:
-
-    - User writes literal usage and options text.
-
-    - Library derives the parser from that text.
-
-    - This approach is much less common.
-
-    - Examples: docopt.
-
-The octo-py library combines the approaches:
-
-  - In most respects, it is API-driven.
-
-    - Tends to require less typing.
-
-    - Generated usage text is mostly fine, especially for simpler projects.
-
-    - Most developers probably prefer an API-driven approach over
-      hand-formatting help text themselves.
-
-    - API-generated help text will follow the conventions for documenting
-      command-line programs -- conventions that few developers have studied in
-      depth and would rather not worry about.
-
-    - Examples confirming these points:
-
-        # Simple programs.
-        examples/get-pocket-items
-        examples/daily-reading
-
-        # More complex examples: contrast the API vs the text examples.
-        misc/examples/odin-client-via-api
-        misc/examples/odin-client-via-api-thematic
-        misc/examples/odin-client-via-text
-        misc/examples/odin-client-via-text-subparsers
-
-  - Nonetheless, text-driven option parsers have some advantages:
-
-    - Text-driven parsers emphasize the idea of **usage variants**, a technique
-      that can greatly enhance usage-text readability -- both for simple
-      programs and especially for complex programs:
-
-            # Simple.
-            frob [--debug] [--foo <f>] <path>...
-            frob --help
-            frob --version
-
-            # Complex.
-            git diff [options] [<commit>] [--] [<path>...]
-            git diff [options] --cached [<commit>] [--] [<path>...]
-            git diff [options] <commit> <commit> [--] [<path>...]
-
-    - API-driven parsers struggle with command-lines that need any grammar that
-      falls beyond the most typical cases (eg, mutually-exclusive groups and
-      subcommands). On stackoverflow and bugs.python.org, for example, one can
-      find many CLI use cases (some of them quite simple) that are not
-      supported easily by argparse but that are straightforward in docopt.
-
-    - And when users discuss CLI-grammar scenarios, they invariably use a
-      text-oriented approach to specify the problem. In my own research, I
-      experimented with defining the needed grammars via an API, but I always
-      found the text-based approach simpler to express and read.
-
-    - For those reasons, opto-py encourages a compact text-based configuration
-      syntax for expressing the CLI grammar. That syntax does not try to
-      address other option configurations (data types, choices, etc), and it is
-      not literal usage text. Rather, it is an intuitive mechanism for
-      configuring a CLI grammar. The grammar is also configurable via an API,
-      but most users will prefer the simple text syntax.
-
-    - Also, for most use cases a simple specification like `--foo F1 F2` is an
-      easy way to declare an option --foo with nargs=2 and arg names F1 and F2.
-
-Although opto-py is primarily an API-driven library, it also aims to address
-some key weaknesses found in most parsing libraries.
-
-  - Providing users with simple ways to handle CLI grammars and usage variants
-    (just noted).
-
-  - Supporting everything from quick-and-dirty scripts to complex, highly
-    customized CLI programs, with other variants in between.
-
-    - At once extreme, opto-py allows you to parse a standard command line with
-      zero configuration. Just import and go.
-
-            import opto_py
-            opts = opto_py.parse_args()
-
-    - At the other extreme, you could build the next Git or a variety of
-      programs with idiosyncratic grammars, heavily customized help text, and
-      many other features.
-
-    - Sitting between the two extremes are numerous conveniences and sensible
-      defaults to make option parsing easy, no matter what level of control
-      your application needs.
-
-  - Allowing users to control the generated help text in a fine-grained manner.
-    One core premise of opto-py is that program complexity increases the need
-    to organize and fine-tune help text, but not necessarily to hand-craft it.
-    Some examples:
-
-    - Simple top-level configurations to control basic layout, capitalization,
-      punctuation, etc.
-
-    - Support for common styles: CLI vs man-page.
-
-    - Ability to group options into sections.
-
-    - Ability to supply hand-crafted sections whenever needed and to
-      locate those sections with precision in the output.
-
-    - Ability to control virtually every aspect of the help text contruction
-      process via basic functions (no need to subclass or dig into the parser's
-      private methods and attributes).
-
-  - Allowing users to enhance usage-text readability by being able to refer to
-    groups of options and to omit either short or long options.
-
-    - API-generated usage text tends to be poor not only because it lacks usage
-      variants but also because the generated text exhaustively lists all
-      options in all of their permutations (short and long).
-
-    - Especially as the number of options grows, readability can be improved
-      greatly by referring to sets of options by symbolic names rather than by
-      enumerating every possibility.
-
-    - Similarly, readability can be enhanced by focusing the usage text on just
-      the long-options (or just the short-options) and then providing a mapping
-      between short and long options latter in the help text.
-
-  - Allowing users to define their arguments and options in ways that encourage
-    modularity.
-
-    - In opto-py a user defines options and arguments as atomic units, separate
-      from the issues of CLI grammar, usage variants, and options help text.
-
-    - Each of those atomic units can be assigned to one or more groups of
-      related options.
-
-    - Then those options or option-groups can be leveraged when defining the
-      CLI grammar, when expressing the generated usage text, and when
-      organizing the options text into sections.
-
-  - Providing users with full access to the parser configuration, both via the
-    API and in the form of standard, serializable data structures.
-
-Key insights from other tools:
-
-    - Tool must parse both options and positionals.
-
-    - Customizable help text.
-
-    - Need to support other formats (eg, POD or man pages).
-
-    - Use hooks for customization by the user, not subclasses.
-
-    - Prioritize the simple use cases. Yes, add features and customization
-      capability. But do that without sacrificing super super usage patterns.
-
-    - Tool must support conversion/validation. Without validation, providing
-      good user error information is impossible.
-
-    - Maybe support the tool's usages for simple conversion/validation of
-      arguments to functions.
 
 ------------------
 
@@ -888,54 +599,6 @@ Handling literal option-arg choices.
     - Fine tuned usage text.
     - CLI grammars.
     - Lots more.
-
---------
-
-## Grammar-configuration syntax
-
-- NOTE: see api_design.txt for more detailed, up-to-date notes.
-
-- The grammar-configuration syntax will look roughly like usage text.
-
-- But it will be more compact, easier to type, and easier to scan visually and
-  grasp quickly.
-
-- And it will include a small number of additional syntax elements focused on
-  issues of CLI grammar.
-
-  - Variants and their names.
-  - Ability to refer to entire groups of options.
-  - Zone boundaries.
-  - Anchored items.
-  - Destinations for literal-positionals.
-  - Fully tolerant variants.
-
-- General syntax:
-
-        VARIANT_NAME : VARIANT_SPEC
-
-- An example:
-
-        get : [general-options] ; !task=get (-j XX) [--json [--indent] | --b64 | --yaml]
-
-- Syntax elements:
-
-        :         # divider between variant-name and variant-spec
-
-        []        # grouping + optional
-        ()        # grouping + required
-        |         # logical OR
-        {n1,n2}   # quantifier
-
-        -x        # short option
-        --zoo     # long option
-
-        <x>       # variable argument (supplied by end-user)
-        X         # ditto
-        x         # literal argument
-
-        ;         # zone boundary
-        !         # anchor
 
 --------
 
@@ -1458,223 +1121,6 @@ Positionals:
 Notes formerly in api_design.txt
 --------
 
-####
-# Parser.
-####
-
-p = Parser()
-
-p.parse(args = None)
-p.parse_known(args = None)
-p.help_text(section = None)
-p.error_text()
-p.warn(msg)
-p.error(code = None, msg = None))
-p.exit(code = None, msg = None)
-
-####
-# Opts.
-####
-
-o = Opt(
-    option     = '--job-id',            # Or string-spec with option, aliases, and arg_name.
-    aliases    = ['-j', '-J', '--jid'], # Or just one string.
-    n_args     = 1,
-    repeatable = False,                 # If true, append values.
-    choices    = ('A', 'B', 'C', 'D'),
-    required   = False,
-    tolerant   = False,                 # Setting option makes grammar fully tolerant.
-    high       = False,                 # A high-precedence option (eg --help).
-    greedy     = True,                  # Affects options arg consumption.
-)
-
-####
-# Examples.
-####
-
-p = Parser(
-    # Via simple Opt.
-    Opt('--since TERM', type = int, default = 123),
-    Opt('--limit N', type = int, default = 0),
-    Opt('--rebuild'),
-    Opt('--experiment EXP'),
-    Opt('--stats'),
-    Opt('--month M'),
-    Opt('--search TERM', repeatable = True),
-    Opt('--get ITEM'),
-
-    # Via full Opts.
-    Opt(
-        'task',
-        choices = 'configure submit upload start get stop download find'.split(),
-        desc    = 'The odin-client task to run',
-    ),
-
-    # Via dict.
-    dict(
-        option  = '--odin-env ENV',
-        groups  = 'general',
-        default = 'dev',
-        desc    = "Odin environment ('production' for most users).",
-    ),
-
-    parsing_config = {
-        allow_abbrev = True,
-        opt_prefix_rgx = ...,
-    },
-
-    formatter_config = {
-        program_name = '...',
-        etc ...
-    },
-
-)
-
-# All help-text section, in order.
-p.help_text()
-
-# Specific help-text sections, in the requested order.
-p.help_text('usage')
-p.help_text('section-foo')
-p.help_text('section-foo', 'section-bar')
-
-
-####
-# SimpleSpec.
-####
-
-For example:
-
-    --verbose --type A <x> <y> -h -g
-
-    spec = '-n NAME --foo --bar B1 B2 <x> <y>'
-    p = parser(simple = spec)
-
-
-    expr        = (longoption | shortoption | posarg)+
-
-    longoption  = longopt optarg*
-    shortoption = shortopt optarg*
-    posarg      = "<" char+ ">"
-
-    longopt     = "--" char+
-    shortopt    = "-" char
-    optarg      = [A-Z_\-\d]+
-    char        = [\w\-]
-
-Elements:
-
-    short opt  | -h
-    long opt   | --type
-    opt arg    | A
-    positional | <x>
-
-
-Example: from spec to Opt() instances to parsing logic:
-
-    Spec:
-
-        -n NAME --foo --bar B1 B2 <x> <y>
-
-    Opt instances:
-
-        -n      nargs=1
-        --foo
-        --bar   nargs=2
-        x
-        y
-
-    Parsing logic:
-
-        # Initial grammar.
-        grammar = n | foo | bar | x | y
-
-        # Keep parsing until we have used all grammar elements.
-        while grammar.has_elements():
-            parse
-            if the ParsedOpt we got is not repeatable:
-                grammer = grammar - that Opt
-
-####
-# GrammarSpec.
-####
-
-For references in my notes, let's refer to this example script as blort-maker.
-
-For example:
-
-    general`      : [--verbose] [--log-file {}]
-    other`        : [--hi] [--bye]
-    help`         : --help* --syntax*
-
-    configure     : general` ; task=configure! --odin-env {} --od-user {}
-    submit        : general` ; task=submit! -c {} -r {} [--start-job] [--person {name} {age}]
-    get           : general` ; task=get! -j {} [--json [--indent {}] | --b64 | --yaml]
-    drop          : general` ; task=drop! what=(first|last|random)! [--print] <n>
-    fubb          : [-a] [-b] other` <fubb>... (--fast | --slow)
-    zzz           : [-x] [-y] other` (<a> <b> <c> [-z]){2,7}
-
-Naming:
-
-    short opt
-    long opt
-    opt arg
-    positional
-    variant
-    partial
-    destination
-    literal
-    option group name
-    zone
-
-Overall structure:
-
-    foo` : PARTIAL_DEFINITION                               # Use equal sign to mimic BNF?
-    bar  : VARIANT_DEFINITION
-
-Variant definition syntax:
-
-    Variants and zones:
-
-        foo`      Insert the "foo" partial definition.
-        ;         Divider between zones.                     # Use comma to mimic BNF?
-        !         Anchor item(s) to the front of a zone.
-
-    Grouping and alternatives:
-
-        []        Grouping, optional.
-        ()        Grouping, required.
-        |         Alternation.
-
-    Quantifiers:
-
-        ...       Repetition: 1+ or 0+ depending on brackets or question mark.
-        {m,n}     Repetition: m through n, inclusive.
-        ?         Non-greedy quantifier.
-
-    Options:
-
-        -x           Short.
-        --xy         Long.
-
-    Positional arguments and option arguments:
-
-        <xy>      Positional.
-        {xy}      Named option argument.
-        {}        Unnamed option argument.
-
-    Literals:
-
-        foo=bar   Literal arg (bar), assigned to "foo" in results.
-        bar       Literal arg, not assigned in regults (eg, for separators).
-        'bar'     Literal arg, when it conflicts with grammar punctuation.
-
-    Special options:
-
-        *         High precedence option: if present, do a best-effort parse
-                  and dispatch to a callable rather that executing the
-                  normal program or halting on bad input.
-
 Eager option attachment at repetition boundaries:
 
     VERDICT: yes. Could be configurable if anyone ever needed.
@@ -2043,32 +1489,34 @@ Simplify the tentative syntax plan?
 
             - VERDICT: retain.
 
-Sytax example: neck-diagram script:
+Target assignment: needed after all:
 
-    - This is a non-standard command line program.
+    VERDICT: we do need generalized target assignment. Or, at a minimum,
+    target assignment for Opt and Partial.
 
-    - But the grammer will handle it fine.
+    - Consider examples like neck-diagram (nab is similar). The specific Opt
+      targets (cmd, snum, syms, etc) will be nested underneath the 'commands'
+      namespace (the outer target assignment). The returned data would have
+      this structure:
 
-        (
-            cmd=snum   <snum>             |
-            cmd=fnum   <fnum>             |
-            cmd=number numbering=(on|off) |
-            cmd=tuning <notes>...         |
-            cmd=fret   <syms>...          |
-            cmd=invert <syms>...
-        )...
+        opts.commands : (
+            Namespace(cmd = 'snum', snum = 6),
+            Namespace(cmd = 'tuning', notes = ('E', 'A', ...)),
+            Namespace(cmd = 'fret', syms = ('1', '3', '5')),
+            ...
+        )
 
-Sytax example: nab:
+    - Without the outer target assignment to 'commands`, the returned data
+      would be grouped by the other target names -- which badly jumbles
+      everything up:
 
-    cmd` :  (
-                cmd=chomp                          |
-                cmd=findall <rgx>                  |
-                cmd=grep <rgx> [-i] [-v] [-s]      |
-                cmd=range <start> <stop> [<step>]  |
-                cmd=run <code> [-g {}] [-a]
-            )
-
-    main : cmd` [ / cmd` ]...
+        opts = Namespace(
+            cmd   : ['snum, 'tuning', 'fnum', 'fret', 'fret', ...]
+            snum  : ['6']
+            fnum  : ['5']
+            notes : [[...]]
+            syms  : [[...], [...], ]
+        )
 
 Grammar via API:
 
@@ -2108,105 +1556,6 @@ Grammar via API:
                 main = g.variants['main']
                 main.group('--size', '-x', '-z', target = config)
                 main.group('paths', 'overwrite', target = run)
-
-    # The full API usage example:
-
-        general_opts = Partial(
-            'general',
-            Opt('--verbose'),
-            Opt('--log-file {}'),
-        )
-
-        other_opts = Partial(
-            'other',
-            Opt('--hi'),
-            Opt('--bye'),
-        )
-
-        task_opt = Opt(
-            'task',
-            choices = ('configure', 'submit', 'get', 'drop'),
-        )
-
-        general_zone = Zone(general_opts)
-
-        variants = [
-            Variant(
-                'configure',
-                general_zone,
-                Zone(
-                    Choice(task_opt, value = 'configure', anchor = True),
-                    Opt('--odin-env {}', required = True),
-                    Opt('--od-user {}', required = True),
-                ),
-            ),
-            Variant(
-                'submit',
-                general_zone,
-                Zone(
-                    Choice(task_opt, value = 'submit', anchor = True),
-                    Opt('-c {}', required = True),
-                    Opt('-r {}', required = True),
-                    Opt('--start-job'),
-                    Opt('--person {name} {age}'),
-                ),
-            ),
-            Variant(
-                'get',
-                general_zone,
-                Zone(
-                    Choice(task_opt, value = 'get', anchor = True),
-                    Opt('-j {}', required = True),
-                    Alternatives(
-                        Group(
-                            Opt('--json', required = True),
-                            Opt('--indent {}'),
-                        ),
-                        Opt('--b64'),
-                        Opt('--yaml'),
-                        required = False,
-                    ),
-                ),
-            ),
-            Variant(
-                'drop',
-                general_zone,
-                Zone(
-                    Choice(task_opt, value = 'drop', anchor = True),
-                    Opt('what', choices = ('first', 'last', 'random'), required = True),
-                    Opt('--print'),
-                    Opt('n'),
-                ),
-            ),
-            Variant(
-                'fubb',
-                Opt('-a'),
-                Opt('-b'),
-                other_opts,
-                Opt('fubb', nargs = (1, None)),
-                Alternatives(
-                    Opt('--fast'),
-                    Opt('--slow'),
-                ),
-            ),
-            Variant(
-                'zzz',
-                Opt('-x'),
-                Opt('-y'),
-                other_opts,
-                Group(
-                    Opt('a'),
-                    Opt('b'),
-                    Opt('c'),
-                    Opt('-z'),
-                    ntimes = (2, 7),
-                ),
-            ),
-            Variant(
-                'help',
-                Opt('--help', high = True),
-            ),
-        ]
 
 End-user input error scenarios:
 
