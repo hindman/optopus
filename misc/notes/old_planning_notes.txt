@@ -65,31 +65,6 @@
 
         - Don't forget about the need to support the parse_known() use case.
 
-----------------
-
---------
-
-Page width formatting in help text:
-
-    - By default, operate within these boundaries:
-
-        min_width = 40
-        max_width = 100
-
-    - Within those parameters, respect the current terminal width, if known.
-
-    - User-supplied text:
-
-        - Break into paragraphs (but preserve info about N of blank lines between
-          paragraphs).
-
-        - Rewrap to the desired width (probably using textwrap module).
-
-        - Leave indented paragraphs as-is.
-
-        - Provide an easy syntax for users to suppress line wrapping
-          within the text (eg something borrowed from markdown)
-
 --------
 
 ## The configuration API

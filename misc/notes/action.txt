@@ -24,7 +24,12 @@ Rename project: optopuss:
 
     - Git repo: remote and local.
     - Package and module name.
+    - Notes files.
+
     - How quickly could we publish a beta version of something useful?
+        - Maybe an MVP that does zero-config parsing?
+
+    - Shift to a master/dev branching model, plus release tags.
 
 --------
 Feature list

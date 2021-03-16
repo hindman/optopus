@@ -392,3 +392,28 @@ inconvenience with the partial variant mechanism. If a partial consists
 entirely of high-precendence options, the underlying options are included
 automatically in all of the grammar's variants, at least by default.
 
+--------
+Help text formatting
+--------
+
+Text wrapping:
+
+    - Respect terminal widths, if known and within boundaries:
+
+        min_width = 40
+        max_width = 100
+
+    - Allow users to adjust those parameters.
+
+    - User-supplied text:
+
+        - Break into paragraphs (but preserve info about N of blank lines
+          between paragraphs).
+
+        - Rewrap to the desired width (probably using textwrap module).
+
+        - Leave indented paragraphs as-is.
+
+        - Provide an easy syntax for users to suppress line wrapping
+          within the text (eg something borrowed from markdown)
+
