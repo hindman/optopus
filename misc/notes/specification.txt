@@ -9,51 +9,44 @@ Overall structure:
 
 Variant definition syntax:
 
-    Variants and zones:
+    Variants:
 
-        foo`        Insert the "foo" partial definition.
-        ,           Divider between zones.
-        !           Anchor item(s) to the front of a zone.
+        foo`        Insert the foo partial into the current partial or variant.
 
     Grouping and alternatives:
 
         []          Grouping, optional.
-        ()          Grouping, required (if any contents are required).
-        |           Alternation.
+        ()          Grouping.
+        |           Alternatives.
 
     Quantifiers:
 
-        ...         Repetition: 1+ or 0+ depending on brackets or question mark.
+        ...         1 or more
         {m,n}       Repetition: m through n, inclusive.
-        ?           Non-greedy setting for preceding quantifier.
+        ?           Non-greedy assignment.
 
     Options:
 
         -x           Short.
         --xy         Long.
 
-    Positional arguments and option arguments:
+    Positional arguments and option parameters:
 
         <xy>        Positional.
-        {xy}        Named option argument.
-        {}          Unnamed option argument.
+        {xy}        Named parameter.
+        {}          Unnamed parameter.
 
     Literals:
 
-        foo=bar     Literal arg (bar), assigned to "foo" in results.
-        bar         Literal arg, not assigned in regults (eg, for separators).
-        'bar'       Literal arg, when it conflicts with grammar punctuation.
+        bar         Literal, not assigned in regults (eg, for separators).
+        'bar'       Quoted literal (for cases of conflict with grammar).
+        foo=bar     Literal, assigned to foo destination in results.
 
-    Special options:
+    Other:
 
-        *           High precedence option: if present, do a best-effort parse
-                    and dispatch to a callable rather that executing the
-                    normal program or halting on bad input.
-
-    Destinations:
-
-        foo=(...)   In returned data, organize the inner data under under a
-                    foo attribute. Most applicable for literals and variants.
+        foo=(...)   Generalized destination assignment. In returned data,
+                    organize the data from ... under the foo attribute.
+                    Most applicable for variants and literal alternatives.
 
 --------
 Syntax examples
@@ -64,16 +57,16 @@ blort-maker:
     - This is generally a subcommand-style script, plus various bells and
       whistles to exercise most of the full grammar syntax.
 
-    general`      : [--verbose] [--log-file {}]
+    help`         : [--help] [--syntax]
+    general`      : [--verbose] [--log-file {}] help`
     other`        : [--hi] [--bye]
-    help`         : --help* --syntax*
 
-    configure     : general` , task=configure! --odin-env {} --od-user {}
-    submit        : general` , task=submit! -c {} -r {} [--start-job] [--person {name} {age}]
-    get           : general` , task=get! -j {} [--json [--indent {}] | --b64 | --yaml]
-    drop          : general` , task=drop! what=(first|last|random)! [--print] <n>
-    fubb          : [-a] [-b] other` <fubb>... (--fast | --slow)
-    zzz           : [-x] [-y] other` items=(<a> <b> <c> [-z]){2,7}
+    configure     : general` task=configure --odin-env {} --od-user {}
+    submit        : general` task=submit -c {} -r {} [--start-job] [--person {name} {age}]
+    get           : general` task=get -j {} [--json [--indent {}] | --b64 | --yaml]
+    drop          : general` task=drop what=(first|last|random)! [--print] <n>
+    fubb          : help` other` [-a] [-b] <fubb>... (--fast | --slow)
+    zzz           : help` other` [-x] [-y] items=(<a> <b> <c> [-z]){2,7}
 
 neck-diagram:
 
@@ -175,6 +168,9 @@ exert no influence on destination assignment.
 --------
 Old examples: needs editing pass
 --------
+
+When working on the Parser API, also see odin-client-via-api. It's
+somewhat out of date but might have useful ideas.
 
 ####
 # Parser.
@@ -426,6 +422,24 @@ API: FormatterConfig example:
         name  | Short; used symbolically (eg in grammar).
         label | Used in help text
 
+API needs good syntax for retrieving grammar elements:
+
+    g.get(NAME, NAME, ...)          # Get one.
+    g.get(NAME, [NAME, ...], ...)   # Get multiple.
+
+    - Support bulk configuration.
+
+    - In user validation code, they need an easy way to get sibling Opt
+      information.
+
+Function signature for converters and validators:
+
+    Function  | Arity | Signature
+    -------------------------------------------------------
+    Converter | 1     | STR            => OBJ/raise
+    Validator | 3     | VAL, OPT, OPTS => True/False/raise
+    Dispatch  | 3     | VAL, OPT, OPTS => None
+
 --------
 Classes and attributes
 --------
@@ -447,6 +461,7 @@ Opt
 
     option_spec          # Rename to spec?
     nargs
+    nparams
     ntimes
     required
     text

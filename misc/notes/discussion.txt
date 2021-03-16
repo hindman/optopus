@@ -45,9 +45,9 @@ The optopuss library combines the best of both approaches:
           technique that can greatly enhance usage-text readability --
           especially for complex programs but also for small ones.
 
-                git diff [options] [<commit>] [--] [<path>...]
-                git diff [options] --cached [<commit>] [--] [<path>...]
-                git diff [options] <commit> <commit> [--] [<path>...]
+                git diff [<commit>] [--] [<path>...]
+                git diff --cached [<commit>] [--] [<path>...]
+                git diff <commit> <commit> [--] [<path>...]
 
                 frob [--debug] [--foo <f>] <path>...
                 frob --help
@@ -83,20 +83,13 @@ Configuration via usage syntax is focused on grammar:
 
           - Usage variants. Discussed above.
 
-          - Zones and anchors to regulate argument ordering.
-
-          - High-precendence options, which are options (--help, --version,
-            --examples, and so forth) that must trigger some behavior if they
-            are present, even if the command line happens to have errors in it.
-            Most libraries insist on reporting the error rather than providing
-            the help.
-
           - Partial variants, which use the variant concept to define a named
             group of options and/or arguments that can then be inserted into
             one or more usage variants -- avoiding repetition in the definition
             of complex grammars.
 
-          - Destinations for literal-positionals.
+          - Named destinations for literal-positionals, variants, and
+            any other group of elements in the grammar.
 
     - The syntax opens up a wide range of possibilities for complex programs or
       unusual grammars
@@ -189,23 +182,102 @@ Providing users more conventient mechanisms to reduce repetition in
 the configuration of the parser.
 
 --------
-Key insights from other tools
+Other goals
 --------
 
 Prioritize the simple use cases. Yes, add features and customization
 capability. But do that without sacrificing super super usage patterns.
 
-Must parse both options and positionals.
+Should handle both positional arguments and options.
 
-Customizable help text.
+Usage should be intuitive and declarative, especially for the simplest and most
+common use cases. It should not bizarre syntax or on user-created complex data
+structures.
 
-Give users access to all tunable parameters.
+The parser's configuration should be expressible as a data structure -- and
+creatable from one. This is important for testing, debugging, easy integration
+with config files, and using other libraries for data validation.
 
-Use hooks for customization by the user, not subclasses.
+For complex programs or special needs, users should have full control over
+documentation. This includes both usage/help text and the styling of error
+messages.
+
+Easy system for validators to be combined flexibly.
+
+Should be applicable to validating subroutine arguments, both positional and
+key-value.
+
+Should support subcommand applications, like svn or git.
+
+Should easily support different help types: (a) brief usage/synopsis, (b) full
+help or man-page, and (c) extras or examples.
+
+Include ability to merge options from several sources: ENV variables, config
+files, command-line options. Note that the purpose of the configuration sources
+(ENV vars and config files) is to set the default values used by the
+command-line option parser. When defaults are supplied, it should also cause a
+required option to become non-required (in other words, whenever default is set
+for an option, it causes required to become False.
+
+Make it easy to test the option parser.
+
+Error handling should be under the user's control, if they want it. This is a
+serious flaw in some parsers (eg argparse). The library should support both
+"automatic" mode (where the parser will eagerly print help or error message and
+then exit) or non-automatic mode (where the parser will simply return an object
+containing all information and allow the user to decide what to do.
+
+Should have a design that is friendly to customization. Allow users to
+customize by writing simple functions or hooks rather than having to subclass.
+Consider using the pluggy library so that users can implement simple function
+hooks.
+
+Start simple: begin with core behaviors; don't support more flexibility until a
+basic working system is in place.
+
+Where possible, rely on convention over configuration: sensible defaults to
+allow the most common path to be followed with minimal setup.
+
+Provide good support for --version. Show the application's name and version
+number.
+
+Provide helper functions for warn(), exit().
+
+Support various configuration styles: per option configuration (argparse and
+many other libraries do this); and thematic or bulk (make one type of setting
+on multiple options at once).
+
+Allow the user to have hidden options (eg for developers only).
+
+Support file and dir types as arguments, with checks for existence or non-existence.
+
+For file path arguments, support the ability to treat `-` as stdin or stdout.
+
+Support an easy way to get bash completion.
+
+Support @somefile.txt: user supplies command-line args via a file.
+
+Support parse_known_args().
+
+Support abbreviated option names when there is no ambiguity.
+
+Support some no-configuration argument parsing strategies: default (options are
+flags), key-val (options take single args by default), greedy (options consume
+as many params as possible).
 
 Support conversion/validation.
 
 Support dispatch mechanisms.
+
+The parser's configuration is likely to be organized as a fairly deep
+tree behind the scenes. But make it easy for the user to query that
+tree to obtain nodes of interest for configuration and other purposes.
+Primarily this means quickly getting Opt instances, but there could
+be other types of interest as well.
+
+Let users control the important aspects of the help text: section ordering;
+section titles; layout style (eg, compact 2-column or man-page); capitalization
+rules; widths; conventions for showing default values; etc.
 
 --------
 Standard command-line grammar
@@ -385,13 +457,6 @@ interpretted an invalid subcommand.
 
     demo --help -Q HI delete   # General help rather than delete help.
 
-Another challenge with options like this is that they are not convenient to
-express in a command-line grammar. Library users typically want help-style
-options available across all usage variants. Optopuss addresses this
-inconvenience with the partial variant mechanism. If a partial consists
-entirely of high-precendence options, the underlying options are included
-automatically in all of the grammar's variants, at least by default.
-
 --------
 Help text formatting
 --------
@@ -416,4 +481,314 @@ Text wrapping:
 
         - Provide an easy syntax for users to suppress line wrapping
           within the text (eg something borrowed from markdown)
+
+--------
+Alternative parsing algorithm won't work after all
+--------
+
+The algorithm:
+
+    - When parse() is called, there will be N command line arguments.
+      Command-line use cases never have large N.
+
+    - Using the parser configuration, assemble data on the aspects of the
+      grammar that are not static. The most common non-static configurations:
+      varying nargs, nparams, or ntimes; variants; and alternatives.
+
+    - For grammar elements that have no inherent boundaries (eg, an option
+      taking 1+ params), interpret them in as bounded by using N as the upper
+      limit.
+
+    - Use all of that information to generate all static grammars that satisfy
+      the actual grammar.
+
+    - Check each static grammar against the command line arguments.
+
+    - A successful parse finds exactly one successful static grammar.
+
+What causes a grammar to generate multiple possibilities?
+
+    .              | Where expressed | Note
+    -----------------------------------------------------
+    Varying nargs  | Opt             | .
+    Varying ntimes | Opt or Phrase   | Includes required.
+    Aliases        | Opt             | .
+    Alternatives   | Phrase          | Includes variants.
+
+Benefits of the algorithm:
+
+    - This code seems easy to write:
+
+        - The generation of static grammars seems like a manageable
+          situation involving itertools.
+
+        - Parsing a static grammar very simple: no backtracking required.
+
+    - It provides a run-time guard for users against ambiguous grammars.
+
+Two concerns and one deal breaker:
+
+    - The approach seems non-standard. A classic PEG algorithm seems to suit
+      the situation. And that code might not be any harder to write -- perhaps
+      just a bit less familiar. Why reinvent the wheel? Make sure there's a
+      good reason.
+
+    - Modern operating systems and shells have very large limits on the max
+      size of command lines and N of arguments. Why build a good argument
+      parsing tool that would fail at moderate values for N -- especially
+      when a linear algorithm is known?
+
+    - There won't necessarily be only one successful parse of the static
+      grammars, as noted in the discussion of ambiguous grammars. By using a
+      greedy assignment policy the parser can ignore that matter. But regular
+      expressions have a greedy concept precisely because without it there can
+      be more than one successful parse of an input.
+
+--------
+Ambiguous grammars are not an issue
+--------
+
+From a strictly grammatical perspective, only one positional can have a
+non-static nargs or ntimes, because there isn't exactly one valid way to attach
+the values to the destination attributes. A similar problem occurs when an
+option has non-static nparams and a positional has non-static nargs.
+Two examples:
+
+    <xray>...    <y>...
+    --xray {}... <y>...
+
+But that's not a problem, because Optopuss can do what regular expression
+engines do: greedy assignment by default, non-greed by configuration.
+
+--------
+Parsing algorithm
+--------
+
+Algorithm sketch: parsing one argument:
+
+    - If option:
+
+        - If it can bind to only one leaf in the Phrase tree, do so.
+
+        - If there are alternatives leaves, collect them and prepare for
+          possible backtracking. We will try each leaf in order.
+
+    - Non-option:
+
+        - Can the current option take args?
+
+            - No: do not bind.
+            - Yes, static: just bind.
+            - Yes, variable: bind with possible backtracking.
+
+        - Otherwise, we will bind to current positional Opt.
+
+            - Static: just bind.
+            - Variable: bind with possible backtracking.
+
+--------
+Parsed data structuring: nargs, nparams, ntimes
+--------
+
+The meaning of nparams, nargs, and ntimes:
+
+    nparams : N of params (for options)
+    nargs   : N args (for positionals and theoretically literals)
+    ntimes  : Governs only optionality and repetition.
+
+    Options:                    #  nparams  ntimes
+
+        -y                      #  0        (1,1)
+        [-y]                    #  0        (0,1)
+        [-y {} {}]              #  2        (0,1)
+
+    Positionals:                #  nargs    ntimes
+
+        <x>                     #  1        (1,1)
+        [<x>]                   #  1        (0,1)
+        (<x> <x> <x>){0,2}      #  3        (0,2)
+
+    Literals:                   #  nargs    ntimes
+
+        (veg|meat)              #  .        (1,1)
+        [veg|meat]{0,3}         #  .        (0,3)
+        digits=(1|2|3|4)...     #  .        (1,None)
+        ((x|y) (x|y)){1,3}      #  2        (1,3)
+
+Although literals probably won't need nargs in the real world (and could be
+handled by nested ntimes configurations), it might be just as simple from an
+implementation perspective to allow nargs for literals. One might be tempted to
+think a similar not-strictly-needed argument could be made for positionals: the
+last <x> example could be done with nested ntimes. But that would make the
+grammar syntax less readable and less conventional.
+
+Internally, all data assigned to destinations will be stored in a fully
+explicit manner. Assume a list of lists, where nargs/nparams determines the
+length of the inner lists and ntimes determines the length of the outer.
+
+    self._values = [
+          [a1, a2, ...],  # First time.
+          ...             # Etc.
+    ]
+
+But attribute values returned to users will be as flat as possible, based on
+nargs/nparams and ntimes (unless user requests non-flattened data).
+
+    nargs/nparams | ntimes 0 or 1 | ntimes 2+ flattened                 | ntimes 2+ non-flattened
+    ---------------------------------------------------------------------------------------------
+    0             | bool          | [bool, bool, ...]                   | [[bool], [bool], ...]
+    1             | a1            | [a1, a2, ...]                       | [[a1], [a2], ...]
+    2+            | [a1, a2, ...] | [[a1, a2, ...], [a1, a2, ...], ...] | .
+
+--------
+Eager option attachment at repetition boundaries
+--------
+
+In the following example, the -z option will bind eagerly to the repeated
+triplets of positionals.
+
+    Grammar:                  cmds=(<a> <b> <c> [-z]){2,7}
+    Example input:            A1 B1 C1 -z A2 B2 C2
+    Returned data for cmds:   opts.cmds[1] = Namespace(a=A1, b=B1, c=C1, z=False)
+
+That policy is consistent with greedy parsing elsewhere. Configuration for this
+issue will have to be done via the API.
+
+--------
+Grammar syntax: named and unnamed arguments
+--------
+
+Positionals must be named:
+
+    frob <a> <b> [<c>]
+
+Option arguments can be named or unnamed:
+
+                                        # opts.mode:
+    frob --mode {group} {name} {n}      # - Data object with attributes.
+    frob --mode {} {} {}                # - Tuple.
+
+Literals can be named or not:
+
+    frob action=div <a> / <b>           # Named (action=div), unnamed (slash).
+
+    Unnamed literals won't be in the returned data for now. But support could
+    be added later (data-wise it's like a flag with ntimes).
+
+--------
+Variants: why they are needed
+--------
+
+Are variants needed give that the grammar syntax already has support for
+alternatives?
+
+Partial variants are a useful device to express some grammars more
+conveniently. 
+
+Usage variants are a good mechanism for the user to help Optopuss generate more
+readable usage text and more relevant portions of it in response to errors.
+
+Variants can provide a low-config mechanism for subcommand-style programs to
+provide subcommand help text.
+
+Variants have been a useful concept, and their names convenient handles, when
+thinking about and planning this project. That utility might come in handy
+later.
+
+--------
+General destination assignment: needed after all
+--------
+
+Optopuss does need generalized destination assignment. At a minimum, it needs
+that feature not just for Opt, but also for partial variants. And once you go
+that far, you might as well generalize it.
+
+Consider examples like neck-diagram (nab is similar). With destination
+assignment, the specific Opt destinations (cmd, snum, syms, etc) will be nested
+underneath the 'commands' namespace (the outer destination assignment). The returned
+data would have this structure:
+
+    opts.commands : (
+        Namespace(cmd = 'snum', snum = 6),
+        Namespace(cmd = 'tuning', notes = ('E', 'A', ...)),
+        Namespace(cmd = 'fret', syms = ('1', '3', '5')),
+        ...
+    )
+
+Without the outer assignment, the returned data would be grouped by the Opt
+destination names -- which badly jumbles everything up:
+
+    opts = Namespace(
+        cmd   : ['snum, 'tuning', 'fnum', 'fret', 'fret', ...]
+        snum  : ['6']
+        fnum  : ['5']
+        notes : [[...]]
+        syms  : [[...], [...], ]
+    )
+
+--------
+Grammar syntax: is it too complex?
+--------
+
+To evaluate the question, I focused on the least intuitive aspect of the syntax
+and compared it against the API-driven alternative:
+
+Alternatives:
+
+    - This is an easy call: syntax is intuitive and API usage for this
+      situation is annoying.
+
+    - This is a strong example of the superiority of text syntax for grammar
+      configuration relative to API.
+
+Quantifiers:
+
+    - The ... is intuitive and practically a convention.
+
+    - The {m,n} syntax directly mimics regex and is also quite intutive.
+
+Destination assignment for literals:
+
+    - To configure this via the API requires the user to understand how
+      the library works a bit too closely.
+
+    - More fundamentally, when a grammar uses literal alternatives, some type
+      of name is required (which attribute name would Optopuss use?).
+
+    - And there are other reasons for generalized destination assignment, so
+      doing it for literals makes sense.
+
+Partials:
+
+    - API usage would require the user make multiple configurations to mark a
+      variant as partial and then insert it wherever needed.
+
+    - The partial syntax isn't heavy; in fact, it's moderately intuitve and
+      without it, the grammar syntax might even be a bit less immediately
+      understandable.
+
+Zones and anchoring:
+
+    - I suspect the desire for zones and anchoring is moderately low but still
+      more than nothing.
+
+    - Also, configuring these parameters via the API is simple to understand
+      and requires little code.
+
+    - While the zone syntax not too obtrusive, and it is a mixture of intutive
+      (zone markers) and not very intuitive (anchor markers)
+
+    - Infrequent use case, easy to handle via API: let's drop it.
+
+High precedence:
+
+    - Setting this attribute is easy in the API.
+
+    - Although the syntax is not heavy, it's also not fully intuitive.
+
+    - The majority of use cases will get the built-in help behavior, and the
+      library could interpret --help and --version options as high precedence
+      by default.
+
+    - Infrequent use case, easy via the API: let's drop it.
 

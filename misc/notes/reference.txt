@@ -539,3 +539,29 @@ odin-client:
         - When running `odin-client configure`, you do not want to load the
           existing config file.
 
+--------
+Example grammars
+--------
+
+Example 1:
+
+    [-b]      [-x] [-y]   # -a and -b are mutex,
+    [-a] [-c] [-x] [-y]   # and -b also allows -c
+
+Example 2:
+
+    [-x]  [-z] <a>
+    -y -x [-z] <a> [<b>]   # If -y, then -x is required and <b> is allowed.
+
+Example 3:
+
+    [-x] [-y] (<a> <b> <c>)...
+
+Example 4:
+
+    (-x | -y | -z -q) [-a] <b>
+
+Example 5:
+
+    (-a -x | -b... | [-a] -c -d) [-e | -f] [-g] <h> [<i>...] ([-j -k]... | -m -n)
+

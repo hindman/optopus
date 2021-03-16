@@ -35,6 +35,10 @@ Rename project: optopuss:
 Feature list
 --------
 
+Support zones and anchors to regulate argument ordering (via the API).
+
+Support high-precendence options.
+
 Need to support other formats (eg, POD or man pages).
 
 Maybe support the tool's usages for simple conversion/validation of arguments
@@ -42,9 +46,17 @@ to functions.
 
 Ability to emit parser config as data.
 
+Support variant validation hooks.
+
+Support sub-variants.
+
 --------
 Items from prior road map
 --------
+
+- Drop the Simple spec: just have a grammar and allow it to parse in full (with
+  variants), in basic usage (standard command line grammar), and for an
+  individual option.
 
 - Don't worry about using simple dependencies: attrs, short_con.
 
