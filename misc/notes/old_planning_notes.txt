@@ -67,78 +67,7 @@
 
 ----------------
 
-# Tolerant options
-
-    - NOTE: see api_design.txt for a more up-to-date decision making about this
-      concept.
-
-    - Search for "example 8".
-
-    - In a case like that, if --help is among the args, a user still wants
-      opto-py to parse as much as possible (eg, so the user can distinguish
-      general help from help for a specific subcommand).
-
-    - In other words, opto-py should attempt to parse the variants in the
-      usual way, but if --help is present it should disregard end-user
-      mistakes and keep parsing.
-
-    - Some end-user mistakes will cause opto-py to misinterpret the situation.
-      For example, `--fubb X configure` would cause opto-py to treat --fubb as
-      an unknown option having nargs=0 and then treat X as the first
-      positional, assigning it to task. (The user's code could still do the
-      right thing by checking whether `configure` is among the positionals
-      rather than just looking at task-positional).
-
-    - Nonetheless, opto-py should do what it can.
-
-    - And will tolerant options be fairly limited (eg, `* --help`, which means
-      "accept anything if --help is present") or will users be allowed to
-      define more complex grammars that trigger tolerant parsing: for example,
-      `* --foo X task=blort --info`, which means "accept anything if several
-      things are present.
-
-    - More broadly, should tolerance be an attribute of the variant or of
-      an opt?
-
-    - This discussion makes me think tolerance should not be a variant
-      attribute. What users want is for opto-py to parse options in the normal
-      way (to the extent feasible) while overlooking end-user mistakes if a
-      specific opt is present (--help, --version, etc). If this is sound logic,
-      the "example 8" grammar should not have a help-variant; rather, something
-      like [* --help] should be added to all of the other variants.
-
-    - If we use that approach, how does the user express the grammar? For
-      example, appending `[* --help]` to the end of every variant seems
-      incorrect, because we should allow --help to be present in any zone of of
-      each variant.
-
-    - At least in complex cases (with variants and anchors), requiring the user
-      to express tolerant opts within the grammar would be unhelpful,
-      cluttering things up with little benefit. Although in the actual case of
-      "Example 8", the problem is easy for the user, who could also include a
-      tolerant --help in the general-options. Meanwhile, in simple cases,
-      adding a tolerant opt to the grammar would be easy. And it's conceivable
-      that a user might want a tolerant opt only for certain variants.
-
-    - One approach might be the following:
-
-        - If a user needs fine-grained control, they can specify tolerant opts
-          in the grammar.
-
-        - But also let them add tolerant opts via API convenience methods that
-          would do things like add this tolerant opt to (a) all zones in a
-          variant, or (b) to everything.
-
-        - Additionally, the grammar could support a syntax for those
-          conveniences:
-
-            [* --help]    # normal
-            [** --help]   # all zones
-            [*** --help]  # everywhere (would be set in its own pseudo-variant)
-
 --------
-
-------------------
 
 Page width formatting in help text:
 
@@ -163,280 +92,6 @@ Page width formatting in help text:
 
 --------
 
-API: FormatterConfig example:
-
-    p = Parser(
-
-        Opt(
-            '--blort',
-            text = '',
-            sections = ['foo', 'bar'],             # Can be str or list/tuple/set.
-        ),
-
-        formatter_config = FormatterConfig(
-
-            # Either Section or iterable.
-            # Default label: "Foo options"
-            Section('usage', label = '...'),
-            Section('foo'),
-            Section('bar'),
-            Section('short-opts'),
-            Section('special-notes', text = SPECIAL_NOTES, label = 'Special notes'),
-            Section('warnings', text = WARNINGS, label = 'Warnings'),
-
-            program_name        = '',
-            section_label_punct = ':',
-            after_section_label = '',
-            after_section       = '\n',
-
-            program_summary    = '',
-            style              = CLI|MAN,
-            opt_style          = CLI|MAN,
-
-        ),
-
-    )
-
-    Section
-        name  | Short; used symbolically (eg in grammar).
-        label | Used in help text
-
---------
-
-## Why opto-py does not include subparser features
-
-Adding the subcommand/subparser concept to an option parsing brings a bunch of
-new syntax. And ultimately, the subparser concept is much less flexible (and
-less intuitive) than supporting the key concepts noted above: (1) usage
-variants, and (2) command line grammar.
-
-Very few CLI tools need a full-blown subparser strategy, especially if the
-option parsing library provides good support for variants and CLI grammars.
-
-And even if we were building the next Git, we would not need the subparser
-in an option parsing library. We would just do this instead:
-
-- Use a general parser:
-
-        git [general-options] <subcommand> [args]
-
-- Then parse `args` with the appropriate parser, based on the value of
-  `subcommand`. As long as the library makes it easy to merge the
-  general-options with the subcommand-options, there is no benefit
-  to modeling the library to include a subparser concept.
-
-In other words, a complex program does not need subparsers; it just needs N
-parsers.
-
-The opto-py library will support use cases like this by providing easy ways to
-combine the opts obtained from both the top-level parse and the subcommand
-parse -- both the ability to fully merge those two sets of options or to keep
-them separately namespaced (eg, Git uses `-C` both and the top level and in
-subcommands like `git-diff`).
-
---------
-
-## Does Opt class need an action attribute?
-
-No. The argparse library basically uses the action paramenter to
-control the option type and thus the grammar.
-
-    Action       | Option type       | Example         | Stored      | Notes
-    ----------------------------------------------------------------------------------
-    store_true   | 1 flag            | --frob          | True        | True == 1
-    count        | 1+ flags          | -v -v           | N           | .
-    store        | Single            | --foo F         | F           | .
-    append       | Repeatable single | -x A -x B       | [A, B]      | Overwrite on repeat
-    extend       | Repeatable multi  | -x A B -x C D E | [A B C D E] | .
-    help         | High precedence   | .               |             | .
-    version      | "    "            | .               | .           | .
-    ----------------------------------------------------------------------------------
-    store_false  | 1 flag            | --frob          | False       | Not necessary
-    store_const  | 1 flag            | --frob          | X           | Not necessary
-    append_const | 1+ flag           | --frob --frob   | [X x]       | Not necessary
-
---------
-
-## CLI grammars
-
-First start with the normal rules of CLI grammar, as commonly understood:
-
-  - Positional arguments are ordered among each other:
-
-        P1 P2 P3 ...
-
-  - Options can be ordered in any way:
-
-        --x4 --x1 --x3 --x2 ...
-
-  - Options can be freely interspersed among the ordered positional arguments.
-
-        --x3 P1 --x1 --x4 P2 --x2 P3 ...
-
-In addition, a CLI grammar can have boundary points:
-
-  - Each boundary creates a division between "zones" in a given usage variant.
-
-  - Within a zone, the grammar can require that one or more positional
-    arguments and/or options appear first, in order.
-
-Side note on CLI grammars relative to regexes:
-
-  - opto-py will borrow many concepts from regular expressions.
-
-  - But CLI grammar parsing seems not directly amenable to handling via regex
-    parsing approaches.
-
-  - The crucial difference:
-
-    - Positionals are ordered among themselves.
-
-    - Options can appear in any order (ignoring boundaries and anchors).
-
-  - That special flexibility makes it not very intuitive to convert a CLI
-    grammar into a corresponding regex-style grammar.
-
-      - At every stage, any of the options are possible.
-      - But then once an option appears, it cannot appear again (ignoring repeatables).
-      - That means CLI parsing is highly context-sensitive.
-
-Within those rules in mind, we can handle the grammar of a typical subcommand
-program as follows:
-
-  - For example:
-
-        frob [general-options] ; !<subcommand> <x> <y> [-a] [-b]
-
-        General options:
-          --log
-          --debug
-
-  - Requirements of that grammar:
-
-    - Zone 1: some general options in any order.
-
-    - Boundary point.
-
-    - Zone 2: first the subcommand and then other positional args and options
-      using the normal rules.
-
-  - Usage examples:
-
-        # Valid.
-        frob               delete X Y
-        frob --log         diff   X Y -a -b
-        frob --log --debug copy   -a X -b Y
-
-        # Invalid.
-        frob --log -a diff X Y
-
-  - A complex CLI with multiple layers of subcommands:
-
-        frob [optsA]
-             ; !<comm1> !<a> <b> <c> [optsB]
-             ; <comm2> <d> <e> [optsC]
-             ; !<comm3> !<h> !<i> [optsD]
-
-  - The grammar has 4 zones:
-
-    - optsA:
-      - Normal rules.
-
-    - comm1
-      - Two positionals must appear first, then normal rules.
-      - Note: optsA must be to left of comm1, and optsB to right.
-
-    - comm2
-      - Normal rules.
-      - Note: either comm2 or any optsC means that no more optsB can appear.
-
-    - comm3
-      - Three positionals must appear first, and then normal rules.
-
-  - You do not need a way to anchor items to the end of a zone. [I now
-    think this might be wrong; see last part of this example.]
-
-    - Imagine that we wanted to adjust the grammar to require two positionals
-      at the end of the comm2 zone:
-
-            frob [optsA]
-                 ; !<comm1> !<a> <b> <c> [optsB]
-                 ; <comm2> <d> <e> [optsC] <f>! <g>!
-                 ; !<comm3> !<h> !<i> [optsD]
-
-    - We could achieve that instead by establishing a new zone:
-
-            frob [optsA]
-                 ; !<comm1> !<a> <b> <c> [optsB]
-                 ; <comm2> <d> <e> [optsC] ; <f> <g>
-                 ; !<comm3> !<h> !<i> [optsD]
-
-    - The potential PROBLEM: in organizing the parsed data, the user probably
-      wants <f> and <g> linked to <comm2> -- at least that's my assumption. But
-      are such cross-zone data linkages the way most users want the parsing to
-      behave?
-
-Handling literal option-arg choices.
-
-- Consider these examples:
-
-        frob (find|copy|delete) <path> --type (file|dir|link) --rgx <patt>
-
-        frob --group (a|b|c|d) (x|y)
-
-- Both raise ambiguities: are `--type` and `--group` flags or options that take
-  literal args?
-
-- Or here: is --group a flag or an option taking one, or even two, args?
-
-        frob --group <g> (x|y)
-
-- The equal-sign syntax seems to clarify, but it helps only for the case when
-  nargs=1.
-
-        frob --group=(a|b|c|d) (x|y)
-
-- We could use curly braces only for literal option-args, but that doesn't
-  provide a way to specify variable option-args.
-
-        frob --group {a|b|c|d} (x|y)
-
-- The way to resolve these problems is as follows:
-
-  - If an option takes args, the option-phrase must be enclosed in brackets,
-    either square or round.
-
-        (-x <x1> <x2>)
-        [-y Y]
-        [-z Z1...]
-
-    - The CLI grammar rule is that if brackets begin with an option, the
-      remaining args inside the brackets are option-args, not positionals.
-
-    - With this convention in place, expressing literal option-args is
-      straightforward too. For example, this option takes 3 args, the first 2
-      are literal-choices and the last is a variable-arg:
-
-            (-x (a|b|c) (d|e) <x>)
-
-    - And it even becomes possible to define grammar variants based on literal
-      option-args values. For example, we can elaborate on the previous
-      example, creating 3 variants driven by literal option-arg values:
-
-            (-x (b|c) d <x1>)
-            (-x a     e <x1> <x2>)
-            (-x a     d <x1> <x2> <x3>)
-
-- The SimpleSpecParser glosses over these issues via some assumptions:
-
-  - It does not support literal args.
-
-  - It uses different syntaxes for variable args: option vs positional:
-
-        --foo F1 F2 <x1> <x2>
-
---------
-
 ## The configuration API
 
 - See examples/odin-client-via-api.
@@ -451,7 +106,7 @@ Handling literal option-arg choices.
 - Several keys support a fully explicit syntax and a compact form for basic use
   cases.
 
-- A list-of-dicts is sufficient for many CLI use cases. With that, the library
+- A list-of-dicts is sufficient for many command-line use cases. With that, the library
   could parse well and generate good usage text.
 
 - If needed, the user could supply a grammar. Either way, the library will end
@@ -543,13 +198,13 @@ Handling literal option-arg choices.
   80 chars or less, for readability. And almost no one uses terminals less than
   80 characters wide.
 
-- Usage text in man-page or CLI style.
+- Usage text in man-page or command-line style.
 
 - For file args, handle `-` as stdin or stdout.
 
 - Add a --bash-completion option.
 
-- Support @somefile.txt: user supplies CLI args via a file.
+- Support @somefile.txt: user supplies command-line args via a file.
 
 - Support file and dir types.
 
@@ -597,7 +252,7 @@ Handling literal option-arg choices.
 
   - Full control.
     - Fine tuned usage text.
-    - CLI grammars.
+    - command-line grammars.
     - Lots more.
 
 --------
@@ -613,7 +268,7 @@ Attributes:
     subphrase_logic : AND | OR
     anchored        : bool
 
-The top-level Phrase represents the entire CLI grammar and is the root node
+The top-level Phrase represents the entire command-line grammar and is the root node
 in a tree of Phrase objects.
 
 The leaf nodes of the tree are always OPT or POS.
@@ -631,8 +286,8 @@ and, in more limited ways, to OPT nodes that have a varying nargs attribute.
 - Similar issues arrive if an option resides in multiple leaves in the Phrase
   tree and if those Opt instances have varying ntimes attributes. For example,
   if -x is in one leaf with ntimes=(1,3) and also in another leaf with
-  ntimes=(1,3), and if there are 4 -x options in the CLI args, there is not an
-  unambiguous way to bind those CLI args to the leaves.
+  ntimes=(1,3), and if there are 4 -x options in the command-line args, there is not an
+  unambiguous way to bind those command-line args to the leaves.
 
 - A fairly obvious policy to resolve many such ambiguities:
 
@@ -918,7 +573,7 @@ Example 8:
 What causes the parsing to require alternatives and backtracking?
 
 - Options that reside in multiple alternative locations in the Phrase tree. For
-  example, when we encounter an -x among the CLI args, we do not know in
+  example, when we encounter an -x among the command-line args, we do not know in
   advance which subphrase to bind it with:
 
         PHR OR
@@ -931,7 +586,7 @@ What causes the parsing to require alternatives and backtracking?
 
 - Options that reside in multiple non-alternative locations in the Phrase tree,
   and where one of those leaves has a varying ntimes attribute. In this
-  example, we do not know in advance how greedily to bind -x CLI args to the
+  example, we do not know in advance how greedily to bind -x command-line args to the
   first leaf in the tree.
 
         PHR AND
@@ -947,7 +602,7 @@ What causes the parsing to require alternatives and backtracking?
 
 - Destinations for positional arguments with varying ntimes attributes or
   (closely related) options with varying nargs attributes. In these two
-  examples, when we encounter a non-option CLI arg, we do not know in advance
+  examples, when we encounter a non-option command-line arg, we do not know in advance
   whether to bind it greedily:
 
         PHR AND
@@ -960,7 +615,7 @@ What causes the parsing to require alternatives and backtracking?
             POS b 1
             POS c 1
 
-Decisions when processing a CLI arg:
+Decisions when processing a command-line arg:
 
 - Is it an option or non-option?
 
@@ -990,6 +645,42 @@ Decisions when processing a CLI arg:
 
 General principles:
 
+    VERDICT: I think this is a sound plan
+    VERDICT: use nparams for options, nargs for positionals, and neither for literals
+
+        An alternative:
+
+            nparams : N of params (for options)
+            nargs   : N args (for positionals and theoretically literals)
+            ntimes  : Governs only optionality and repetition.
+
+            Options:                    #  nparams  ntimes
+
+                -y                      #  0        1
+                [-y]                    #  0        (0,1)
+                [-y {} {}]              #  2        (0,1)
+
+            Positionals:                #  nargs    ntimes
+
+                <x>                     #  1        1
+                [<x>]                   #  1        (0,1)
+                (<x> <x> <x>){0,2}      #  3        (0,1,2)
+
+            Literals:                   #  nargs    ntimes
+
+                (veg|meat)              #  .        1
+                [veg|meat]{0,3}         #  .        (0,3)
+                digits=(1|2|3|4)...     #  .        (1,None)
+                ((x|y) (x|y)){1,3}      #  2        (1,3)
+
+                Literals probably won't every need nargs in the real world, and
+                those strange usages could be handled by nested ntimes
+                configurations. That said, it might be just as simple from an
+                implementation perspective to allow nargs for literals. A
+                similar not-strictly-needed argument could be made for
+                positionals: the last <x> example could be done with nested
+                ntimes. But that would make the grammar syntax less readable.
+
   - The returned data will have attribute names corresponding to the configured
     Opt instances.
 
@@ -1014,14 +705,12 @@ General principles:
 
             - nargs always counts the number of non-option arguments.
 
-                --foo {} {}     # nargs = 2
-                {x} {x}         #
+                --foo {} {}     # 2
+                {x} {x}         # 2
 
-  - In other words, for positionals:
+            - ntimes counts what?
 
-    - Optional/required behavior is governed by ntimes.
-    - Positionals always have a nargs of at least 1.
-    - Adjacent-repetition of a positional is governed by nargs.
+            - The need for a mnemonic is a warning sign.
 
   - Internally, a ParsedOpt will store all values in a 2D array:
 
@@ -1174,7 +863,7 @@ Notes on --help:
       `--help` but on some other options: for example, I've had programs where
       I want --examples to print some usage examples for the end-user.
 
-        - Simple use case: standard help feature for a CLI program.
+        - Simple use case: standard help feature for a command-line program.
 
             p = Parser(help = True|False)
 

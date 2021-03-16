@@ -99,7 +99,7 @@ Configuration via usage syntax is focused on grammar:
           - Destinations for literal-positionals.
 
     - The syntax opens up a wide range of possibilities for complex programs or
-      unusual grammars 
+      unusual grammars
 
     - But it also helps at the micro scale, simplifying the configuration of
       individual options.
@@ -206,4 +206,189 @@ Use hooks for customization by the user, not subclasses.
 Support conversion/validation.
 
 Support dispatch mechanisms.
+
+--------
+Standard command-line grammar
+--------
+
+Typical rules of command-line grammar, as commonly understood in Unix tradition:
+
+    - Options start with a prefix:
+
+        --long
+        -s
+
+    - Options can take zero or more ordered parameters.
+
+    - Positional arguments are ordered among each other:
+
+        P1 P2 P3 ...
+
+    - Options can be ordered in any way:
+
+        --x4 --x1 --x3 --x2 ...
+
+    - Options can be freely interspersed among the ordered positional arguments.
+
+        --x3 P1 --x1 --x4 P2 --x2 P3 ...
+
+    - Short options can be bundled:
+
+        -x -y -z
+        -xyz
+
+--------
+Command-line grammar vs. regex
+--------
+
+Although Optopus usage syntax borrows many concepts from regular expressions,
+command-line grammar parsing is not readily amenable to handling via regex
+parsing approaches.
+
+Positionals are ordered among themselves, but options can appear in any order
+(ignoring boundaries and anchors). That flexibility makes it not very intuitive
+to convert a command-line grammar into a manageable regular expression. At
+every stage, any of the options are possible. But then once an option appears,
+it cannot appear again (ignoring repeatables). That means command-line parsing
+is context-sensitive.
+
+--------
+Optopuss does not need the subparser concept
+--------
+
+The subparser concept is much less powerful and flexible than the key concept
+of a command-line grammar, along with the related ideas of usage variants and
+flexible destination assignment. It's also less intuitive.
+
+The universe of command-line programs could be broken down into a sizable
+majority and three small minorities:
+
+    - A sizable majority that needs neither subparsers nor a complex grammar.
+
+    - A small minority that are forced by the limitations of current argument
+      parsing libraries to resort to subparsers even though the concept does
+      not align very well with their needs.
+
+    - A small minority that align conceptually with the subparser concept. But
+      command-line grammar supports this use case even better.
+
+    - A small minority that must hack their way around the current limitations.
+
+--------
+Optopuss does not need the 'action' concept
+--------
+
+Arguments can be configured in argparse with an 'action' parameter. The
+parameter is a bit overloaded and misleading. It does control some actions (eg,
+showing help text), but mostly it is used as a sometimes misnamed device for option type
+and destination assignment.
+
+    Action       | Option type       | Example         | Stored      | Notes
+    ----------------------------------------------------------------------------------
+    store_true   | 1 flag            | --frob          | True        | True == 1
+    store_false  | 1 flag            | --frob          | False       | Can override True default
+    count        | 1+ flags          | -v -v           | N           | .
+    store        | Single            | --foo F         | F           | .
+    append       | Repeatable single | -x A -x B       | [A, B]      | Overwrite on repeat
+    extend       | Repeatable multi  | -x A B -x C D E | [A B C D E] | .
+    help         | High precedence   | .               |             | .
+    version      | "    "            | .               | .           | .
+    ----------------------------------------------------------------------------------
+    store_const  | 1 flag            | --frob          | X           | Not necessary
+    append_const | 1+ flag           | --frob --frob   | [X x]       | Not necessary
+
+--------
+Grammar syntax: why explicit syntax for option parameters is needed
+--------
+
+Without an explicit syntax to mark option parameters, various grammar
+ambiguities are possible. For example:
+
+    - Should we interpret --type as a flag or an option taking a
+      literal parameter?
+
+            frob --type (file|dir|link)
+
+    - How many parameters does --group take: 0, 1, or 2?
+
+            frob --group (a|b|c|d) (x|y)
+
+    - Special syntax for literal choices (for examples, the conventionally used
+      braces) helps only in the case when nparams equals 1.
+
+The relatively low cost way to resolve such issues to an explicit syntax for
+any command line arguments that vary (the non-literals). Everything else
+is a literal or unambiguously part of the grammar syntax.
+
+    Positionals:
+
+        <x> <y>
+
+    Parameters:
+
+        --person {name} {age}            # Named.
+        --sort {quick|bubble|merge}      # Literal because of choices.
+        --sort {'quick'}                 # Literal because of quotes.
+
+    Literals:
+
+        task=get                         # Named destination.
+        /                                # Unnamed literal (eg separator)
+
+--------
+High precedence options
+--------
+
+Most options control the primary behaviors of a program. But some are
+special, most notably those related to user help:
+
+    --help
+    --version
+    --examples
+    --demo
+
+Argument parsing libraries often provide an convenient mechanism for --help and
+sometimes --version, but rarely anything else. In addition, they tend to
+provide such features in a way that is slightly misleading (at least in a
+strict sense) and definitely not as convenient for users as it could be.
+
+Consider a simple subcommand-style program. Assume that both <id> and the
+parameter for -n should be integers and that the program has both general help
+text and subcommand help text.
+
+    demo [--help] [-n {}] (print|delete) <id>
+
+At least by default, if the end-user supplies the --help option, an argument
+parser should (1) print help text and exit, (2) select the help text that is
+relevant given the other command-line arguments, and (3) ignore errors in the
+other command-line arguments. Some examples of desired behavior:
+
+    demo --help                # General help.
+    demo --help delete         # Delete help.
+    demo --help -n HI delete   # Same, in spite of invalid -n parameter.
+
+Most argument parsers fail on #3 (they gripe instead of helping) and they do
+not easily support #2.
+
+Optopuss addresses those problems with two mechanisms: high-precendence options
+and flexible dispatching. If an option is configured to be high-precendence,
+its presence among the command-line arguments will trigger whatever action it
+has been configured to perform, and that dispatching configuration will take
+precendence over error reporting. When high-precendence options are used, the
+parser performs a best-effort parsing to collect as much contextual information
+as it can before calling the code responsible taking action.
+
+There are limits, of course. Some types of bad input can reduce the accuracy of
+that best-effort parse. In this example, -Q in an unknown option and is treated
+by default as a flag taking no parameters, which then means that HI is is
+interpretted an invalid subcommand.
+
+    demo --help -Q HI delete   # General help rather than delete help.
+
+Another challenge with options like this is that they are not convenient to
+express in a command-line grammar. Library users typically want help-style
+options available across all usage variants. Optopuss addresses this
+inconvenience with the partial variant mechanism. If a partial consists
+entirely of high-precendence options, the underlying options are included
+automatically in all of the grammar's variants, at least by default.
 

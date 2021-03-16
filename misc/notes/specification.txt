@@ -112,8 +112,8 @@ Terminology
 Users:
 
     - Library: the opto-py code base.
-    - User: a developer using opto-py.
-    - End-user: a user running a program that uses opto-py.
+    - Library user (or just user): a developer using opto-py.
+    - End user: a user running a program that uses opto-py.
 
 Command line argument types:
 
@@ -125,8 +125,8 @@ Command line argument types:
         - A non-varying positional.
         - For example, subcommand names or separators.
 
-
-    - Arguments: the strings directly from the command line.
+    - Arguments:
+        - The raw strings directly from the command line.
 
     - Options: arguments with an option prefix.
 
@@ -160,6 +160,17 @@ Help text sections:
         - DESCRIPTION
         - OPTIONS
         - Custom sections.
+
+Destination assignment:
+
+    - Controls how the parsed data elements are stored and named.
+
+--------
+Zones and anchors
+--------
+
+They do not control anything other than argument ordering. For example, they
+exert no influence on destination assignment.
 
 --------
 Old examples: needs editing pass
@@ -376,6 +387,44 @@ Elements:
             Opt('--help', high = True),
         ),
     ]
+
+API: FormatterConfig example:
+
+    p = Parser(
+
+        Opt(
+            '--blort',
+            text = '',
+            sections = ['foo', 'bar'],             # Can be str or list/tuple/set.
+        ),
+
+        formatter_config = FormatterConfig(
+
+            # Either Section or iterable.
+            # Default label: "Foo options"
+            Section('usage', label = '...'),
+            Section('foo'),
+            Section('bar'),
+            Section('short-opts'),
+            Section('special-notes', text = SPECIAL_NOTES, label = 'Special notes'),
+            Section('warnings', text = WARNINGS, label = 'Warnings'),
+
+            program_name        = '',
+            section_label_punct = ':',
+            after_section_label = '',
+            after_section       = '\n',
+
+            program_summary    = '',
+            style              = CLI|MAN,
+            opt_style          = CLI|MAN,
+
+        ),
+
+    )
+
+    Section
+        name  | Short; used symbolically (eg in grammar).
+        label | Used in help text
 
 --------
 Classes and attributes
