@@ -1,5 +1,5 @@
 --------
-API-driven vs text-driven
+api-vs-text: API-driven vs text-driven
 --------
 
 Two fundamental configuration strategies for argument parsers:
@@ -98,7 +98,7 @@ Configuration via usage syntax is focused on grammar:
       individual options.
 
 --------
-Addressing weaknesses common in other libraries
+other-lib-weaknesses: Addressing weaknesses common in other libraries
 --------
 
 Providing users with simple ways to handle command-line grammars and usage
@@ -182,7 +182,7 @@ Providing users more conventient mechanisms to reduce repetition in
 the configuration of the parser.
 
 --------
-Other goals
+other-goals: Other goals
 --------
 
 Prioritize the simple use cases. Yes, add features and customization
@@ -280,7 +280,7 @@ section titles; layout style (eg, compact 2-column or man-page); capitalization
 rules; widths; conventions for showing default values; etc.
 
 --------
-Standard command-line grammar
+standard-cli-grammar: Standard command-line grammar
 --------
 
 Typical rules of command-line grammar, as commonly understood in Unix tradition:
@@ -310,7 +310,7 @@ Typical rules of command-line grammar, as commonly understood in Unix tradition:
         -xyz
 
 --------
-Command-line grammar vs. regex
+cli-grammar-vs-regex: Command-line grammar vs. regex
 --------
 
 Although Optopus usage syntax borrows many concepts from regular expressions,
@@ -325,7 +325,7 @@ it cannot appear again (ignoring repeatables). That means command-line parsing
 is context-sensitive.
 
 --------
-Optopuss does not need the subparser concept
+subparsers-not-needed: Optopuss does not need the subparser concept
 --------
 
 The subparser concept is much less powerful and flexible than the key concept
@@ -347,7 +347,7 @@ majority and three small minorities:
     - A small minority that must hack their way around the current limitations.
 
 --------
-Optopuss does not need the 'action' concept
+opt-action-not-needed: Optopuss does not need the 'action' concept
 --------
 
 Arguments can be configured in argparse with an 'action' parameter. The
@@ -370,7 +370,7 @@ and destination assignment.
     append_const | 1+ flag           | --frob --frob   | [X x]       | Not necessary
 
 --------
-Grammar syntax: why explicit syntax for option parameters is needed
+explicit-option-param-syntax: Why explicit syntax for option parameters is needed
 --------
 
 Without an explicit syntax to mark option parameters, various grammar
@@ -408,7 +408,7 @@ is a literal or unambiguously part of the grammar syntax.
         /                                # Unnamed literal (eg separator)
 
 --------
-High precedence options
+high-precendence-options: High precedence options
 --------
 
 Most options control the primary behaviors of a program. But some are
@@ -458,7 +458,7 @@ interpretted an invalid subcommand.
     demo --help -Q HI delete   # General help rather than delete help.
 
 --------
-Help text formatting
+help-text-formatting: Help text formatting
 --------
 
 Text wrapping:
@@ -483,7 +483,7 @@ Text wrapping:
           within the text (eg something borrowed from markdown)
 
 --------
-Alternative parsing algorithm won't work after all
+alternative-parsing-algo: Alternative parsing algorithm won't work after all
 --------
 
 The algorithm:
@@ -545,7 +545,7 @@ Two concerns and one deal breaker:
       be more than one successful parse of an input.
 
 --------
-Ambiguous grammars are not an issue
+abmiguous-grammars: Ambiguous grammars are not an issue
 --------
 
 From a strictly grammatical perspective, only one positional can have a
@@ -561,7 +561,7 @@ But that's not a problem, because Optopuss can do what regular expression
 engines do: greedy assignment by default, non-greed by configuration.
 
 --------
-Parsing algorithm
+basic-arg-parsing-algo: Parsing algorithm
 --------
 
 Algorithm sketch: parsing one argument:
@@ -587,7 +587,7 @@ Algorithm sketch: parsing one argument:
             - Variable: bind with possible backtracking.
 
 --------
-Parsed data structuring: nargs, nparams, ntimes
+parsed-data-structure: Parsed data structuring: nargs, nparams, ntimes
 --------
 
 The meaning of nparams, nargs, and ntimes:
@@ -641,7 +641,7 @@ nargs/nparams and ntimes (unless user requests non-flattened data).
     2+            | [a1, a2, ...] | [[a1, a2, ...], [a1, a2, ...], ...] | .
 
 --------
-Eager option attachment at repetition boundaries
+eager-attachment-at-bounary: Eager option attachment at repetition boundaries
 --------
 
 In the following example, the -z option will bind eagerly to the repeated
@@ -655,7 +655,7 @@ That policy is consistent with greedy parsing elsewhere. Configuration for this
 issue will have to be done via the API.
 
 --------
-Grammar syntax: named and unnamed arguments
+grammar-syntax-named-unnamed: Grammar syntax: named and unnamed arguments
 --------
 
 Positionals must be named:
@@ -676,7 +676,7 @@ Literals can be named or not:
     be added later (data-wise it's like a flag with ntimes).
 
 --------
-Variants: why they are needed
+variants-needed: Variants: why they are needed
 --------
 
 Are variants needed give that the grammar syntax already has support for
@@ -696,7 +696,7 @@ thinking about and planning this project. That utility might come in handy
 later.
 
 --------
-General destination assignment: needed after all
+destination-assignment: General destination assignment: needed after all
 --------
 
 Optopuss does need generalized destination assignment. At a minimum, it needs
@@ -727,7 +727,7 @@ destination names -- which badly jumbles everything up:
     )
 
 --------
-Grammar syntax: is it too complex?
+grammar-syntax-complexity: Grammar syntax: is it too complex?
 --------
 
 To evaluate the question, I focused on the least intuitive aspect of the syntax
