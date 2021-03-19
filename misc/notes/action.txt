@@ -50,6 +50,8 @@ Support variant validation hooks.
 
 Support sub-variants.
 
+Support abbrev not only for long-options but also choices.
+
 --------
 Items from prior road map
 --------
