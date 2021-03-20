@@ -58,8 +58,10 @@ End-user input error scenarios:
 
     - Conclusions:
 
-        - Each parse() call will generate up to N failures (one per variant or,
-          under the new parsing idea, one per concrete permutation).
+        - Each parse() call will generate up to N failures:
+
+            - One per static grammar (new parsing alternative).
+            - One per short-circuit (standard stack-based or PEG-style approach).
 
         - Ideally, we would report the error most aligned with user intent.
 
@@ -69,7 +71,10 @@ End-user input error scenarios:
 
     - Reporting precendence for errors:
 
-        - First consider error precendence:
+        - First consider error specificity, listed from high to low. Errors
+          with higher specificity convey end-user intent (we know what they
+          were trying to do). Errors with lower specificity tend to disqualify
+          the current variant (not the one intended by end-user).
 
             - Global problems.
             - Conversion and validation problems.
@@ -81,27 +86,14 @@ End-user input error scenarios:
             - Greater alignment implies intent.
             - Example metric: N Opts matched / N Opts
 
-        - Finally, use input ordering within the grammar.
+        - Finally, use error creation order (report the first error among those
+          not yet filtered out by criteria above). Error ordering will be
+          governed by the grammar's greedy policies.
 
         - As a possible future feature, support verbose error reporting,
           triggered by env variables and/or Parser config via API.
 
     - Types of errors:
-
-        - NOTE: order of the errors is important, but I'm not certain
-          what the ordering trait is:
-
-            - Precedence?
-
-            - Specificity? Non-specific errors tend to be disqualifying
-              (meaning, the current variant or concrete permutation is probably
-              not applicable or intended) and specific errors tend to pull in
-              the opposite direction (we know what the user intended, but the
-              goofed up a detail).
-
-            - Also, errors related to options are more specific or telling (an
-              option is either known, compatible, and allowed ... or not) than
-              non-options (which could be positionals or option arguments).
 
         - Global problems:
 
@@ -138,7 +130,7 @@ End-user input error scenarios:
 
         - Conversion and validation problems:
 
-            * Here we have slotted all arguments into valid slots (none of the
+            * Here we have allocated all arguments into valid slots (none of the
               structure problems listed below), but the actual values don't
               pass muster. These failures are the most specific and telling
               with respect to intent.

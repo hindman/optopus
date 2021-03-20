@@ -61,10 +61,10 @@ blort-maker:
     general`      : [--verbose] [--log-file {}] help`
     other`        : [--hi] [--bye]
 
-    configure     : general` task=configure --odin-env {} --od-user {}
-    submit        : general` task=submit -c {} -r {} [--start-job] [--person {name} {age}]
-    get           : general` task=get -j {} [--json [--indent {}] | --b64 | --yaml]
-    drop          : general` task=drop what=(first|last|random)! [--print] <n>
+    configure     : help` general` task=configure --odin-env {} --od-user {}
+    submit        : help` general` task=submit -c {} -r {} [--start-job] [--person {name} {age}]
+    get           : help` general` task=get -j {} [--json [--indent {}] | --b64 | --yaml]
+    drop          : help` general` task=drop what=(first|last|random)! [--print] <n>
     fubb          : help` other` [-a] [-b] <fubb>... (--fast | --slow)
     zzz           : help` other` [-x] [-y] items=(<a> <b> <c> [-z]){2,7}
 

@@ -533,12 +533,12 @@ The algorithm:
 
 What causes a grammar to generate multiple possibilities?
 
-    .              | Where expressed | Note
+    .                     | Where expressed | Note
     -----------------------------------------------------
-    Varying nargs  | Opt             | .
-    Varying ntimes | Opt or Phrase   | Includes required.
-    Aliases        | Opt             | .
-    Alternatives   | Phrase          | Includes variants.
+    Varying nargs/nparams | Opt             | .
+    Varying ntimes        | Opt or Phrase   | Includes required.
+    Alternatives          | Phrase          | Includes variants.
+    Aliases               | Opt             | .
 
 Benefits of the algorithm:
 
@@ -551,7 +551,7 @@ Benefits of the algorithm:
 
     - It provides a run-time guard for users against ambiguous grammars.
 
-Two concerns and one deal breaker:
+Three concerns:
 
     - The approach seems non-standard. A classic PEG algorithm seems to suit
       the situation. And that code might not be any harder to write -- perhaps
@@ -567,7 +567,10 @@ Two concerns and one deal breaker:
       grammars, as noted in the discussion of ambiguous grammars. By using a
       greedy assignment policy the parser can ignore that matter. But regular
       expressions have a greedy concept precisely because without it there can
-      be more than one successful parse of an input.
+      be more than one successful parse of an input. [On further reflection,
+      this point argues against expecting only one successful static grammar.
+      But if you try the static grammars in the correct order, based on greedy
+      policies in place, you can stop at the first success -- as regex does.]
 
 --------
 abmiguous-grammars: Ambiguous grammars are not an issue
@@ -618,8 +621,8 @@ parsed-data-structure: Parsed data structuring: nargs, nparams, ntimes
 The meaning of nparams, nargs, and ntimes:
 
     nparams : N of params (for options)
-    nargs   : N args (for positionals and theoretically literals)
-    ntimes  : Governs only optionality and repetition.
+    nargs   : N args (for positionals and literals)
+    ntimes  : Governs only optionality and repetition via {n,m} or its shortcuts.
 
     Options:                    #  nparams  ntimes
 
@@ -632,20 +635,23 @@ The meaning of nparams, nargs, and ntimes:
         <x>                     #  1        (1,1)
         [<x>]                   #  1        (0,1)
         (<x> <x> <x>){0,2}      #  3        (0,2)
+        -----------------------------------------
+        <x> <x> <x>             #  3        (1,1)      # A
+        <x>{3}                  #  1        (3,3)      # B
 
     Literals:                   #  nargs    ntimes
 
-        (veg|meat)              #  .        (1,1)
-        [veg|meat]{0,3}         #  .        (0,3)
-        digits=(1|2|3|4)...     #  .        (1,None)
+        (veg|meat)              #  1        (1,1)
+        [veg|meat]{0,3}         #  1        (0,3)
+        digits=(1|2|3|4)...     #  1        (1,None)
         ((x|y) (x|y)){1,3}      #  2        (1,3)
 
-Although literals probably won't need nargs in the real world (and could be
-handled by nested ntimes configurations), it might be just as simple from an
-implementation perspective to allow nargs for literals. One might be tempted to
-think a similar not-strictly-needed argument could be made for positionals: the
-last <x> example could be done with nested ntimes. But that would make the
-grammar syntax less readable and less conventional.
+Is nargs needed? Why not handle it all with ntimes? See the examples marked A
+and B above. There is a subtle difference between the two configurations in the
+returned data, if the user requests non-flattened. Example A would produce [X1,
+X2, X2], but example B would create [[X1], [X2], [X3]]. Generally, users
+should prefer to configure positionals and literals with nargs first, using
+ntimes only when required.
 
 Internally, all data assigned to destinations will be stored in a fully
 explicit manner. Assume a list of lists, where nargs/nparams determines the
@@ -800,7 +806,7 @@ Zones and anchoring:
     - Also, configuring these parameters via the API is simple to understand
       and requires little code.
 
-    - While the zone syntax not too obtrusive, and it is a mixture of intutive
+    - While the zone syntax not too obtrusive, and it is a mixture of intuitive
       (zone markers) and not very intuitive (anchor markers)
 
     - Infrequent use case, easy to handle via API: let's drop it.

@@ -35,7 +35,7 @@ Rename project: optopuss:
 Feature list
 --------
 
-Support zones and anchors to regulate argument ordering (via the API).
+Support zones and anchors to regulate argument ordering (via the API, not grammar syntax).
 
 Support high-precendence options.
 
