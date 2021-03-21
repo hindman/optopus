@@ -39,6 +39,10 @@ extras = {
         'Pygments>=2.1.3',
         'Sphinx >=1.4.4, <1.5',
         'pep8>=1.7.0',
+        'invoke',
+        'pycodestyle',
+        'twine',
+        'short-con',
     ],
 }
 

@@ -1,5 +1,5 @@
 --------
-Dev notes
+dev-notes: Dev notes
 --------
 
 Creating a new virtualenv:

@@ -1,5 +1,5 @@
 --------
-Grammar syntax
+grammar-syntax: Grammar syntax
 --------
 
 Overall structure:
@@ -23,33 +23,34 @@ Variant definition syntax:
 
         ...         1 or more
         {m,n}       Repetition: m through n, inclusive.
-        ?           Non-greedy assignment.
+        ?           Non-greedy quantifier.
+
+    Positional arguments:
+
+        <xy>        Positional.
+        <xy=foo>    Positional variant.
+        'bar'       Literal (eg, for separators).
 
     Options:
 
-        -x           Short.
-        --xy         Long.
+        -x          Short.
+        --xy        Long.
 
-    Positional arguments and option parameters:
+    Option parameters:
 
-        <xy>        Positional.
-        {xy}        Named parameter.
-        {}          Unnamed parameter.
-
-    Literals:
-
-        bar         Literal, not assigned in regults (eg, for separators).
-        'bar'       Quoted literal (for cases of conflict with grammar).
-        foo=bar     Literal, assigned to foo destination in results.
+        -p {}       Parameter.
+        -p {x}      Parameter, named.
+        -p {=foo}   Parameter variant.
+        -p {x=foo}  Parameter variant, named.
 
     Other:
 
         foo=(...)   Generalized destination assignment. In returned data,
                     organize the data from ... under the foo attribute.
-                    Most applicable for variants and literal alternatives.
+                    Most applicable for variants and groups.
 
 --------
-Syntax examples
+syntax-examples: Syntax examples
 --------
 
 blort-maker:
@@ -61,10 +62,10 @@ blort-maker:
     general`      : [--verbose] [--log-file {}] help`
     other`        : [--hi] [--bye]
 
-    configure     : help` general` task=configure --odin-env {} --od-user {}
-    submit        : help` general` task=submit -c {} -r {} [--start-job] [--person {name} {age}]
-    get           : help` general` task=get -j {} [--json [--indent {}] | --b64 | --yaml]
-    drop          : help` general` task=drop what=(first|last|random)! [--print] <n>
+    configure     : help` general` <task=configure> --odin-env {} --od-user {}
+    submit        : help` general` <task=submit> -c {} -r {} [--start-job] [--person {name} {age}]
+    get           : help` general` <task=get> -j {} [--json [--indent {}] | --b64 | --yaml]
+    drop          : help` general` <task=drop> <what=first|last|random> [--print] <n>
     fubb          : help` other` [-a] [-b] <fubb>... (--fast | --slow)
     zzz           : help` other` [-x] [-y] items=(<a> <b> <c> [-z]){2,7}
 
@@ -74,32 +75,33 @@ neck-diagram:
       or more subcommands with a literal separator between them.
 
     cmd` :  commands=(
-                cmd=snum   <snum>             |
-                cmd=fnum   <fnum>             |
-                cmd=number numbering=(on|off) |
-                cmd=tuning <notes>...         |
-                cmd=fret   <syms>...          |
-                cmd=invert <syms>...
+                <cmd=snum>   <snum>             |
+                <cmd=fnum>   <fnum>             |
+                <cmd=number> <numbering=on|off> |
+                <cmd=tuning> <notes>...         |
+                <cmd=fret>   <syms>...          |
+                <cmd=invert> <syms>...
             )...
 
-    main : cmd` [ / cmd` ]...
+    main : cmd` [ '/' cmd` ]...
 
 Sytax example: nab:
 
     - Another separator-based grammar.
+    - But an interesting separator.
 
-    cmd` :  commands=(
-                cmd=chomp                          |
-                cmd=findall <rgx>                  |
-                cmd=grep <rgx> [-i] [-v] [-s]      |
-                cmd=range <start> <stop> [<step>]  |
-                cmd=run <code> [-g {}] [-a]
+    cmd` :  (
+                '-s' <cmd=chomp>                          |
+                '-s' <cmd=findall> <rgx>                  |
+                '-s' <cmd=grep> <rgx> [-i] [-v] [-s]      |
+                '-s' <cmd=range> <start> <stop> [<step>]  |
+                '-s' <cmd=run> <code> [-g {}] [-a]
             )
 
-    main : cmd` [ / cmd` ]...
+    main : [--help] commands=(cmd`...)
 
 --------
-Terminology
+terminology: Terminology
 --------
 
 Users:
@@ -110,16 +112,11 @@ Users:
 
 Command line argument types:
 
-    - Positionals:
-        - The typical non-option argument.
-        - Positionals can vary.
-
-    - Literals:
-        - A non-varying positional.
-        - For example, subcommand names or separators.
-
     - Arguments:
         - The raw strings directly from the command line.
+
+    - Positionals:
+        - The typical non-option argument.
 
     - Options: arguments with an option prefix.
 
@@ -129,9 +126,12 @@ Command line argument types:
         - Option (other names: regular option, parameter option)
         - Flag
 
-    - Parameters: arguments for an option.
-        - Parameter
-        - Literal
+    - Parameters:
+        - Arguments for an option.
+
+    - Positional or parameter variant:
+        - Mechanism to define a special grammar when a
+          positional or parameter takes a specific value.
 
 Help text sections:
 
@@ -159,15 +159,17 @@ Destination assignment:
     - Controls how the parsed data elements are stored and named.
 
 --------
-Zones and anchors
+zones-and-anchors: Zones and anchors
 --------
 
 They do not control anything other than argument ordering. For example, they
 exert no influence on destination assignment.
 
 --------
-Old examples: needs editing pass
+old-api-examples: Old API examples
 --------
+
+NEEDS EDITING PASS
 
 When working on the Parser API, also see odin-client-via-api. It's
 somewhat out of date but might have useful ideas.
@@ -441,7 +443,7 @@ Function signature for converters and validators:
     Dispatch  | 3     | VAL, OPT, OPTS => None
 
 --------
-Classes and attributes
+classes-and-attributes: Classes and attributes
 --------
 
 Parser

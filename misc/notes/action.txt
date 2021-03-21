@@ -1,12 +1,30 @@
 --------
-Road map
+road-map: Road map
 --------
+
+Sketch the parsing algo [in process on paper]
+
+Sketch the Grammar data structure [in process on paper]
 
 Organize and simplify the planning docs/notes:
 
+    - old_planning_notes.txt
+    . specification.txt
+    . action.txt
+    x dev.txt
+    x discussion.txt
+    x reference.txt
+    x toc.txt
+
+why CLI grammar is amenable to PEG, recursive descent, etc. It is 
+a context-sensitive language. Read this and take notes:
+
+    https://cs.stackexchange.com/questions/7716/can-someone-give-a-simple-but-non-toy-example-of-a-context-sensitive-grammar/7717#7717?newreg=2930da1fdc374a098aa9d9b17b33b195
+    https://www.quora.com/What-is-an-intuitive-way-to-describe-the-differences-between-context-sensitive-context-free-and-regular-grammars-Explanations-with-examples-relating-to-human-language-would-be-particularly-helpful
+
 Design plan.
 
-    - Grammar syntax.
+    x Grammar syntax.
     - Class names and attributes.
     - Naming conventions.
     - Terminology.
@@ -32,7 +50,7 @@ Rename project: optopuss:
     - Shift to a master/dev branching model, plus release tags.
 
 --------
-Feature list
+feature-list: Feature list
 --------
 
 Support zones and anchors to regulate argument ordering (via the API, not grammar syntax).
@@ -53,7 +71,7 @@ Support sub-variants.
 Support abbrev not only for long-options but also choices.
 
 --------
-Items from prior road map
+items-from-prior-road-map: Items from prior road map
 --------
 
 - Drop the Simple spec: just have a grammar and allow it to parse in full (with

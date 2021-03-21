@@ -1,5 +1,5 @@
 --------
-Parsing resources
+parsing-resources: Parsing resources
 --------
 
 Extended Backus–Naur form (EBNF):
@@ -30,7 +30,7 @@ Books:
     Language Implementation Patterns: Create Your Own Domain-Specific and General Programming Languages
 
 --------
-Parsing process generally
+parsing-process-generally: Parsing process generally
 --------
 
 Given a grammar, generate an appropriate parser.
@@ -41,7 +41,7 @@ Feed the tokens into the parsers, which determines validity and returns a
 syntax tree.
 
 --------
-PEGs, CFGs, and packrat parsing
+pegs-cfgs-and-packrat-parsing: PEGs, CFGs, and packrat parsing
 --------
 
 Resource:
@@ -106,7 +106,7 @@ The algorithm combines the PEG approach with memoization (essentially dynamic
 programming without the bookkeeping) to achieve linear performance.
 
 --------
-API-driven vs text-driven: examples:
+api-driven-vs-text-driven-examples: API-driven vs text-driven examples
 --------
 
 # Simple programs.
@@ -120,7 +120,7 @@ misc/examples/odin-client-via-text
 misc/examples/odin-client-via-text-subparsers
 
 --------
-Other tools
+other-tools: Other tools
 --------
 
 App::Cmd
@@ -344,7 +344,7 @@ Ruby Thor
 Ruby GLI
 
 --------
-Problems and scenarios from argparse use cases
+problems-scenarios-from-argparse: Problems scenarios from argparse
 --------
 
 https://stackoverflow.com/questions/18025646
@@ -540,7 +540,7 @@ odin-client:
           existing config file.
 
 --------
-Example grammars
+example-grammars: Example grammars
 --------
 
 Example 1:
