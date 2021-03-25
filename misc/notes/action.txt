@@ -11,16 +11,11 @@ Organize and simplify the planning docs/notes:
     - old_planning_notes.txt
     . specification.txt
     . action.txt
+    - context-sensitive-grammars
     x dev.txt
     x discussion.txt
     x reference.txt
     x toc.txt
-
-why CLI grammar is amenable to PEG, recursive descent, etc. It is 
-a context-sensitive language. Read this and take notes:
-
-    https://cs.stackexchange.com/questions/7716/can-someone-give-a-simple-but-non-toy-example-of-a-context-sensitive-grammar/7717#7717?newreg=2930da1fdc374a098aa9d9b17b33b195
-    https://www.quora.com/What-is-an-intuitive-way-to-describe-the-differences-between-context-sensitive-context-free-and-regular-grammars-Explanations-with-examples-relating-to-human-language-would-be-particularly-helpful
 
 Design plan.
 

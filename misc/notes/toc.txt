@@ -52,6 +52,7 @@ toc: Table of contents
         parsing-resources                  | Parsing resources
         parsing-process-generally          | Parsing process generally
         pegs-cfgs-and-packrat-parsing      | PEGs, CFGs, and packrat parsing
+        context-sensitive-grammars         | Context-sensitive grammars
         api-driven-vs-text-driven-examples | API-driven vs text-driven examples
         other-tools                        | Other tools
         problems-scenarios-from-argparse   | Problems scenarios from argparse

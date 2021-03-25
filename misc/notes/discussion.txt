@@ -758,7 +758,7 @@ Zones and anchoring:
     - Infrequent use case, easy to handle via API: let's drop it from grammar syntax.
 
     - Another question: is the zone concept needed, or could Group do the same
-      thing?
+      thing? I increasingly think so.
 
 High precedence:
 
