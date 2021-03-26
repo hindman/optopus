@@ -464,6 +464,327 @@ Text wrapping:
           within the text (eg something borrowed from markdown)
 
 --------
+arg-parsing-algo: Parsing algorithm
+--------
+
+Notation and terminology:
+
+    - Grammar elements:
+
+        Variant
+        Group
+        Opt
+
+    - Purely notational concepts:
+
+        Pos:         A positional Opt.
+        MGroup:      A Group having mutex=True.
+        Alternative: A Variant or MGroup.
+        OPT:         When current arg looks like an Opt.
+        POS:         When current arg looks like a Pos.
+
+    - Parsing terms:
+
+        - Alternatives: the Variants and MGroups determine how many
+          alternatives we will try.
+
+        - Interpretations: within an alternative, there can be multiple valid
+          interpretations of the arguments -- specifically how they are
+          allocated to Opts either as positionals or params.
+
+        - Backtracking:
+
+            - Current parsing route: the interpretation you are
+              currently on, based on a successful parse of the current
+              arg.
+
+            - Foregone interpretation: the interpretation that you
+              could have selected, but did not -- so you push it to
+              the stack.
+
+Some key insights related to backtracking:
+
+    - Parsing decisions that might require backtracking come from positional
+      arguments or parameters, not options. Options, if present, are
+      non-ambiguous: either they are known and allowed, or not.
+
+    - Backtracking is needed when your current parsing route ends up attaching
+      a param to an Opt or an argument to a Pos but then that route ultimately
+      fails (on a later argument). You need to backtrack to check any foregone
+      alternative interpretations of the input arguments.
+
+    - Alternative interpretations are possible only for Opt with non-static
+      nparams, Pos with non-static nargs, or Pos with non-static ntimes.
+
+    - So pushing to the stack needs to happen when your parsing decision for
+      the current argument creates a foregone alternative.
+
+    - This occurs only for successful parsing of the current argument; never
+      for errors.
+
+    - Variants and MGroups also don't require a backtracking mechanism.
+
+        - Rather, you want to process all of the alternatives in order, based
+          on the Grammar. Each alternative either succeeds or fails. And you
+          stop on the first success.
+
+        - The best time load the stack with these alternatives is before the
+          while-stack loop begins. This will ensure that each alternative will
+          be tried in order. Because we are using a stack, backtracking within
+          any specific alternative (due to non-static nparams/nargs) will
+          finish before the algorithm advances to a fresh alternative.
+
+        - If you were to try to push foregone interpretations to the stack when
+          an alternative fails, you interfere with the correct ordering of the
+          alternatives. Perhaps even worse, it's not easy to know within the
+          while-stack loop when an alternative have totally failed. Each
+          iteration of the loop can be either starting a fresh alternative or
+          exploring one of the different interpretations possible within the
+          alternative.
+
+A backtracking example:
+
+    Grammar:
+        Opt('-f', nparams = (1,3))
+        Opt('x', nargs = (3,4))
+
+    Input:
+        -f V1 V2 V3 V4 V5
+
+    Parsing logic:
+
+        -f : Valid: attach it to Opt(-f).
+
+        V1 : Attach to Opt(-f)
+
+        V2 : Because Opt(-f) is greedy by default, attach. But
+             this attachment is not required due to non-static
+             nparams. Before pushing the new State where V2
+             is attached to Opt(-f), we should push the foregone
+             interpretation -- namely, where we restrict Opt(-f)
+             to nparams of (1,1).
+
+        V3 : Same logic: attach and push foregone interpretation.
+
+        V4 : Attach to Opt(x).
+
+        V5 : Same. But now we're out of arguments and have not
+             satisfied Opt(x). So this interpretation fails.
+             The next State in the stack will restrict
+             Opt(-f) to nparams of (2,2), which will succeed.
+
+    Logic if Opt(-f) had been non-greedy.
+
+        V2 : Don't attach to Opt(-f). Now the foregone interpretation
+             is for Opt(-f) with nparams of (2,3). Push that
+             to the stack.
+
+Result:
+
+    - Data object returned to user after parse.
+
+Target:
+
+    - Similar to Result in storing the parsed information.
+
+    - But the data is structured with an eye toward supporting
+      the parsing process rather than toward user-friendliness.
+
+State:
+
+    - Data object to hold parsing state information as the various
+      alternatives from the grammar are being tried during the
+      while-stack loop.
+
+    - Attributes:
+
+        ai: index of args.
+
+        gp: next available Pos [or None].
+
+        np: nparams remaining for the active Opt [or None].
+
+        av: map of available Opt to remaining ntimes [0 for exhausted].
+
+        target: parsed data accumulated so far.
+
+        err: error that terminated the current alterantive [or None].
+
+ArgResult:
+
+    Data object to represent info need to capture the result-so-far
+    when parsing the current arg. Some likely attributes:
+
+        err: data object holding error info
+        opt: matched Opt
+        val: converted value
+
+    Notation here:
+
+        ArgResult(ERR: ...)
+        ArgResult(OPT)
+        ArgResult(PARAM)
+        ArgResult(POS)
+        ArgResult(UNKNOWN)   # For parse-known-args mode.
+
+Algorithm: how to handle optional Groups:
+
+    - A Group can be optional overall, but have required elements if
+      the Group is triggered by the presense of any of its elements.
+      For example, if either -x or -y are present, both are needed.
+
+        [ -x -y [-i] ]
+
+    - When to handle such matters:
+
+        - During parse. For example, when we see -x, then we would
+          immediately adjust ntimes for -y.
+
+        - After a successfull ArgResult. Before checking Opts for sufficient
+          nparams, nargs, ntimes, we would first adjust those expectations
+          based on any Groups that were activated by the presense of the Opts.
+
+    - The latter, for two reasons:
+
+        - Groups can alter quantifier expections. It makes sense to
+          do all of that logic together.
+
+        - More fundamentally, an optional Group can contain positionals and
+          params. Like in the rest of the grammar, greedy is the default. That
+          means positionals within optional Groups should be attached eagerly.
+          It could get very messy trying to support some special logic just for
+          optional Groups. The user has multiple ways to configure the grammar
+          if the default greediness isn't desired.
+
+Algorithm: setup:
+
+    Stuff from the end-user or user:
+
+        args = [...]
+
+        P = Parser(...)
+        G = P.grammar
+
+    Initialize the stack that drives the algorithm. For every allowed combo of
+    Variant and MGroup, add a State instance to represent the initial
+    conditions of each Alternative.
+
+        stack = [S1, S2, ...]
+        stack = list(reversed(stack))
+
+        # Every State examined and whether the entire parse succeeded.
+        history = []
+        success = False
+
+Algorithm: parsing loop:
+
+    while stack and not success:
+
+        # Prep.
+
+        S = stack.pop()
+        arg = args[S.ai]
+        T = P.get_arg_type(arg)
+        ares = ArgResult()
+
+        # Check arg type.
+
+        if T is OPT:
+
+            # Handle aliases and fuzzy match.
+            if arg not in S.av:
+                arg = P.fuzzy_match(arg)
+
+            if S.np is not None:
+                ares = ArgResult(ERR: expected param but got OPT)
+            elif arg not in S.av:
+                ares = ArgResult(Error unknown OPT)
+            elif S.av[arg] == 0:
+                ares = ArgResult(ERR: OPT occurred too many times)
+            else:
+                ares = ArgResult(OPT)
+
+        else:
+            if S.np[arg]:
+                ares = ArgResult(PARAM)
+            elif gp is not None:
+                ares = ArgResult(POS)
+            else:
+                ares = ArgResult(ERR: too many POS arguments)
+
+        # Conversion and validation for PARAM and POS.
+
+        if not ares.ERR and not ares.OPT:
+            null = object()
+            val = null
+            ok = null
+            err = None
+            try:
+                val = ares.opt.convert(arg)
+                ok = ares.opt.validate(val)
+            except (...) as e:
+                ares.err = captured info about the error
+
+            if best-effort-mode and ok is not True:
+                # Treat as success.
+                ares.best_effort = True
+                ares.val = arg
+            elif val is null:
+                ares = ArgResult(ERR: conversion raised an error)
+            elif ok is null:
+                ares = ArgResult(ERR: validation raised an error)
+            elif ok is False:
+                ares = ArgResult(ERR: validation returned False)
+            else:
+                # Success.
+                ares.val = val
+
+        # Handle parse-known-args.
+
+        if parse-known-mode and ares.ERR:
+            ares = ArgResult(UNKNOWN)
+
+        # Check for overall success if args exhausted.
+
+        if ares.ERR is None and S.ai + 1 == len(args):
+            if all Opts have sufficient nparams, nargs, ntimes:
+                success = True
+            else:
+                ares = ArgResult(ERR: insufficient nparams/nargs)
+
+        # Store history, push foregone, check overall success.
+
+        if ares.ERR:
+            # On error, just store the history.
+            S.target.add(ares)
+            history.append(S)
+
+        else:
+
+            # Check for foregone interpretation.
+            if not success and (ares.PARAM or ares.POS):
+                If either of these apply:
+                    - Matched Opt has non-static nparams.
+                    - Match Pos has non-static nargs or ntimes.
+                Then:
+                    S2 = new State to represent the foregone parsing route
+                    stack.push(S2)
+
+            # Store history.
+            S.target.add(ares)
+            history.append(S)
+
+            # Create next parsing State.
+            S1 = new State based on current parsing route
+            stack.push(S1)
+
+Algorithm: wrap up:
+
+    if success:
+        return history[-1].target
+
+
+--------
 alternative-parsing-algo: Alternative parsing algorithm won't work after all
 --------
 
@@ -543,32 +864,6 @@ Two examples:
 
 But that's not a problem, because Optopuss can do what regular expression
 engines do: greedy assignment by default, non-greedy by configuration.
-
---------
-basic-arg-parsing-algo: Parsing algorithm
---------
-
-Algorithm sketch: parsing one argument:
-
-    - If option:
-
-        - If it can bind to only one leaf in the Phrase tree, do so.
-
-        - If there are alternatives leaves, collect them and prepare for
-          possible backtracking. We will try each leaf in order.
-
-    - Non-option:
-
-        - Can the current option take args?
-
-            - No: do not bind.
-            - Yes, static: just bind.
-            - Yes, variable: bind with possible backtracking.
-
-        - Otherwise, we will bind to current positional Opt.
-
-            - Static: just bind.
-            - Variable: bind with possible backtracking.
 
 --------
 parsed-data-structure: Parsed data structuring: nargs, nparams, ntimes
@@ -656,7 +951,7 @@ Are variants needed give that the grammar syntax already has support for
 alternatives?
 
 Partial variants are a useful device to express some grammars more
-conveniently. 
+conveniently.
 
 Usage variants are a good mechanism for the user to help Optopuss generate more
 readable usage text and more relevant portions of it in response to errors.

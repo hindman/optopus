@@ -23,25 +23,25 @@ toc: Table of contents
 
     discussion.txt
 
-        api-vs-text                        | API-driven vs text-driven
-        other-lib-weaknesses               | Addressing weaknesses common in other libraries
-        other-goals                        | Other goals
-        standard-cli-grammar               | Standard command-line grammar
-        cli-grammar-vs-regex               | Command-line grammar vs. regex
-        subparsers-not-needed              | Optopuss does not need the subparser concept
-        opt-action-not-needed              | Optopuss does not need the action concept
-        explicit-option-param-syntax       | Why explicit syntax for option parameters is needed
-        high-precendence-options           | High precedence options
-        help-text-formatting               | Help text formatting
-        alternative-parsing-algo           | Alternative parsing algorithm won't work after all
-        abmiguous-grammars                 | Ambiguous grammars are not an issue
-        basic-arg-parsing-algo             | Parsing algorithm
-        parsed-data-structure              | Parsed data structuring: nargs, nparams, ntimes
-        eager-attachment-at-bounary        | Eager option attachment at repetition boundaries
-        grammar-syntax-named-unnamed       | Grammar syntax: named and unnamed arguments
-        variants-needed                    | Variants: why they are needed
-        destination-assignment             | General destination assignment: needed after all
-        grammar-syntax-complexity          | Grammar syntax: is it too complex?
+        api-vs-text                  | API-driven vs text-driven
+        other-lib-weaknesses         | Addressing weaknesses common in other libraries
+        other-goals                  | Other goals
+        standard-cli-grammar         | Standard command-line grammar
+        cli-grammar-vs-regex         | Command-line grammar vs. regex
+        subparsers-not-needed        | Optopuss does not need the subparser concept
+        opt-action-not-needed        | Optopuss does not need the action concept
+        explicit-option-param-syntax | Why explicit syntax for option parameters is needed
+        high-precendence-options     | High precedence options
+        help-text-formatting         | Help text formatting
+        arg-parsing-algo             | Parsing algorithm
+        alternative-parsing-algo     | Alternative parsing algorithm won't work after all
+        abmiguous-grammars           | Ambiguous grammars are not an issue
+        parsed-data-structure        | Parsed data structuring: nargs, nparams, ntimes
+        eager-attachment-at-bounary  | Eager option attachment at repetition boundaries
+        grammar-syntax-named-unnamed | Grammar syntax: named and unnamed arguments
+        variants-needed              | Variants: why they are needed
+        destination-assignment       | General destination assignment: needed after all
+        grammar-syntax-complexity    | Grammar syntax: is it too complex?
 
     dev.txt
 
