@@ -2,16 +2,13 @@
 road-map: Road map
 --------
 
-Sketch the parsing algo [in process on paper]
-
-Sketch the Grammar data structure [in process on paper]
-
 Organize and simplify the planning docs/notes:
 
-    - old_planning_notes.txt
+    . Topic: context-sensitive-grammars: editing pass
     . specification.txt
     . action.txt
-    - context-sensitive-grammars
+    x old_planning_notes.txt
+    x hand written notes
     x dev.txt
     x discussion.txt
     x reference.txt
@@ -19,11 +16,15 @@ Organize and simplify the planning docs/notes:
 
 Design plan.
 
-    x Grammar syntax.
+    . Parsing algo: review again
+    . Grammar data structure
+    . More clarity on error selection.
+    - Convience grammar syntax for individual Opts
     - Class names and attributes.
     - Naming conventions.
     - Terminology.
     - API.
+    x Grammar syntax.
 
     * The code currently reads as very heavy; try to lighten up naming.
 

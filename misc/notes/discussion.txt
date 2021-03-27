@@ -268,11 +268,11 @@ Support conversion/validation.
 
 Support dispatch mechanisms.
 
-The parser's configuration is likely to be organized as a fairly deep
-tree behind the scenes. But make it easy for the user to query that
-tree to obtain nodes of interest for configuration and other purposes.
-Primarily this means quickly getting Opt instances, but there could
-be other types of interest as well.
+The parser's configuration is likely to be organized as a fairly deep tree
+behind the scenes. But make it easy for the user to query that tree to obtain
+nodes of interest for configuration and other purposes. Primarily this means
+quickly getting Opt instances, but there could be other types of interest as
+well.
 
 Let users control the important aspects of the help text: section ordering;
 section titles; layout style (eg, compact 2-column or man-page); capitalization
@@ -471,9 +471,11 @@ Notation and terminology:
 
     - Grammar elements:
 
-        Variant
-        Group
-        Opt
+        Parser
+            Grammar (0, 1)
+                Variant (1+)
+                    Groups (0+)
+                    Opts (0+)
 
     - Purely notational concepts:
 
@@ -492,15 +494,14 @@ Notation and terminology:
           interpretations of the arguments -- specifically how they are
           allocated to Opts either as positionals or params.
 
-        - Backtracking:
+        - Backtracking terms:
 
-            - Current parsing route: the interpretation you are
-              currently on, based on a successful parse of the current
-              arg.
+            - Current interpretation or parsing route: the interpretation you
+              are currently on, based on a successful parse of the current arg.
 
-            - Foregone interpretation: the interpretation that you
-              could have selected, but did not -- so you push it to
-              the stack.
+            - Foregone interpretation: the interpretation that you could have
+              selected, but did not -- so you push it to the stack before proceeding
+              with the current interpretation.
 
 Some key insights related to backtracking:
 
@@ -588,27 +589,36 @@ Target:
     - Similar to Result in storing the parsed information.
 
     - But the data is structured with an eye toward supporting
-      the parsing process rather than toward user-friendliness.
+      the parsing process rather than toward end-user convenience.
+
+    - For the applicable alternative (Variant and any MGroups),
+      a Target contains two core data structures accumulated from
+      all Opts within that alternative:
+
+        List[Pos]
+        Dict[Opt]
 
 State:
 
-    - Data object to hold parsing state information as the various
-      alternatives from the grammar are being tried during the
-      while-stack loop.
+    - Data object to hold parsing state information as the various alternatives
+      from the grammar are being tried during the while-stack loop.
 
     - Attributes:
 
         ai: index of args.
 
-        gp: next available Pos [or None].
+        next_pos: next available Pos [or None].
 
-        np: nparams remaining for the active Opt [or None].
+        nps: nparams remaining for the active Opt [or None].
 
-        av: map of available Opt to remaining ntimes [0 for exhausted].
+        avail: map of available Opt to remaining ntimes [0 for exhausted].
 
         target: parsed data accumulated so far.
 
         err: error that terminated the current alterantive [or None].
+
+        variant: name/id/index for the current variant; relevant for
+        error selection/reporting, not parsing directly.
 
 ArgResult:
 
@@ -625,9 +635,9 @@ ArgResult:
         ArgResult(OPT)
         ArgResult(PARAM)
         ArgResult(POS)
-        ArgResult(UNKNOWN)   # For parse-known-args mode.
+        ArgResult(UNKNOWN)   # For forge-ahead-mode or parse-known-mode.
 
-Algorithm: how to handle optional Groups:
+How to handle optional Groups:
 
     - A Group can be optional overall, but have required elements if
       the Group is triggered by the presense of any of its elements.
@@ -674,7 +684,7 @@ Algorithm: setup:
 
         # Every State examined and whether the entire parse succeeded.
         history = []
-        success = False
+        finished = False
 
 Algorithm: parsing loop:
 
@@ -692,22 +702,22 @@ Algorithm: parsing loop:
         if T is OPT:
 
             # Handle aliases and fuzzy match.
-            if arg not in S.av:
+            if arg not in S.avail:
                 arg = P.fuzzy_match(arg)
 
-            if S.np is not None:
+            if S.nps is not None:
                 ares = ArgResult(ERR: expected param but got OPT)
-            elif arg not in S.av:
+            elif arg not in S.avail:
                 ares = ArgResult(Error unknown OPT)
-            elif S.av[arg] == 0:
+            elif S.avail[arg] == 0:
                 ares = ArgResult(ERR: OPT occurred too many times)
             else:
                 ares = ArgResult(OPT)
 
         else:
-            if S.np[arg]:
+            if S.nps[arg]:
                 ares = ArgResult(PARAM)
-            elif gp is not None:
+            elif S.next_pos is not None:
                 ares = ArgResult(POS)
             else:
                 ares = ArgResult(ERR: too many POS arguments)
@@ -739,16 +749,22 @@ Algorithm: parsing loop:
                 # Success.
                 ares.val = val
 
-        # Handle parse-known-args.
+        # Handle less restrictive parsing modes.
 
-        if parse-known-mode and ares.ERR:
+        if ares.ERR and (forge-ahead-mode or parse-known-mode):
             ares = ArgResult(UNKNOWN)
 
         # Check for overall success if args exhausted.
 
         if ares.ERR is None and S.ai + 1 == len(args):
-            if all Opts have sufficient nparams, nargs, ntimes:
-                success = True
+
+            - First check whether any Groups have been activated by the present
+              Opts. If so, adjust expected ntimes accordingly.
+
+            - Then check that all Opts have sufficient nparams, nargs, ntimes.
+
+            if OK:
+                finished = True
             else:
                 ares = ArgResult(ERR: insufficient nparams/nargs)
 
@@ -762,7 +778,8 @@ Algorithm: parsing loop:
         else:
 
             # Check for foregone interpretation.
-            if not success and (ares.PARAM or ares.POS):
+            # Not sure if we should perform these steps for ArgResult(UNKNOWN).
+            if not finished and (ares.PARAM or ares.POS):
                 If either of these apply:
                     - Matched Opt has non-static nparams.
                     - Match Pos has non-static nargs or ntimes.
@@ -780,9 +797,14 @@ Algorithm: parsing loop:
 
 Algorithm: wrap up:
 
+    # Also need to handle parse-known-mode and forge-ahead-mode.
+
     if success:
         return history[-1].target
 
+    else:
+        - Examine history to find most relevant error.
+        - Return or raise, depending on Parser configuration.
 
 --------
 alternative-parsing-algo: Alternative parsing algorithm won't work after all
@@ -1066,4 +1088,309 @@ High precedence:
       by default.
 
     - Infrequent use case, easy via the API: let's drop it.
+
+--------
+optional-positional-placement: Optional positionals before required are not a problem
+--------
+
+One might be concerned about Grammars containing optional positionals before
+required ones. For example:
+
+    [<m>] <x> <y>
+
+But this is not a problem is we just adhere consistently to greedy policy.
+If the user wants positionals attached to <x> and <y> before <m>, they
+can express the grammar differently.
+
+--------
+parse-known-args: Parse known arguments
+--------
+
+How argparse handles it:
+
+    - Instead of returning a single Namespace it returns a tuple:
+
+        (Namespace, List[unknown args])
+
+    - It does still apply all validations to any supplied arguments.
+
+I have found that approach mildly annoying:
+
+    - It requires a change to the calling code to call a different
+      method and to unpack the 2-tuple.
+
+    - That makes it a bit less convenient to drive via typical configuration
+      mechanisms.
+
+I think it makes more sense for Optopuss to treat parse-known-args as
+one of the parsing strategies that it supports:
+
+    - Regular.
+
+    - Parse known.
+
+    - Best-effort: accept conversion/validation failures.
+
+    - Best-effort: always forge ahead: in the face of an error, accumulate the
+      bad args, but keep pressing forward.
+
+    - No configuration parsing, with configurable nparams (default: 0).
+
+Optopuss:
+
+    - By default:
+
+        - Continue to return a single Result object.
+
+        - Put the unknown arguments in an attribute with an uncommon name, such
+          as 'others' or 'unknowns'.
+
+    - Let the user configure this:
+
+        - Name of the unknowns attribute.
+
+        - Whether to return (Result, List[unknowns]) tuple, like argparse.
+
+--------
+destination-scopes: Destination scopes
+--------
+
+By default, a destination used in multiple places within a grammar are assumed
+to refer to the same underlying Opt.
+
+    Example 1:
+
+        <x> <x>
+
+    Example 2:
+
+        foo : <x> [-y]
+        bar : -z -y <x> <x>
+
+    Example 3:
+
+        foo : <x> [-y]
+        bar : -z -y [-x]
+
+    Example 4:
+
+        foo : <x> [-y]
+        bar : -z -y <x>
+
+It seems like the right default behavior, but it opens up some questions:
+
+    (1) What if the grammar contains two or more fundamentally different Opt
+    types for the same destination, as in Example 3?
+
+    (2) What if the user wants different configuration for the same destination
+    in different locations within the grammar? The nab script, for example,
+    seems to demand this kind of flexibility: each nab command needs its Opts
+    to be independently configurable.
+
+One approach:
+
+    - Disallow Opt independence within a variant: if you use the same
+      destination in a variant, the underlying Opt will be the same.
+
+    - Use Opt independence across variants.
+
+    - In some cases, the grammar will force independence right out of the gate,
+      as in Examples 2 and 3. This will occur if the grammar implies differents
+      in Opt types, nparams, nargs, ntimes.
+
+    - In other cases (such as Example 4) the variants won't distinguish
+      the Opts.
+
+    - Flexible querying mechanisms can support easy configuration whether
+      the user wants to configure different occurrences of the same destination
+      differently or the same. Under the hood, the Opts will be distinct, but
+      the user won't have to think too hard either way:
+
+        p = Parser(...)
+        p.get('x').config(...)         # Configures both <x> Opts.
+        p.get('foo', 'x').config(...)  # Configures only <x> in Variant(foo).
+
+--------
+zones-not-needed: Zones not needed
+--------
+
+In my planning I think the concept of Zones was not useful. A zone has no
+purpose on its own; rather, it existed purely to support anchoring. And the
+anchoring configuration was applied to Opts, not Zones. Just use Groups and
+allow Opts to be anchored within them.
+
+--------
+help-distpatching: Help distpatching
+--------
+
+Optopuss aims to support behavior like this:
+
+    frob --help              # Print general help.
+    frob configure --help    # Print help for the configure task.
+
+How does the user configure this help dispatching. More generally, what about
+supporting other help-printing scenarios that rely not on --help but on some
+other options: for example, I've had programs where I want --examples to print
+some usage examples for the end-user.
+
+    - Simple use case: standard help feature for a command-line program.
+
+        p = Parser(help = True|False)
+
+    - Help hook: any time the library's help feature is triggered, call the
+      user's function with some params and let them return something to tell
+      the library which help section(s) to print, if any.
+
+        p = Parser(help = CALLABLE)
+
+    - That approach is flexible for the general case, but it does not speak to
+      the most common type of complex use case (a program with subcommands,
+      where the subcommands and help sections have a 1:1 correspondence). Some
+      additional conveniences to support dispatching based on subcommands --
+      or, more correctly, based on the value taken by a specific Opt.
+
+        # For 1:1 correspondence between help sections and Opt values.
+        o = Opt('task', help = 'sections')
+
+        # For more flexibility, supply mapping from Opt value to section name.
+        o = Opt('task', help = DICT)
+
+--------
+argparse-and-greed: argparse and greediness
+--------
+
+The argparse library does attach arguments greedily, but it makes no attempt
+to backtrack. An example:
+
+    Grammar:
+
+        -z {}... <y> <y>
+
+    Example input:
+
+        -z A B C D E F
+
+    Behavior:
+
+        - Attach everything to -z.
+        - Raise error because <y> not given.
+
+--------
+end-user-errors: End-user errors
+--------
+
+General notes:
+
+    - Each Parser.parse(args) call will generate up to N failures, one per
+      interpretation.
+
+    - Ideally, we would report the error most aligned with end-user intent.
+
+    - Possible mechanisms to select the most relevant error:
+
+        - Error type, under the theory that some errors are more likely to
+          convey intent about which alternative was (or was not) intended.
+
+        - Percentage of input args matched, under regular parsing or
+          forge-ahead parsing.
+
+        - Percentage of options present in the arguments [details below].
+
+Percentage of options present:
+
+    - Every interpretation allows certain options.
+
+    - Some options are shared by multiple (or even all) interpretations. The
+      presence of such options is not very telling regarding end-user intent.
+
+    - Other options are less widely shared across interpretations, or even
+      unique.
+
+    - This is an easy measure to compute (no complex parsing required): just
+      count up how many times each option occurs and measure that for alignment
+      with the expected/possible tally based on the interpretations.
+
+    - This metric is probably not perfect by itself, but it is not affected by
+      positioning of the erroneous argument on the input command line, so it
+      might be an effective counterweight against that positioning problem.
+
+Types of errors:
+
+    - Invalid options:
+
+        - Globally unknown option.
+
+        - Inapplicable option for current alternative (but known to grammar).
+
+    - Missing arguments:
+
+        - Missing option: either missing or insufficient ntimes.
+
+        - Insufficient nparams.
+
+        - Insufficient nargs.
+
+    - Excess arguments:
+
+        - Too many nargs.
+
+    - Invalid values:
+
+        - Conversion/validation problems: params.
+
+        - Conversion/validation problems: positionals.
+
+Metrics based on the current parsing algorithm are not always indicative:
+
+    - Since an interpretation is rejected on the first error, we don't actually
+      known how many arguments would have been matched if we had kept going.
+
+    - Perhaps the metrics should be driven by some kind of forge-ahead parsing?
+
+    - Or more simply on the basis of the mere presence of of uniq options
+      within the args. This is a simple check, not a parsing algorithm.
+
+Inferring intent from error types is tempting but not always so powerful:
+
+    - Globally unknown options are an easy case: always select this error,
+      because it's true under any interpretation.
+
+    - One might think that an inapplicable option conveys that the current
+      interpretation was not intended. But it's easy to create
+      counter-examples: for example, a large N of arguments that work perfectly
+      for the current interpretation, but the end-user inadvertently included
+      an option for a different variant as the first argument (maybe when
+      editing a prior command from shell history). In this case, the
+      interpretation would fail on the first argument, matching zero arguments.
+      However, it would do very well on a percent-matched metric under
+      forge-ahead parsing.
+
+    - Invalid values might seem like an indication the current interpretation
+      was intended, under the theory that the args were allocated to a slot but
+      just failed in the details. But to know that with any confidence you need
+      forge-ahead parsing.
+
+Reporting precendence for errors:
+
+    - First consider error specificity, listed from high to low. Errors with
+      higher specificity convey end-user intent (we know what they were trying
+      to do). Errors with lower specificity tend to disqualify the current
+      interpretation (not the one intended by end-user).
+
+        - Global problems.
+        - Conversion and validation problems.
+        - Structural problems: non-options.
+        - Structural problems: options.
+
+    - Then check alignment between arguments and expectations.
+
+        - Greater alignment implies intent.
+        - Metric: N args matched / N args.
+
+    - Finally, use error creation order (report the first error among those not
+      yet filtered out by criteria above). Error ordering will be governed by
+      the grammar's structure of alternatives and its greedy policies.
+
+    - As a possible future feature, support verbose error reporting, triggered
+      by env variables and/or Parser config via API.
 
