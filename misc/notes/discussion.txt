@@ -529,7 +529,7 @@ Some key insights related to backtracking:
           on the Grammar. Each alternative either succeeds or fails. And you
           stop on the first success.
 
-        - The best time load the stack with these alternatives is before the
+        - The best time to load the stack with these alternatives is before the
           while-stack loop begins. This will ensure that each alternative will
           be tried in order. Because we are using a stack, backtracking within
           any specific alternative (due to non-static nparams/nargs) will
@@ -538,7 +538,7 @@ Some key insights related to backtracking:
         - If you were to try to push foregone interpretations to the stack when
           an alternative fails, you interfere with the correct ordering of the
           alternatives. Perhaps even worse, it's not easy to know within the
-          while-stack loop when an alternative have totally failed. Each
+          while-stack loop when an alternative has totally failed. Each
           iteration of the loop can be either starting a fresh alternative or
           exploring one of the different interpretations possible within the
           alternative.
@@ -569,7 +569,9 @@ A backtracking example:
 
         V4 : Attach to Opt(x).
 
-        V5 : Same. But now we're out of arguments and have not
+        V5 : Same.
+
+        -  : Now we're out of arguments and have not
              satisfied Opt(x). So this interpretation fails.
              The next State in the stack will restrict
              Opt(-f) to nparams of (2,2), which will succeed.
@@ -586,10 +588,10 @@ Result:
 
 Target:
 
-    - Similar to Result in storing the parsed information.
+    - Similar to Result in that its purpose is to store the parsed information.
 
-    - But the data is structured with an eye toward supporting
-      the parsing process rather than toward end-user convenience.
+    - But the data is structured with an eye toward supporting the parsing
+      process rather than toward end-user convenience.
 
     - For the applicable alternative (Variant and any MGroups),
       a Target contains two core data structures accumulated from
@@ -600,8 +602,8 @@ Target:
 
 State:
 
-    - Data object to hold parsing state information as the various alternatives
-      from the grammar are being tried during the while-stack loop.
+    - Data object to hold parsing state as the various interpretations from the
+      grammar are being tried during the while-stack loop.
 
     - Attributes:
 
@@ -613,7 +615,7 @@ State:
 
         avail: map of available Opt to remaining ntimes [0 for exhausted].
 
-        target: parsed data accumulated so far.
+        target: Target instance holding parsed data accumulated so far.
 
         err: error that terminated the current alterantive [or None].
 
@@ -623,24 +625,24 @@ State:
 ArgResult:
 
     Data object to represent info need to capture the result-so-far
-    when parsing the current arg. Some likely attributes:
+    for the parsing the current arg. Some likely attributes:
 
         err: data object holding error info
         opt: matched Opt
         val: converted value
 
-    Notation here:
+    Notation used here:
 
-        ArgResult(ERR: ...)
-        ArgResult(OPT)
-        ArgResult(PARAM)
-        ArgResult(POS)
-        ArgResult(UNKNOWN)   # For forge-ahead-mode or parse-known-mode.
+        ArgResult(ERR: ...) | Current arg failed.
+        ArgResult(OPT)      | Current arg matched OPT.
+        ArgResult(PARAM)    | Current arg matched PARAM.
+        ArgResult(POS)      | Current arg matched POS.
+        ArgResult(UNKNOWN)  | For forge-ahead-mode or parse-known-mode.
 
 How to handle optional Groups:
 
     - A Group can be optional overall, but have required elements if
-      the Group is triggered by the presense of any of its elements.
+      the Group is triggered by the presence of any of its elements.
       For example, if either -x or -y are present, both are needed.
 
         [ -x -y [-i] ]
@@ -652,12 +654,12 @@ How to handle optional Groups:
 
         - After a successfull ArgResult. Before checking Opts for sufficient
           nparams, nargs, ntimes, we would first adjust those expectations
-          based on any Groups that were activated by the presense of the Opts.
+          based on any Groups that were activated by the presence of the Opts.
 
     - The latter, for two reasons:
 
-        - Groups can alter quantifier expections. It makes sense to
-          do all of that logic together.
+        - Groups can alter quantifier expections. It makes sense to do all of
+          that quantifier checking together.
 
         - More fundamentally, an optional Group can contain positionals and
           params. Like in the rest of the grammar, greedy is the default. That
@@ -677,14 +679,18 @@ Algorithm: setup:
 
     Initialize the stack that drives the algorithm. For every allowed combo of
     Variant and MGroup, add a State instance to represent the initial
-    conditions of each Alternative.
+    conditions of each alternative.
 
+        # The stack of States.
         stack = [S1, S2, ...]
         stack = list(reversed(stack))
 
-        # Every State examined and whether the entire parse succeeded.
+        # Every State examined and whether the entire parse is complete.
         history = []
-        finished = False
+        success = False
+
+        # Parser-wide inventory of all known OPT.
+        known_opts = G.get_all_options()
 
 Algorithm: parsing loop:
 
@@ -705,10 +711,12 @@ Algorithm: parsing loop:
             if arg not in S.avail:
                 arg = P.fuzzy_match(arg)
 
-            if S.nps is not None:
-                ares = ArgResult(ERR: expected param but got OPT)
+            if arg not in known_opts:
+                ares = ArgResult(ERR: globally unknown OPT)
             elif arg not in S.avail:
-                ares = ArgResult(Error unknown OPT)
+                ares = ArgResult(ERR: inapplicable OPT)
+            elif S.nps is not None:
+                ares = ArgResult(ERR: expected param but got OPT)
             elif S.avail[arg] == 0:
                 ares = ArgResult(ERR: OPT occurred too many times)
             else:
@@ -735,7 +743,7 @@ Algorithm: parsing loop:
             except (...) as e:
                 ares.err = captured info about the error
 
-            if best-effort-mode and ok is not True:
+            if ok is not True and (forge-ahead-mode or parse-known-mode):
                 # Treat as success.
                 ares.best_effort = True
                 ares.val = arg
@@ -764,9 +772,9 @@ Algorithm: parsing loop:
             - Then check that all Opts have sufficient nparams, nargs, ntimes.
 
             if OK:
-                finished = True
+                success = True
             else:
-                ares = ArgResult(ERR: insufficient nparams/nargs)
+                ares = ArgResult(ERR: insufficient ntimes/nparams/nargs)
 
         # Store history, push foregone, check overall success.
 
@@ -778,8 +786,8 @@ Algorithm: parsing loop:
         else:
 
             # Check for foregone interpretation.
-            # Not sure if we should perform these steps for ArgResult(UNKNOWN).
-            if not finished and (ares.PARAM or ares.POS):
+            # Not yet sure if we should perform these steps for ArgResult(UNKNOWN).
+            if not success and (ares.PARAM or ares.POS):
                 If either of these apply:
                     - Matched Opt has non-static nparams.
                     - Match Pos has non-static nargs or ntimes.
@@ -797,14 +805,19 @@ Algorithm: parsing loop:
 
 Algorithm: wrap up:
 
-    # Also need to handle parse-known-mode and forge-ahead-mode.
-
     if success:
         return history[-1].target
 
     else:
         - Examine history to find most relevant error.
         - Return or raise, depending on Parser configuration.
+
+Post-parsing logic:
+
+    target = self.do_parse(...)
+
+    Load the data from target into a Result. Details will vary based on Parser
+    configuration and parsing-mode.
 
 --------
 alternative-parsing-algo: Alternative parsing algorithm won't work after all
@@ -1279,76 +1292,27 @@ to backtrack. An example:
 end-user-errors: End-user errors
 --------
 
-General notes:
+The problem:
 
     - Each Parser.parse(args) call will generate up to N failures, one per
       interpretation.
 
     - Ideally, we would report the error most aligned with end-user intent.
 
-    - Possible mechanisms to select the most relevant error:
+    - How do we select the error to report?
 
-        - Error type, under the theory that some errors are more likely to
-          convey intent about which alternative was (or was not) intended.
+Initial ideas for mechanisms to select the most relevant error:
 
-        - Percentage of input args matched, under regular parsing or
-          forge-ahead parsing.
+    - Error type, under the theory that some errors are more likely to
+      convey intent about which alternative was (or was not) intended.
 
-        - Percentage of options present in the arguments [details below].
+    - Percentage of input args matched, under regular parsing or
+      perhaps forge-ahead parsing.
 
-Percentage of options present:
-
-    - Every interpretation allows certain options.
-
-    - Some options are shared by multiple (or even all) interpretations. The
-      presence of such options is not very telling regarding end-user intent.
-
-    - Other options are less widely shared across interpretations, or even
-      unique.
-
-    - This is an easy measure to compute (no complex parsing required): just
-      count up how many times each option occurs and measure that for alignment
-      with the expected/possible tally based on the interpretations.
-
-    - This metric is probably not perfect by itself, but it is not affected by
-      positioning of the erroneous argument on the input command line, so it
-      might be an effective counterweight against that positioning problem.
-
-Types of errors:
-
-    - Invalid options:
-
-        - Globally unknown option.
-
-        - Inapplicable option for current alternative (but known to grammar).
-
-    - Missing arguments:
-
-        - Missing option: either missing or insufficient ntimes.
-
-        - Insufficient nparams.
-
-        - Insufficient nargs.
-
-    - Excess arguments:
-
-        - Too many nargs.
-
-    - Invalid values:
-
-        - Conversion/validation problems: params.
-
-        - Conversion/validation problems: positionals.
-
-Metrics based on the current parsing algorithm are not always indicative:
-
-    - Since an interpretation is rejected on the first error, we don't actually
-      known how many arguments would have been matched if we had kept going.
-
-    - Perhaps the metrics should be driven by some kind of forge-ahead parsing?
-
-    - Or more simply on the basis of the mere presence of of uniq options
-      within the args. This is a simple check, not a parsing algorithm.
+    - Percentage of available options present in the arguments, under the
+      theory that the presence of options is one of the more telling indicators
+      of intent. This metric is fairly easy to compute (a frequency distrition
+      of options present).
 
 Inferring intent from error types is tempting but not always so powerful:
 
@@ -1360,37 +1324,49 @@ Inferring intent from error types is tempting but not always so powerful:
       counter-examples: for example, a large N of arguments that work perfectly
       for the current interpretation, but the end-user inadvertently included
       an option for a different variant as the first argument (maybe when
-      editing a prior command from shell history). In this case, the
-      interpretation would fail on the first argument, matching zero arguments.
-      However, it would do very well on a percent-matched metric under
-      forge-ahead parsing.
+      editing a prior command from shell history).
 
     - Invalid values might seem like an indication the current interpretation
       was intended, under the theory that the args were allocated to a slot but
       just failed in the details. But to know that with any confidence you need
       forge-ahead parsing.
 
-Reporting precendence for errors:
+The resolution is to consider how other parsers behave:
 
-    - First consider error specificity, listed from high to low. Errors with
-      higher specificity convey end-user intent (we know what they were trying
-      to do). Errors with lower specificity tend to disqualify the current
-      interpretation (not the one intended by end-user).
+    - The always try to consume as much of the input as possible. This suggests
+      that the first criterion for error-selection is S.ai.
 
-        - Global problems.
-        - Conversion and validation problems.
-        - Structural problems: non-options.
-        - Structural problems: options.
+    - Multiple interpretations can fail with the same S.ai. To resolve ties,
+      consider how errors can occur (consuming an OPT, consuming a POS, or
+      during final checks). For each of those cases, the error-reporting
+      precedence is fairly clear-cut [listed below].
 
-    - Then check alignment between arguments and expectations.
+    - To resolve ties, report the error associated with the earliest
+      alternative, based on the grammar.
 
-        - Greater alignment implies intent.
-        - Metric: N args matched / N args.
+Types of errors in precedence order, by failure source:
 
-    - Finally, use error creation order (report the first error among those not
-      yet filtered out by criteria above). Error ordering will be governed by
-      the grammar's structure of alternatives and its greedy policies.
+    - Trying to consume an OPT:
 
-    - As a possible future feature, support verbose error reporting, triggered
-      by env variables and/or Parser config via API.
+        - Globally unknown option.
+
+        - Inapplicable option for current alternative (but known to grammar).
+
+    - Trying to consume a POS:
+
+        - Conversion/validation problems: params.
+
+        - Conversion/validation problems: positionals.
+
+        - Excess arguments.
+
+    - Making final checks:
+
+        - Insufficient ntimes: option.
+
+        - Insufficient nparams.
+
+        - Insufficient ntimes: positional.
+
+        - Insufficient nargs.
 

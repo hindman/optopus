@@ -16,14 +16,14 @@ Organize and simplify the planning docs/notes:
 
 Design plan.
 
-    . Parsing algo: review again
     . Grammar data structure
-    . More clarity on error selection.
-    - Convience grammar syntax for individual Opts
     - Class names and attributes.
     - Naming conventions.
     - Terminology.
     - API.
+    x Convience grammar syntax for individual Opts
+    x Parsing algo: review again
+    x More clarity on error selection.
     x Grammar syntax.
 
     * The code currently reads as very heavy; try to lighten up naming.

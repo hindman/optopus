@@ -49,6 +49,27 @@ Variant definition syntax:
                     organize the data from ... under the foo attribute.
                     Most applicable for variants and groups.
 
+    Convenience syntax when configuring a single Opt:
+
+        - Some examples using full syntax:
+
+            Opt('<what>')
+            Opt('<what=first|last|random>')
+            Opt('<x> <x> [<x>]')
+            Opt('--foo')
+            Opt('--foo {} {} [{}]')
+            Opt('--foo {a} {b} [{c}]')
+
+        - Same examples using convenience syntax, which drops the explicit
+          brackets for positionals and parameters.
+
+            Opt('what')
+            Opt('what=first|last|random')
+            Opt('x x [x]')
+            Opt('--foo')
+            Opt('--foo _ _ [_]')
+            Opt('--foo a b [c]')
+
 --------
 syntax-examples: Syntax examples
 --------
