@@ -10,7 +10,7 @@ Wrap up editing:
     - specification.txt
     - action.txt
 
-Rename project: optopuss:
+Rename project: optopus:
     x Package and module name.
     x Notes files.
     - Git repo: remote and local.

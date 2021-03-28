@@ -18,7 +18,7 @@ Two fundamental configuration strategies for argument parsers:
         - This approach is much less common.
         - Examples: docopt.
 
-The optopuss library combines the best of both approaches:
+The optopus library combines the best of both approaches:
 
     - API-driven.
 
@@ -70,7 +70,7 @@ The optopuss library combines the best of both approaches:
 
 Configuration via usage syntax is focused on grammar:
 
-    - Optopuss keeps that syntax fairly clean, readable, and intutive by
+    - Optopus keeps that syntax fairly clean, readable, and intutive by
       focusing it solely on the grammar and naming -- the area where it excels.
       Other details, if any are neeeded, are handled via the API.
 
@@ -106,14 +106,14 @@ variants (just noted).
 Supporting everything from quick-and-dirty scripts to complex, highly
 customized command-line programs:
 
-    - At once extreme, optopuss allows you to parse any default-behavior
+    - At once extreme, optopus allows you to parse any default-behavior
       command line, with zero configuration. Just import and go. This parser
       won't enforce any rules, but it will tell you what the end-user entered
       -- which is good enough for many types of quick-and-dirty scripts,
       debugging sessions, experiments, and even early prototypes.
 
-            import optopuss
-            opts = optopuss.parse_args()
+            import optopus
+            opts = optopus.parse_args()
 
     - At the other extreme, you could build the next Git or a variety of
       programs with idiosyncratic grammars, heavily customized help text, and
@@ -128,7 +128,7 @@ Allowing users to control the generated help text in a fine-grained manner.
     - Program complexity increases the need to organize and fine-tune help
       text, but not necessarily to write and layout the whole thing.
 
-    - Optopuss provides many mechanisms for that fine tuning:
+    - Optopus provides many mechanisms for that fine tuning:
 
         - Simple top-level configurations to control basic layout,
           capitalization, punctuation, etc.
@@ -142,7 +142,7 @@ Allowing users to control the generated help text in a fine-grained manner.
 
         - Ability to control nearly all parameters driving the help text
           contruction process via configuration and, where necessary, through
-          the programmatic hooks. There should be no need to subclass optopuss
+          the programmatic hooks. There should be no need to subclass optopus
           or delve into the parser's innards.
 
 Allowing users to enhance usage-text readability by being able to refer to
@@ -163,7 +163,7 @@ groups of options and to omit either short or long options.
 Allowing users to define their arguments and options in ways that encourage
 modularity.
 
-    - In optopuss a user defines options and arguments as atomic units,
+    - In optopus a user defines options and arguments as atomic units,
       separate from the issues of command-line grammar, usage variants, and
       options help text.
 
@@ -324,7 +324,7 @@ it cannot appear again (ignoring repeatables). That means command-line parsing
 is context-sensitive.
 
 --------
-subparsers-not-needed: Optopuss does not need the subparser concept
+subparsers-not-needed: Optopus does not need the subparser concept
 --------
 
 The subparser concept is much less powerful and flexible than the key concept
@@ -344,7 +344,7 @@ majority and two small minorities:
       not align very well with their needs.
 
 --------
-opt-action-not-needed: Optopuss does not need the action concept
+opt-action-not-needed: Optopus does not need the action concept
 --------
 
 Arguments can be configured in argparse with an 'action' parameter. The
@@ -423,7 +423,7 @@ other command-line arguments. Some examples of desired behavior:
 Most argument parsers fail on #3 (they gripe instead of helping) and they do
 not easily support #2.
 
-Optopuss addresses those problems with two mechanisms: high-precendence options
+Optopus addresses those problems with two mechanisms: high-precendence options
 and flexible dispatching. If an option is configured to be high-precendence,
 its presence among the command-line arguments will trigger whatever action it
 has been configured to perform, and that dispatching configuration will take
@@ -897,7 +897,7 @@ Two examples:
     <xray>...    <y>...
     --xray {}... <y>...
 
-But that's not a problem, because Optopuss can do what regular expression
+But that's not a problem, because Optopus can do what regular expression
 engines do: greedy assignment by default, non-greedy by configuration.
 
 --------
@@ -988,7 +988,7 @@ alternatives?
 Partial variants are a useful device to express some grammars more
 conveniently.
 
-Usage variants are a good mechanism for the user to help Optopuss generate more
+Usage variants are a good mechanism for the user to help Optopus generate more
 readable usage text and more relevant portions of it in response to errors.
 
 Variants can provide a low-config mechanism for subcommand-style programs to
@@ -1009,7 +1009,7 @@ to most specific:
 destination-assignment: General destination assignment: needed after all
 --------
 
-Optopuss does need generalized destination assignment. At a minimum, it needs
+Optopus does need generalized destination assignment. At a minimum, it needs
 that feature not just for Opt, but also for partial variants. And once you go
 that far, you might as well generalize it.
 
@@ -1135,7 +1135,7 @@ I have found that approach mildly annoying:
     - That makes it a bit less convenient to drive via typical configuration
       mechanisms.
 
-I think it makes more sense for Optopuss to treat parse-known-args as
+I think it makes more sense for Optopus to treat parse-known-args as
 one of the parsing strategies that it supports:
 
     - Regular.
@@ -1149,7 +1149,7 @@ one of the parsing strategies that it supports:
 
     - No configuration parsing, with configurable nparams (default: 0).
 
-Optopuss:
+Optopus:
 
     - By default:
 
@@ -1236,7 +1236,7 @@ allow Opts to be anchored within them.
 help-distpatching: Help distpatching
 --------
 
-Optopuss aims to support behavior like this:
+Optopus aims to support behavior like this:
 
     frob --help              # Print general help.
     frob configure --help    # Print help for the configure task.

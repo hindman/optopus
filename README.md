@@ -1,6 +1,6 @@
 --------
 
-## optopuss
+## optopus
 
 Blah blah.
 

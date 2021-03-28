@@ -3,7 +3,7 @@
 import sys
 import json
 
-from optopuss import (
+from optopus import (
     Parser,
     Opt,
     FormatterConfig,

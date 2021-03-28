@@ -142,9 +142,9 @@ terminology: Terminology
 
 Users:
 
-    - Library: the optopuss code base.
-    - Library user (or just user): a developer using optopuss.
-    - End user: a user running a program that uses optopuss.
+    - Library: the optopus code base.
+    - Library user (or just user): a developer using optopus.
+    - End user: a user running a program that uses optopus.
 
 Command line argument types:
 

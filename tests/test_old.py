@@ -4,7 +4,7 @@ import pytest
 from six.moves import zip_longest
 from textwrap import dedent
 
-from optopuss.old import (
+from optopus.old import (
     OptType,
     SimpleSpecParser,
     ExitCode,
