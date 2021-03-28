@@ -106,94 +106,130 @@ The algorithm combines the PEG approach with memoization (essentially dynamic
 programming without the bookkeeping) to achieve linear performance.
 
 --------
-context-sensitive-grammars: Context-sensitive grammars
+grammar-types: Grammar types
 --------
 
-TODO: these notes need rework, edting
+References:
 
-why CLI grammar is not directly amenable to PEG, recursive descent, etc. It is
-a context-sensitive language. Read this and take notes:
-
-    https://cs.stackexchange.com/questions/7716/can-someone-give-a-simple-but-non-toy-example-of-a-context-sensitive-grammar/7717#7717?newreg=2930da1fdc374a098aa9d9b17b33b195
+    https://en.wikipedia.org/wiki/Chomsky_hierarchy
+    https://en.wikipedia.org/wiki/Formal_grammar
+    https://stackoverflow.com/questions/14589346/is-c-context-free-or-context-sensitive
     https://www.quora.com/What-is-an-intuitive-way-to-describe-the-differences-between-context-sensitive-context-free-and-regular-grammars-Explanations-with-examples-relating-to-human-language-would-be-particularly-helpful
-    https://math.stackexchange.com/questions/170902/why-cant-we-use-memoization-to-parse-unambiguous-context-free-grammars-in-linea
 
-An important detail here is that grammars do not accept strings; they generate
-strings. Grammars are descriptions of languages that provide a means for
-generating all possible strings contained in the language. In order to tell if
-a particular string is contained in the language, you would use a recognizer,
-some sort of automaton that processes a given string and says "yes" or "no."
+Formal grammars:
+
+    In formal language theory, a grammar describes how to form strings from a
+    language's alphabet (or elemental values) that are valid according to the
+    language's syntax.
+
+    More specically, a grammar consists of:
+
+        - A finite set N of nonterminal symbols (disjoint from the strings
+          formed from G).
+
+        - A finite set T of terminal symbols (disjoint from N).
+
+        - A finite set P of production rules for rewriting strings via
+          substitution.
+
+    A grammar is usually thought of as a language generator. However, it can
+    also sometimes be used as the basis for a recognizer -- a function in
+    computing that determines whether a given string belongs to the language or
+    is grammatically incorrect. To describe such recognizers, formal language
+    theory uses separate formalisms, known as automata theory.
+
+    Parsing is the process of recognizing an utterance (a string in natural
+    languages) by breaking it down to a set of symbols and analyzing each one
+    against the grammar of the language.
+
+    Most languages have the meanings of their utterances structured according
+    to their syntax—a practice known as compositional semantics. As a result,
+    the first step to describing the meaning of an utterance in language is to
+    break it down part by part and look at its analyzed form (known as its
+    parse tree in computer science, and as its deep structure in generative
+    grammar).
 
 Chomsky Hierarchy:
 
-    https://www.quora.com/What-is-an-intuitive-way-to-describe-the-differences-between-context-sensitive-context-free-and-regular-grammars-Explanations-with-examples-relating-to-human-language-would-be-particularly-helpful
-    https://math.stackexchange.com/questions/170902/why-cant-we-use-memoization-to-parse-unambiguous-context-free-grammars-in-linea
-    https://stackoverflow.com/questions/14589346/is-c-context-free-or-context-sensitive
-    https://en.wikipedia.org/wiki/Chomsky_hierarchy
+    The following table summarizes each of Chomsky's four types of grammars, the
+    class of language it generates, the type of automaton that recognizes it, and
+    the form its rules must have.
 
+    Grammar | Languages               | Recognizer automaton       | Allowed production rules
+    -----------------------------------------------------------------------------------
+    Type-3  | Regular                 | Finite state               | A   => a | aB
+    Type-2  | Context-free            | Non-deterministic pushdown | A   => x
+    Type-1  | Context-sensitive       | LB-ND Turing machine       | xAy => xzy
+    Type-0  | Recursively enumberable | Turing machine             | z   => x
 
-    Type 0: Recursively enumberable
+    Symbols and abbreviations:
 
-        Automaton: Turing machine
+        * These symbols are not standard. Typically, uppercase are terminals,
+          lowercase are non-terminals, and Greek are sequences of either.
 
-        Production rules allowed:
+        a     | Terminal
+        ---------------------------------------------
+        M     | Non-terminal
+        N     | Same
+        ---------------------------------------------
+        x     | Sequence of terminals or non-terminals
+        y     | Same
+        z     | Same, and this one cannot empty
+        ---------------------------------------------
+        LB-ND | Linear-bounded non-deterministic
 
-            
-    Type 1: Context-sensitive
-    Type 2: Context-free
-    Type 3: Regular
+    Understanding the production rules:
 
-Grammars that are context-free (or that plus being regular), can be expressed
-with static substitution rules:
+        - Regular grammar (Type-3) is very rigid. Every non-terminal produces
+          at least a left-side terminal. The automaton requires no memory and
+          can make each decision based on the information directly at hand.
 
-    NOUN     : BlueBomber | Grijesh | I | We
-    TENSE    : am | was | is | were
-    VERB     : going | eating | working
-    SENTENCE : <NOUN> <TENSE> <VERB>
+            Classic example (using regex quantifier notation):
 
-Superficially, the grammar seems alright, but it can also generate sentences
-that English speakers would reject due to subject-verb disagreements.
+                L = a{n}
 
+                X = ''
+                X = a
+                X = Xa
 
-Regular grammar:
+            In other words, the language consisting of all strings of
+            consisting of zero or more letter a.
 
-    Languages generated by regular grammars can be parsed by finite state
-    automata, where what you can accept at one state does not depend on
-    anything except the state that you're currently in.
+        - Context-free grammar (Type-2) is more open: a non-terminal can
+          generate sequences of terminals and/or non-terminals. The constraint
+          is that every non-terminal maps to exactly one pre-defined thing.
+          Mappings never change dynamically during parsing. This automaton
+          requires memory to support backtracking (classically, a stack).
 
-    Notation:
-        A : terminal
-        x : non-terminal
+            Classic example:
 
-    A : x B
-    A : x
+                L = a{n} b{n}
 
-    An example:
+                X = ''
+                X = ab
+                X = aXa
+                X = bXb
 
-        # Any number of a, followed by any number of b.
-        a{m} b{n}
+            To recognize strings in this language, the parser needs to remember
+            how many letter a were seen.
 
-        W : a W
-        W : b W
-        W : a
-        W : b
+        - Context-sensitive (Type-1) can be understood in relation to
+          context-free. If you look only at the middle terms, you see the
+          context-free production rule just discussed (A => z). But now what
+          each non-terminal maps to can differ depending on the context (x and
+          y are the surrounding context on both sides of the rule).
 
-Context-free grammar:
+            Classic example:
 
-    Context-free languages can be accepted by pushdown automata, which are
-    finite state automata equipped with a stack for memory. This allows the
-    automaton to remember what has already been seen.
+                L = a{n} b{n} c{n}
 
-    An example:
+            At first, I did not understand why this is any different than a{n}
+            b{n}. Couldn't you just remember N in the same way? Perhaps the
+            answer lies less in the ordinary practicalities of how one would
+            implement a real parser but in writing the grammar rules.
 
-        # Same number of a and b.
-        a{n} b{n}
-
-    A : a
-    A : a A
-    B : b B
-    B : b
-
+        - Context-sensitive (Type-0) is wide open, no constraints on the
+          grammar.
 
 --------
 api-driven-vs-text-driven-examples: API-driven vs text-driven examples

@@ -1311,7 +1311,7 @@ Initial ideas for mechanisms to select the most relevant error:
 
     - Percentage of available options present in the arguments, under the
       theory that the presence of options is one of the more telling indicators
-      of intent. This metric is fairly easy to compute (a frequency distrition
+      of intent. This metric is fairly easy to compute (a frequency distribution
       of options present).
 
 Inferring intent from error types is tempting but not always so powerful:
@@ -1333,7 +1333,7 @@ Inferring intent from error types is tempting but not always so powerful:
 
 The resolution is to consider how other parsers behave:
 
-    - The always try to consume as much of the input as possible. This suggests
+    - They always try to consume as much of the input as possible. This suggests
       that the first criterion for error-selection is S.ai.
 
     - Multiple interpretations can fail with the same S.ai. To resolve ties,

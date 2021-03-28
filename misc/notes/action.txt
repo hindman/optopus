@@ -2,47 +2,30 @@
 road-map: Road map
 --------
 
-Organize and simplify the planning docs/notes:
-
-    . Topic: context-sensitive-grammars: editing pass
-    . specification.txt
-    . action.txt
-    x old_planning_notes.txt
-    x hand written notes
-    x dev.txt
-    x discussion.txt
-    x reference.txt
-    x toc.txt
-
 Design plan.
 
-    . Grammar data structure
-    - Class names and attributes.
-    - Naming conventions.
-    - Terminology.
-    - API.
-    x Convience grammar syntax for individual Opts
-    x Parsing algo: review again
-    x More clarity on error selection.
-    x Grammar syntax.
+    - specification.txt
 
-    * The code currently reads as very heavy; try to lighten up naming.
+        - Grammar data structure
+        - Class names and attributes.
+        - Naming conventions.
+        - Terminology.
+        - API.
 
 Road map.
 
-    - Try to organize into top-level features.
-    - What is an MVP?
-    - Shift things that can wait to later.
+    - action.txt
+
+        - Top-level features.
+        - What is an MVP - maybe zero-config parsing?
+        - Shift things that can wait to later.
+        - Try to claim pypi name early.
 
 Rename project: optopuss:
 
     - Git repo: remote and local.
     - Package and module name.
     - Notes files.
-
-    - How quickly could we publish a beta version of something useful?
-        - Maybe an MVP that does zero-config parsing?
-
     - Shift to a master/dev branching model, plus release tags.
 
 --------
