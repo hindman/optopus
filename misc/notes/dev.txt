@@ -4,15 +4,12 @@ dev-notes: Dev notes
 
 Creating a new virtualenv:
 
-    V='2.7.18'
+    v='2.7.18'
     deactivate
-    pyenv shell $V
-    pyenv versions
-    mkvirtualenv optopus-$V
+    pyenv shell $v && pyenv versions
+    mkvirtualenv optopus-$v
     full-venv
-    pip install -e .
-    pip install -e .[dev]
-    pip install -e .[test]
+    pip install -e . -e .[dev] -e .[test]
 
 Activate and run tests:
 

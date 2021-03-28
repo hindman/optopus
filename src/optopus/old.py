@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals, print_function
-
 import json
 import re
 import sys
@@ -674,7 +672,8 @@ class Opt(object):
                 opts = list(SimpleSpecParser(option_spec).parse())
                 assert opts
                 otok = opts[-1]
-                otok.aliases = [otok.option for otok in opts[0:-1]]
+                otok.aliases = [otok.option for otok in opts]
+                otok.aliases.pop()
             except (RegexLexerError, AssertionError) as e:
                 otok = None
 
@@ -744,7 +743,6 @@ class Opt(object):
                      text = self.text,
                      sections = self.sections,
                 )
-                # print(o)
 
     def __str__(self):
         fmt = 'Opt({})'

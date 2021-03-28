@@ -10,14 +10,6 @@ Wrap up editing:
     - specification.txt
     - action.txt
 
-Rename project: optopus:
-    x Package and module name.
-    x Notes files.
-    - Git repo: remote and local.
-    - Set up virtualenvs.
-
-Drop PY2 support.
-
 --------
 milestones: Milestones
 --------
@@ -125,4 +117,7 @@ items-from-prior-road-map: Items from prior road map
 - Support no-args behaviors, such as show-help or default-args.
 
 - Support global configuration to automatically add single-letter aliases.
+
+- Tox fails for Pythons 3.6, 3.5, 3.4, 3.3. Not sure why. Failed early during
+  pip installs.
 

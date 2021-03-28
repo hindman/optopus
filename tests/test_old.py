@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals, print_function
-
 import pytest
 from six.moves import zip_longest
 from textwrap import dedent
