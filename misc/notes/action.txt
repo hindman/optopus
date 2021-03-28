@@ -16,10 +16,19 @@ Road map.
 
     - action.txt
 
-        - Top-level features.
-        - What is an MVP - maybe zero-config parsing?
-        - Shift things that can wait to later.
-        - Try to claim pypi name early.
+    - Possible milestones:
+
+        Nail down naming, classes, and API.
+        MVP: zero-config parsing.
+        Publish to claim pypi name.
+
+        Parsing backed by core grammar.
+        Usage text creation.
+        High precendence.
+        Dispatch support.
+        Anchored Opts.
+        Conveniences.
+        Integration with config data and env variables.
 
 Rename project: optopuss:
 
@@ -27,6 +36,10 @@ Rename project: optopuss:
     - Package and module name.
     - Notes files.
     - Shift to a master/dev branching model, plus release tags.
+
+Drop PY2 support.
+    - There is a community effort to get libraries to stop
+      supporting PY2 starting 2020: python3statement.org
 
 --------
 feature-list: Feature list
@@ -75,11 +88,9 @@ items-from-prior-road-map: Items from prior road map
     - Keeping track of alternatives.
     - Backtracking using those alternatives.
 
-- Support tolerant.
+- Support high-precendence.
 
 - Check argparse for other behaviors.
-
-- Opt: allow `x` or `<x>`
 
 - Handle --opt=val.
 
@@ -112,5 +123,7 @@ items-from-prior-road-map: Items from prior road map
 
 - Integration with ENV variables.
 
-- Miscellaneous.
+- Support no-args behaviors, such as show-help or default-args.
+
+- Support global configuration to automatically add single-letter aliases.
 

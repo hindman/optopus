@@ -4,22 +4,22 @@ toc: Table of contents
 
     toc.txt
 
-        toc                                | Table of contents
+        toc | Table of contents
 
     action.txt
 
-        road-map                           | Road map
-        feature-list                       | Feature list
-        items-from-prior-road-map          | Items from prior road map
+        road-map                  | Road map
+        feature-list              | Feature list
+        items-from-prior-road-map | Items from prior road map
 
     specification.txt
 
-        grammar-syntax                     | Grammar syntax
-        syntax-examples                    | Syntax examples
-        terminology                        | Terminology
-        zones-and-anchors                  | Zones and anchors
-        old-api-examples                   | Old API examples
-        classes-and-attributes             | Classes and attributes
+        grammar-syntax                | Grammar syntax
+        syntax-examples               | Syntax examples
+        single-opt-convenience-syntax | Convenience syntax for single Opts
+        terminology                   | Terminology
+        old-api-examples              | Old API examples
+        classes-and-attributes        | Classes and attributes
 
     discussion.txt
 

@@ -43,32 +43,17 @@ Variant definition syntax:
         -p {=foo}   Parameter variant.
         -p {x=foo}  Parameter variant, named.
 
-    Other:
+    General destination assignment:
 
-        foo=(...)   Generalized destination assignment. In returned data,
-                    organize the data from ... under the foo attribute.
-                    Most applicable for variants and groups.
+        foo=(...)   In returned data, organize the data from ... under
+                    the foo attribute. Most applicable for variants/groups.
 
     Convenience syntax when configuring a single Opt:
 
-        - Some examples using full syntax:
-
-            Opt('<what>')
-            Opt('<what=first|last|random>')
-            Opt('<x> <x> [<x>]')
-            Opt('--foo')
-            Opt('--foo {} {} [{}]')
-            Opt('--foo {a} {b} [{c}]')
-
-        - Same examples using convenience syntax, which drops the explicit
-          brackets for positionals and parameters.
-
-            Opt('what')
-            Opt('what=first|last|random')
-            Opt('x x [x]')
-            Opt('--foo')
-            Opt('--foo _ _ [_]')
-            Opt('--foo a b [c]')
+        x x [x]     Positionals can drop <> brackets.
+        x=a|b|c     Ditto, with choices.
+        -f _ [_]    Parameters can drop {} brackets.
+        -f a b      Ditto, with named parameters.
 
 --------
 syntax-examples: Syntax examples
@@ -122,6 +107,36 @@ Sytax example: nab:
     main : [--help] commands=(cmd`...)
 
 --------
+single-opt-convenience-syntax: Convenience syntax for single Opts
+--------
+
+    Convenience syntax when configuring a single Opt:
+
+        x x [x]     Positionals can drop <> brackets.
+        x=a|b|c     Ditto, with choices.
+        -f _ [_]    Parameters can drop {} brackets.
+        -f a b      Ditto, with named parameters.
+
+        - Some examples using full syntax:
+
+            Opt('<what>')
+            Opt('<what=first|last|random>')
+            Opt('<x> <x> [<x>]')
+            Opt('--foo')
+            Opt('--foo {} {} [{}]')
+            Opt('--foo {a} {b} [{c}]')
+
+        - Same examples using convenience syntax, which drops the explicit
+          brackets for positionals and parameters.
+
+            Opt('what')
+            Opt('what=first|last|random')
+            Opt('x x [x]')
+            Opt('--foo')
+            Opt('--foo _ _ [_]')
+            Opt('--foo a b [c]')
+
+--------
 terminology: Terminology
 --------
 
@@ -144,7 +159,7 @@ Command line argument types:
         - Long
         - Short
 
-        - Option (other names: regular option, parameter option)
+        - Option (parameter option)
         - Flag
 
     - Parameters:
@@ -178,13 +193,6 @@ Help text sections:
 Destination assignment:
 
     - Controls how the parsed data elements are stored and named.
-
---------
-zones-and-anchors: Zones and anchors
---------
-
-They do not control anything other than argument ordering. For example, they
-exert no influence on destination assignment.
 
 --------
 old-api-examples: Old API examples
@@ -479,34 +487,36 @@ Parser
     add_help
 
 Opt
-    # Configuration object used by the Parser.
-    # Each represents either an option or positional argument.
 
-    option_spec          # Rename to spec?
-    nargs
-    nparams
-    ntimes
-    required
-    text
-    sections
-    aliases
-    tolerant
-    option
-    destination          # Or dest? In a lot of planning notes I also use target.
-    _opt_type
-    arg_names            # Is the argparse metavar or something else?
-    _nargs
-    default
-    factory              # Default for collections.
-    convert              # Callable(s)
-    validate             # Callable(s)
-    dispatch             # Callable(s)
-    choices
-    required             # A convenience; implemented as ntimes
-    description          # Or desc?
-    high
-    hide                 # Mechanism to hide option in usage and help text.
-    negated_by           # Mechanism to create flag negatives (when default is True, eg from config)
+    - Used to configure an option or positional.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    grammar   | Grammar syntax for the Opt. Was 'option_spec'.
+    ntimes    | .
+    nargs     | .
+    nparams   | .
+    dest      | Was 'destination'.
+    default   | .
+    convert   | Callable(s).
+    validate  | Callable(s).
+    --------------------------------------------------------------------------------
+    text      | Defer.
+    aliases   | Defer.
+    high      | Defer. Was 'tolerant'.
+    factory   | Defer. Callable to create default.
+    dispatch  | Defer. Callable(s).
+    choices   | Defer. Could handle with validate.
+    sections  | Defer. Sequence of section names.
+    required  | Defer, maybe drop. Same as ntimes=1.
+    negaters  | Defer. For flag negatives (to overrule True default)
+    hidden    | Defer.
+    help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
+    --------------------------------------------------------------------------------
+    option    | Internal. Not sure of purpose.
+    _opt_type | Internal. Holds an OptType.
+    arg_names | Internal. Seems related to simple spec parsing.
+    --------------------------------------------------------------------------------
 
 ParsedOptions
     # Object returned by Parser.parse().
