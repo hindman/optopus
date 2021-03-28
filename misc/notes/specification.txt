@@ -142,9 +142,9 @@ terminology: Terminology
 
 Users:
 
-    - Library: the opto-py code base.
-    - Library user (or just user): a developer using opto-py.
-    - End user: a user running a program that uses opto-py.
+    - Library: the optopuss code base.
+    - Library user (or just user): a developer using optopuss.
+    - End user: a user running a program that uses optopuss.
 
 Command line argument types:
 
@@ -476,19 +476,21 @@ classes-and-attributes: Classes and attributes
 --------
 
 Parser
-    # Command line option and argument parser.
 
-    opts
-    simple_spec
-    wildcards
-    sections
-    formatter_config
-    program
-    add_help
+    Attribute        | Note
+    --------------------------------------------------------------------------------
+    grammar          | Was 'simple_spec'.
+    elems            | Was 'opts'.
+    --------------------------------------------------------------------------------
+    sections         | Defer.
+    program          | Defer. The program name, in usage text.
+    formatter_config | Defer. FormatterConfig.
+    add_help         | Defer.
+    --------------------------------------------------------------------------------
+    wildcards        | Drop. Was used to support * as a match-anything device.
+    --------------------------------------------------------------------------------
 
 Opt
-
-    - Used to configure an option or positional.
 
     Attribute | Note
     --------------------------------------------------------------------------------

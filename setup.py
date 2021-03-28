@@ -9,7 +9,7 @@ import sys
 # Basic metadata.
 ####
 
-project_name = 'opto-py'
+project_name = 'optopuss'
 package_name = project_name.replace('-', '_')
 repo_name    = project_name
 src_subdir   = 'src'

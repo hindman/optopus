@@ -2,44 +2,43 @@
 road-map: Road map
 --------
 
-Design plan.
+Nail down naming, classes, attributes, API, and general terminology.
 
+Grammar data structure: specify with greater clarity.
+
+Wrap up editing:
     - specification.txt
-
-        - Grammar data structure
-        - Class names and attributes.
-        - Naming conventions.
-        - Terminology.
-        - API.
-
-Road map.
-
     - action.txt
 
-    - Possible milestones:
-
-        Nail down naming, classes, and API.
-        MVP: zero-config parsing.
-        Publish to claim pypi name.
-
-        Parsing backed by core grammar.
-        Usage text creation.
-        High precendence.
-        Dispatch support.
-        Anchored Opts.
-        Conveniences.
-        Integration with config data and env variables.
-
 Rename project: optopuss:
-
+    x Package and module name.
+    x Notes files.
     - Git repo: remote and local.
-    - Package and module name.
-    - Notes files.
-    - Shift to a master/dev branching model, plus release tags.
+    - Set up virtualenvs.
 
 Drop PY2 support.
-    - There is a community effort to get libraries to stop
-      supporting PY2 starting 2020: python3statement.org
+
+--------
+milestones: Milestones
+--------
+
+MVP: zero-config parsing.
+
+Publish first beta version.
+
+Parsing backed by core grammar.
+
+Usage text creation.
+
+High precendence.
+
+Dispatch support.
+
+Anchored Opts.
+
+Conveniences.
+
+Integration with config data and env variables.
 
 --------
 feature-list: Feature list

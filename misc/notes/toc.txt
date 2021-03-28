@@ -9,6 +9,7 @@ toc: Table of contents
     action.txt
 
         road-map                  | Road map
+        milestones                | Milestones
         feature-list              | Feature list
         items-from-prior-road-map | Items from prior road map
 

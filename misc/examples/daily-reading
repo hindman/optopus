@@ -2,9 +2,9 @@
 
 # Compares different setups for a simple script:
 #
-# - opto-py : usage text
-# - opto-py : API
-# - opto-py : API + simple spec
+# - optopuss : usage text
+# - optopuss : API
+# - optopuss : API + simple spec
 
 ####
 # Usage text.

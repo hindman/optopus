@@ -3,9 +3,9 @@
 # Compares different setups for a simple script:
 #
 # - argparse
-# - opto-py : usage text
-# - opto-py : API
-# - opto-py : simple spec + API
+# - optopuss : usage text
+# - optopuss : API
+# - optopuss : simple spec + API
 
 ####
 # argparse.
@@ -40,7 +40,7 @@ p = parser(
 
 
 ####
-# opto-py : API.
+# optopuss : API.
 ####
 
 p = parser(
@@ -56,7 +56,7 @@ p = parser(
 
 
 ####
-# opto-py : API: simple spec.
+# optopuss : API: simple spec.
 ####
 
 spec = '--since TERM --limit N --rebuild --experiment EXP --status --month M --search TERM --get ITEM'

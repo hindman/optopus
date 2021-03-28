@@ -3,7 +3,7 @@
 import sys
 import json
 
-from opto_py import (
+from optopuss import (
     Parser,
     Opt,
     FormatterConfig,

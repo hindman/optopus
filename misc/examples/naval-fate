@@ -3,7 +3,7 @@
 # The docopt naval_fate example shown two ways:
 #
 # - The original docopt specification.
-# - The same grammar using opto-py's syntax.
+# - The same grammar using optopuss's syntax.
 #
 # The docopt syntax has the benefit of being shorter, but this
 # brevity comes at a high cost: an awkward returned opts dict,
@@ -26,7 +26,7 @@ USAGE = '''
 '''
 
 ####
-# opto-py spec.
+# optopuss spec.
 ####
 
 grammar = [

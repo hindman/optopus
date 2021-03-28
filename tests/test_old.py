@@ -4,19 +4,17 @@ import pytest
 from six.moves import zip_longest
 from textwrap import dedent
 
-from opto_py import (
+from optopuss.old import (
+    OptType,
+    SimpleSpecParser,
+    ExitCode,
+    jdump,
     FormatterConfig,
     Opt,
     OptoPyError,
     Parser,
     Section,
     SectionName,
-)
-from opto_py.parser import (
-    OptType,
-    SimpleSpecParser,
-    ExitCode,
-    jdump,
 )
 
 def test_parser_using_wildcards():
