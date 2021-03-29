@@ -21,6 +21,7 @@ toc: Table of contents
         terminology                   | Terminology
         old-api-examples              | Old API examples
         classes-and-attributes        | Classes and attributes
+        deferred-classes              | Deferred classes
 
     discussion.txt
 

@@ -58,6 +58,7 @@ PATT_OPT_CHAR = r'[\w\-]+'
 # - The type.
 # - Whether the RegexLexer should emit the tokens of this type.
 # - The regex to match the token.
+# - TODO: should create a TokenType data object.
 SIMPLE_SPEC_TOKENS = (
     (WHITESPACE, False, re.compile(r'\s+')),
     (LONG_OPT,   True,  re.compile(r'--' + PATT_OPT_CHAR + PATT_END)),
@@ -596,24 +597,23 @@ class Section(object):
             )
 
 ################
-# GenericParser.
+# GenericParserMixin.
 ################
 
-class GenericParser(object):
-
-    def __init__(self, lexer):
-        self.lexer = lexer
-        self.current_token = self.lexer.get_next_token()
-        self.parser_functions = tuple()
+class GenericParserMixin(object):
 
     def parse(self):
+        # Setup: have the lexer get the first token.
+        self.current_token = self.lexer.get_next_token()
         elem = True
+        # Consume and yield as many tokens as we can.
         while elem:
             for func in self.parser_functions:
                 elem = func()
                 if elem:
                     yield elem
                     break
+        # We expect EOF as the final token.
         if not self.current_token.isa(EOF):
             self.error()
 
@@ -1204,17 +1204,15 @@ class RegexLexer(object):
 # SimpleSpecParser.
 ################
 
-class SimpleSpecParser(GenericParser):
+class SimpleSpecParser(GenericParserMixin):
 
     ####
     #
     # To implement a parser:
     #
-    # - Inherit from GenericParser.
+    # - Inherit from GenericParserMixin.
     #
-    # - Pass a TOKENS data structure to the RegexLexer.
-    #
-    # - Define one or more parser_functions.
+    # - Define self.lexer and self.parser_functions.
     #
     # - Each of those functions should return some data element
     #   appropriate for the grammar (if the current Token matches)
@@ -1229,10 +1227,7 @@ class SimpleSpecParser(GenericParser):
     ####
 
     def __init__(self, text):
-        lexer = RegexLexer(text, SIMPLE_SPEC_TOKENS)
-        super(SimpleSpecParser, self).__init__(lexer)
-        # TODO: should not need to assign as an attribute on self,
-        # since GenericParser handles that.
+        self.lexer = RegexLexer(text, SIMPLE_SPEC_TOKENS)
         self.parser_functions = (
             self.long_opt,
             self.short_opt,

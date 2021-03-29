@@ -7,6 +7,15 @@ Overall structure:
     foo` : PARTIAL_DEFINITION
     bar  : VARIANT_DEFINITION
 
+    Defintions can span multiple lines. Any line with whitespace indentation
+    (optionally with leading colon) will be considered a continuation of
+    the current variant.
+
+        foo` : Blah blah
+               blah blah
+               blah blah
+        bar  : Blah
+
 Variant definition syntax:
 
     Variants:
@@ -96,15 +105,13 @@ Sytax example: nab:
     - Another separator-based grammar.
     - But an interesting separator.
 
-    cmd` :  (
-                '-s' <cmd=chomp>                          |
-                '-s' <cmd=findall> <rgx>                  |
-                '-s' <cmd=grep> <rgx> [-i] [-v] [-s]      |
-                '-s' <cmd=range> <start> <stop> [<step>]  |
-                '-s' <cmd=run> <code> [-g {}] [-a]
-            )
+    cmd` : '-s' <cmd=chomp>                          |
+           '-s' <cmd=findall> <rgx>                  |
+           '-s' <cmd=grep> <rgx> [-i] [-v] [-s]      |
+           '-s' <cmd=range> <start> <stop> [<step>]  |
+           '-s' <cmd=run> <code> [-g {}] [-a]
 
-    main : [--help] commands=(cmd`...)
+    main : [--help] commands=cmd`...
 
 --------
 single-opt-convenience-syntax: Convenience syntax for single Opts
@@ -475,7 +482,7 @@ Function signature for converters and validators:
 classes-and-attributes: Classes and attributes
 --------
 
-Parser
+Parser:
 
     Attribute        | Note
     --------------------------------------------------------------------------------
@@ -490,7 +497,7 @@ Parser
     wildcards        | Drop. Was used to support * as a match-anything device.
     --------------------------------------------------------------------------------
 
-Opt
+Opt:
 
     Attribute | Note
     --------------------------------------------------------------------------------
@@ -520,26 +527,90 @@ Opt
     arg_names | Internal. Seems related to simple spec parsing.
     --------------------------------------------------------------------------------
 
+Result:
+
+    TODO
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    --------------------------------------------------------------------------------
+
+Target:
+
+    TODO
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    --------------------------------------------------------------------------------
+
+TokenType:
+    - Internal data object given to a lexer.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    name      | Name of token.
+    rgx       | Regex to match the token.
+    emit      | Whether to emit back to parser [default: True].
+    --------------------------------------------------------------------------------
+
+RegexLexer:
+    - General-purpose regex-based lexer.
+
+    Attribute   | Note
+    --------------------------------------------------------------------------------
+    text        | The text to be lexed.
+    token_types | Sequence of TokenType.
+    pos         | Current index of the lexer.
+    max_pos     | Last index of the text.
+    is_eof      | Becomes True when text exhausted.
+    --------------------------------------------------------------------------------
+
+Token:
+    - Simple internal data object emitted by a lexer.
+
+    Attribute  | Note
+    --------------------------------------------------------------------------------
+    token_type | TokenType of the token.
+    value      | Corresponding token text.
+    --------------------------------------------------------------------------------
+
+GenericParserMixin:
+    - Provides parse(), eat(), and error() behaviors.
+
+    Attribute        | Note
+    --------------------------------------------------------------------------------
+    lexer            | Lexer, supplied by subclass.
+    parser_functions | Sequence of token-eating functions, supplied by subclass.
+    --------------------------------------------------------------------------------
+    current_token    | Managed by the mixin.
+    --------------------------------------------------------------------------------
+
+GrammarParser:
+
+--------
+deferred-classes: Deferred classes
+--------
+
 ParsedOptions
-    # Object returned by Parser.parse().
-    # Basic form: self.DESTINATION = VALUE.
-    # Also behaves like a collection: iterable, dictable, etc.
+    - Object returned by Parser.parse().
+    - Basic form: self.DESTINATION = VALUE.
+    - Also behaves like a collection: iterable, dictable, etc.
 
     args
     parsed_opts
     args_index
 
 ParsedOpt
-    # Used by the Parser to store parsing results for an Opt.
-    # Each ParsedOpt represents one DESTINATION-VALUE pair.
+    - Used by the Parser to store parsing results for an Opt.
+    - Each ParsedOpt represents one DESTINATION-VALUE pair.
 
     destination
     opt
     _values
 
 FormatterConfig
-    # Object for the user to configure details about the generation
-    # of usage and help text.
+    - Object for the user to configure details about the generation
+    - of usage and help text.
 
     sections
     program_name
@@ -552,57 +623,34 @@ FormatterConfig
     alias_style
 
 Section
-    # Used to create labeled groups of Opt instances for the purposes
-    # of help text generation.
+    - Used to create labeled groups of Opt instances for the purposes
+    - of help text generation.
 
     name
     label
     text
     opts
 
-GenericParser
-    # A general-purpose parser meant to be sub-classed.
-    # The subclass provides a lexer and parsing functions.
-
-    lexer
-    parser_functions
-    current_token
-
-SimpleSpecParserGenericParser(GenericParser)
-    # Used to parse a simple grammar spec given by the user.
-    # The parse() method returns a Phrase representing the CLI grammar.
+SimpleSpecParserGenericParser(GenericParserMixin)
+    - Used to parse a simple grammar spec given by the user.
+    - The parse() method returns a Phrase representing the CLI grammar.
 
 GrammarSpecParser
-    # Like SimpleSpecParser, but for the full variant-based grammar.
+    - Like SimpleSpecParser, but for the full variant-based grammar.
     # Not implemented yet.
 
 Phrase
-    # Object used by Parser to represent CLI grammar and do parsing work.
-    # Each Phrase can store subphrases, so the grammar forms a tree.
-    # Leaves are Phrase objects corresponding to Opt intances.
+    - Object used by Parser to represent CLI grammar and do parsing work.
+    - Each Phrase can store subphrases, so the grammar forms a tree.
+    - Leaves are Phrase objects corresponding to Opt intances.
 
     subphrases
     opt
 
-RegexLexer
-    # General purpose lexer for use by SimpleSpecParser and GrammarSpecParser.
-
-    text
-    token_types
-    pos
-    max_pos
-    is_eof
-
-Token
-    # Simple data object emitted by the RegexLexer.
-
-    token_type
-    value
-
 OptToken
-    # A data object holding the parsed content of a Token.
-    # Lacks constructor; should add.
-    # Callers are using these attributes.
+    - A data object holding the parsed content of a Token.
+    - Lacks constructor; should add.
+    - Callers are using these attributes.
 
     option
     option_spec
@@ -611,20 +659,21 @@ OptToken
     arg_names
 
 Enum
-    # Used for collections of constants.
-    # Should switch to short-con.
+    - Used for collections of constants.
+    - Should switch to short-con.
 
     _enum_name
     _members
     _rmembers
 
 EnumMember
-    # Used by Enum.
+    - Used by Enum.
+    - The kws dict is used to set as attributes on self.
 
     enum_name
     name
     value
-    **kws    # Set as attributes on self
+    **kws
 
 RegexLexerErrorException(Exception)
     pass

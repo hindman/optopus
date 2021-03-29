@@ -21,7 +21,7 @@ def tags(c):
     Run mtags for the project
     '''
     c.run('mtags --recipe .optpy --write w')
-    c.run('mtags --recipe .opttxt --write u')
+    c.run('mtags --recipe .opttxt --write u --toc order')
 
 # @task
 # def test(c, cov = False):
