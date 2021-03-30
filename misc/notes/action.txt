@@ -121,3 +121,6 @@ items-from-prior-road-map: Items from prior road map
 - Tox fails for Pythons 3.6, 3.5, 3.4, 3.3. Not sure why. Failed early during
   pip installs.
 
+- Support custom option prefixes. [Requires some thought about the grammar
+  syntax: it might need to stick with standard prefixes].
+

@@ -7,13 +7,11 @@ Overall structure:
     foo` : PARTIAL_DEFINITION
     bar  : VARIANT_DEFINITION
 
-    Defintions can span multiple lines. Any line with whitespace indentation
-    (optionally with leading colon) will be considered a continuation of
-    the current variant.
+    Defintions can span multiple lines. Leading colon is required.
 
         foo` : Blah blah
-               blah blah
-               blah blah
+             : blah blah
+             : blah blah
         bar  : Blah
 
 Variant definition syntax:
@@ -26,6 +24,8 @@ Variant definition syntax:
 
         []          Grouping, optional.
         ()          Grouping.
+        foo=[]      Named grouping, optional.
+        foo=()      Named grouping.
         |           Alternatives.
 
     Quantifiers:
@@ -38,7 +38,8 @@ Variant definition syntax:
 
         <xy>        Positional.
         <xy=foo>    Positional variant.
-        'bar'       Literal (eg, for separators).
+        <xy=a|b>    Positional choices.
+        'bar'       Literal.
 
     Options:
 
@@ -48,21 +49,107 @@ Variant definition syntax:
     Option parameters:
 
         -p {}       Parameter.
+        -p _        Synonym.
         -p {x}      Parameter, named.
+        -p {=a|b}   Parameter choices.
+
         -p {=foo}   Parameter variant.
         -p {x=foo}  Parameter variant, named.
-
-    General destination assignment:
-
-        foo=(...)   In returned data, organize the data from ... under
-                    the foo attribute. Most applicable for variants/groups.
+        -p {x=a|b}  Parameter choices, named.
 
     Convenience syntax when configuring a single Opt:
 
         x x [x]     Positionals can drop <> brackets.
-        x=a|b|c     Ditto, with choices.
+        x=a|b|c
+
         -f _ [_]    Parameters can drop {} brackets.
-        -f a b      Ditto, with named parameters.
+        -f a [b]
+
+    Whitespace rules:
+
+        - Whitespace required:
+
+            - Quoted literal containing whitespace (no user want this).
+
+            - If a variant ends with an option, whitespace is needed before the
+              next variant name (otherwise the names bleed together).
+
+            - To disambiguate names in the convenience syntax for single Opts.
+
+        - Tight-binding required among syntax elements:
+
+            - Option prefix with name.
+
+            - Partial name with back-quote.
+
+--------
+parsing-grammar-syntax: Parsing the grammar syntax
+--------
+
+Phase 1: input normalization:
+
+    - Accept text and/or lines of text.
+    - Join into a block of text.
+
+Phase 2: lexing:
+
+    - Remember that the lexer analyzes character by character to emit
+      the meaningful atomic units of the language.
+
+    - It does not engage in validation logic to assess whether the arrangement
+      of those units is syntactically valid.
+
+    - Nor does it try to assemble those character-based atoms into fully
+      meaningful entitities, other than in cases where they must be assemble to
+      avoid ambiguitity with similar tokens.
+
+    - Regex snippets to build the token regexes:
+
+        Spippets | Pattern
+        ------------------------------------------
+        letter   | [A-Za-z]
+        nm       | letter (letter | \d)*
+        name     | nm ([-_] nm)*
+
+    - Token names and regexes, in order of evaluation:
+
+        Tokens            | Pattern
+        ------------------------------------------
+        quoted-literal    | '[^']+?'
+        whitespace        | \s+         emit=False
+        paren-open        | \(
+        paren-close       | \)
+        brack-open        | \[
+        brack-close       | \]
+        brace-open        | \{
+        brace-close       | \}
+        angle-open        | \<
+        angle-close       | \>
+        choice-sep        | BAR
+        quant-sep         | ,
+        one-or-more       | \.\.\.
+        non-greedy        | \?
+        assign            | =
+        long-option       | -- name
+        short-option      | - letter
+        partial-defintion | name ` :
+        variant-defintion | name :
+        continuation      | :
+        partial-usage     | name `
+        name              | name
+        number            | \d+
+        nameless-param    | _
+
+Phase 3: parsing:
+
+    - A parser's job is to eat a stream of tokens, organizing them into
+      meaningful and valid units, and emitting those units to the caller.
+
+    - Previously, I tried to write the lexer code with a parsing mindset. That
+      was too hard.
+
+    - Now we just have to figure out how to organize the consumption of the
+      tokens listed above.
 
 --------
 syntax-examples: Syntax examples
@@ -163,11 +250,12 @@ Command line argument types:
 
     - Options: arguments with an option prefix.
 
-        - Long
-        - Short
+        - Long prefix.
+        - Short prefix.
 
         - Option (parameter option)
         - Flag
+
 
     - Parameters:
         - Arguments for an option.
@@ -529,21 +617,27 @@ Opt:
 
 Result:
 
-    TODO
+    - Data object returned to end-user by Parser.parse().
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    --------------------------------------------------------------------------------
+    - A mapping-like object with destinations as the attributes.
 
 Target:
 
-    TODO
+    - A data object used during argument parsing to store the
+      information ultimately returned as a Result to end user.
 
-    Attribute | Note
+    - For the applicable parsing interpretation, a Target contains information
+      about all relevant Opt/Pos and values parsed so far.
+
+    Attribute   | Note
     --------------------------------------------------------------------------------
+    positionals | List[Pos]
+    options     | Dict[Opt]
+    values      | Dict[DEST -> VAL]
     --------------------------------------------------------------------------------
 
 TokenType:
+
     - Internal data object given to a lexer.
 
     Attribute | Note
@@ -554,6 +648,7 @@ TokenType:
     --------------------------------------------------------------------------------
 
 RegexLexer:
+
     - General-purpose regex-based lexer.
 
     Attribute   | Note
@@ -566,6 +661,7 @@ RegexLexer:
     --------------------------------------------------------------------------------
 
 Token:
+
     - Simple internal data object emitted by a lexer.
 
     Attribute  | Note
@@ -575,6 +671,7 @@ Token:
     --------------------------------------------------------------------------------
 
 GenericParserMixin:
+
     - Provides parse(), eat(), and error() behaviors.
 
     Attribute        | Note
@@ -586,6 +683,16 @@ GenericParserMixin:
     --------------------------------------------------------------------------------
 
 GrammarParser:
+
+    TODO
+
+State:
+
+    - Internal object used during parsing: see arg-parsing-algo .
+
+ArgResult:
+
+    - Internal object used during parsing: see arg-parsing-algo .
 
 --------
 deferred-classes: Deferred classes

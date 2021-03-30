@@ -370,23 +370,24 @@ and destination assignment.
 explicit-option-param-syntax: Why explicit syntax for option parameters is needed
 --------
 
-Without an explicit syntax to mark option parameters, various grammar
-ambiguities are possible. For example:
+Imagine that the grammar did not require explicit surrouding markers for
+parameters, positionals, and literal values: {}, <>, an ''. Every type of
+confusion would be possible.
 
-    - Should we interpret --type as a flag or an option taking a
-      parameter?
+    frob --type x y z   # Meaning of x, y, z unclear.
 
-            frob --type (file|dir|link)
+Some ways to address that problem:
 
-    - How many parameters does --group take: 0, 1, or 2?
+    - Minimize syntax burden. Require that literals be quoted (because rarely
+      needed) and positionals use angle brackets (because it is conventional).
 
-            frob --group (a|b|c|d) (x|y)
+    - Enforce consistency: require all 3 types of markers (and because braces
+      for params are also conventional).
 
-    - Special syntax for choices (for example, the conventionally used
-      braces) helps only in the case when nparams equals 1.
-
-The relatively low cost way to resolve such issues to an explicit syntax for
-any command line arguments that vary.
+    - Be creative: require that literals be quoted and give users a mechanism
+      to disambiguate when needed. Probably a bad idea: these issues can be
+      tricky to think through. Also, for non-standard grammars, a small bit of
+      extra typing seems easy compared to having to reason about subleties.
 
 --------
 high-precendence-options: High precedence options
@@ -581,24 +582,6 @@ A backtracking example:
         V2 : Don't attach to Opt(-f). Now the foregone interpretation
              is for Opt(-f) with nparams of (2,3). Push that
              to the stack.
-
-Result:
-
-    - Data object returned to user after parse.
-
-Target:
-
-    - Similar to Result in that its purpose is to store the parsed information.
-
-    - But the data is structured with an eye toward supporting the parsing
-      process rather than toward end-user convenience.
-
-    - For the applicable alternative (Variant and any MGroups),
-      a Target contains two core data structures accumulated from
-      all Opts within that alternative:
-
-        List[Pos]
-        Dict[Opt]
 
 State:
 

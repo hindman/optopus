@@ -16,6 +16,7 @@ toc: Table of contents
     specification.txt
 
         grammar-syntax                | Grammar syntax
+        parsing-grammar-syntax        | Parsing the grammar syntax
         syntax-examples               | Syntax examples
         single-opt-convenience-syntax | Convenience syntax for single Opts
         terminology                   | Terminology
