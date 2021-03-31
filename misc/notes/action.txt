@@ -4,6 +4,18 @@ road-map: Road map
 
 Nail down naming, classes, attributes, API, and general terminology.
 
+Questions:
+
+    - Syntax conveniences:
+
+        - Allow _ as synonym for {} in full grammar syntax?
+        - Add other regex quantifiers (? * +)?
+        - Use ... or just standardize on regex?
+
+    - Parameters/positionals: choices/variants containing whitespace?
+
+    - Nested ntimes and parsed-data-structure?
+
 Grammar data structure: specify with greater clarity.
 
 Wrap up editing:

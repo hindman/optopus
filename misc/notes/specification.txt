@@ -37,8 +37,8 @@ Variant definition syntax:
     Positional arguments:
 
         <xy>        Positional.
-        <xy=foo>    Positional variant.
         <xy=a|b>    Positional choices.
+        <xy=foo>    Positional variant.
         'bar'       Literal.
 
     Options:
@@ -48,22 +48,19 @@ Variant definition syntax:
 
     Option parameters:
 
-        -p {}       Parameter.
-        -p _        Synonym.
-        -p {x}      Parameter, named.
-        -p {=a|b}   Parameter choices.
-
-        -p {=foo}   Parameter variant.
-        -p {x=foo}  Parameter variant, named.
-        -p {x=a|b}  Parameter choices, named.
+        Unnamed      Named
+        ---------------------------------------------
+        -p {}        -p {x}        Parameter.
+        -p {=a|b}    -p {x=a|b}    Parameter choices.
+        -p {=foo}    -p {x=foo}    Parameter variant.
 
     Convenience syntax when configuring a single Opt:
 
-        x x [x]     Positionals can drop <> brackets.
-        x=a|b|c
-
-        -f _ [_]    Parameters can drop {} brackets.
-        -f a [b]
+        Positionals    Options
+        ---------------------------------------------------
+        x x [x]        -f _ [_]    Brackets/braces unneeded
+        x=a|b|c        -f a|b      Choices.
+        x=a            -f x=a      Variant.
 
     Whitespace rules:
 
@@ -80,7 +77,8 @@ Variant definition syntax:
 
             - Option prefix with name.
 
-            - Partial name with back-quote.
+            - Partial name with back-quote (this could be optional, but
+              there is no benefit).
 
 --------
 parsing-grammar-syntax: Parsing the grammar syntax
@@ -117,6 +115,7 @@ Phase 2: lexing:
         ------------------------------------------
         quoted-literal    | '[^']+?'
         whitespace        | \s+         emit=False
+        quantifier        | \{ \s* ( \d+ | \d+ \s* , | \d+ \s* , \s* \d+ ) \s* \}
         paren-open        | \(
         paren-close       | \)
         brack-open        | \[
@@ -129,13 +128,13 @@ Phase 2: lexing:
         quant-sep         | ,
         one-or-more       | \.\.\.
         non-greedy        | \?
-        assign            | =
         long-option       | -- name
         short-option      | - letter
-        partial-defintion | name ` :
-        variant-defintion | name :
+        partial-defintion | name ` \s* :
+        variant-defintion | name \s* :
         continuation      | :
         partial-usage     | name `
+        destination       | name \s* =
         name              | name
         number            | \d+
         nameless-param    | _
@@ -145,11 +144,163 @@ Phase 3: parsing:
     - A parser's job is to eat a stream of tokens, organizing them into
       meaningful and valid units, and emitting those units to the caller.
 
-    - Previously, I tried to write the lexer code with a parsing mindset. That
-      was too hard.
+        - Previously, I tried to write the lexer code with a parsing mindset.
+          That was too hard.
 
-    - Now we just have to figure out how to organize the consumption of the
-      tokens listed above.
+        - Now we just have to figure out how to organize the consumption of the
+          tokens listed above.
+
+    - Focus now on the full grammar. Convenience syntax can be handle later via
+      a different subclass, different tokens, different parser functions, or
+      some combo.
+
+    - Key points from current SimpleSpecParser:
+
+        - Parser functions should be substantive from the perspective of the
+          language, not low level.
+
+        - Remember also that GenericParserMixin calls the parser_functions in
+          order. Try to work within that framework, if possible.
+
+        - GenericParserMixin.parse() is what yields information back to the
+          caller.
+
+        - And the syntax grammar really only want to get back a sequence of 1+
+          Variants and 0+ Partials -- which implies only two parser_functions,
+          I think.
+
+            variant()
+            partial()
+
+    - It seems like GenericParserMixin is not all that generic.
+
+        - It operates on the model of a flat list of parser functions, but that
+          approach does not work for anything other than flatt grammars.
+
+        - We need more like a hierarchy of parser functions. Otherwise, we will
+          need to implement logic very similar to GenericParserMixin in the
+          subclass -- namely, the ability to try to parse different elements
+          until one matches.
+
+    - Hierarchy of parser functions:
+
+        variant():
+            # Variant name.
+            tok = self.eat_first(variant-defintion, partial-defintion)
+            if tok:
+                var_name = ...
+                is_partial = ...
+            else:
+                return None
+
+            # Expressions.
+            exprs = []
+            while True:
+                e = self.expression()
+                if e:
+                    exprs.push(e)
+                else:
+                    break
+
+            return Variant(var_name, is_partial, exprs)
+
+        expresion():
+            elems = []
+            while True:
+                e = self.element()
+                if e:
+                    elems.push(e)
+                else:
+                    break
+            return Expression(elems)
+
+        element():
+            # Get the syntax element or return None.
+            if self.current(quoted-literal):
+                # Literal
+                e = ...
+
+            elif self.current(paren-open):
+                # Group: parens.
+                tok = self.eat(paren-open)
+                if not tok:
+                    return None
+                e = self.expresion()
+                if not e:
+                    return None
+                tok = self.eat(paren-close)
+                if not tok:
+                    return None
+
+            elif self.current(brack-open):
+                # Group: brackets.
+                Same pattern.
+
+            elif self.current(brace-open):
+                # Parameter.
+                Same pattern.
+
+            elif self.current(angle-open):
+                # Positional.
+                Same pattern.
+
+            elif self.current(partial-usage):
+                # Partial.
+                e = ...
+
+            elif self.current(long-option, short-option):
+                # Option.
+                e = ...
+
+            # Quantifier.
+            if e and self.current(quantifier):
+                e.quantifier = ...
+
+            return e
+
+        TEMP:
+
+            quoted-literal    | '[^']+?'
+            whitespace        | \s+         emit=False
+            quantifier        | .
+            paren-open        | \(
+            paren-close       | \)
+            brack-open        | \[
+            brack-close       | \]
+            brace-open        | \{
+            brace-close       | \}
+            angle-open        | \<
+            angle-close       | \>
+            choice-sep        | BAR
+            quant-sep         | ,
+            one-or-more       | \.\.\.
+            non-greedy        | \?
+            long-option       | -- name
+            short-option      | - letter
+            partial-defintion | name ` \s* :
+            variant-defintion | name \s* :
+            continuation      | :
+            partial-usage     | name `
+            destination       | name \s* =
+            name              | name
+            number            | \d+
+            nameless-param    | _
+
+        x Grammar
+        x     Variant +1
+        x         Expression 1+
+        .             Elements 1+
+        -                 Elem
+        -                 Quantifier {0,1}
+
+        Elem
+            quoted literal
+            partial usage
+            option
+            positional
+            parameter
+            group: backet or paren
+                Expression 1+
 
 --------
 syntax-examples: Syntax examples

@@ -597,42 +597,6 @@ class Section(object):
             )
 
 ################
-# GenericParserMixin.
-################
-
-class GenericParserMixin(object):
-
-    def parse(self):
-        # Setup: have the lexer get the first token.
-        self.current_token = self.lexer.get_next_token()
-        elem = True
-        # Consume and yield as many tokens as we can.
-        while elem:
-            for func in self.parser_functions:
-                elem = func()
-                if elem:
-                    yield elem
-                    break
-        # We expect EOF as the final token.
-        if not self.current_token.isa(EOF):
-            self.error()
-
-    def eat(self, token_type):
-        # If the current Token is of the expected type, return it
-        # after advancing the lexer. Otherwise, return None.
-        tok = self.current_token
-        if tok.isa(token_type):
-            self.current_token = self.lexer.get_next_token()
-            return tok
-        else:
-            return None
-
-    def error(self):
-        fmt = 'Invalid syntax: pos={}'
-        msg = fmt.format(self.lexer.pos)
-        raise Exception(msg)
-
-################
 # GrammarSpecParser.
 ################
 
@@ -1199,6 +1163,42 @@ class RegexLexer(object):
             if tok.isa(EOF):
                 self.is_eof = True
             return tok
+
+################
+# GenericParserMixin.
+################
+
+class GenericParserMixin(object):
+
+    def parse(self):
+        # Setup: have the lexer get the first token.
+        self.current_token = self.lexer.get_next_token()
+        elem = True
+        # Consume and yield as many tokens as we can.
+        while elem:
+            for func in self.parser_functions:
+                elem = func()
+                if elem:
+                    yield elem
+                    break
+        # We expect EOF as the final token.
+        if not self.current_token.isa(EOF):
+            self.error()
+
+    def eat(self, token_type):
+        # If the current Token is of the expected type, return it
+        # after advancing the lexer. Otherwise, return None.
+        tok = self.current_token
+        if tok.isa(token_type):
+            self.current_token = self.lexer.get_next_token()
+            return tok
+        else:
+            return None
+
+    def error(self):
+        fmt = 'Invalid syntax: pos={}'
+        msg = fmt.format(self.lexer.pos)
+        raise Exception(msg)
 
 ################
 # SimpleSpecParser.
