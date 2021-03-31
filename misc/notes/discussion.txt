@@ -917,21 +917,57 @@ required.
 
 Internally, all data assigned to destinations will be stored in a fully
 explicit manner. Assume a list of lists, where nargs/nparams determines the
-length of the inner lists and ntimes determines the length of the outer.
+length of the innermost lists and ntimes determines the length of the outer
+list(s).
 
-    self._values = [
-          [a1, a2, ...],  # First time.
-          ...             # Etc.
-    ]
+    - Singular nargs, nparams, and ntimes:
 
-But attribute values returned to users will be as flat as possible, based on
-nargs/nparams and ntimes (unless user requests non-flattened data).
+        a1     # Either value or bool (latter if nargs/nparams is zero).
 
-    nargs/nparams | ntimes 0 or 1 | ntimes 2+ flattened                 | ntimes 2+ non-flattened
-    ---------------------------------------------------------------------------------------------
-    0             | bool          | [bool, bool, ...]                   | [[bool], [bool], ...]
-    1             | a1            | [a1, a2, ...]                       | [[a1], [a2], ...]
-    2+            | [a1, a2, ...] | [[a1, a2, ...], [a1, a2, ...], ...] | .
+    - Add plural nargs/nparams:
+
+        [a1, a2, ...]
+
+    - Add plural ntimes:
+
+        -x _ _ (<z> <z>){3}
+
+        x = [a1, a2]
+
+        z = [[a1, a2], ..., ...]
+
+    - Add a layer of nested plural ntimes:
+
+        (  --foo _ _  (-x _ _ <z> <z>){3}  ){4}
+
+        foo: nparams 2, ntimes     4
+        x  : nparams 2, ntimes 3 x 4
+        z  : nargs   2, ntimes 3 x 4
+
+        foo = [[a1, a2], ..., ..., ...]
+
+        x = [
+            [[a1, a2], ..., ...],
+            ...
+            ...
+            ...
+        ]
+
+        z = Same structure as x.
+
+Default flattening policy:
+
+    - If the grammar does not contain nested plural ntimes, data
+      will be flattened as much as possible, as shown in table below.
+
+    - User can request non-flattened data.
+
+    nargs or | ntimes    | ntimes 2+                   | ntimes 2+
+    nparams  | 0 or 1    | Flattened                   | Non-flattened
+    ------------------------------------------------------------------
+    0        | bool      | [bool, ...]                 | [[bool], ...]
+    1        | a1        | [a1, ...]                   | [[a1], ...]
+    2+       | [a1, ...] | [[a1, ...], [a1, ...], ...] | .
 
 --------
 eager-attachment-at-bounary: Eager option attachment at repetition boundaries

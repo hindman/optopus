@@ -18,49 +18,57 @@ Variant definition syntax:
 
     Variants:
 
-        foo`        Insert the foo partial into the current partial or variant.
+        foo`             Insert the foo partial into the current partial or variant.
 
     Grouping and alternatives:
 
-        []          Grouping, optional.
-        ()          Grouping.
-        foo=[]      Named grouping, optional.
-        foo=()      Named grouping.
-        |           Alternatives.
+        []               Grouping, optional.
+        ()               Grouping.
+        foo=[]           Named grouping, optional.
+        foo=()           Named grouping.
+        |                Alternatives.
 
     Quantifiers:
 
-        ...         1 or more
-        {m,n}       Repetition: m through n, inclusive.
-        ?           Non-greedy quantifier.
+        ...              1 or more
+        +                1 or more
+        *                0 or more
+        ?                0 or 1
+        {m,n}            Repetition: m through n, inclusive.
+        ?                Non-greedy for preceding quantifier.
 
     Positional arguments:
 
-        <xy>        Positional.
-        <xy=a|b>    Positional choices.
-        <xy=foo>    Positional variant.
-        'bar'       Literal.
+        <xy>             Positional.
+        <xy=a|b>         Positional choices.
+        <xy=foo>         Positional variant.
 
     Options:
 
-        -x          Short.
-        --xy        Long.
+        -x               Short.
+        --xy             Long.
 
     Option parameters:
 
-        Unnamed      Named
-        ---------------------------------------------
-        -p {}        -p {x}        Parameter.
-        -p {=a|b}    -p {x=a|b}    Parameter choices.
-        -p {=foo}    -p {x=foo}    Parameter variant.
+        Unnamed          Named
+        --------------------------------------------------
+        -p {}            -p {x}         Parameter.
+        -p _             .              Parameter.
+        -p {=a|b}        -p {x=a|b}     Parameter choices.
+        -p {=foo}        -p {x=foo}     Parameter variant.
+
+    Literals:
+
+        'hello world'    Literal: can be used as positional, positional choice,
+                         positonal variant, parameter choice, or parameter variant.
 
     Convenience syntax when configuring a single Opt:
 
-        Positionals    Options
-        ---------------------------------------------------
-        x x [x]        -f _ [_]    Brackets/braces unneeded
-        x=a|b|c        -f a|b      Choices.
-        x=a            -f x=a      Variant.
+        Positionals      Options
+        --------------------------------------------------------
+        x x [x]          -f _ [_]       Brackets/braces unneeded
+        x=a|b|c          -f a|b         Choices.
+        x=a              -f x=a         Variant.
 
     Whitespace rules:
 
@@ -115,7 +123,7 @@ Phase 2: lexing:
         ------------------------------------------
         quoted-literal    | '[^']+?'
         whitespace        | \s+         emit=False
-        quantifier        | \{ \s* ( \d+ | \d+ \s* , | \d+ \s* , \s* \d+ ) \s* \}
+        quantifier-range  | \{ \s* ( \d+ | \d+ \s* , | \d+ \s* , \s* \d+ ) \s* \}
         paren-open        | \(
         paren-close       | \)
         brack-open        | \[
@@ -125,9 +133,10 @@ Phase 2: lexing:
         angle-open        | \<
         angle-close       | \>
         choice-sep        | BAR
-        quant-sep         | ,
-        one-or-more       | \.\.\.
-        non-greedy        | \?
+        zero-or-more      | \*
+        one-or-more       | +
+        one-or-more-dots  | \.\.\.
+        question          | \?
         long-option       | -- name
         short-option      | - letter
         partial-defintion | name ` \s* :
@@ -159,30 +168,29 @@ Phase 3: parsing:
         - Parser functions should be substantive from the perspective of the
           language, not low level.
 
-        - Remember also that GenericParserMixin calls the parser_functions in
-          order. Try to work within that framework, if possible.
+        - Since a grammar is just a sequence of Variant, the GenericParserMixin
+          will be given just one parser function. The more fine-grained method
+          calling will occur in the subclass.
 
-        - GenericParserMixin.parse() is what yields information back to the
-          caller.
+    - Parser functions:
 
-        - And the syntax grammar really only want to get back a sequence of 1+
-          Variants and 0+ Partials -- which implies only two parser_functions,
-          I think.
+        - Could this code be simplified by letting GenericParserMixin peek
+          ahead 1 or more tokens. And the ability to retrieve tokens from the
+          last peek. Basically, make GenericParserMixin better so the
+          subclass code can be simplified.
 
-            variant()
-            partial()
+        - Add a NL token: use it to increment manage (LINENO, COLUMN),
+          for better error reporting.
+            - Store (LINE, COL) in parsed entitities too?
 
-    - It seems like GenericParserMixin is not all that generic.
+        - Figure out all needed classes/data-objects:
+            - Token types
+            - Actual Grammar elements.
+            - Parsed entitities: tokens parsed, but
+              some post-processing still needed to created full
+              Grammar elements.
 
-        - It operates on the model of a flat list of parser functions, but that
-          approach does not work for anything other than flatt grammars.
-
-        - We need more like a hierarchy of parser functions. Otherwise, we will
-          need to implement logic very similar to GenericParserMixin in the
-          subclass -- namely, the ability to try to parse different elements
-          until one matches.
-
-    - Hierarchy of parser functions:
+        - Add ability to so self.eat(..., require = True|N)
 
         variant():
             # Variant name.
@@ -215,48 +223,156 @@ Phase 3: parsing:
             return Expression(elems)
 
         element():
-            # Get the syntax element or return None.
-            if self.current(quoted-literal):
-                # Literal
-                e = ...
-
-            elif self.current(paren-open):
-                # Group: parens.
-                tok = self.eat(paren-open)
-                if not tok:
-                    return None
-                e = self.expresion()
-                if not e:
-                    return None
-                tok = self.eat(paren-close)
-                if not tok:
-                    return None
-
-            elif self.current(brack-open):
-                # Group: brackets.
-                Same pattern.
-
-            elif self.current(brace-open):
-                # Parameter.
-                Same pattern.
-
-            elif self.current(angle-open):
-                # Positional.
-                Same pattern.
-
-            elif self.current(partial-usage):
-                # Partial.
-                e = ...
-
-            elif self.current(long-option, short-option):
-                # Option.
-                e = ...
-
-            # Quantifier.
-            if e and self.current(quantifier):
-                e.quantifier = ...
-
+            e = None
+            element_methods = [
+                self.quoted_literal,
+                self.partial_usage,
+                self.paren_expression,
+                self.brack_expression,
+                self.positional,
+                self.long_option,
+                self.short_option,
+            ]
+            for method in element_methods:
+                e = method()
+                if e:
+                    break
+            if e:
+                q = self.quantifier()
+                if q:
+                    e.quantifier = q
             return e
+
+        paren_expression():
+            return self.parenthesized(paren-open, paren-close, 'expression')
+
+        brack_expression():
+            return self.parenthesized(brack-open, brack-close, 'expression')
+
+        quoted_literal():
+            tok = self.eat(quoted-literal)
+            if tok:
+                return Literal(...)
+            else:
+                return None
+
+        partial_usage():
+            tok = self.eat(partial-usage)
+            if tok:
+                return PartialUsage(...)
+            else:
+                return None
+
+        long_option():
+            return self.option(long-option)
+
+        short_option():
+            return self.option(long-option)
+
+        option(option_type):
+            tok = self.eat(option_type)
+            if not tok:
+                return None
+            name = ...
+            params = []
+            while True:
+                p = self.parameter()
+                if p:
+                    params.append(p)
+                else:
+                    break
+            return Opt(name, params, ...)
+
+        positional():
+            return self.parenthesized(angle-open, angle-close, 'positional_definition')
+
+        parameter():
+            return self.parenthesized(brace-open, brace-close, 'parameter_definition')
+
+        positional_definition():
+            # Destination assignment.
+            tok = self.eat(destination)
+            if tok:
+                dest = ...
+                choices = self.choices()
+                if not choices:
+                    raise ...
+                elif len(choices) == 1:
+                    return PositionalVariant(dest, value = ...)
+                else:
+                    return Positional(dest, choices = choices)
+            # Simple positional.
+            tok = self.eat(name)
+            if tok:
+                dest = ...
+                return Positional(dest)
+            else:
+                raise ...
+
+        parameter_definition():
+            # TODO
+            # -p {}        -p {x}        Parameter.
+            # -p _         .             Parameter.
+            # -p {=a|b}    -p {x=a|b}    Parameter choices.
+            # -p {=foo}    -p {x=foo}    Parameter variant.
+
+        choices():
+            # TODO
+            # 'literal value'
+            # name
+
+        quantifier():
+            quantifier_methods = [
+                self.one_or_more_dots,
+                self.one_or_more,
+                self.zero_or_more,
+                self.zero_or_one,
+                self.quantifier_range,
+            ]
+            for method in quantifier_methods:
+                q = method()
+                if q:
+                    greedy = not self.eat(question)
+                    return Quantifier(q, greedy)
+            return None
+
+        one_or_more_dots():
+            tok = self.eat(one-or-more-dots)
+            return (1, None) if tok else None
+
+        one_or_more():
+            tok = self.eat(one-or-more)
+            return (1, None) if tok else None
+
+        zero_or_more():
+            tok = self.eat(zero-or-more)
+            return (0, None) if tok else None
+
+        zero_or_one():
+            tok = self.eat(question)
+            return (0, 1) if tok else None
+
+        quantifier_range():
+            tok = self.eat(quantifier-range)
+            if tok:
+                tup = ...
+                return tup
+            else:
+                return None
+
+        parenthesized(open_tok, close_tok, method_name):
+            if self.current(open_tok):
+                self.eat(open_tok)
+                method = getattr(self, method_name)
+                tok = method()
+                if not tok:
+                    raise ...
+                if self.eat(close_tok):
+                    return tok
+                else:
+                    raise ...
+            else:
+                return None
 
         TEMP:
 
@@ -286,16 +402,7 @@ Phase 3: parsing:
             number            | \d+
             nameless-param    | _
 
-        x Grammar
-        x     Variant +1
-        x         Expression 1+
-        .             Elements 1+
-        -                 Elem
-        -                 Quantifier {0,1}
-
         Elem
-            quoted literal
-            partial usage
             option
             positional
             parameter
