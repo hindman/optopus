@@ -6,6 +6,28 @@ Finish drafts of parser functions:
     parameter_definition()
     choices()
 
+Consider improvements to GenericParserMixin.
+
+    The token peek/eat functions take zero or more token type specifications.
+
+        t1, t2, ...
+
+        Where each value can be:
+            - Single token type.
+            - Or a sequence of types to select from.
+
+    peek(t1, t2, ...)
+        - Takes token types.
+        - Return true if upcoming tokens match.
+
+    eat_last_peek()
+        - Returns those tokens.
+        - Any eat*() calls reset the last-peek sequence to None.
+
+    eat(t1, t2, ..., require = N)
+        - Tries to eat and return the tokens.
+        - If require > 0, raises if tokens do not match.
+
 Nail down naming, classes, attributes, API, and general terminology.
 
 Grammar data structure: specify with greater clarity.
