@@ -465,6 +465,91 @@ Text wrapping:
           within the text (eg something borrowed from markdown)
 
 --------
+grammar-parsing-algo: Parsing the grammar syntax
+--------
+
+Phase 1: input normalization:
+
+    - Accept text and/or lines of text.
+    - Join into a block of text.
+
+Phase 2: lexing:
+
+    - Remember that the lexer analyzes character by character to emit
+      a flat streem of the meaningful atomic units of the language.
+
+    - It does not engage in validation logic to assess whether the arrangement
+      of those units is syntactically valid.
+
+    - Nor does it try to assemble those character-based atoms into fully
+      meaningful entitities, other than in cases where they must be assemble to
+      avoid ambiguitity with similar tokens.
+
+    - Regex snippets to build the token regexes:
+
+        Spippets | Pattern
+        ------------------------------------------
+        letter   | [A-Za-z]
+        nm       | letter (letter | \d)*
+        name     | nm ([-_] nm)*
+
+    - Token names and regexes, in order of evaluation:
+
+        Tokens            | Pattern
+        ------------------------------------------
+        quoted-literal    | '[^']+?'
+        whitespace        | \s+         emit=False
+        quantifier-range  | \{ \s* ( \d+ | \d+ \s* , | \d+ \s* , \s* \d+ ) \s* \}
+        paren-open        | \(
+        paren-close       | \)
+        brack-open        | \[
+        brack-close       | \]
+        brace-open        | \{
+        brace-close       | \}
+        angle-open        | \<
+        angle-close       | \>
+        choice-sep        | BAR
+        zero-or-more      | \*
+        one-or-more       | +
+        one-or-more-dots  | \.\.\.
+        question          | \?
+        long-option       | -- name
+        short-option      | - letter
+        partial-defintion | name ` \s* :
+        variant-defintion | name \s* :
+        continuation      | :
+        partial-usage     | name `
+        destination       | name \s* =
+        name              | name
+        number            | \d+
+        nameless-param    | _
+
+Phase 3: parsing:
+
+    - A parser's job is to eat a stream of tokens, organizing them into
+      meaningful and valid units, and emitting those units to the caller.
+
+        - Previously, I tried to write the lexer code with a parsing mindset.
+          That was too hard.
+
+        - Now we just have to figure out how to organize the consumption of the
+          tokens listed above.
+
+    - Focus now on the full grammar. Convenience syntax can be handle later via
+      a different subclass, different tokens, different parser functions, or
+      some combo.
+
+    - Parser functions should be substantive from the perspective of the
+      language, not low level.
+
+    - Since a grammar is just a sequence of Variant, the GenericParserMixin
+      will be given just one parser function. The more fine-grained method
+      calling will occur in the subclass.
+
+    - See draft.py for draft of the parser functions and some related
+      changes to GenericParserMixin.
+
+--------
 arg-parsing-algo: Parsing algorithm
 --------
 
@@ -868,7 +953,7 @@ Three concerns:
       policies in place, you can stop at the first success -- as regex does.]
 
 --------
-abmiguous-grammars: Ambiguous grammars are not an issue
+ambiguous-grammars: Ambiguous grammars are not an issue
 --------
 
 From a strictly grammatical perspective, only one positional can have a

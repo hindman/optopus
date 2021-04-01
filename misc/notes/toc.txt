@@ -16,7 +16,6 @@ toc: Table of contents
     specification.txt
 
         grammar-syntax                | Grammar syntax
-        parsing-grammar-syntax        | Parsing the grammar syntax
         syntax-examples               | Syntax examples
         single-opt-convenience-syntax | Convenience syntax for single Opts
         terminology                   | Terminology
@@ -36,9 +35,10 @@ toc: Table of contents
         explicit-option-param-syntax  | Why explicit syntax for option parameters is needed
         high-precendence-options      | High precedence options
         help-text-formatting          | Help text formatting
+        grammar-parsing-algo          | Parsing the grammar syntax
         arg-parsing-algo              | Parsing algorithm
         alternative-parsing-algo      | Alternative parsing algorithm won't work after all
-        abmiguous-grammars            | Ambiguous grammars are not an issue
+        ambiguous-grammars            | Ambiguous grammars are not an issue
         parsed-data-structure         | Parsed data structuring: nargs, nparams, ntimes
         eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
         grammar-syntax-named-unnamed  | Grammar syntax: named and unnamed arguments
