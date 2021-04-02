@@ -498,6 +498,7 @@ Phase 2: lexing:
         Tokens            | Pattern
         ------------------------------------------
         quoted-literal    | '[^']+?'
+        newline           | \n          emit=False
         whitespace        | \s+         emit=False
         quantifier-range  | \{ \s* ( \d+ | \d+ \s* , | \d+ \s* , \s* \d+ ) \s* \}
         paren-open        | \(
@@ -513,13 +514,13 @@ Phase 2: lexing:
         one-or-more       | +
         one-or-more-dots  | \.\.\.
         question          | \?
+        assign            | =
         long-option       | -- name
         short-option      | - letter
         partial-defintion | name ` \s* :
         variant-defintion | name \s* :
         continuation      | :
         partial-usage     | name `
-        destination       | name \s* =
         name              | name
         number            | \d+
         nameless-param    | _
@@ -547,7 +548,48 @@ Phase 3: parsing:
       calling will occur in the subclass.
 
     - See draft.py for draft of the parser functions and some related
-      changes to GenericParserMixin.
+      changes to GenericParserMixin and RegexLexer.
+
+Phase 4: interpretation:
+
+    - The parser phase is the most complex, so don't overburden it
+      with the duty of creating the ultimate grammar elements.
+
+    - Instead, keep the parser simpler by having it emit simple AST-style
+      objects.
+
+    - The last phase converts the AST to true grammar elements.
+
+--------
+convenience-parsing-algo: Parsing the convenience grammar syntax
+--------
+
+The grammar can be built from the parts we already have:
+
+    P1         = positional | positional_definition
+    P2         = [ P1 ]
+
+    O1         = short_option | long_option
+    O2         = parameter | parameter_definition
+    O3         = [ O2 ]
+
+    single_pos = P1+ P2*
+    single_opt = O1 O2+ O3*
+
+Apply extra validation at the end to disallow:
+
+    Group
+    PositionalVariant
+    ParameterVariant
+
+To orchestrate things we can adjust the GrammarParser initializer:
+
+    def __init__(self, text, single = False):
+        self.lexer = RegexLexer(text, GRAMMAR_TOKENS)
+        if single:
+            self.parser_functions = (self.single_pos, self.single_opt)
+        else:
+            self.parser_functions = (self.variant,)
 
 --------
 arg-parsing-algo: Parsing algorithm

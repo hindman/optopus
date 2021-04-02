@@ -68,7 +68,6 @@ Variant definition syntax:
         --------------------------------------------------------
         x x [x]          -f _ [_]       Brackets/braces unneeded
         x=a|b|c          -f a|b         Choices.
-        x=a              -f x=a         Variant.
 
     Whitespace rules:
 

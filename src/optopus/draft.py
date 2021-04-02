@@ -1,3 +1,33 @@
+class RegexLexer(object):
+
+    # Modifications to track (LINE, COL)
+
+    def __init__(self, text, token_types):
+        ...
+        self.pos = 0
+        self.line = 0
+        self.col = 0
+        ...
+
+    def match_token(self, rgx, token_type):
+        m = rgx.match(self.text, pos = self.pos)
+        if m:
+            # Get matched text and locations of newlines inside of it.
+            txt = m.group(0)
+            indexes = [i for i, c in enumerate(text) if c == NL]
+            # Adjust lexer location information.
+            n_chars = len(txt)
+            n_newlines = len(indexes)
+            self.pos += n_chars
+            self.line += n_newlines
+            if indexes:
+                self.col = n_chars - indexes[-1] - 1
+            else:
+                self.col += n_chars
+            # Return Token, including location information.
+            return Token(token_type, txt, Loc(self.pos, self.line, self.col))
+        else:
+            return None
 
 class GenericParserMixin:
 
@@ -164,36 +194,81 @@ class GrammarParser:
         return self.parenthesized(brace-open, brace-close, 'parameter_definition')
 
     def positional_definition(self):
-        # Destination assignment.
-        if self.peek(destination):
-            tok = self.eat_last_peek()
-            dest = ...
-            choices = self.choices()
-            if not choices:
-                raise ...
-            elif len(choices) == 1:
-                return PositionalVariant(dest, value = ...)
-            else:
-                return Positional(dest, choices = choices)
-        # Simple positional.
-        if self.peek(name):
-            tok = self.eat_last_peek()
-            dest = ...
-            return Positional(dest)
+        # Get the choices or raise.
+        choices = self.choices()
+        if choices:
+            dest = choices.dest
+            vals = choices.vals
+            n = len(vals)
+        else:
+            raise ...
+
+        # Return Positional or ParameterVariant.
+        # Raise if no destination.
+        if dest:
+            return (
+                Positional(dest) if n == 0 else
+                PositionalVariant(dest, vals[0]) if n == 1 else
+                Positional(dest, vals)
+            )
         else:
             raise ...
 
     def parameter_definition(self):
-        # TODO
-        # -p {}        -p {x}        Parameter.
-        # -p _         .             Parameter.
-        # -p {=a|b}    -p {x=a|b}    Parameter choices.
-        # -p {=foo}    -p {x=foo}    Parameter variant.
+        # Handle nameless param via underscore.
+        if self.peek(nameless-param):
+            return Parameter(None, None)
+
+        # Parse the expression in braces or raise.
+        choices = self.parenthesized(brace-open, brace-close, 'choices', empty_ok = True)
+        if not choices:
+            raise ...
+
+        # Hanlde nameless param via {}.
+        if choices.isa(EmptyToken):
+            return Parameter(None, None)
+
+        # Return named Parameter or ParameterVariant.
+        dest = choices.dest
+        vals = choices.vals
+        n = len(vals)
+        return (
+            Parameter(dest, None) if n == 0
+            ParameterVariant(dest, val = val[0]) elif n == 1
+            Parameter(dest, vals)
+        )
 
     def choices(self):
-        # TODO
-        # 'literal value'
-        # name
+        # Used for parameters and positionals. Allows the following forms,
+        # where x is a destination and V1/V2 are values.
+        #   x
+        #   x=V1
+        #   x=V1|V2|...
+        #   =V1
+        #   =V1|V2|...
+
+        # Get destination, if any.
+        if self.peek(name):
+            tok = self.eat_last_peek()
+            dest = ...
+        else:
+            dest = None
+
+        # Return if no assigned value/choices.
+        tok = self.eat(assign)
+        if not tok:
+            return Choices(dest, tuple())
+
+        # Get value/choices.
+        choices = []
+        while self.peak((quoted-literal, name)):
+            val = self.eat_last_peek()
+            choices.append(val)
+            if not self.eat(choice-sep):
+                break
+
+        # Return.
+        return Choices(dest, tuple(choices))
 
     def quantifier(self):
         quantifier_methods = [
@@ -233,15 +308,15 @@ class GrammarParser:
         else:
             return None
 
-    def parenthesized(self, open_tok, close_tok, method_name):
+    def parenthesized(self, open_tok, close_tok, method_name, empty_ok = False):
         if self.peek(open_tok):
             self.eat_last_peek()
             method = getattr(self, method_name)
             tok = method()
-            if not tok:
+            if not (tok or empty_ok):
                 raise ...
-            if self.eat(close_tok):
-                return tok
+            elif self.eat(close_tok):
+                return tok or EmptyToken
             else:
                 raise ...
         else:

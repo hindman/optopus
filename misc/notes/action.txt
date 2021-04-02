@@ -2,24 +2,14 @@
 road-map: Road map
 --------
 
-Finish drafts of parser functions:
-    parameter_definition()
-    choices()
+Classes, API, attributes, terminology, naming conventions:
 
-Add a NL token:
-    - Use it to increment manage (LINENO, COLUMN), for better error reporting.
-    - Store (LINE, COL) in parsed entitities too?
+    - Token types
 
-Nail down naming, classes, attributes, API, and general terminology.
+    - Actual Grammar elements.
 
-    - Figure out all needed classes/data-objects:
-        - Token types
-        - Actual Grammar elements.
-        - Parsed entitities: tokens parsed, but
-          some post-processing still needed to created full
-          Grammar elements.
-
-Grammar data structure: specify with greater clarity.
+    - Parsed entities: tokens parsed, but some post-processing still needed
+      to created full Grammar elements.
 
 Wrap up editing:
     - specification.txt

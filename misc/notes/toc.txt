@@ -36,6 +36,7 @@ toc: Table of contents
         high-precendence-options      | High precedence options
         help-text-formatting          | Help text formatting
         grammar-parsing-algo          | Parsing the grammar syntax
+        convenience-parsing-algo      | Parsing the convenience grammar syntax
         arg-parsing-algo              | Parsing algorithm
         alternative-parsing-algo      | Alternative parsing algorithm won't work after all
         ambiguous-grammars            | Ambiguous grammars are not an issue
