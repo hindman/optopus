@@ -542,12 +542,13 @@ Phase 3: parsing:
     - Parser functions should be substantive from the perspective of the
       language, not low level.
 
-    - Since a grammar is just a sequence of Variant, the GenericParserMixin
+    - Since a grammar is just a sequence of Variant, the mixin
       will be given just one parser function. The more fine-grained method
-      calling will occur in the subclass.
+      calling will occur in the subclass. [Subsequently decided
+      to drop the mixin.]
 
     - See draft.py for draft of the parser functions and some related
-      changes to GenericParserMixin and RegexLexer.
+      changes to RegexLexer.
 
 Phase 4: interpretation:
 
@@ -1523,4 +1524,19 @@ Function signatures:
     Converter | 1     | STR            => OBJ/raise
     Validator | 3     | VAL, OPT, RES  => True/False/raise
     Dispatch  | 3     | VAL, OPT, RES  => None
+
+--------
+grammar-querying-api: Grammar querying API
+--------
+
+Grammary querying API
+
+    - Because the Grammar can be a tree structure, the API needs good syntax to
+      query for grammar elements, both for configuration needs (including the
+      ability to perform bulk configurations) and for complex validations.
+
+    - Possible approach:
+
+        g.get(NAME, NAME, ...)          # Get one, dive-style.
+        g.get(NAME, [NAME, ...], ...)   # Get multiple.
 

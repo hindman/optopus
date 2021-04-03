@@ -2,25 +2,10 @@
 road-map: Road map
 --------
 
-Put in discussion.txt:
-
-    API needs good syntax for retrieving grammar elements:
-
-        g.get(NAME, NAME, ...)          # Get one.
-        g.get(NAME, [NAME, ...], ...)   # Get multiple.
-
-        - Support bulk configuration.
-
-        - In user validation code, they need an easy way to get sibling Opt
-          information.
-
-Drop GrammarParserMixin.
-
 API planning:
 
-    . Class attributes.
-
-    . Kinds: TokType, Token, ParseElem.
+    . Class attributes and kinds.
+        - See TODO.
 
     - Class APIs.
     - Parser API: see odin-client-via-api, which might have useful ideas.

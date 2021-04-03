@@ -52,6 +52,7 @@ toc: Table of contents
         argparse-and-greed            | argparse and greediness
         end-user-errors               | End-user errors
         converters-validators         | Converters and validators
+        grammar-querying-api          | Grammar querying API
 
     dev.txt
 

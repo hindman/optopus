@@ -244,41 +244,23 @@ Overview:
         Relationships:
 
             Parser
-                sections      = List[Section]      | 0+
-                grammar       = Grammar            | 0 or 1
-                    variants  = List[Variant]      | 0+
-                        elems = List[Group or Opt] | 0+
+                sections      = List[Section]      # 0+
+                grammar       = Grammar            # 0 or 1
+                    variants  = List[Variant]      # 0+
+                        elems = List[Group or Opt] # 0+
 
-            Parser.parse(ARGS) -> Result
+                parse(ARGS) -> Result
 
-            Group: also has an elems attribute.
+            Group:
+                elems = List[Group or Opt] # 0+
 
     Objects used during grammar parsing:
 
-        GenericParserMixin | Drop (until we have an actual second use case).
         GrammarParser      | Parses a spec, returns Grammar.
+        RegexLexer         | Lexer used by GrammarParser.
         TokType            | Token types given to lexer.
-        RegexLexer         | Lexer.
         Token              | Emitted by lexer.
         ParseElem          | Emitted by parser functions. Later assembled into Grammar.
-
-        TokType kinds:
-
-            TODO
-
-        Token kinds:
-
-            TODO
-
-        ParseElem kinds:
-
-            Variant
-            Group
-            Opt
-            Quantifier
-            Choices
-            Parameter
-            Literal
 
     Objects used during argument parsing:
 
@@ -304,6 +286,7 @@ Parser:
     spec      | Was 'simple_spec'.
     grammar   | Grammar. Was 'opts'.
     --------------------------------------------------------------------------------
+    auto      | Defer. True by default: exit with error on failed parse().
     sections  | Defer.
     format    | Defer. Data object to namepsace formatting attributes. Was 'formatter_config'.
     helpful   | Defer.
@@ -315,27 +298,73 @@ Parser:
 
     API:
 
-        parse(args = None)
-        parse_known(args = None)
+        Parser(spec = None, grammar = None, ...)
 
-        help_text(section, section, ...)
-        error_text()
+            - The spec/grammar arguments are mutex and optional.
+            - Other arguments are defferred.
 
-        help(sections = None)
-        warn(msg)
-        error(code = None, msg = None))
-        exit(code = None, msg = None)
+        parse(args = None, mode = ...) -> Result or raise
+
+            - Parser can have a mode.
+            - And parse() can temporarily use a different mode.
+
+        # Obtaining help text or text for the error from most recent parse():
+
+            help_text(section...)
+            error_text()
+
+        # Actions like printing or exiting.
+
+            warn(msg)
+            help(section...)
+            error(msg = None, code = 1)
+            exit(msg = None, code = 0)
+
+Section
+
+    - Used to create labeled groups of Opt for help text purposes.
+    - Each variant has a corresponding section with the same name.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    name      | Short symbolic name used in API.
+    label     | Used in help text.
+    opts      | Opts belonging to the section.
+    text      | Hand-crafted help text.
+    --------------------------------------------------------------------------------
+
+Grammar:
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    variants  | List[Variant]
+    --------------------------------------------------------------------------------
+
+Variant:
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    elems     | List[Group or Opt]
+    --------------------------------------------------------------------------------
+
+Group:
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    elems     | List[Group or Opt]
+    --------------------------------------------------------------------------------
 
 Opt:
 
     Attribute | Note
     --------------------------------------------------------------------------------
-    grammar   | Grammar syntax for the Opt. Was 'option_spec'.
+    spec      | Was 'option_spec'.
+    grammar   | Grammar.
     ntimes    | .
     nargs     | .
     nparams   | .
     dest      | Was 'destination'.
-    default   | Maybe 'init'.
+    default   | .
     convert   | Callable(s).
     validate  | Callable(s).
     value     | None (typical) or the variant value.
@@ -361,33 +390,24 @@ Result:
 
     - Data object returned to end-user by Parser.parse().
 
-    - A mapping-like object with destinations as the attributes.
+    - An iterable mapping-like object with destinations as the attributes.
 
-Target:
+GrammarParser:
 
-    - A data object used during argument parsing to store the
-      information ultimately returned as a Result to end user.
-
-    - For the applicable parsing interpretation, a Target contains information
-      about all relevant Opt/Pos and values parsed so far.
-
-    Attribute   | Note
-    --------------------------------------------------------------------------------
-    positionals | List[Pos]
-    options     | Dict[Opt]
-    values      | Dict[DEST -> VAL]
-    --------------------------------------------------------------------------------
-
-TokType:
-
-    - Internal data object given to a lexer.
+    TODO
 
     Attribute | Note
     --------------------------------------------------------------------------------
-    name      | Name of token.
-    regex     | Regex to match the token.
-    emit      | Whether to emit back to parser [default: True].
+    lexer     | Lexer.
+    parsers   | Sequence of token-eaters. Was 'parser_functions'.
+    curr      | Was 'current_token'. Managed by the mixin.
     --------------------------------------------------------------------------------
+
+    API:
+
+        parse()
+        eat()
+        error()
 
 RegexLexer:
 
@@ -402,6 +422,21 @@ RegexLexer:
     iseof     | Becomes True when text exhausted.
     --------------------------------------------------------------------------------
 
+TokType:
+
+    - Internal data object given to a lexer.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    name      | Name of token.
+    regex     | Regex to match the token.
+    emit      | Whether to emit back to parser [default: True].
+    --------------------------------------------------------------------------------
+
+    Kinds:
+
+        TODO
+
 Token:
 
     - Simple internal data object emitted by a lexer.
@@ -410,42 +445,49 @@ Token:
     --------------------------------------------------------------------------------
     toktype   | TokenType of the token.
     value     | Corresponding token text.
-    pos       | Position.
+    pos       | Position (where matched)
     line      | Line number.
     col       | Column number.
     --------------------------------------------------------------------------------
 
-GenericParserMixin:
+    Kinds:
 
-    - Dropping.
-    - Provides parse(), eat(), and error() behaviors.
-    - Gets lexer and parsers from subclass.
+        TODO
+
+ParseElem:
+
+    TODO
+
+    Kinds:
+
+        variant
+        group
+        opt
+        quantifier
+        choices
+        parameter
+        literal
+
+State:
+
+    TODO
+
+ArgResult:
+
+    TODO
+
+Target:
+
+    - A data object used during argument parsing to store the
+      information ultimately returned as a Result to end user.
+
+    - For the applicable parsing interpretation, a Target contains information
+      about all relevant Opt/Pos and values parsed so far.
 
     Attribute | Note
     --------------------------------------------------------------------------------
-    lexer     | Lexer.
-    parsers   | Sequence of token-eaters. Was 'parser_functions'.
+    poss      | List[Pos]
+    opts      | Dict[Opt]
+    vals      | Dict[DEST -> VAL]
     --------------------------------------------------------------------------------
-    curr      | Was 'current_token'. Managed by the mixin.
-    --------------------------------------------------------------------------------
-
-Section
-    - Used to create labeled groups of Opt for help text purposes.
-
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    name      | Short symbolic name used in API.
-    label     | Used in help text.
-    text      | .
-    opts      | .
-    --------------------------------------------------------------------------------
-
-RegexLexerErrorException(Exception)
-    pass
-
-OptoPyErrorException(Exception)
-    pass
-
-Format
-    - Data object to namespace what could become a lot of attributes.
 

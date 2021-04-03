@@ -29,7 +29,9 @@ class RegexLexer(object):
         else:
             return None
 
-class GenericParserMixin:
+class GrammarParser:
+
+    # General parsing methods (formerly in the mixin).
 
     def __init__(self):
         self.curr = None
@@ -116,7 +118,7 @@ class GenericParserMixin:
         else:
             raise ...
 
-class GrammarParser:
+    # Methods specific to the grammar syntax.
 
     def variant(self):
         if self.peek((variant-defintion, partial-defintion)):
