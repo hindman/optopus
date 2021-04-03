@@ -19,9 +19,7 @@ toc: Table of contents
         syntax-examples               | Syntax examples
         single-opt-convenience-syntax | Convenience syntax for single Opts
         terminology                   | Terminology
-        old-api-examples              | Old API examples
         classes-and-attributes        | Classes and attributes
-        deferred-classes              | Deferred classes
 
     discussion.txt
 
@@ -53,6 +51,7 @@ toc: Table of contents
         help-distpatching             | Help distpatching
         argparse-and-greed            | argparse and greediness
         end-user-errors               | End-user errors
+        converters-validators         | Converters and validators
 
     dev.txt
 

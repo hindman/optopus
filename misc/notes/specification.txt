@@ -226,300 +226,105 @@ Destination assignment:
     - Controls how the parsed data elements are stored and named.
 
 --------
-old-api-examples: Old API examples
---------
-
-NEEDS EDITING PASS
-
-When working on the Parser API, also see odin-client-via-api. It's
-somewhat out of date but might have useful ideas.
-
-####
-# Parser.
-####
-
-p = Parser()
-
-p.parse(args = None)
-p.parse_known(args = None)
-p.help_text(section = None)
-p.error_text()
-p.warn(msg)
-p.error(code = None, msg = None))
-p.exit(code = None, msg = None)
-
-####
-# Opts.
-####
-
-o = Opt(
-    option     = '--job-id',            # Or string-spec with option, aliases, and arg_name.
-    aliases    = ['-j', '-J', '--jid'], # Or just one string.
-    n_args     = 1,
-    repeatable = False,                 # If true, append values.
-    choices    = ('A', 'B', 'C', 'D'),
-    required   = False,
-    tolerant   = False,                 # Setting option makes grammar fully tolerant.
-    high       = False,                 # A high-precedence option (eg --help).
-    greedy     = True,                  # Affects options arg consumption.
-)
-
-####
-# Examples.
-####
-
-p = Parser(
-    # Via simple Opt.
-    Opt('--since TERM', type = int, default = 123),
-    Opt('--limit N', type = int, default = 0),
-    Opt('--rebuild'),
-    Opt('--experiment EXP'),
-    Opt('--stats'),
-    Opt('--month M'),
-    Opt('--search TERM', repeatable = True),
-    Opt('--get ITEM'),
-
-    # Via full Opts.
-    Opt(
-        'task',
-        choices = 'configure submit upload start get stop download find'.split(),
-        desc    = 'The odin-client task to run',
-    ),
-
-    # Via dict.
-    dict(
-        option  = '--odin-env ENV',
-        groups  = 'general',
-        default = 'dev',
-        desc    = "Odin environment ('production' for most users).",
-    ),
-
-    parsing_config = {
-        allow_abbrev = True,
-        opt_prefix_rgx = ...,
-    },
-
-    formatter_config = {
-        program_name = '...',
-        etc ...
-    },
-
-)
-
-# All help-text section, in order.
-p.help_text()
-
-# Specific help-text sections, in the requested order.
-p.help_text('usage')
-p.help_text('section-foo')
-p.help_text('section-foo', 'section-bar')
-
-####
-# SimpleSpec.
-####
-
-VERDICT: dropping this concept.
-
-For example:
-
-    --verbose --type A <x> <y> -h -g
-
-    spec = '-n NAME --foo --bar B1 B2 <x> <y>'
-    p = parser(simple = spec)
-
-
-    expr        = (longoption | shortoption | posarg)+
-
-    longoption  = longopt optarg*
-    shortoption = shortopt optarg*
-    posarg      = "<" char+ ">"
-
-    longopt     = "--" char+
-    shortopt    = "-" char
-    optarg      = [A-Z_\-\d]+
-    char        = [\w\-]
-
-Elements:
-
-    short opt  | -h
-    long opt   | --type
-    opt arg    | A
-    positional | <x>
-
-
-# Creating a Grammar via the API
-
-    general_opts = Partial(
-        'general',
-        Opt('--verbose'),
-        Opt('--log-file {}'),
-    )
-
-    other_opts = Partial(
-        'other',
-        Opt('--hi'),
-        Opt('--bye'),
-    )
-
-    task_opt = Opt(
-        'task',
-        choices = ('configure', 'submit', 'get', 'drop'),
-    )
-
-    general_zone = Zone(general_opts)
-
-    variants = [
-        Variant(
-            'configure',
-            general_zone,
-            Zone(
-                Choice(task_opt, value = 'configure', anchor = True),
-                Opt('--odin-env {}', required = True),
-                Opt('--od-user {}', required = True),
-            ),
-        ),
-        Variant(
-            'submit',
-            general_zone,
-            Zone(
-                Choice(task_opt, value = 'submit', anchor = True),
-                Opt('-c {}', required = True),
-                Opt('-r {}', required = True),
-                Opt('--start-job'),
-                Opt('--person {name} {age}'),
-            ),
-        ),
-        Variant(
-            'get',
-            general_zone,
-            Zone(
-                Choice(task_opt, value = 'get', anchor = True),
-                Opt('-j {}', required = True),
-                Alternatives(
-                    Group(
-                        Opt('--json', required = True),
-                        Opt('--indent {}'),
-                    ),
-                    Opt('--b64'),
-                    Opt('--yaml'),
-                    required = False,
-                ),
-            ),
-        ),
-        Variant(
-            'drop',
-            general_zone,
-            Zone(
-                Choice(task_opt, value = 'drop', anchor = True),
-                Opt('what', choices = ('first', 'last', 'random'), required = True),
-                Opt('--print'),
-                Opt('n'),
-            ),
-        ),
-        Variant(
-            'fubb',
-            Opt('-a'),
-            Opt('-b'),
-            other_opts,
-            Opt('fubb', nargs = (1, None)),
-            Alternatives(
-                Opt('--fast'),
-                Opt('--slow'),
-            ),
-        ),
-        Variant(
-            'zzz',
-            Opt('-x'),
-            Opt('-y'),
-            other_opts,
-            Group(
-                Opt('a'),
-                Opt('b'),
-                Opt('c'),
-                Opt('-z'),
-                ntimes = (2, 7),
-            ),
-        ),
-        Variant(
-            'help',
-            Opt('--help', high = True),
-        ),
-    ]
-
-API: FormatterConfig example:
-
-    p = Parser(
-
-        Opt(
-            '--blort',
-            text = '',
-            sections = ['foo', 'bar'],             # Can be str or list/tuple/set.
-        ),
-
-        formatter_config = FormatterConfig(
-
-            # Either Section or iterable.
-            # Default label: "Foo options"
-            Section('usage', label = '...'),
-            Section('foo'),
-            Section('bar'),
-            Section('short-opts'),
-            Section('special-notes', text = SPECIAL_NOTES, label = 'Special notes'),
-            Section('warnings', text = WARNINGS, label = 'Warnings'),
-
-            program_name        = '',
-            section_label_punct = ':',
-            after_section_label = '',
-            after_section       = '\n',
-
-            program_summary    = '',
-            style              = CLI|MAN,
-            opt_style          = CLI|MAN,
-
-        ),
-
-    )
-
-    Section
-        name  | Short; used symbolically (eg in grammar).
-        label | Used in help text
-
-API needs good syntax for retrieving grammar elements:
-
-    g.get(NAME, NAME, ...)          # Get one.
-    g.get(NAME, [NAME, ...], ...)   # Get multiple.
-
-    - Support bulk configuration.
-
-    - In user validation code, they need an easy way to get sibling Opt
-      information.
-
-Function signature for converters and validators:
-
-    Function  | Arity | Signature
-    -------------------------------------------------------
-    Converter | 1     | STR            => OBJ/raise
-    Validator | 3     | VAL, OPT, OPTS => True/False/raise
-    Dispatch  | 3     | VAL, OPT, OPTS => None
-
---------
 classes-and-attributes: Classes and attributes
 --------
 
+Overview:
+
+    User-facing entities:
+
+        Parser
+        Section
+        Grammar
+        Variant
+        Group
+        Opt
+        Result
+
+        Relationships:
+
+            Parser
+                sections      = List[Section]      | 0+
+                grammar       = Grammar            | 0 or 1
+                    variants  = List[Variant]      | 0+
+                        elems = List[Group or Opt] | 0+
+
+            Parser.parse(ARGS) -> Result
+
+            Group: also has an elems attribute.
+
+    Objects used during grammar parsing:
+
+        GenericParserMixin | Drop (until we have an actual second use case).
+        GrammarParser      | Parses a spec, returns Grammar.
+        TokType            | Token types given to lexer.
+        RegexLexer         | Lexer.
+        Token              | Emitted by lexer.
+        ParseElem          | Emitted by parser functions. Later assembled into Grammar.
+
+        TokType kinds:
+
+            TODO
+
+        Token kinds:
+
+            TODO
+
+        ParseElem kinds:
+
+            Variant
+            Group
+            Opt
+            Quantifier
+            Choices
+            Parameter
+            Literal
+
+    Objects used during argument parsing:
+
+        State
+        ArgResult
+        Target
+
+    Entities used only for notation:
+
+        PartialUsage      | Group
+        Positional        | Opt
+        PositionalVariant | Opt
+        ParameterVariant  | Opt
+
 Parser:
+
+    - Class will likely have various getters or query functionality to make it
+      easy to configure specific grammar elements. Users should not have to
+      manually navigate the Grammar hierarchy very often.
 
     Attribute | Note
     --------------------------------------------------------------------------------
-    grammar   | Was 'simple_spec'.
-    elems     | Was 'opts'.
+    spec      | Was 'simple_spec'.
+    grammar   | Grammar. Was 'opts'.
     --------------------------------------------------------------------------------
-    program   | Defer. The program name, in usage text.
-    helpful   | Defer.
     sections  | Defer.
-    format    | Defer. Was 'formatter_config'.
+    format    | Defer. Data object to namepsace formatting attributes. Was 'formatter_config'.
+    helpful   | Defer.
+    mode      | Defer. For special modes (parse-known, best-effort, flags, keyvals, greedy).
     --------------------------------------------------------------------------------
+    program   | Drop: move under format.
     wildcards | Drop. Was used to support * as a match-anything device.
     --------------------------------------------------------------------------------
+
+    API:
+
+        parse(args = None)
+        parse_known(args = None)
+
+        help_text(section, section, ...)
+        error_text()
+
+        help(sections = None)
+        warn(msg)
+        error(code = None, msg = None))
+        exit(code = None, msg = None)
 
 Opt:
 
@@ -533,13 +338,14 @@ Opt:
     default   | Maybe 'init'.
     convert   | Callable(s).
     validate  | Callable(s).
+    value     | None (typical) or the variant value.
     --------------------------------------------------------------------------------
     text      | Defer.
+    choices   | Defer.
     aliases   | Defer.
     high      | Defer. Was 'tolerant'.
     factory   | Defer. Callable to create default.
     dispatch  | Defer. Callable(s). Maybe 'actions'.
-    choices   | Defer. Could handle with validate.
     sections  | Defer. Sequence of section names.
     required  | Defer, maybe drop. Same as ntimes=1.
     negaters  | Defer. For flag negatives (to overrule True default)
@@ -604,10 +410,14 @@ Token:
     --------------------------------------------------------------------------------
     toktype   | TokenType of the token.
     value     | Corresponding token text.
+    pos       | Position.
+    line      | Line number.
+    col       | Column number.
     --------------------------------------------------------------------------------
 
 GenericParserMixin:
 
+    - Dropping.
     - Provides parse(), eat(), and error() behaviors.
     - Gets lexer and parsers from subclass.
 
@@ -619,109 +429,23 @@ GenericParserMixin:
     curr      | Was 'current_token'. Managed by the mixin.
     --------------------------------------------------------------------------------
 
-GrammarParser:
-
-    - TODO
-
-State:
-
-    - Internal object used during parsing: see arg-parsing-algo .
-
-ArgResult:
-
-    - Internal object used during parsing: see arg-parsing-algo .
-
---------
-deferred-classes: Deferred classes
---------
-
-ParsedOptions
-    - Object returned by Parser.parse().
-    - Basic form: self.DESTINATION = VALUE.
-    - Also behaves like a collection: iterable, dictable, etc.
-
-    args
-    parsed_opts
-    args_index
-
-ParsedOpt
-    - Used by the Parser to store parsing results for an Opt.
-    - Each ParsedOpt represents one DESTINATION-VALUE pair.
-
-    destination
-    opt
-    _values
-
-FormatterConfig
-    - Object for the user to configure details about the generation
-    - of usage and help text.
-
-    sections
-    program_name
-    section_label_punct
-    after_section_label
-    after_section
-    program_summary
-    style
-    opt_style
-    alias_style
-
 Section
-    - Used to create labeled groups of Opt instances for the purposes
-    - of help text generation.
+    - Used to create labeled groups of Opt for help text purposes.
 
-    name
-    label
-    text
-    opts
-
-SimpleSpecParserGenericParser(GenericParserMixin)
-    - Used to parse a simple grammar spec given by the user.
-    - The parse() method returns a Phrase representing the CLI grammar.
-
-GrammarSpecParser
-    - Like SimpleSpecParser, but for the full variant-based grammar.
-    # Not implemented yet.
-
-Phrase
-    - Object used by Parser to represent CLI grammar and do parsing work.
-    - Each Phrase can store subphrases, so the grammar forms a tree.
-    - Leaves are Phrase objects corresponding to Opt intances.
-
-    subphrases
-    opt
-
-OptToken
-    - A data object holding the parsed content of a Token.
-    - Lacks constructor; should add.
-    - Callers are using these attributes.
-
-    option
-    option_spec
-    nargs
-    opt_type
-    arg_names
-
-Enum
-    - Used for collections of constants.
-    - Should switch to short-con.
-
-    _enum_name
-    _members
-    _rmembers
-
-EnumMember
-    - Used by Enum.
-    - The kws dict is used to set as attributes on self.
-
-    enum_name
-    name
-    value
-    **kws
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    name      | Short symbolic name used in API.
+    label     | Used in help text.
+    text      | .
+    opts      | .
+    --------------------------------------------------------------------------------
 
 RegexLexerErrorException(Exception)
     pass
 
 OptoPyErrorException(Exception)
     pass
+
+Format
+    - Data object to namespace what could become a lot of attributes.
 

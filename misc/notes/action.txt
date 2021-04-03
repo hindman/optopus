@@ -2,18 +2,36 @@
 road-map: Road map
 --------
 
-Classes, API, attributes, terminology, naming conventions:
+Put in discussion.txt:
 
-    - Token types
+    API needs good syntax for retrieving grammar elements:
 
-    - Actual Grammar elements.
+        g.get(NAME, NAME, ...)          # Get one.
+        g.get(NAME, [NAME, ...], ...)   # Get multiple.
 
-    - Parsed entities: tokens parsed, but some post-processing still needed
-      to created full Grammar elements.
+        - Support bulk configuration.
 
-Wrap up editing:
-    - specification.txt
-    - action.txt
+        - In user validation code, they need an easy way to get sibling Opt
+          information.
+
+Drop GrammarParserMixin.
+
+API planning:
+
+    . Class attributes.
+
+    . Kinds: TokType, Token, ParseElem.
+
+    - Class APIs.
+    - Parser API: see odin-client-via-api, which might have useful ideas.
+
+    . Terminology and naming conventions.
+
+Road map:
+
+    - milestones
+    - feature list
+    - etc
 
 --------
 milestones: Milestones
@@ -108,6 +126,8 @@ items-from-prior-road-map: Items from prior road map
 - Help text customization.
 
 - Support allow_abbreviation boolean.
+
+- Support short-flag bundling.
 
 - Option customization: eg, the regex to identify long opt, short opt, etc.
 

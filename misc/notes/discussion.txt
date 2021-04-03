@@ -126,14 +126,13 @@ customized command-line programs:
 Allowing users to control the generated help text in a fine-grained manner.
 
     - Program complexity increases the need to organize and fine-tune help
-      text, but not necessarily to write and layout the whole thing.
+      text, but not necessarily to write and layout the whole thing
+      (text-driven libraries require that).
 
     - Optopus provides many mechanisms for that fine tuning:
 
         - Simple top-level configurations to control basic layout,
           capitalization, punctuation, etc.
-
-        - Support for common styles: command-line vs man-page.
 
         - Ability to group options into sections.
 
@@ -144,6 +143,8 @@ Allowing users to control the generated help text in a fine-grained manner.
           contruction process via configuration and, where necessary, through
           the programmatic hooks. There should be no need to subclass optopus
           or delve into the parser's innards.
+
+        - Support for common styles: command-line vs man-page.
 
 Allowing users to enhance usage-text readability by being able to refer to
 groups of options and to omit either short or long options.
@@ -163,11 +164,11 @@ groups of options and to omit either short or long options.
 Allowing users to define their arguments and options in ways that encourage
 modularity.
 
-    - In optopus a user defines options and arguments as atomic units,
-      separate from the issues of command-line grammar, usage variants, and
-      options help text.
+    - In optopus a user defines/configures options and arguments as atomic
+      units, separate from the issues of command-line grammar, usage variants,
+      and options help text.
 
-    - Each of those atomic units can be assigned to one or more groups of
+    - Each of those atomic units can be attached to one or more groups of
       related options.
 
     - Then those options or option-groups can be leveraged when defining the
@@ -186,8 +187,6 @@ other-goals: Other goals
 
 Prioritize the simple use cases. Yes, add features and customization
 capability. But do that without sacrificing super super usage patterns.
-
-Should handle both positional arguments and options.
 
 Usage should be intuitive and declarative, especially for the simplest and most
 common use cases. It should not depend on bizarre syntax or on user-created
@@ -552,7 +551,8 @@ Phase 3: parsing:
 
 Phase 4: interpretation:
 
-    - Reassess whether this phase is a good idea.
+    - Reassess whether this phase is a good idea: leaning in that
+      direction.
 
     - The parser phase is the most complex, so don't overburden it
       with the duty of creating the ultimate grammar elements.
@@ -580,6 +580,7 @@ The grammar can be built from the parts we already have:
 
 Apply extra validation at the end to disallow:
 
+    Only a single Opt (if P1 repeats, they must have same dest).
     Group
     PositionalVariant
     ParameterVariant
@@ -598,14 +599,6 @@ arg-parsing-algo: Parsing algorithm
 --------
 
 Notation and terminology:
-
-    - Grammar elements:
-
-        Parser
-            Grammar (0, 1)
-                Variant (1+)
-                    Groups (0+)
-                    Opts (0+)
 
     - Purely notational concepts:
 
@@ -1089,7 +1082,8 @@ Default flattening policy:
     - If the grammar does not contain nested plural ntimes, data
       will be flattened as much as possible, as shown in table below.
 
-    - User can request non-flattened data.
+    - User can request non-flattened data or flattened (the latted
+      to flatten even the 2x2 or nested scenarios).
 
     nargs or | ntimes    | ntimes 2+                   | ntimes 2+
     nparams  | 0 or 1    | Flattened                   | Non-flattened
@@ -1517,4 +1511,16 @@ Types of errors in precedence order, by failure source:
         - Insufficient ntimes: positional.
 
         - Insufficient nargs.
+
+--------
+converters-validators: Converters and validators
+--------
+
+Function signatures:
+
+    Function  | Arity | Signature
+    -------------------------------------------------------
+    Converter | 1     | STR            => OBJ/raise
+    Validator | 3     | VAL, OPT, RES  => True/False/raise
+    Dispatch  | 3     | VAL, OPT, RES  => None
 
