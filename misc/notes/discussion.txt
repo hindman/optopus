@@ -552,6 +552,8 @@ Phase 3: parsing:
 
 Phase 4: interpretation:
 
+    - Reassess whether this phase is a good idea.
+
     - The parser phase is the most complex, so don't overburden it
       with the duty of creating the ultimate grammar elements.
 
