@@ -4,13 +4,12 @@ road-map: Road map
 
 API planning:
 
-    . Class attributes and kinds.
+    - Class attributes and kinds.
         - See TODO.
 
     - Class APIs.
-    - Parser API: see odin-client-via-api, which might have useful ideas.
 
-    . Terminology and naming conventions.
+    - Terminology and naming conventions.
 
 Road map:
 

@@ -311,7 +311,8 @@ Parser:
         # Obtaining help text or text for the error from most recent parse():
 
             help_text(section...)
-            error_text()
+            error_text
+            exception
 
         # Actions like printing or exiting.
 
@@ -339,6 +340,10 @@ Grammar:
     --------------------------------------------------------------------------------
     variants  | List[Variant]
     --------------------------------------------------------------------------------
+
+    API:
+
+        TODO
 
 Variant:
 
@@ -378,8 +383,11 @@ Opt:
     sections  | Defer. Sequence of section names.
     required  | Defer, maybe drop. Same as ntimes=1.
     negaters  | Defer. For flag negatives (to overrule True default)
-    hidden    | Defer.
+    hide      | Defer. False (visible), True (hidden), or sequence of where/what to hide
+    case      | Defer. Case-sensitive if True.
     help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
+    anchor    | Defer. bool
+    metavar   | Defer. But need a better name.
     --------------------------------------------------------------------------------
     option    | Internal. Not sure of purpose.
     _opt_type | Internal. Holds an OptType.
@@ -394,13 +402,12 @@ Result:
 
 GrammarParser:
 
-    TODO
-
     Attribute | Note
     --------------------------------------------------------------------------------
     lexer     | Lexer.
-    parsers   | Sequence of token-eaters. Was 'parser_functions'.
+    handlers  | Sequence of token-stream handlers. Was 'parser_functions'.
     curr      | Was 'current_token'. Managed by the mixin.
+    prevpeek  | .
     --------------------------------------------------------------------------------
 
     API:

@@ -35,31 +35,31 @@ class GrammarParser:
 
     def __init__(self):
         self.curr = None
-        self.last_peek = []
+        self.prevpeek = []
 
     def parse(self):
         # Consume and yield as many tokens as we can.
         elem = True
         while elem:
-            for func in self.parser_functions:
+            for func in self.handlers:
                 elem = func()
                 if elem:
                     yield elem
                     break
         # We expect EOF as the final token.
-        if not self.current_token.isa(EOF):
+        if not self.curr.isa(EOF):
             self.error()
 
     def peek(self, toktype):
         ok = self.do_eat(toktype, peek = True)
-        self.last_peek = toktype
+        self.prevpeek = toktype
         return ok
 
     def eat(self, toktype):
         return self.do_eat(toktype)
 
     def eat_last_peek(self):
-        tok = self.do_eat(self.last_peek)
+        tok = self.do_eat(self.prevpeek)
         if tok:
             return tok
         else:
@@ -87,7 +87,7 @@ class GrammarParser:
                 else:
                     tok = self.curr
                     self.curr = None
-                    self.last_peek = None
+                    self.prevpeek = None
                     return tok
 
         # Fail.
