@@ -8,18 +8,15 @@ toc: Table of contents
 
     action.txt
 
-        road-map                  | Road map
-        milestones                | Milestones
-        feature-list              | Feature list
-        items-from-prior-road-map | Items from prior road map
+        todos    | TODOs
+        road-map | Road map
 
     specification.txt
 
-        grammar-syntax                | Grammar syntax
-        syntax-examples               | Syntax examples
-        single-opt-convenience-syntax | Convenience syntax for single Opts
-        terminology                   | Terminology
-        classes-and-attributes        | Classes and attributes
+        grammar-syntax         | Grammar syntax
+        syntax-examples        | Syntax examples
+        terminology            | Terminology
+        classes-and-attributes | Classes and attributes
 
     discussion.txt
 

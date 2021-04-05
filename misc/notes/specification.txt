@@ -137,36 +137,6 @@ Sytax example: nab:
     main : [--help] commands=cmd`...
 
 --------
-single-opt-convenience-syntax: Convenience syntax for single Opts
---------
-
-    Convenience syntax when configuring a single Opt:
-
-        x x [x]     Positionals can drop <> brackets.
-        x=a|b|c     Ditto, with choices.
-        -f _ [_]    Parameters can drop {} brackets.
-        -f a b      Ditto, with named parameters.
-
-        - Some examples using full syntax:
-
-            Opt('<what>')
-            Opt('<what=first|last|random>')
-            Opt('<x> <x> [<x>]')
-            Opt('--foo')
-            Opt('--foo {} {} [{}]')
-            Opt('--foo {a} {b} [{c}]')
-
-        - Same examples using convenience syntax, which drops the explicit
-          brackets for positionals and parameters.
-
-            Opt('what')
-            Opt('what=first|last|random')
-            Opt('x x [x]')
-            Opt('--foo')
-            Opt('--foo _ _ [_]')
-            Opt('--foo a b [c]')
-
---------
 terminology: Terminology
 --------
 
@@ -192,7 +162,6 @@ Command line argument types:
         - Option (parameter option)
         - Flag
 
-
     - Parameters:
         - Arguments for an option.
 
@@ -203,7 +172,8 @@ Command line argument types:
 Help text sections:
 
     - Terminology in this project:
-        - Usage text: conveys the command-line grammar.
+        - Help text: documents everything.
+        - Usage text: documents the command-line grammar.
         - Options text: documents the options and positional arguments, perhaps in groups.
         - Custom sections.
 
@@ -376,6 +346,7 @@ Group:
     --------------------------------------------------------------------------------
     elems     | List[Group or Opt]
     ntimes    | .
+    validate  | Defer. Callable(s).
     --------------------------------------------------------------------------------
 
 Opt:
@@ -392,24 +363,25 @@ Opt:
     nparams   | .
     dest      | Was 'destination'.
     default   | .
-    convert   | Callable(s).
-    validate  | Callable(s).
     value     | None (typical) or the variant value.
+    choices   | None (validation deferred).
     --------------------------------------------------------------------------------
-    text      | Defer.
+    help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
+    metavar   | Defer. But need a better name.
     choices   | Defer.
-    aliases   | Defer.
+    convert   | Defer. Callable(s).
+    validate  | Defer. Callable(s).
+    text      | Defer.
+    hide      | Defer. False (visible), True (hidden), or sequence of where/what to hide
+    sections  | Defer. Sequence of section names.
     high      | Defer. Was 'tolerant'.
     factory   | Defer. Callable to create default.
+    aliases   | Defer.
     dispatch  | Defer. Callable(s). Maybe 'actions'.
-    sections  | Defer. Sequence of section names.
     required  | Defer, maybe drop. Same as ntimes=1.
     negaters  | Defer. For flag negatives (to overrule True default)
-    hide      | Defer. False (visible), True (hidden), or sequence of where/what to hide
     case      | Defer. Case-sensitive if True.
-    help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
     anchor    | Defer. bool
-    metavar   | Defer. But need a better name.
     --------------------------------------------------------------------------------
     option    | Internal. Not sure of purpose.
     _opt_type | Internal. Holds an OptType.

@@ -202,11 +202,6 @@ messages.
 
 Easy system for validators to be combined flexibly.
 
-Should be applicable to validating subroutine arguments, both positional and
-key-value.
-
-Should support subcommand applications, like svn or git.
-
 Should easily support different help types: (a) brief usage/synopsis, (b) full
 help or man-page, and (c) extras or examples.
 
@@ -223,7 +218,8 @@ Error handling should be under the user's control, if they want it. This is a
 serious flaw in some parsers (eg argparse). The library should support both
 "automatic" mode (where the parser will eagerly print help or error message and
 then exit) or non-automatic mode (where the parser will simply return an object
-containing all information and allow the user to decide what to do.
+containing all information and allow the user to decide what to do. [Note that
+argparse has addressed this, in whole or in part, in Python 3.9].
 
 Should have a design that is friendly to customization. Allow users to
 customize by writing simple functions or hooks rather than having to subclass.
@@ -1278,19 +1274,25 @@ I have found that approach mildly annoying:
     - That makes it a bit less convenient to drive via typical configuration
       mechanisms.
 
-I think it makes more sense for Optopus to treat parse-known-args as
-one of the parsing strategies that it supports:
+I think it makes more sense for Optopus to treat parse-known-args as one of the
+parsing modes that it supports:
 
-    - Regular.
+    Parsing modes:
 
-    - Parse known.
+        Configured: these modes can be combined. They relax the rules to allow
+        deviations:
 
-    - Best-effort: accept conversion/validation failures.
+            allow-unknown
+            allow-unconverted
+            allow-invalid
 
-    - Best-effort: always forge ahead: in the face of an error, accumulate the
-      bad args, but keep pressing forward.
+        No configuration: these modes are exclusive:
 
-    - No configuration parsing, with configurable nparams (default: 0).
+            Mode    | nparams
+            -----------------
+            flag    | 0
+            key-val | 1
+            greedy  | 0+
 
 Optopus:
 

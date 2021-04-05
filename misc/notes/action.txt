@@ -1,119 +1,140 @@
 --------
+todos: TODOs
+--------
+
+Beta zero:
+
+    Tox: fails for 2.7, 3.3, 3.4, 3.5, 3.6.
+
+    Setup .py files and core classes, methods, constants.
+
+    Data-oriented exception strategy.
+
+    No-config parsing modes: flag, key-val, greedy.
+
+    Set up publishing configuration, invoke tasks, dev docs.
+
+--------
 road-map: Road map
 --------
 
-See argparse:
+Core algorithms:
 
-    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_intermixed_args
+    Grammar syntax parsing.
 
-Road map:
+    Argument parsing.
 
-    - milestones
-    - feature list
-    - etc
+Core enhancements:
 
---------
-milestones: Milestones
---------
+    Opt creation via convenience syntax.
 
-MVP: zero-config parsing.
+    Error selection during failed argument parsing.
 
-Publish first beta version.
+    Conversion/validation/choices.
 
-Parsing backed by core grammar.
+Help text: basic:
 
-Usage text creation.
+    Automatic --help.
 
-High precendence.
+    Help text: usage.
 
-Dispatch support.
+    Help text: options.
 
-Anchored Opts.
+Parsing enhancements:
 
-Conveniences.
+    Other parsing modes: allow-unknown, allow-unconverted, allow-invalid.
 
-Integration with config data and env variables.
+    No-args behaviors, such as show-help or default-args.
 
---------
-feature-list: Feature list
---------
+    Data flattening/non-flattening in Result.
 
-Support zones and anchors to regulate argument ordering (via the API, not grammar syntax).
+Help text: enhancements:
 
-Support high-precendence options.
+    Help text: show defaults and choices.
 
-Need to support other formats (eg, POD or man pages).
+    Help text: sections.
 
-Maybe support the tool's usages for simple conversion/validation of arguments
-to functions.
+Alternative inputs: basics:
 
-Ability to emit parser config as data.
+    Aliases.
 
-Support variant validation hooks.
+    Tight binding of option and parameter: --opt=PARAM.
 
-Support sub-variants.
+    Short-flag bundling.
 
-Support abbrev not only for long-options but also choices.
+    Option-prefix customization.
 
-Support @FILE (command line arguments from a file). See argparse fromfile_prefix_chars.
+    Non-option arguments having option prefix: negative numbers.
 
-Handle negative numbers correctly in arg parsing.
+    Non-option arguments having option prefix: generally via a configurable escape
+    prefix.
 
-Support configurable mechanism for end-users to supply arguments that begin
-with the option prefix but should not be treated as options.
+Opt enhancements:
 
---------
-items-from-prior-road-map: Items from prior road map
---------
+    Opt.factory.
 
-    - tox: py27 tests fail under tox (they pass under development virtualenv).
+    Negatable options: --foo and --no-foo.
 
-- Support high-precendence.
+    File-type arguments. Let user decide behaviors: (1) validate path exists, (2)
+    opening (with encoding, mode, etc). Also support `-` for stdin/stdout.
 
-- Check argparse for other behaviors.
+Alternative inputs: handy:
 
-- Handle --opt=val.
+    Abbrevations for long-options.
 
-- Constructors should support dict-based configuration. Parser does, but not
-  FormatterConfig and Section.
+    Abbrevations for choices values.
 
-- help_text(): usage section: when wrapping, keep options together with their
-  option args.
+Dispatching:
 
-- Wildcards mode: allow user to specify pos/opt/both/True.
+    Help dispatch.
 
-- nargs and ntimes: support regex-style quantifiers, both in specs and in the
-  generated USAGE help-text.
+    Dispatch.
 
-- Negatable options: `--smart-case` and `--no-smart-case`.
+Grammar enhancements:
 
-- API thematic configuration.
+    High-precendence options.
 
-- Help text customization.
+    Anchored Opts.
 
-- Support allow_abbreviation boolean.
+Parser enhancements:
 
-- Support short-flag bundling.
+    Parser.query() and bulk configuration.
 
-- Option customization: eg, the regex to identify long opt, short opt, etc.
+    Parser utilities: warn(), help(), error(), exit().
 
-- Better exception strategy.
+    Parser configuration to add single-letter option aliases automatically.
 
-- Man-page support.
+    Group validation.
 
-- Integration with configuration files.
+Alternative inputs: other:
 
-- Integration with ENV variables.
+    @FILE (command line arguments from a file). See argparse fromfile_prefix_chars.
 
-- Support no-args behaviors, such as show-help or default-args.
+    Case-insensitive options.
 
-- Support global configuration to automatically add single-letter aliases.
+    Intermixed parsing mode. See argparse.parse_intermixed_args().
 
-- Tox fails for Pythons 3.6, 3.5, 3.4, 3.3. Not sure why. Failed early during
-  pip installs.
+Text customization:
 
-- Support custom option prefixes. [Requires some thought about the grammar
-  syntax: it might need to stick with standard prefixes].
+    Help text: short options in separate section.
 
-- Support file-type arguments. Let user decide behaviors: (1) validate path
-  exists, (2) opening (with encoding, mode, etc).
+    Help text: usage: symbolically named groupings.
+
+    Help text: customizations via config and/or hooks.
+
+    Error text: customizations via config and/or hooks.
+
+    Man-page-style help text.
+
+Development aids:
+
+    Hidden options: either totally or in specific types of help text.
+
+    Automatic --version.
+
+    Ability to emit Parser configuration as data (and re-create from data).
+
+    Bash completion.
+
+    Integration with configuration data and environment variables.
+
