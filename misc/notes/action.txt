@@ -2,6 +2,10 @@
 road-map: Road map
 --------
 
+See argparse:
+
+    https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_intermixed_args
+
 Road map:
 
     - milestones
@@ -51,31 +55,18 @@ Support sub-variants.
 
 Support abbrev not only for long-options but also choices.
 
+Support @FILE (command line arguments from a file). See argparse fromfile_prefix_chars.
+
+Handle negative numbers correctly in arg parsing.
+
+Support configurable mechanism for end-users to supply arguments that begin
+with the option prefix but should not be treated as options.
+
 --------
 items-from-prior-road-map: Items from prior road map
 --------
 
-- Drop the Simple spec: just have a grammar and allow it to parse in full (with
-  variants), in basic usage (standard command line grammar), and for an
-  individual option.
-
-- Don't worry about using simple dependencies: attrs, short_con.
-
-- tox: py27 tests fail under tox (they pass under development virtualenv).
-
-- Implement a proof-of-concept for the new parsing approach:
-
-- asserts in code: don't rely on them for error checking
-
-- GrammarSpecParser and complex Phrase parsing.
-  - Planning.
-  - Basic GrammarSpecParser implementation.
-  - Complex grammars:
-    - Varying nargs and ntimes.
-    - Keeping track of partially-parsed results.
-    - Pruning no-longer-eligible subphrases.
-    - Keeping track of alternatives.
-    - Backtracking using those alternatives.
+    - tox: py27 tests fail under tox (they pass under development virtualenv).
 
 - Support high-precendence.
 
@@ -124,3 +115,5 @@ items-from-prior-road-map: Items from prior road map
 - Support custom option prefixes. [Requires some thought about the grammar
   syntax: it might need to stick with standard prefixes].
 
+- Support file-type arguments. Let user decide behaviors: (1) validate path
+  exists, (2) opening (with encoding, mode, etc).

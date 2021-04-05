@@ -86,7 +86,7 @@ Configuration via usage syntax is focused on grammar:
           - Partial variants, which use the variant concept to define a named
             group of options and/or arguments that can then be inserted into
             one or more usage variants -- avoiding repetition in the definition
-            of complex grammars.
+            of complex grammars (argparse does this via parents).
 
           - Named destinations for any group of elements in the grammar.
 
