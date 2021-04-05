@@ -2,15 +2,6 @@
 road-map: Road map
 --------
 
-API planning:
-
-    - Class attributes and kinds.
-        - See TODO.
-
-    - Class APIs.
-
-    - Terminology and naming conventions.
-
 Road map:
 
     - milestones

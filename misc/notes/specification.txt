@@ -240,6 +240,7 @@ Overview:
         Group
         Opt
         Result
+        Query
 
         Relationships:
 
@@ -308,6 +309,8 @@ Parser:
             - Parser can have a mode.
             - And parse() can temporarily use a different mode.
 
+        query(...) -> Grammar.query(...) -> Query
+
         # Obtaining help text or text for the error from most recent parse():
 
             help_text(section...)
@@ -343,13 +346,28 @@ Grammar:
 
     API:
 
-        TODO
+        query(...) -> Query
+
+Query:
+
+    Iterable tuple-like object returned by Grammar.query(). Holds the Groups/Opts
+    that satisfy the search parameters. Supports bulk configuration.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    elems     | List[Group or Opt]
+    --------------------------------------------------------------------------------
+
+    API:
+
+        config(...) # Apply the config parameters to all Groups/Opts.
 
 Variant:
 
     Attribute | Note
     --------------------------------------------------------------------------------
     elems     | List[Group or Opt]
+    ntimes    | .
     --------------------------------------------------------------------------------
 
 Group:
@@ -357,9 +375,13 @@ Group:
     Attribute | Note
     --------------------------------------------------------------------------------
     elems     | List[Group or Opt]
+    ntimes    | .
     --------------------------------------------------------------------------------
 
 Opt:
+
+    - A configurable data object to represent one option (with parameters,
+      quantifiers) or one positional (with quantifiers).
 
     Attribute | Note
     --------------------------------------------------------------------------------
@@ -394,6 +416,10 @@ Opt:
     arg_names | Internal. Seems related to simple spec parsing.
     --------------------------------------------------------------------------------
 
+    API:
+
+        config(...)
+
 Result:
 
     - Data object returned to end-user by Parser.parse().
@@ -423,11 +449,15 @@ RegexLexer:
     Attribute | Note
     --------------------------------------------------------------------------------
     text      | The text to be lexed.
-    toktypes  | Sequence of TokenType.
+    toktypes  | Sequence of TokType.
     pos       | Current index of the lexer.
     mxpos     | Last index of the text.
     iseof     | Becomes True when text exhausted.
     --------------------------------------------------------------------------------
+
+    API:
+
+        See old.py implementation and modifications in draft.py.
 
 TokType:
 
@@ -442,7 +472,7 @@ TokType:
 
     Kinds:
 
-        TODO
+        See grammar-parsing-algo notes.
 
 Token:
 
@@ -450,7 +480,7 @@ Token:
 
     Attribute | Note
     --------------------------------------------------------------------------------
-    toktype   | TokenType of the token.
+    toktype   | TokType of the token.
     value     | Corresponding token text.
     pos       | Position (where matched)
     line      | Line number.
@@ -459,11 +489,13 @@ Token:
 
     Kinds:
 
-        TODO
+        Same as TokType.
 
 ParseElem:
 
-    TODO
+    - Simple internal data object emitted by the parsing phase of
+      GrammarParser.parse(). Subsequent work in that method will convert the
+      ParseElem into a user-facing Grammar.
 
     Kinds:
 
@@ -477,11 +509,13 @@ ParseElem:
 
 State:
 
-    TODO
+    - An internal data object used during argument parsing. See
+      arg-parsing-algo notes.
 
 ArgResult:
 
-    TODO
+    - An internal data object used during argument parsing. See
+      arg-parsing-algo notes.
 
 Target:
 
