@@ -4,8 +4,6 @@ todos: TODOs
 
 Beta zero:
 
-    Tox: fails for 2.7, 3.3, 3.4, 3.5, 3.6.
-
     Setup .py files and core classes, methods, constants.
 
     Data-oriented exception strategy.
@@ -13,6 +11,8 @@ Beta zero:
     No-config parsing modes: flag, key-val, greedy.
 
     Set up publishing configuration, invoke tasks, dev docs.
+
+    Look into Github Actions.
 
 --------
 road-map: Road map

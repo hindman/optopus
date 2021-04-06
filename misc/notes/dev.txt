@@ -4,22 +4,28 @@ dev-notes: Dev notes
 
 Creating a new virtualenv:
 
-    v='2.7.18'
+    v='3.9.4'
     deactivate
     pyenv shell $v && pyenv versions
     mkvirtualenv optopus-$v
-    full-venv
+    pip install --upgrade pip
     pip install -e . -e .[dev] -e .[test]
 
 Activate and run tests:
 
-    # Basic.
+    - Basic:
 
-    workon optopus-3.8.5      # Or 2.7.18
-    pytest -s -v tests/
+        workon optopus-3.9.4
+        pytest -s -v tests/
 
-    # With tox.
+    - With tox:
 
-    pyenv shell 3.8.5  2.7.18
-    tox
+        - Manualy:
+
+            pyenv shell 3.9.4  3.8.9  ...
+            tox
+
+        - Invoke:
+
+            inv tox
 

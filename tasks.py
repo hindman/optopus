@@ -8,8 +8,9 @@
 #   invoke --help TASK
 #
 # Tasks:
+#   invoke tags
 #   invoke test [--cov]
-#   invoke publish
+#   invoke tox
 #
 ####
 
@@ -23,16 +24,24 @@ def tags(c):
     c.run('mtags --recipe .optpy --write w')
     c.run('mtags --recipe .opttxt --write u --toc order')
 
-# @task
-# def test(c, cov = False):
-#     '''
-#     Run pytest, optional opening coverage report.
-#     '''
-#     cov_args = '--cov short_con --cov-report html' if cov else ''
-#     cmd = 'pytest -s -v {} tests'.format(cov_args)
-#     c.run(cmd)
-#     if cov:
-#         c.run('open htmlcov/index.html')
+@task
+def tox(c):
+    '''
+    Run tox for the project
+    '''
+    d = dict(PYENV_VERSION = '3.9.4:3.8.9:3.7.10:3.6.13:3.5.10')
+    c.run('tox', env = d)
+
+@task
+def test(c, cov = False):
+    '''
+    Run pytest, optional opening coverage report.
+    '''
+    cov_args = '--cov optopus --cov-report html' if cov else ''
+    cmd = 'pytest -s -v {} tests'.format(cov_args)
+    c.run(cmd)
+    if cov:
+        c.run('open htmlcov/index.html')
 
 # @task
 # def dist(c, publish = False, repo = 'pypi'):
