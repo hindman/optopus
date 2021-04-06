@@ -2,17 +2,13 @@
 todos: TODOs
 --------
 
-Beta zero:
-
-    Setup .py files and core classes, methods, constants.
-
-    Data-oriented exception strategy.
-
-    No-config parsing modes: flag, key-val, greedy.
-
-    Set up publishing configuration, invoke tasks, dev docs.
-
-    Look into Github Actions.
+Publish:
+    - README
+    - setup.py
+    - tasks.py
+    - dev.txt
+    - Publish.
+    - Check in pypi and confirm pip-install.
 
 --------
 road-map: Road map
@@ -20,9 +16,13 @@ road-map: Road map
 
 Core algorithms:
 
+    Data-oriented exception strategy.
+
     Grammar syntax parsing.
 
     Argument parsing.
+
+    Look into Github Actions.
 
 Core enhancements:
 
@@ -42,7 +42,7 @@ Help text: basic:
 
 Parsing enhancements:
 
-    Other parsing modes: allow-unknown, allow-unconverted, allow-invalid.
+    Other parsing modes: key-val, greedy, unknown-ok, unconverted-ok, invalid-ok.
 
     No-args behaviors, such as show-help or default-args.
 

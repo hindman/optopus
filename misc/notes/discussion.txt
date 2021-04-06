@@ -543,7 +543,7 @@ Phase 3: parsing:
       calling will occur in the subclass. [Subsequently decided
       to drop the mixin.]
 
-    - See draft.py for draft of the parser functions and some related
+    - See _draft.py for draft of the parser functions and some related
       changes to RegexLexer.
 
 Phase 4: interpretation:
@@ -1282,9 +1282,9 @@ parsing modes that it supports:
         Configured: these modes can be combined. They relax the rules to allow
         deviations:
 
-            allow-unknown
-            allow-unconverted
-            allow-invalid
+            unknown-ok
+            unconverted-ok
+            invalid-ok
 
         No configuration: these modes are exclusive:
 

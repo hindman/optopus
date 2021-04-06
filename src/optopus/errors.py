@@ -1,0 +1,4 @@
+
+class OptopusError(Exception):
+    pass
+

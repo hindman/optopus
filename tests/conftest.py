@@ -2,6 +2,15 @@ import pytest
 import sys
 import io
 
+@pytest.fixture
+def tr():
+    return TestResource()
+
+class TestResource(object):
+
+    def dump(self, val = None, label = 'dump()'):
+        print(f'\n--------\n{label} =>\n{val}')
+
 class StdStreams(object):
 
     def __init__(self):

@@ -256,12 +256,12 @@ Parser:
     --------------------------------------------------------------------------------
     spec      | Was 'simple_spec'.
     grammar   | Grammar. Was 'opts'.
+    mode      | Special parsing mode.
     --------------------------------------------------------------------------------
     auto      | Defer. True by default: exit with error on failed parse().
     sections  | Defer.
     format    | Defer. Data object to namepsace formatting attributes. Was 'formatter_config'.
     helpful   | Defer.
-    mode      | Defer. For special modes (parse-known, best-effort, flags, keyvals, greedy).
     --------------------------------------------------------------------------------
     program   | Drop: move under format.
     wildcards | Drop. Was used to support * as a match-anything device.
@@ -429,7 +429,7 @@ RegexLexer:
 
     API:
 
-        See old.py implementation and modifications in draft.py.
+        See _old.py implementation and modifications in _draft.py.
 
 TokType:
 

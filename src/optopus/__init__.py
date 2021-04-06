@@ -1,19 +1,3 @@
-# from .parser import (
-#     # Classes.
-#     FormatterConfig,
-#     Opt,
-#     OptoPyError,
-#     Parser,
-#     Section,
-#     # Enumerations.
-#     AliasStyle,
-#     HelpTextStyle,
-#     OptTextStyle,
-#     SectionName,
-# )
-
-from .version import (
-    __git_revision__,
-    __version__,
-)
+from .parser import Parser
+from .version import __version__
 
