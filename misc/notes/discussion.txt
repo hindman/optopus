@@ -1,4 +1,31 @@
 --------
+world-needs-optopus: Why the world needs a better command line argument parser
+--------
+
+What are the problems?
+
+
+
+Summary of types of situations requiring a grammar:
+
+    - Mutual exclusion beyond the simplest case (2 or more options and only one
+      from the group can exist).
+
+    - Options having multiple parameters or arguments, where each requires
+      different choices.
+
+    - Conditional requirements or exclusions: if one option is present, others
+      change status (required or not, allowed or not).
+
+    - More complex repetition. For example, repeat a
+      whole group of options -- or even the entire command line.
+
+    - More flexible quantification: ranges.
+
+    - Complex logical relationship among options: eg, just A, just B, or both
+      (at least one is required).
+
+--------
 api-vs-text: API-driven vs text-driven
 --------
 
@@ -66,7 +93,13 @@ The optopus library combines the best of both approaches:
           usage syntax to specify the desired grammar. In my own research, I
           experimented with defining the needed grammars via an API, but I
           consistently found the text-based approach simpler to express and
-          read.
+          read. [For a good example, see this argparse discussion where a user
+          describes a problem in general terms and suggests how the argparse
+          API could be augmented to handle such cases -- and the discussion
+          both are somewhat difficult to understand without very careful
+          reading and thinking. Then the user provides a short one-line usage
+          syntax, and the issue is immediately clear.
+          https://bugs.python.org/issue11588]
 
 Configuration via usage syntax is focused on grammar:
 

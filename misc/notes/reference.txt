@@ -515,9 +515,9 @@ https://stackoverflow.com/questions/25626109
 
 http://bugs.python.org/issue11588
 
-    "mutually inclusive group"
-
     Grammar needed:
+
+        - Sets of arguments that must occur together.
 
         frob -o           [-x]
         frob -r (-p | -s) [-x]

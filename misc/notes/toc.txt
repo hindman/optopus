@@ -20,6 +20,7 @@ toc: Table of contents
 
     discussion.txt
 
+        world-needs-optopus           | Why the world needs a better command line argument parser
         api-vs-text                   | API-driven vs text-driven
         other-lib-weaknesses          | Addressing weaknesses common in other libraries
         other-goals                   | Other goals
