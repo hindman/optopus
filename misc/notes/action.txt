@@ -2,6 +2,9 @@
 todos: TODOs
 --------
 
+Parser.query(): give more thought the method's parameters and, more broadly,
+how users will want to query/config.
+
 Change parse() to take args[1:], as argparse does.
 
 Publish:
@@ -88,9 +91,11 @@ Alternative inputs: handy:
 
 Dispatching:
 
+    General dispatch.
+
     Help dispatch.
 
-    Dispatch.
+    Different dispatch for --help vs -h.
 
 Grammar enhancements:
 

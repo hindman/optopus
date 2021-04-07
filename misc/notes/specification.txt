@@ -281,6 +281,13 @@ Parser:
 
         query(...) -> Grammar.query(...) -> Query
 
+            - TODO: give more thought the method's parameters
+                - usage modes:
+                    - diving
+                    - getting multiple
+                - query-and-config via one unified dict
+                    - eg to set a bunch of Opt.text at once.
+
         # Obtaining help text or text for the error from most recent parse():
 
             help_text(section...)
