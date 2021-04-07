@@ -2,9 +2,70 @@
 world-needs-optopus: Why the world needs a better command line argument parser
 --------
 
-What are the problems?
+INTRODUCTION
 
+    To varying degrees of success, command-line argument parsing libraries
+    generally do a reasonable job handling the most common use cases. They are
+    able to parse garden-variety command-line inputs and provide help text to
+    end users. Some libraries also take partial steps toward supporting a
+    larger set of features, such as basic conversion and validation, varying
+    numbers of optional parameters or positional arguments, mutually exclusive
+    options, subcommand-style programs like git, some help text customization,
+    and occasionally the ability to control error handling.
 
+    But those additional features tend not to go very far. At least in the
+    languages I have worked in extensively (currently Python, previously Ruby
+    and Perl), argument parsing libraries satisfy roughly 80 to 90 percent of
+    the most common use cases, but cause frustration or hassle for any needs
+    that are complex, specialized, unusual, or particular.
+
+    Optopus aims to fill that void by providing a library that is powerful,
+    flexible, and highly customizable -- all without sacrificing intuitiveness
+    and practicality. Indeed, the library will be able to handle not only
+    complex or atypical needs, but will also reduce developer hassle for the
+    most common and simplest usage patterns.
+
+    The library is under active development and a beta release has been
+    published. The purpose of that release was mainly to reserve the project
+    name in pypi, but it nonetheless provides useful functionality not
+    currently available in other libraries -- namely, no-configuration parsing,
+    which is quite handy for quick-and-dirty, temporary, or experimental
+    scripts that require nothing more than open-ended support for flags and
+    positionals.
+
+        # Install the library in the usual way.
+
+            $ pip install optopus
+
+        # Write almost no code.
+
+            from optopus import Parser
+
+            p = Parser()
+            opts = p.parse()  # Returns an iterable data object.
+            print(opts)
+
+        # Try it out.
+
+            $ python foo.py --bar A B C -x D
+            Result(bar=True, x=True, others=['A', 'B', 'C', 'D'])
+
+    With that introduction, what are the primary problems with the currently
+    available argument parsing libraries and how will Optopus do better?
+
+WEAK GRAMMARS
+
+DEVIATION FROM LIBRARY BEST PRACTICE
+
+UNHELPFUL HELP
+
+INFLEXIBILITY
+
+AWKWARD USAGE TEXT
+
+HEAVY CONFIGURATION APIS
+
+INSUFFICIENT DEVELOPER SUPPORT
 
 Summary of types of situations requiring a grammar:
 

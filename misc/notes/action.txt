@@ -2,6 +2,8 @@
 todos: TODOs
 --------
 
+Change parse() to take args[1:], as argparse does.
+
 Publish:
     - README
     - setup.py
@@ -9,30 +11,6 @@ Publish:
     - dev.txt
     - Publish.
     - Check in pypi and confirm pip-install.
-
-Figure out how to handle options with 2+ params, where the params each need
-their own choices, conversion, or validation.
-
-    - Does that require support a nested structure for attributes like
-      choices, convert, validate? For example:
-
-        Opt('--foo', nparams = 2, choices = [('a', 'b'), ('c', 'd')])
-        Opt('--bar', nparams = 2, convert = [[int], [float]])
-
-    - Similar considerations apply to nargs. But not to ntimes. Basically, it
-      is needed for any Opt attribute that configures the params/args
-      individually (as oppose to configuring the entire Opt as an entity).
-
-        dest      # Needed only for parameters.
-        metavar
-
-        default
-        factory
-        value
-
-        choices
-        convert
-        validate
 
 --------
 road-map: Road map

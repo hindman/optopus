@@ -369,8 +369,8 @@ Opt:
     help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
     metavar   | Defer. But need a better name.
     choices   | Defer.
-    convert   | Defer. Callable(s).
-    validate  | Defer. Callable(s).
+    convert   | Defer. Callable.
+    validate  | Defer. Callable.
     text      | Defer.
     hide      | Defer. False (visible), True (hidden), or sequence of where/what to hide
     sections  | Defer. Sequence of section names.
@@ -387,6 +387,27 @@ Opt:
     _opt_type | Internal. Holds an OptType.
     arg_names | Internal. Seems related to simple spec parsing.
     --------------------------------------------------------------------------------
+
+    For options taking multiple parameters or positionals having multiple
+    arguments, the most common use case treats the parameters/arguments as
+    values of the same kind -- meaning that that have the same type, defaults,
+    choices, conversion, validation, etc. However, sometimes users want those
+    characteristics to vary. In that case, the following attributes also
+    support a sequence of values, one per parameter/argument. In cases where
+    the nparams/nargs have no upper bound, the last value in the sequence will
+    be applied: for example, if nparams=(2,None) one could use convert=(float,
+    int), which would use int to convert any parameters beyond the second.
+
+        dest      # Needed only for parameters.
+        metavar
+        ----
+        default
+        factory
+        value
+        ----
+        choices
+        convert
+        validate
 
     API:
 
