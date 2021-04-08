@@ -10,8 +10,8 @@ INTRODUCTION
     end users. Some libraries also take partial steps toward supporting a
     larger set of features, such as basic conversion and validation, varying
     numbers of optional parameters or positional arguments, mutually exclusive
-    options, subcommand-style programs like git, some help text customization,
-    and occasionally the ability to control error handling.
+    options, subcommand-style programs like git, and occasionally a small
+    amount of help text customization or the ability to control error handling.
 
     But those additional features tend not to go very far. At least in the
     languages I have worked in extensively (currently Python, previously Ruby
@@ -27,7 +27,7 @@ INTRODUCTION
 
     The library is under active development and a beta release has been
     published. The purpose of that release was mainly to reserve the project
-    name in pypi, but it nonetheless provides useful functionality not
+    name in pypi.org, but it nonetheless provides useful functionality not
     currently available in other libraries -- namely, no-configuration parsing,
     which is quite handy for quick-and-dirty, temporary, or experimental
     scripts that require nothing more than open-ended support for flags and
@@ -81,10 +81,10 @@ WEAK GRAMMARS
           offer subparsers as one mechanism to apply conditional requirements,
           but this seems like an awkward and heavy device for what are often
           fairly simple grammatical needs (for example, if -x then require -y
-          or -z).
+          or -z; or if -x then -y is not allowed).
 
-        - Complex logical relationship among options (for example, at least one
-          of: -a OR -b OR -a -b).
+        - Logical relationship among options (for example, at least one of: -a
+          OR -b OR -a -b).
 
         - More flexible quantification. The argparse library supports four
           basic quantifiers (N, ? *, and +), but it lacks support for ranges,
@@ -100,12 +100,13 @@ WEAK GRAMMARS
           intuitive usage, a built-in set of core utilities, and an easy
           mechanism for users to add their own. Because the tool is literally a
           pipeline for text running through various conversion and computation
-          states, it makes sense to model the command-line grammar are
+          stages, it makes sense to model the command-line grammar as
           repeatable. This use can is mostly supportable by cobbling together
-          multiple argparse parsers, but it an awkward solution.
+          multiple argparse parsers, but it is awkward and requires a bit of
+          special logic.
 
         - Parameter or argument independence. When an option has multiple
-          parameters or positional has multiple arguments, most argument
+          parameters or a positional has multiple arguments, most argument
           parsers force them to be configured indentically. But sometimes
           independence makes sense (for example, -a {A,B,C} {X,Y}, where each
           parameter has different choices).
@@ -118,16 +119,16 @@ WEAK GRAMMARS
     And that flexible grammar will be intuitive to use because it builds on
     widely familiar conventions for program usage text, along with a limited
     number of syntax enhancements (most of them inspired by regular
-    expressions, making them likely to be fairly intuitive for most
-    programmers). An example grammar for a program with two usage variants
-    triggered by the value of <task> positional (add or delete), along with a
-    third variant where the user can request some help text showing examples.
+    expressions) An example grammar for a program with two usage variants
+    (named Add and Delete) triggered by the value of the <task> positional
+    ('add' or 'delete'), along with a third variant allowing the user to
+    request some help text showing examples.
 
-        <task=add> (<name> <id>)...
-        <task=delete> <id>{1,5} [--date {}] [--log [--json [--indent] | --xml]]
-        --examples
+        Add      : <task=add> (<name> <id>)...
+        Delete   : <task=delete> <id>{1,5} [--date {}] [--log [--json [--indent] | --xml]]
+        Examples : --examples
 
-    Defining command-line grammar via an configuration syntax inspired by usage
+    Defining command-line grammar via a configuration syntax inspired by usage
     text is not a new idea. While most argument parsing libraries are like
     argparse in configuring the parser's grammar via a programmatic API, some
     libraries take a different approach: the user writes the help text
@@ -136,12 +137,12 @@ WEAK GRAMMARS
     literal usage and help text presented to end users. Examples include docopt
     in Python or Getopt::Euclid and Getopt::Declare in Perl.
 
-    My experiments with text-driven argument parsing libraries convinced
-    me that both approaches have their strengths and weaknesses. Optopus
-    builds on the strengths:
+    My experiments with argument parsing libraries convinced me that both
+    approaches have their strengths and weaknesses. Optopus builds on the
+    strengths:
 
         - Use a text syntax to define the core: the grammar and logical
-          relationships along with the names to be used when referring to
+          relationships, along with the names to be used when referring to
           options, parameters, positionals, groups, and usage variants. Those
           are the areas where the text-driven approach shines. Consider the
           example grammar shown above: it conveys a lot of information very
@@ -157,52 +158,152 @@ WEAK GRAMMARS
           text.
 
         - Use the programmatic API to apply other configurations: defaults,
-          conversion, validation, short description text for the option or
-          positional, aliases, and various other details. The API approach
-          excels in these areas. The Optopus library builds on the strength of
-          the API approach and adds some additional conveniences -- most
-          notably, a simple bulk configuration mechanism -- to keep the
-          developer burden as low as possible. Finally, it should be noted that
-          all of the library's behaviors will be configurable via the API,
-          including the grammar.
+          conversion, validation, alias, short description text for each option
+          or positional, and various other details. The API approach excels in
+          these areas. The Optopus library builds on the strength of the API
+          approach and adds some additional conveniences -- most notably, a
+          simple bulk configuration mechanism -- to keep the developer burden
+          as low as possible.
+
+    Finally, it should be noted that all of the library's behaviors will be
+    configurable via the API, including the grammar -- not merely to satisfy
+    traditionalists, but because for simpler use cases configuring the parser's
+    grammar via the API also works well. Users are free to select whichever
+    approach suits their preferences or their program's needs.
 
 INFLEXIBILITY
+
     - help and error text customization
-    - alternative parsing modes
+
+        - No-to-weak control over formatting and presentation of
+          help and error text.
+
     - control over side effect: aggressive printing/exiting
 
+        - this is simply a best-practice for library design.
+
+    - alternative parsing modes
+
+        - modes that relax requirements:
+
+            unknown-ok
+            unconverted-ok
+            invalid-ok
+
+        - no-config: Optopus will support 3 varieties of this
+
+    - To the extent that libraries do allow customization, the sometimes
+      provide awkward mechanism. Argparse is a good example: many workarounds
+      to user difficulties with the library involve subclassing, but most
+      argparse classes do not appear to be well designed for inheritance. At a
+      minimum, one a can that authoritative guidance on which classes are
+      intended for subclassing and what users should do or avoid are not
+      documented.
+
+        - A better approach is to support as many configurations
+          as feasible through convenient APIs.
+
+        - And for more complex needs, the use of programmtic hooks (with a
+          documented API) usefully works better than inheritance. The developer
+          does not have to worry about whether they have implemented a method
+          override robustly enough in the face of edge cases or future
+          evolution of the library. By contract, a hook is just an ordinary
+          function with an explicitly documented API.
+
 UNHELPFUL HELP
+
     - griping instead of helping
+
+        - high precedence
+
+    - special help sections
+
     - sometimes awkward usage text
-        - referring to named entities
-        - useful alternatives to exhaustive approaches
+
+        - API generated usage and help text can be awkward -- visually
+          confusing or overbearing -- at times, especially when they list every
+          possible usage pattern exhaustively or when the number literal
+          choices (for parameters or positionals) is moderate-to-large in size.
+
+        - Better techniques are available. Some of them arise due
+          from usage variants or from treating groups as first-class
+          citizens in the grammar.
 
 INSUFFICIENT DEVELOPER SUPPORT
+
     - missing utilities
+
+        - Argument parsers are all used in the same general context:
+          command-line programs.
+
+        - Those programs have many common needs during the early phase of the
+          program where arguments are parsed and validated.
+
+        - Optopus aims to help developers by providing several of the
+          needed utilities:
+
+            quitting with proper exit codes, sometimes after printing
+            a warning or error message.
+
+            hanlding --version
+
+            supporting hidden (developer-only or "super user" only) options
+
+            flexible mechansims for argument conversion, validation,
+            and dispatching.
+
     - missing good cooperation with config files and env variables
+
+        - Complex programs often have command-line options and arguments,
+          but they also want their end-users to be able to set their
+          default preferences in configuration files and/or variables.
+
+        - An argument parser need to support that use case conveniently.
+
     - nested destinations
+
     - sometimes heavy configuration apis
+
         - bulk config
-        - convenience syntax
 
-        g = Parser(spec)
+            - In most cases it's easier to configure options individual.
 
-        p = Parser()
-        p.opt('--foo _ _')
+            - But in some situations, code can be make lighter and more
+              readable by applying configurations to multiple options at once.
+              Optopus will support this alternative through a convenient
+              mechanism.
 
-        p = ArgumentParser()
-        p.add_argument('--foo', nargs = 3)
+        - convenience syntax when defining the grammar through the API.
 
-        p.opt('--foo a b [c]')
+            Compare, for example how one would configure a single option
+            taking 2 parameters in argparse vs Optopus.
 
-        p.get('--foo', '--bar', '-x', '-y').config(converter = int)
+                # Argparse.
+                p.add_argument('--foo', nargs = 2)
 
-        opt_texts = {
-            '--foo': 'Blah blah',
-            '--bar': 'Blah blah',
-        }
+                # Optopus.
+                p.opt('--foo _ _')
 
-        p.set_texts(opt_texts)
+            Or an option with choices:
+
+                # Argparse.
+                p.add_argument('--foo', choices = ('A', 'B', 'C'))
+
+                # Optopus.
+                p.opt('--foo A|B|C')
+
+            Or an option with two required parameters and one optional
+            parameters, each having different choices. Because Argparse cannot
+            handle this scenario, the example compares and API-driven
+            configuration of the option vs a text-driven one. Optopus supports
+            both approaches, but the comparison illustrates the expressiveness
+            and ease of the grammar syntax compared to API usage.
+
+                # Via API.
+                p.opt('--foo', nparams = (2, 3), choices = [('A', 'B'), ('M', 'N'), ('X', 'Y')])
+
+                # Via grammar syntax.
+                p.opt('--foo A|B M|N [X|Y]')
 
 --------
 api-vs-text: API-driven vs text-driven
@@ -1557,28 +1658,19 @@ It seems like the right default behavior, but it opens up some questions:
     seems to demand this kind of flexibility: each nab command needs its Opts
     to be independently configurable.
 
-One approach:
+Decision:
 
-    - Disallow Opt independence within a variant: if you use the same
-      destination in a variant, the underlying Opt will be the same.
+    - Within a variant, all Opt/Group dest values must be unique.
 
-    - Use Opt independence across variants.
+    - Opts having the same dest across different variatns are treated as the
+      same underlying object, unless:
 
-    - In some cases, the grammar will force independence right out of the gate,
-      as in Examples 2 and 3. This will occur if the grammar implies differents
-      in Opt types, nparams, nargs, ntimes.
+        - The spec requires them to have different configuration, as in
+          Examples 2 and 3.
 
-    - In other cases (such as Example 4) the variants won't distinguish
-      the Opts.
+        - The user explicitly requests independence via the API.
 
-    - Flexible querying mechanisms can support easy configuration whether
-      the user wants to configure different occurrences of the same destination
-      differently or the same. Under the hood, the Opts will be distinct, but
-      the user won't have to think too hard either way:
-
-        p = Parser(...)
-        p.get('x').config(...)         # Configures both <x> Opts.
-        p.get('foo', 'x').config(...)  # Configures only <x> in Variant(foo).
+            p.query('x').independent()
 
 --------
 zones-not-needed: Zones not needed

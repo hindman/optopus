@@ -269,32 +269,77 @@ Parser:
 
     API:
 
-        Parser(spec = None, grammar = None, ...)
+        - Parsing:
 
-            - The spec/grammar arguments are mutex and optional.
-            - Other arguments are defferred.
+            Parser(spec = None, grammar = None, ...)
 
-        parse(args = None, mode = ...) -> Result or raise
+                - The spec/grammar arguments are mutex and optional.
+                - Other arguments are defferred.
 
-            - Parser can have a mode.
-            - And parse() can temporarily use a different mode.
+            parse(args = None, mode = ...) -> Result or raise
 
-        query(...) -> Grammar.query(...) -> Query
+                - Parser can have a mode.
+                - And parse() can temporarily use a different mode.
 
-            - TODO: give more thought the method's parameters
-                - usage modes:
-                    - diving
-                    - getting multiple
-                - query-and-config via one unified dict
-                    - eg to set a bunch of Opt.text at once.
+        - Querying and configuring grammar elements:
 
-        # Obtaining help text or text for the error from most recent parse():
+            query(*paths) -> Grammar.query(...) -> Query
+
+                - Query paths are based on Opt.dest, Variant.name, and
+                  Group.dest or Group.index.
+
+                - The vast majority of queries will be for leaf nodes: the
+                  Opts.
+
+                    query('foo', 'bar')
+
+                    - Gets Opt(foo) and Opt(bar).
+
+                    - More precisely, the query gets any grammar element having
+                      those dests/names.
+
+                - In complex cases where independent Opts have the same dest,
+                  the query path can include the variant name.
+
+                    query('go foo')
+
+                    - Gets Opt(foo) inside Variant(go).
+
+                - Although Groups can have a dest, most won't. But they will
+                  have a unique index within each variant.
+
+                    query('go 2')
+
+                    - Gets the third Group in Variant(go).
+
+                - As a future enhancement, these query path elements can be
+                  interpreted as regular expressions (I doubt the need).
+
+            config(*paths, **kws) -> None
+
+                - A shortcut for query(*paths).config(**kws).
+
+            config_each(attr_name, d) -> None
+
+                - Set the value of Opt.ATTR_NAME for several Opts.
+
+                - The second argument is a dict mapping query paths to the
+                  desired value for the attribute.
+
+                - For example, setting a bunch of Opt.text values:
+
+                    config_each('text', {
+                        'foo': 'Blah',
+                        'bar': 'Blah blah',
+                    })
+
+        - Obtaining help text or text for the error from most recent parse():
 
             help_text(section...)
             error_text
             exception
 
-        # Actions like printing or exiting.
+        - Actions like printing or exiting.
 
             warn(msg)
             help(section...)

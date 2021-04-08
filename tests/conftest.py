@@ -9,7 +9,9 @@ def tr():
 class TestResource(object):
 
     def dump(self, val = None, label = 'dump()'):
-        print(f'\n--------\n{label} =>\n{val}')
+        fmt = '\n--------\n{label} =>\n{val}'
+        msg = fmt.format(label, val)
+        print(msg)
 
 class StdStreams(object):
 

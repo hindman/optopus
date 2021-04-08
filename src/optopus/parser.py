@@ -1,4 +1,5 @@
 import sys
+from collections import OrderedDict
 
 from .constants import MODES, RGXS
 
@@ -13,23 +14,24 @@ class Parser:
         self.mode = MODES.flag    # TEMP: only one mode so far.
 
     def parse(self, args = None, mode = None):
-        args = args or sys.argv
+        args = sys.argv[1:] if args is None else args
         mode = mode or self.mode
         if mode == MODES.flag:
             return self.parse_noconfig(args, mode)
         else:
-            raise NotImplementedError(f'Invalid mode: {mode}')
+            msg = 'Invalid mode: {}'.format(mode)
+            raise NotImplementedError(msg)
 
     def parse_noconfig(self, args, mode):
         # Quick and dirty no-config arg parsing.
 
         # Index of current arg and N of args.
-        ai = 1
+        ai = 0
         n = len(args)
 
         # Return data.
         pos_key = 'others'
-        options = {}
+        options = OrderedDict()
         others = []
 
         # Process arguments.
@@ -57,16 +59,15 @@ class Parser:
         # Return.
         if others:
             options[pos_key] = others
-        return Result(**options)
+        return Result(options)
 
 def hyphen2under(s):
     return s.replace('-', '_')
 
 class Result:
     
-    def __init__(self, **kws):
-        for k, v in kws.items():
-            setattr(self, k, v)
+    def __init__(self, d):
+        self.__dict__ = d
 
     def __iter__(self):
         return iter(self.__dict__.items())
@@ -81,9 +82,16 @@ class Result:
         return k in self.__dict__
 
     def __eq__(self, other):
-        return self.__dict__ == dict(other)
+        return (
+            isinstance(other, Result) and
+            self.__dict__ == other.__dict__
+        )
+
+    def __repr__(self):
+        fmt = '{}={!r}'
+        inside = ', '.join(fmt.format(*tup) for tup in self.__dict__.items())
+        return 'Result({})'.format(inside)
 
     def __str__(self):
-        inside = ', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())
-        return f'Result({inside})'
+        return repr(self)
 
