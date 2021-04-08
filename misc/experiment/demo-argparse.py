@@ -17,7 +17,8 @@ ap = argparse.ArgumentParser()
 for xs, kws in ARG_PARSE_DATA:
     ap.add_argument(*xs, **kws)
 
-opts = ap.parse_known_args()
+opts = ap.parse_args()
+# opts = ap.parse_known_args()
 
 print(opts)
 

@@ -152,10 +152,10 @@ WEAK GRAMMARS
           programmers do not want to handcraft the end-user-facing usage and
           help text if a computer program can do it consistently and well (not
           to mention dyntamically responding to terminal width or to runtime
-          configurations). That is why Optopus takes inspiration from, but does
-          not fully adopt, the ideas motivating the text-driven parsers:
-          Optopus treats the text as a configuration syntax, not literal usage
-          text.
+          configurations). That is why Optopus takes substantial inspiration
+          from, but does not fully adopt, the ideas motivating the text-driven
+          parsers: Optopus treats the text as a configuration syntax, not
+          literal usage text.
 
         - Use the programmatic API to apply other configurations: defaults,
           conversion, validation, alias, short description text for each option
@@ -173,42 +173,84 @@ WEAK GRAMMARS
 
 INFLEXIBILITY
 
-    - help and error text customization
+    In addition to having an insufficiently powerful grammatical foundation,
+    existing argument parsers tend to be inflexible in their design
+    and thus not open to very much customization.
 
-        - No-to-weak control over formatting and presentation of
-          help and error text.
+    Three areas are particularly noteworthy:
 
-    - control over side effect: aggressive printing/exiting
+        - Help text and error text. Most libraries offer only limited controls
+          over the formatting, arrangement, and style of help and error text.
+          Argparse, for example, offers a few subclasses that adjust help text
+          in small ways or allow the user to supply literal text blocks that
+          will be presented as-is rather than line wrapped. But the underlying
+          HelpFormatter class is not friendly to customization generally. Some
+          of its stylistic choices seem off to my eye and I've never found ways
+          to adjust them without awkward hacks. More fundamentally, the library
+          is not prepared to handle bigger changes, ranging from fairly
+          standard needs (for example, help text in man-page format) to more
+          innovative approaches. Optopus will offer some of those approaches
+          directly with the aim of giving programmers the ability to light-up
+          and improve the readability of help text. One simple example is
+          listing option aliases (for example, --foo might have an alias of -f)
+          in a separate section to avoid overburdening the options section of
+          the help text. Another is supporting the ability to refer to groups
+          of options by symbolic names in the usage text, a technique that can
+          greatly enhance the readability of usage text for programs with a
+          large number of options. An example:
 
-        - this is simply a best-practice for library design.
+                buy-car [style-options] [engine-options] <make> <model>
 
-    - alternative parsing modes
+        - Side effects. Many argument parsers, including argparse until Python
+          3.9, are rigid in response to invalid input. They start with sensible
+          default behavior: in the face of bad input, print brief usage text
+          and an error message, then exit. And they turn that default into a
+          requirement by providing no good way to prevent the side effects from
+          occurring (by good way, I mean one where the library would include
+          sufficient contextual data about the error, rather than just
+          providing the error text string). That default behavior works in the
+          most common cases, but sometimes programs have other needs. Argument
+          parsing libraries should follow ordinary best practices by giving the
+          user the ability to bypass or postpone major side effects like
+          printing and exiting. Imagine any other data oriented library doing
+          that.
 
-        - modes that relax requirements:
+        - Parsing modes. Existing libaries tend offer the ability to parse only
+          the known arguments, but they rarely venture beyond that. One
+          possiblity is to relax other parsing rules, with an eye toward
+          parsing as much input as possible in order to glean end-user intent
+          to provide a more meaningful error messge. Another is to support
+          no-configuration parsing modes that will parse any input based on
+          standard rules and return a data object. The purpose is to support
+          low-stakes or temporary scripts that could benefit from a
+          command-line option or two, but are not important enough to want to
+          devote very much configuration work. Optopus will eventually offer
+          three varieties of no-config parsing. Finally, it is worth
+          emphasizing the power of the grammar syntax in quickly defining a
+          command line in low-stakes situations. With two lines of code a
+          developer can parse arguments for a wide variety of simple scripts.
 
-            unknown-ok
-            unconverted-ok
-            invalid-ok
+            p = Parser('<host> <port> [--verbose] [--size {h} {w}]')
+            opts = p.parse()
 
-        - no-config: Optopus will support 3 varieties of this
+    To the extent that the existing libraries do allow customizations, the
+    mechanisms for doing that are sometimes awkward. Argparse is a good
+    example: many workarounds to user difficulties with the library involve
+    subclassing, but most argparse classes do not appear to be well-designed
+    for inheritance (and some of their docstrings seem to discourage it
+    outright). At a minimum, one a can say that the library does not provide
+    authoritative guidance on which classes are are amenable for subclassing,
+    if any, and what users should do or avoid when doing so.
 
-    - To the extent that libraries do allow customization, the sometimes
-      provide awkward mechanism. Argparse is a good example: many workarounds
-      to user difficulties with the library involve subclassing, but most
-      argparse classes do not appear to be well designed for inheritance. At a
-      minimum, one a can that authoritative guidance on which classes are
-      intended for subclassing and what users should do or avoid are not
-      documented.
-
-        - A better approach is to support as many configurations
-          as feasible through convenient APIs.
-
-        - And for more complex needs, the use of programmtic hooks (with a
-          documented API) usefully works better than inheritance. The developer
-          does not have to worry about whether they have implemented a method
-          override robustly enough in the face of edge cases or future
-          evolution of the library. By contract, a hook is just an ordinary
-          function with an explicitly documented API.
+    Optopus will be built with an eye toward flexibility and customization. To
+    the extent feasible, all controllable parameters governing the generation
+    of text will be adjustable. And for dynamic configuration needs -- whether
+    related to help text, error text, side effects, or parsing -- the library
+    will support them via hooks rather than subclassing. Developers needing
+    special behavior will not have to worry whether they have implemented a
+    method override robustly enough in the face of edge cases or future
+    evolution of the library. Instead, they will just have to write an ordinary
+    hook function based on a documented API.
 
 UNHELPFUL HELP
 
