@@ -51,6 +51,7 @@ toc: Table of contents
         end-user-errors               | End-user errors
         converters-validators         | Converters and validators
         grammar-querying-api          | Grammar querying API
+        validation-notes              | Validation notes
 
     dev.txt
 

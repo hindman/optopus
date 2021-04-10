@@ -1888,3 +1888,98 @@ Grammary querying API
         g.get(NAME, NAME, ...)          # Get one, dive-style.
         g.get(NAME, [NAME, ...], ...)   # Get multiple.
 
+--------
+validation-notes: Validation notes
+--------
+
+What to validate:
+
+    - Only user-facing code: the entry points.
+
+    - Let internal code blow up if given bad input.
+
+Consider using a library:
+
+    - valid8 is interesting but seems a bit over-engineered.
+
+    - Its docs point to other tools that could have interesting ideas.
+
+If not a library, consider implementing a simple validation module for the
+project:
+
+    - Some of the libraries I saw treated the process very formally, with a
+      large API to learn.
+
+    - A simpler approach seems better.
+
+        validate(
+            value,      # Value to check.
+            convert,    # Callable: value => converted-value
+            validate,   # Callable: converted-value => bool
+            error,      # Error to raise.
+        )
+
+Where should validation logic reside?
+
+    - Option 1: near the call site, so that you do not have to look elsewhere
+      to understand the function.
+
+        - Using decorator. Validation library writers seem attracted to this
+          approach, but I don't see the appeal. It does not save any typing,
+          and I find decorators with a lot of content to be awkward looking --
+          aesthetically unappealing.
+
+            @validate(
+                x = (
+                    int,
+                    lambda x: x in range(1,11),
+                    'x parameter must be interger 1 through 10: {val}',
+                ),
+                y = (...),
+                z = (...),
+            )
+            def bar(x, y, z):
+                ...
+
+        - Or just using an ordinary function:
+
+            def bar(x, y, z):
+                validate(
+                    x,
+                    int,
+                    lambda x: x in range(1,11),
+                    'x parameter must be interger 1 through 10: {val}',
+                )
+                validate(y, ...)
+                validate(z, ...)
+                ...
+
+    - Option 2: put validation logic a separate module, consolidating such
+      details in one location. Let readers focus on the happy-path substance of
+      the function, not the grubby validation logic, exception raising, etc.
+      That code is mostly formulaic anyway -- stick it in the footnotes.
+
+            # Main code.
+
+            @validate
+            def bar(x, y, z):
+                ...
+
+            # Validation module:
+
+            register_validators(
+                bar = (
+                    x,
+                    int,
+                    lambda x: x in range(1,11),
+                    'x parameter must be interger 1 through 10: {val}',
+                ),
+                ...
+            )
+
+        Under this approach, you want the validators to be composable, with the
+        ability to define a bigger validator using smaller validators.
+        And such compositions may need some helpers:
+
+            validate_all()
+

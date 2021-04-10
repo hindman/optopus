@@ -69,6 +69,14 @@ Alternative inputs: basics:
     Non-option arguments having option prefix: generally via a configurable escape
     prefix.
 
+Project health:
+
+    Add validation to user-facing callables. [consider valid8; or roll simple one]
+
+    Documentation.
+
+    Docstrings.
+
 Opt enhancements:
 
     Opt.factory.
