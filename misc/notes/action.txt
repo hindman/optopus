@@ -2,6 +2,15 @@
 todos: TODOs
 --------
 
+Support docopt config syntax:
+    - Probably easy to do.
+    - Consider if there is a way to get more power though
+      that approach -- but, again, as config syntax.
+
+Try to define reasonable examples of differing complexity
+to compare argparse vs optopus vs optopus-via-docopt.
+Which approach is shorter and easier?
+
 Publish:
     - README
     - setup.py

@@ -100,7 +100,7 @@ blort-maker:
     general`      : [--verbose] [--log-file {}] help`
     other`        : [--hi] [--bye]
 
-    configure     : help` general` <task=configure> --odin-env {} --od-user {}
+    configure     : help` general` <task=configure> --env {} --user {}
     submit        : help` general` <task=submit> -c {} -r {} [--start-job] [--person {name} {age}]
     get           : help` general` <task=get> -j {} [--json [--indent {}] | --b64 | --yaml]
     drop          : help` general` <task=drop> <what=first|last|random> [--print] <n>
