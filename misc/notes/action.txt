@@ -2,14 +2,19 @@
 todos: TODOs
 --------
 
-Support docopt config syntax:
-    - Probably easy to do.
-    - Consider if there is a way to get more power though
-      that approach -- but, again, as config syntax.
+Strategy reassessment.
 
-Try to define reasonable examples of differing complexity
-to compare argparse vs optopus vs optopus-via-docopt.
-Which approach is shorter and easier?
+    - Define a few realistic programs ranging from simple to fairly complex
+      (job-client is example of the latter). Ignore examples that argparse
+      cannot support. Try to define examples that others can understand
+      intuitively.
+
+    - Configure the parser for each script.
+
+        - Literal text.
+        - Argparse.
+        - Optopus: regular.
+        - Optopus: new strategy.
 
 Publish:
     - README

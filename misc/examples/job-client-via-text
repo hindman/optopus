@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 
-# odin-client : configuration via usage text.
+# job-client : configuration via usage text.
 #
 # - Attempts to add usage variant naming as a special syntax in the
 #   usage text. This is awkward.
 #
-# - Comparing this to the API-driven examples for odin-client
+# - Comparing this to the API-driven examples for job-client
 #   illustrates the benefits of the API approach. This approach
 #   begins to feel burdensome precisely on a moderately complex
 #   project.
@@ -18,25 +18,25 @@
 
 USAGE = '''
 Usage:
-  odin-client [general-options] COMMAND [options]                               ## IGNORE
+  job-client [general-options] COMMAND [options]                               ## IGNORE
 
-  odin-client configure --odin-env ENV --od-user USER                           ## configure
+  job-client configure --job-env ENV --od-user USER                           ## configure
 
-  odin-client submit --job-config-file PATH --requests-file PATH [--start-job]  ## submit
-  odin-client upload --job-id ID --requests-file PATH [--resume N]              ## upload
-  odin-client start --job-id ID                                                 ## start
-  odin-client get --job-id ID                                                   ## get
-  odin-client stop --job-id ID                                                  ## stop
-  odin-client download --job-id ID [download-options]                           ## download
-  odin-client find [--job-id ID] [--user USER] [--job-status S]                 ## find
+  job-client submit --job-config-file PATH --requests-file PATH [--start-job]  ## submit
+  job-client upload --job-id ID --requests-file PATH [--resume N]              ## upload
+  job-client start --job-id ID                                                 ## start
+  job-client get --job-id ID                                                   ## get
+  job-client stop --job-id ID                                                  ## stop
+  job-client download --job-id ID [download-options]                           ## download
+  job-client find [--job-id ID] [--user USER] [--job-status S]                 ## find
 
-  odin-client --help                                                            ## help
-  odin-client --version                                                         ## version
-  odin-client --examples                                                        ## examples
-  odin-client --autocomplete                                                    ## autocomplete
+  job-client --help                                                            ## help
+  job-client --version                                                         ## version
+  job-client --examples                                                        ## examples
+  job-client --autocomplete                                                    ## autocomplete
 
 General options:
-  --odin-env ENV     Odin environment ('production' for most users).
+  --job-env ENV      Environment ('production' for most users).
   --od-user USER     Open Directory user name.
   --log-level LEVEL  DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].
   --disable-logging  Disable logging.
@@ -48,27 +48,27 @@ Special options:
   --help             Display the help message.
 
 Commands:
-  configure          Set up the default configurations for odin-client.
+  configure          Set up the default configurations for job-client.
   submit             Submit the config file for a new job.
   upload             Upload requests for a submitted job.
   start              Start a submitted job.
   stop               Stop a job.
-  download           Download OdinItem data for a job.
+  download           Download Item data for a job.
   get                Get information about a job.
   find               Find jobs.
 
 Command options:
-  --job-id ID        The Odin job id.
+  --job-id ID        The job id.
   --user USER        Open Directory user who submitted the job.
   --job-status S     Job status.
   --job-config-file PATH
                      Path to job configuration file, which should contain an
-                     OdinJobConfig, either base64-encoded or as JSON.
+                     JobConfig, either base64-encoded or as JSON.
   --requests-file PATH
                      Path to the job's requests file, which should contain
-                     OdinItem objects, base64-encoded, one per line. If
-                     this option is given, odin-client will upload after
-                     submitting the OdinJobConfig.
+                     Item objects, base64-encoded, one per line. If
+                     this option is given, job-client will upload after
+                     submitting the JobConfig.
   --start-job        After submitting job and uploading requests, start job.
   --resume N         Resume upload, starting at line N [1].
 
@@ -92,7 +92,7 @@ p = parser(
     usage_text = USAGE,
     option_groups = 'general special command download'.split(),
     defaults = dict(
-        odin_env = 'dev',
+        env = 'dev',
         resume = 1,
         start_index = 1,
     ),

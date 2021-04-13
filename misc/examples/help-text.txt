@@ -3,25 +3,25 @@ CLI style: example
 --------
 
 Usage:
-  odin-client [general-options] COMMAND [options]
+  job-client [general-options] COMMAND [options]
 
-  odin-client configure --odin-env ENV --od-user USER
+  job-client configure --job-env ENV --od-user USER
 
-  odin-client submit --job-config-file PATH --requests-file PATH [--start-job]
-  odin-client upload --job-id ID --requests-file PATH [--resume N]
-  odin-client start --job-id ID
-  odin-client get --job-id ID
-  odin-client stop --job-id ID
-  odin-client download --job-id ID [download-options]
-  odin-client find [--job-id ID] [--user USER] [--job-status S]
+  job-client submit --job-config-file PATH --requests-file PATH [--start-job]
+  job-client upload --job-id ID --requests-file PATH [--resume N]
+  job-client start --job-id ID
+  job-client get --job-id ID
+  job-client stop --job-id ID
+  job-client download --job-id ID [download-options]
+  job-client find [--job-id ID] [--user USER] [--job-status S]
 
-  odin-client --help
-  odin-client --version
-  odin-client --examples
-  odin-client --autocomplete
+  job-client --help
+  job-client --version
+  job-client --examples
+  job-client --autocomplete
 
 General options:
-  --odin-env ENV     Odin environment ('production' for most users).
+  --job-env ENV      Environment ('production' for most users).
   --od-user USER     Open Directory user name.
   --log-level LEVEL  DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].
   --disable-logging  Disable logging.
@@ -33,27 +33,27 @@ Special options:
   --help             Display the help message.
 
 Commands:
-  configure          Set up the default configurations for odin-client.
+  configure          Set up the default configurations for job-client.
   submit             Submit the config file for a new job.
   upload             Upload requests for a submitted job.
   start              Start a submitted job.
   stop               Stop a job.
-  download           Download OdinItem data for a job.
+  download           Download Item data for a job.
   get                Get information about a job.
   find               Find jobs.
 
 Command options:
-  --job-id ID        The Odin job id.
+  --job-id ID        The job id.
   --user USER        Open Directory user who submitted the job.
   --job-status S     Job status.
   --job-config-file PATH
                      Path to job configuration file, which should contain an
-                     OdinJobConfig, either base64-encoded or as JSON.
+                     JobConfig, either base64-encoded or as JSON.
   --requests-file PATH
                      Path to the job's requests file, which should contain
-                     OdinItem objects, base64-encoded, one per line. If
-                     this option is given, odin-client will upload after
-                     submitting the OdinJobConfig.
+                     Item objects, base64-encoded, one per line. If
+                     this option is given, job-client will upload after
+                     submitting the JobConfig.
   --start-job        After submitting job and uploading requests, start job.
   --resume N         Resume upload, starting at line N [1].
 

@@ -240,10 +240,10 @@ examples/get-pocket-items
 examples/daily-reading
 
 # More complex examples: contrast the API vs the text examples.
-misc/examples/odin-client-via-api
-misc/examples/odin-client-via-api-thematic
-misc/examples/odin-client-via-text
-misc/examples/odin-client-via-text-subparsers
+misc/examples/job-client-via-api
+misc/examples/job-client-via-api-thematic
+misc/examples/job-client-via-text
+misc/examples/job-client-via-text-subparsers
 
 --------
 other-tools: Other tools
@@ -643,9 +643,9 @@ https://stackoverflow.com/questions/62524681
     2. Ditto, for /bar volume.
     3. Configuration settings for all other volumes.
 
-odin-client:
+job-client:
 
-    Allow for extra options for Odin devs, based on env var.
+    Allow for extra options for job-client devs, based on env var.
 
     Special options that exit-with-msg (without griping about other issues):
         --version
@@ -653,16 +653,16 @@ odin-client:
         --autocomplete
 
     General and task-specific help (without griping about other issues):
-        odin-client -h
-        odin-client TASK -h
-        odin-client -h TASK -h
+        job-client -h
+        job-client TASK -h
+        job-client -h TASK -h
 
     Using a YAML config file:
 
         - Settings from the config file should control the `default`
           settings for the argument parser.
 
-        - When running `odin-client configure`, you do not want to load the
+        - When running `job-client configure`, you do not want to load the
           existing config file.
 
 --------

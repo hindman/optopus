@@ -1,10 +1,12 @@
 #! /usr/bin/env python
 
-# odin-client : configuration via API, using a thematic approach
+# job-client : configuration via API, using a thematic approach
 # rather than a per-option approach.
 #
 # - Compared to the per-option configuration approach, this seems
-#   confusing.
+#   disjointed. I suspect most developers will not like it.
+#
+# - One positive: the code itself is more aesthetic.
 
 p = parser(
     option_groups = dict(
@@ -12,7 +14,7 @@ p = parser(
             'task',
         ],
         general = [
-            '--odin-env ENV',
+            '--job-env ENV',
             '--od-user USER',
             '--log-level LEV',
             '--disable-logging',
@@ -40,7 +42,7 @@ p = parser(
         ],
     )
     grammar = dict(
-        configure    = 'task=configure --odin-env --od-user'
+        configure    = 'task=configure --job-env --od-user'
         submit       = 'task=submit -c -r [--start-job]',
         upload       = 'task=upload -j -r [--resume]',
         start        = 'task=start -j',
@@ -66,8 +68,8 @@ p = parser(
         stop_index = int,
     ),
     option_help(
-        taks            = "The odin-client task to run",
-        odin_env        = "Odin environment ('production' for most users).",
+        task            = "The job-client task to run",
+        env             = "Environment ('production' for most users).",
         od_user         = "Open Directory user name.",
         log_level       = "DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].",
         disable_logging = "Disable logging.",
@@ -75,11 +77,11 @@ p = parser(
         autocomplete    = "Display instructions for enabling autocomplete.",
         version         = "Display version information.",
         help            = "Display the help message.",
-        job_id          = "The Odin job id.",
+        job_id          = "The job id.",
         user            = "Open Directory user who submitted the job.",
         job_status      = "Job status.",
-        job_config_file = "Path to job configuration file, which should contain an OdinJobConfig, either base64-encoded or as JSON.",
-        requests_file   = "Path to the job's requests file, which should contain OdinItem objects, base64-encoded, one per line. If this option is given, odin-client will upload after submitting the OdinJobConfig.",
+        job_config_file = "Path to job configuration file, which should contain an JobConfig, either base64-encoded or as JSON.",
+        requests_file   = "Path to the job's requests file, which should contain Item objects, base64-encoded, one per line. If this option is given, job-client will upload after submitting the JobConfig.",
         start_job       = "After submitting job and uploading requests, start job.",
         resume          = "Resume upload, starting at line N [1].",
         output_file     = "Output file path [STDOUT].",

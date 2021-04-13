@@ -1,4 +1,58 @@
 --------
+strategy-reassessment: Reassess the strategy
+--------
+
+After further reflection and looking again at the various job-client*
+example scripts, I think I underestimated the power of the text-based
+configuration syntax.
+
+    - It's true that I did find writing the literal help text tedious. I also
+      dislike the idea that it will lack dynamic formatting behavior.
+
+    - However, the API based configuration is very ineffecient and repetitive
+      compared to the brevity, clarity, and intutiveness of the text approach.
+
+    - Perhaps the right path, again, is to used text-driven configuration, but
+      as syntax, not literal help text.
+
+Consider which parts of the ultimate help text must be typed directly by the
+programmer.
+
+    - Option or argument names.
+    - Help text for each option/argument.
+    - Metavars.
+    - Aliases.
+    - Section names.
+
+The simplest, clearest way to write that material is as a block of options
+text. Lines likes these cover all of those bases:
+
+    General:
+    --job-id -j ID    : The job id.
+    --od-user -u USER : Open Directory user who submitted the job.
+
+The only other configurations are (a) syntax for complex grammars, and (b)
+stuff well handled by the API (defaults, types, conversion, validation, etc).
+
+And this text-centric approach is flexible in allowing a variety of
+usage patterns:
+
+    - It can be treated as literal options text, for those who prefer that
+      approach. Essentialy, Optopus will support a Docopt mode.
+
+    - But treating it as configuration syntax will be easier for many who (1)
+      don't want to have to lay everything out precisely and (2) especially
+      don't want to have to define a usage grammar even for programs with
+      standard command-line needs. If the API approach is ineffecient
+      generally, the literal-text approach is ineffecient in requiring a usage
+      grammar every time (as docopt does).
+
+If we end up taking this approach, the write-up will need to be reframed to
+emphasize the debt to the text-based argument parsers and to criticize the API
+approach for being so inefficient. Give a good example to illustrate the
+comparison.
+
+--------
 world-needs-optopus: Why the world needs a better command line argument parser
 --------
 

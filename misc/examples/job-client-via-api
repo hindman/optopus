@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# odin-client : configuration via API.
+# job-client : configuration via API.
 #
 # Includes the following examples:
 #
@@ -26,13 +26,13 @@ p = parser(
         groups    = 'task',
         arg_names = 'TASK',
         choices   = 'configure submit upload start get stop download find'.split(),
-        desc      = 'The odin-client task to run',
+        desc      = 'The job-client task to run',
     ),
     dict(
-        option  = '--odin-env ENV',
+        option  = '--job-env ENV',
         groups  = 'general',
         default = 'dev',
-        desc    = "Odin environment ('production' for most users).",
+        desc    = "Environment ('production' for most users).",
     ),
     dict(
         option = '--od-user USER',
@@ -96,7 +96,7 @@ p = parser(
         choices        = ('A', 'B', 'C', 'D'),      # Or a list of choices if nargs > 1. See SO Question: 28660992.
         required       = False,
         negate_option  = ['--no-job-id'],           # Or just True.
-        description    = 'The Odin job id.',        # Or `desc`.
+        description    = 'The job id.',        # Or `desc`.
         tolerant       = False,                     # Setting option makes grammar fully tolerant.
         case_sensitive = True,                      # Whether option value is case-sensitive.
         hide           = ['choices', 'default']     # Other values: option, description.
@@ -119,15 +119,15 @@ p = parser(
         groups = 'command',
         type   = 'file',
         desc   = 'Path to job configuration file, which should contain an '
-                 'OdinJobConfig, either base64-encoded or as JSON.',
+                 'JobConfig, either base64-encoded or as JSON.',
     ),
     dict(
         option = '--requests-file -r PATH',
         groups = 'command',
         type   = 'file',
-        desc   = "Path to the job's requests file, which should contain OdinItem "
+        desc   = "Path to the job's requests file, which should contain Item "
                  "objects, base64-encoded, one per line. If this option is given, "
-                 "odin-client will upload after submitting the OdinJobConfig.",
+                 "job-client will upload after submitting the JobConfig.",
     ),
     dict(
         option = '--start-job',
@@ -170,7 +170,7 @@ p = parser(
         desc   = 'Download even if job is not finished.',
     ),
     grammar = [
-        'configure    : [general-options] ; !task=configure --odin-env --od-user',
+        'configure    : [general-options] ; !task=configure --job-env --od-user',
         'submit       : [general-options] ; !task=submit -c -r [--start-job]',
         'upload       : [general-options] ; !task=upload -j -r [--resume]',
         'start        : [general-options] ; !task=start -j',
@@ -194,7 +194,7 @@ p = parser(
         ('Short options'    , AUTO),
         ('Notes'            , USAGE['notes'],
     ],
-    program = 'odin-client',
+    program = 'job-client',
     version = __version__,    # Or callable.
 )
 
@@ -210,7 +210,7 @@ g = grammar(
     group('general-options'),
     boundary(),
     opt('task', value = 'configure', anchor = True),
-    opts('--odin-env', '--od-user', required = True),
+    opts('--job-env', '--od-user', required = True),
     #
     # submit
     variant('submit'),
