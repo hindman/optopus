@@ -32,7 +32,8 @@ text. Lines likes these cover all of those bases:
     --od-user -u USER : Open Directory user who submitted the job.
 
 The only other configurations are (a) syntax for complex grammars, and (b)
-stuff well handled by the API (defaults, types, conversion, validation, etc).
+stuff well handled by the API (ntimes, defaults, types, conversion, validation,
+sometimes choices, dispatch, etc).
 
 And this text-centric approach is flexible in allowing a variety of
 usage patterns:

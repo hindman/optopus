@@ -3,173 +3,18 @@
 # job-client : configuration via the planned Optopus syntax and API.
 #
 
-# SPEC = '''
-#     configure    : configure --job-env ENV --od-user USER
-#     submit       : submit --job-config-file PATH --requests-file PATH [--start-job]
-#     upload       : upload --job-id ID --requests-file PATH [--resume N]
-#     start        : start --job-id ID
-#     get          : get --job-id ID
-#     stop         : stop --job-id ID
-#     download     : download --job-id ID [download-options]
-#     find         : find [--job-id ID] [--user USER] [--job-status S]
-#     help         : --help
-#     version      : --version
-#     examples     : --examples
-#     autocomplete : --autocomplete
-# '''
-
-SPEC = '''
-    configure    : configure --job-env {} --od-user {}
-    submit       : submit --job-config-file {} --requests-file {} [--start-job]
-    upload       : upload --job-id {} --requests-file {} [--resume {}]
-    start        : start --job-id {}
-    get          : get --job-id {}
-    stop         : stop --job-id {}
-    download     : download --job-id {} [download-options]
-    find         : find [--job-id {}] [--user {}] [--job-status {}]
-    help         : --help
-    version      : --version
-    examples     : --examples
-    autocomplete : --autocomplete
-'''
-
-p = Parser(
-    SPEC,
-    prog = 'job-client',
-    sections = Section('General', '...')
-)
-
-USAGE = '''
-General options:
-  --job-env ENV      Environment ('production' for most users).
-  --od-user USER     Open Directory user name.
-  --log-level LEVEL  DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].
-  --disable-logging  Disable logging.
-
-Special options:
-  --examples         Display configuration and usage examples.
-  --autocomplete     Display instructions for enabling autocomplete.
-  --version          Display version information.
-  --help             Display the help message.
-
-Commands:
-  configure          Set up the default configurations for job-client.
-  submit             Submit the config file for a new job.
-  upload             Upload requests for a submitted job.
-  start              Start a submitted job.
-  stop               Stop a job.
-  download           Download Item data for a job.
-  get                Get information about a job.
-  find               Find jobs.
-
-Command options:
-  --job-id ID        The job id.
-  --user USER        Open Directory user who submitted the job.
-  --job-status S     Job status.
-  --job-config-file PATH
-                     Path to job configuration file, which should contain an
-                     JobConfig, either base64-encoded or as JSON.
-  --requests-file PATH
-                     Path to the job's requests file, which should contain
-                     Item objects, base64-encoded, one per line. If
-                     this option is given, job-client will upload after
-                     submitting the JobConfig.
-  --start-job        After submitting job and uploading requests, start job.
-  --resume N         Resume upload, starting at line N [1].
-
-Download options:
-  --output-file PATH Output file path [STDOUT].
-  --start-index N    Start index [1].
-  --stop-index N     Stop index, inclusive.
-  --force            Download even if job is not finished.
-
-Short options:
-  -h --help
-  -c --job-config-file
-  -r --requests-file
-  -j --job-id
-  -o --output-file
-  -f --force
-  -u --user
-'''.strip()
-
-p = parser(
-    usage_text = USAGE,
-    option_groups = 'general special command download'.split(),
-    defaults = dict(
-        env = 'dev',
-        resume = 1,
-        start_index = 1,
-    ),
-    types = dict(
-        job_config_file = 'file',
-        requests_file = 'file',
-        output_file = 'file',
-        resume = int,
-        start_index = int,
-        stop_index = int,
-    ),
-    choices = dict(
-        log_level = 'DEBUG INFO WARNING ERROR CRITICAL'.split(),
-    ),
-)
-
-p.variants('help', 'version', 'examples', 'autocomplete').make_tolerant()
-p.variants().add_options('general-options')
-
-#############################################################
-
-SPEC = '''
-    configure : <task=configure> --job-env {} --od-user {}
-    submit : <task=submit> --job-config-file {} --requests-file {} [--start-job]
-    upload : <task=upload> --job-id {} --requests-file {} [--resume]
-    start : <task=start> --job-id {}
-    get : <task=get> --job-id {}
-    stop : <task=stop> --job-id {}
-    download : <task=download> --job-id {} [download-options]
-    find : <task=find> [--job-id {}] [--od-user {}] [--job-status]
-    help : --help
-    version : --version
-    examples : --examples
-    autocomplete : --autocomplete
-
-    Task:
-        configure : Set up the default configurations for job-client.
-        submit : Submit the config file for a new job.
-        upload : Upload requests for a submitted job.
-        start : Start a submitted job.
-        stop : Stop a job.
-        download : Download Item data for a job.
-        get : Get information about a job.
-        find : Find jobs.
-
-    General :
-    --env ENV : Environment (production for most users).
-    --od-user USER : Open Directory user name.
-    --log-level LEV : DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].
-    --disable-logging : Disable logging.
-
-    Special :
-    --examples : Display configuration and usage examples.
-    --autocomplete : Display instructions for enabling autocomplete.
-    --version : Display version information.
-    --help -h : Display the help message.
-
-    Command :
-    --job-id -j ID : The job id.
-    --od-user -u USER : Open Directory user who submitted the job.
-    --job-status STATUS : Job status.
-    --job-config-file -c PATH : Path to job configuration file, which should contain an JobConfig, either base64-encoded or as JSON.
-    --requests-file -r PATH : Path to the job requests file, which should contain Item objects, base64-encoded, one per line. If this option is given, job-client will upload after submitting the JobConfig.
-    --start-job : After submitting job and uploading requests, start job.
-    --resume N : Resume upload, starting at line N [1].
-
-    Download :
-    --output_file -o PATH : Output file path [STDOUT].
-    --start_index N : Start index [1].
-    --stop_index N : Stop index, inclusive.
-    --force -f : Download even if job is not finished.
-'''
+# Step 1:
+#
+#   Define the spec to control:
+#     - Usage variants.
+#     - Grammar.
+#     - Help section titles.
+#     - Option metavars and help text.
+#
+#   This spec is shown with indenting and vertical alignment,
+#   but users are not required to do that. Unless explicitly marked
+#   with triple-backquotes, the spec is configuration syntax, not
+#   literal help text.
 
 SPEC = '''
     configure    : <task=configure> --job-env {} --od-user {}
@@ -185,7 +30,7 @@ SPEC = '''
     examples     : --examples
     autocomplete : --autocomplete
 
-    Task:
+    Task =>
         configure : Set up the default configurations for job-client.
         submit    : Submit the config file for a new job.
         upload    : Upload requests for a submitted job.
@@ -195,19 +40,19 @@ SPEC = '''
         get       : Get information about a job.
         find      : Find jobs.
 
-    General:
+    General =>
         --env ENV         : Environment (production for most users).
         --od-user USER    : Open Directory user name.
         --log-level LEV   : DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].
         --disable-logging : Disable logging.
 
-    Special:
+    Special =>
         --examples        : Display configuration and usage examples.
         --autocomplete    : Display instructions for enabling autocomplete.
         --version         : Display version information.
         --help -h         : Display the help message.
 
-    Command:
+    Command =>
         --job-id -j ID            : The job id.
         --od-user -u USER         : Open Directory user who submitted the job.
         --job-status STATUS       : Job status.
@@ -216,118 +61,18 @@ SPEC = '''
         --start-job               : After submitting job and uploading requests, start job.
         --resume N                : Resume upload, starting at line N [1].
 
-    Download:
+    Download =>
         --output_file -o PATH : Output file path [STDOUT].
         --start_index N       : Start index [1].
         --stop_index N        : Stop index, inclusive.
         --force -f            : Download even if job is not finished.
 '''
 
-p = Parser(
-    SPEC,
-    defaults = dict(
-        resume = 1,
-        start_index = 1,
-    ),
-    types = dict(
-        job_config_file = 'file',
-        requests_file = 'file',
-        output_file = 'file',
-        resume = int,
-        start_index = int,
-        stop_index = int,
-    ),
-    high_precedence = ('help', 'version', 'examples', 'autocomplete'),
-)
-
-p = parser(
-    grammar = dict(
-        configure    = '<task=configure> --job-env {} --od-user {}'
-        submit       = '<task=submit> --job-config-file {} --requests-file {} [--start-job]',
-        upload       = '<task=upload> --job-id {} --requests-file {} [--resume]',
-        start        = '<task=start> --job-id {}',
-        get          = '<task=get> --job-id {}',
-        stop         = '<task=stop> --job-id {}',
-        download     = '<task=download> --job-id {} [download-options]',
-        find         = '<task=find> [--job-id {}] [--od-user {}] [--job-status]',
-        help         = '--help',
-        version      = '--version',
-        examples     = '--examples',
-        autocomplete = '--autocomplete',
-    ),
-    option_help = dict(
-        task = [
-            'task  The job-client task to run',
-        ],
-        general = [
-            '--env ENV         : Environment (production for most users).',
-            '--od-user USER    : Open Directory user name.',
-            '--log-level LEV   : DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].',
-            '--disable-logging : Disable logging.',
-        ],
-        special = [
-            '--examples        : Display configuration and usage examples.',
-            '--autocomplete    : Display instructions for enabling autocomplete.',
-            '--version         : Display version information.',
-            '--help -h         : Display the help message.',
-        ],
-        command = [
-            '--job-id -j ID            : The job id.',
-            '--od-user -u USER         : Open Directory user who submitted the job.',
-            '--job-status STATUS       : Job status.',
-            '--job-config-file -c PATH : Path to job configuration file, which should contain an JobConfig, either base64-encoded or as JSON.',
-            '--requests-file -r PATH   : Path to the job requests file, which should contain Item objects, base64-encoded, one per line. If this option is given, job-client will upload after submitting the JobConfig.',
-            '--start-job               : After submitting job and uploading requests, start job.',
-            '--resume N                : Resume upload, starting at line N [1].',
-        ],
-        download = [
-            '--output_file -o PATH : Output file path [STDOUT].',
-            '--start_index N       : Start index [1].',
-            '--stop_index N        : Stop index, inclusive.',
-            '--force -f            : Download even if job is not finished.',
-        ],
-    ),
-    defaults = dict(
-        resume = 1,
-        start_index = 1,
-    ),
-    types = dict(
-        job_config_file = 'file',
-        requests_file = 'file',
-        output_file = 'file',
-        resume = int,
-        start_index = int,
-        stop_index = int,
-    ),
-    high_precedence = ('help', 'version', 'examples', 'autocomplete'),
-)
-
-
-# And for a standard command-line program, where you
-# just need a bunch of regular options, the text syntax
-# is very nice.
-
-SPEC = '''
---env ENV                 : Environment (production for most users).
---od-user USER            : Open Directory user name.
---log-level LEV           : DEBUG, INFO, WARNING, ERROR, or CRITICAL [DEBUG].
---disable-logging         : Disable logging.
---examples                : Display configuration and usage examples.
---autocomplete            : Display instructions for enabling autocomplete.
---version                 : Display version information.
---help -h                 : Display the help message.
---job-id -j ID            : The job id.
---od-user -u USER         : Open Directory user who submitted the job.
---job-status STATUS       : Job status.
---job-config-file -c PATH : Path to job configuration file, which should contain an JobConfig, either base64-encoded or as JSON.
---requests-file -r PATH   : Path to the job requests file, which should contain Item objects, base64-encoded, one per line. If this option is given, job-client will upload after submitting the JobConfig.
---start-job               : After submitting job and uploading requests, start job.
---resume N                : Resume upload, starting at line N [1].
---output_file -o PATH     : Output file path [STDOUT].
---start_index N           : Start index [1].
---stop_index N            : Stop index, inclusive.
---force -f                : Download even if job is not finished.
-'''
+# Step 2:
+#
+#   Use the API to wrap up the configuration.
+#   
+#   TODO: this is an older API; update.
 
 p = Parser(
     SPEC,
@@ -343,5 +88,9 @@ p = Parser(
         start_index = int,
         stop_index = int,
     ),
+    choices = dict(
+        log_level = 'DEBUG INFO WARNING ERROR CRITICAL'.split(),
+    ),
     high_precedence = ('help', 'version', 'examples', 'autocomplete'),
 )
+
