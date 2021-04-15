@@ -1,0 +1,193 @@
+#! /usr/bin/env python
+
+####
+# Setup.
+####
+
+import sys
+import argparse
+import re
+import os
+from pathlib import Path
+
+class Parser:
+
+    def __init__(self, *xs, **kws):
+        self.xs = xs
+        self.kws = kws
+
+    def config(self, *xs, **kws):
+        pass
+
+def isfile(path):
+    return True
+
+def ispositive(n):
+    return True
+
+####
+#
+# Example 1: minimal.
+#
+# Bare-bones grep-clone so you can use Python regexes.
+#
+#   pgrep [-i] [-v] <rgx>
+#
+# Optopus much easier: shorter, more intuitive, no API to remember.
+#
+####
+
+# Optopus.
+
+p = Parser('pgrep [-i] [-v] <rgx>')
+
+# Argparse.
+
+ap = argparse.ArgumentParser(prog = 'pgrep')
+ap.add_argument('-i', action = 'store_true')
+ap.add_argument('-v', action = 'store_true')
+ap.add_argument('rgx')
+
+####
+#
+# Example 2: basic.
+#
+# Simple pgrep with help text and optional positionals.
+#
+#   pgrep [-i] [-v] <rgx> [<path>...]
+#
+# Same LOC, but the Optopus lines are more efficient, more
+# readable, and require less API knowledge. You just type
+# what you want and have to remember nothing more than
+# a couple of intuitive syntax rules.
+#
+####
+
+# Optopus.
+
+p = Parser('''pgrep
+    <rgx> : Python regular expression
+    [<path>...] : Path(s) to input
+    -i --ignore-case : Ignore case
+    -v --invert-match : Select non-matching lines
+''')
+
+# Argparse.
+
+ap = argparse.ArgumentParser(prog = 'pgrep')
+ap.add_argument('rgx', help = 'Python regular expression')
+ap.add_argument('path', nargs = '*', help = 'Path(s) to input')
+ap.add_argument('-i', '--ignore-case', action = 'store_true', help = 'Ignore case')
+ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select non-matching lines')
+
+####
+#
+# Example 3: moderate
+#
+# A pgrep with more options, plus some conversion/validation
+# and choices.
+#
+#   pgrep [-i] [-v] <rgx> [<path>...]
+#
+# Argparse configuration is notably heavier and harder to read or
+# scan. It provides less flexible conversion/validation (in the
+# argparse example, we ignore isfile and ispositive).
+#
+####
+
+# Optopus.
+
+p = Parser('''pgrep
+    <rgx> : Python regular expression
+    [<path>...] : Path(s) to input
+    -i --ignore-case : Ignore case
+    -v --invert-match : Select non-matching lines
+    -m N --max-count : Stop searching after N matches
+    -C N --context N : Print N lines of before/after context
+    -B N --before-context N : Print N lines of before context
+    -A N --after-context N : Print N lines of after context
+    --color red|green|blue|off : Highlight matching text [off]
+''')
+
+p.config('rgx', convert = re.compile)
+p.config('path', convert = Path, validate = isfile)
+p.config('m C B A', convert = int, validate = ispositive)
+p.config('color', default = 'off')
+
+# Argparse.
+
+ap = argparse.ArgumentParser(prog = 'pgrep')
+ap.add_argument('rgx', type = re.compile, help = 'Python regular expression')
+ap.add_argument('path', type = Path, nargs = '*', help = 'Path(s) to input')
+ap.add_argument('-i', '--ignore-case', action = 'store_true', help = 'Ignore case')
+ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select non-matching lines')
+ap.add_argument('-m', '--max-count', metavar = 'N', type = int, help = 'Stop searching after N matches')
+ap.add_argument('-C', '--context', metavar = 'N', type = int, help = 'Print N lines of before/after context')
+ap.add_argument('-B', '--before-context', metavar = 'N', type = int, help = 'Print N lines of before context')
+ap.add_argument('-A', '--after-context', metavar = 'N', type = int, help = 'Print N lines of after context')
+ap.add_argument('--color', metavar = 'COL', choices = ('red', 'green', 'blue', 'off'), help = 'Highlight matching text: red|green|blue [off]')
+
+####
+#
+# Example 3 detour: compare help text.
+#
+# Argparse configuration is notably heavier and harder to read or
+# scan. It provides less flexible conversion/validation (in the
+# argparse example, we ignore isfile and ispositive).
+#
+####
+
+OPTOPUS_OUTPUT = '''
+Usage:
+  pgrep [-h] [-i] [-v] [-m N] [-C N] [-B N] [-A N] [--color COL] <rgx> [<path>...]
+  pgrep [-h] [-i] [-v] [-m N] [-C N] [-B N] [-A N] [--color COL] <rgx> [<path>...]
+
+  --foo {SYM=dest=vals}
+  --foo SYM=dest=vals
+  --foo dest=vals
+
+positional arguments:
+  rgx                   Python regular expression
+  path                  Path(s) to input
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i, --ignore-case     Ignore case
+  -v, --invert-match    Select non-matching lines
+  -m N, --max-count N   Stop searching after N matches
+  -C N, --context N     Print N lines of before/after context
+  -B N, --before-context N
+                        Print N lines of before context
+  -A N, --after-context N
+                        Print N lines of after context
+  --color COL           Highlight matching text: red|green|blue [off]
+'''
+
+ARGPARSE_OUTPUT = '''
+usage: pgrep [-h] [-i] [-v] [-m N] [-C N] [-B N] [-A N] [--color COL]
+             rgx [path ...]
+
+positional arguments:
+  rgx                   Python regular expression
+  path                  Path(s) to input
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i, --ignore-case     Ignore case
+  -v, --invert-match    Select non-matching lines
+  -m N, --max-count N   Stop searching after N matches
+  -C N, --context N     Print N lines of before/after context
+  -B N, --before-context N
+                        Print N lines of before context
+  -A N, --after-context N
+                        Print N lines of after context
+  --color COL           Highlight matching text: red|green|blue [off]
+'''
+
+####
+# Wrap up.
+####
+
+opts = ap.parse_args()
+print(opts)
+

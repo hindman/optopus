@@ -263,7 +263,7 @@ Parser:
     format    | Defer. Data object to namepsace formatting attributes. Was 'formatter_config'.
     helpful   | Defer.
     --------------------------------------------------------------------------------
-    program   | Drop: move under format.
+    prog      | Drop. Handled via the spec or under format.
     wildcards | Drop. Was used to support * as a match-anything device.
     --------------------------------------------------------------------------------
 
@@ -317,11 +317,14 @@ Parser:
 
             config(*paths, **kws) -> None
 
-                - A shortcut for query(*paths).config(**kws).
+                - Given Opts, configure them all in the same way.
+
+                - Just a shortcut for query(*paths).config(**kws).
 
             config_each(attr_name, d) -> None
 
-                - Set the value of Opt.ATTR_NAME for several Opts.
+                - Given Opts, set one attribute in different ways
+                  for each opt.
 
                 - The second argument is a dict mapping query paths to the
                   desired value for the attribute.

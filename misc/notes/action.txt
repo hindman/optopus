@@ -11,10 +11,51 @@ Strategy reassessment.
 
     - Configure the parser for each script.
 
-        - Literal text.
         - Argparse.
-        - Optopus: regular.
         - Optopus: new strategy.
+
+Augment grammar syntax:
+
+    - Reassess optional parameter syntax:
+
+        - Uppercase for parameters is very common, and I keep feeling internal
+          pressure to support it.
+
+        - Also, consider how metavar will work (alternative naming idea: sym,
+          for symbolic value). Is there any point to a rigid brace-reqired
+          syntax if the metavar can just lead to usage text that works
+          differently than the grammar syntax. Ideally the two would be aligned
+          well, as least on basics.
+
+        - Allow UPPER word to also represent a parameter. Use this
+          general parameter syntax:
+
+            SYM.dest=vals
+
+        - Some examples:
+
+            Configuration     | Usage text
+            ---------------------------------
+            --point _ _       | --point {} {}
+            --point X Y       | --point X Y
+            --point X.x Y.y   | --point X Y
+            --point X.x Y.y=0 | --point X 0       # But these are a bit ambiguous.
+            --point .x .y     | --point {} {}
+            --point _ =0      | --point {} 0
+            --point X Y=0     | --point X 0
+
+        - Strictly speaking, uppercase paramaters can cause some ambiguity,
+          especially in more complex situations. But they are very rare. Maybe
+          just allow the user to request explicit braced-parameters in usage
+          text (or even angle-bracket parameters, like Git).
+
+    - Program name as the first word.
+
+    - The option text, optionally with section titles.
+
+    - Make sure we can support full spectrum implied by this meta-grammar.
+
+        [PROG] (OPTS | VARIANTS) [OPTSHELP | SECTION OPTSHELP]...
 
 Publish:
     - README
