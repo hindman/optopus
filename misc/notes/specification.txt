@@ -283,7 +283,7 @@ Parser:
 
         - Querying and configuring grammar elements:
 
-            query(*paths) -> Grammar.query(...) -> Query
+            query(*paths, **kws) -> Grammar.query(...) -> Query
 
                 - Query paths are based on Opt.dest, Variant.name, and
                   Group.dest or Group.index.
@@ -371,7 +371,7 @@ Grammar:
 
     API:
 
-        query(...) -> Query
+        query(*paths, kind = KIND, negate = False) -> Query
 
 Query:
 
@@ -386,6 +386,7 @@ Query:
     API:
 
         config(...) # Apply the config parameters to all Groups/Opts.
+        query(...)  # Subquery to filter down further.
 
 Variant:
 

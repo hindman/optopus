@@ -100,15 +100,16 @@ ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select no
 p = Parser('''pgrep
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
-    -i --ignore-case : Ignore case
-    -v --invert-match : Select non-matching lines
-    -m N --max-count : Stop searching after N matches
-    -C N --context N : Print N lines of before/after context
-    -B N --before-context N : Print N lines of before context
-    -A N --after-context N : Print N lines of after context
+    --ignore-case -i : Ignore case
+    --invert-match -v : Select non-matching lines
+    --max-count <n> -m : Stop searching after N matches
+    --context <n> -C : Print N lines of before/after context
+    --before-context <n> -B : Print N lines of before context
+    --after-context <n> -A : Print N lines of after context
     --color red|green|blue|off : Highlight matching text [off]
 ''')
 
+p.query(kind = 'opt').usage_group('options')
 p.config('rgx', convert = re.compile)
 p.config('path', convert = Path, validate = isfile)
 p.config('m C B A', convert = int, validate = ispositive)
@@ -117,71 +118,75 @@ p.config('color', default = 'off')
 # Argparse.
 
 ap = argparse.ArgumentParser(prog = 'pgrep')
-ap.add_argument('rgx', type = re.compile, help = 'Python regular expression')
-ap.add_argument('path', type = Path, nargs = '*', help = 'Path(s) to input')
-ap.add_argument('-i', '--ignore-case', action = 'store_true', help = 'Ignore case')
-ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select non-matching lines')
-ap.add_argument('-m', '--max-count', metavar = 'N', type = int, help = 'Stop searching after N matches')
-ap.add_argument('-C', '--context', metavar = 'N', type = int, help = 'Print N lines of before/after context')
-ap.add_argument('-B', '--before-context', metavar = 'N', type = int, help = 'Print N lines of before context')
-ap.add_argument('-A', '--after-context', metavar = 'N', type = int, help = 'Print N lines of after context')
-ap.add_argument('--color', metavar = 'COL', choices = ('red', 'green', 'blue', 'off'), help = 'Highlight matching text: red|green|blue [off]')
+ap.add_argument('rgx', metavar = '<rgx>', type = re.compile, help = 'Python regular expression')
+ap.add_argument('path', metavar = '<path>', type = Path, nargs = '*', help = 'Path(s) to input')
+ap.add_argument('--ignore-case', '-i', action = 'store_true', help = 'Ignore case')
+ap.add_argument('--invert-match', '-v', action = 'store_true', help = 'Select non-matching lines')
+ap.add_argument('--max-count', '-m', metavar = '<n>', type = int, help = 'Stop searching after N matches')
+ap.add_argument('--context', '-C', metavar = '<n>', type = int, help = 'Print N lines of before/after context')
+ap.add_argument('--before-context', '-B', metavar = '<n>', type = int, help = 'Print N lines of before context')
+ap.add_argument('--after-context', '-A', metavar = '<n>', type = int, help = 'Print N lines of after context')
+ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue', 'off'), help = 'Highlight matching text: red|green|blue [off]')
 
 ####
 #
 # Example 3 detour: compare help text.
 #
-# Argparse configuration is notably heavier and harder to read or
-# scan. It provides less flexible conversion/validation (in the
-# argparse example, we ignore isfile and ispositive).
+# Optopus help text is cleaner, easier to read, and more aesthetic.
 #
 ####
 
 OPTOPUS_OUTPUT = '''
 Usage:
-  pgrep [-h] [-i] [-v] [-m N] [-C N] [-B N] [-A N] [--color COL] <rgx> [<path>...]
-  pgrep [-h] [-i] [-v] [-m N] [-C N] [-B N] [-A N] [--color COL] <rgx> [<path>...]
+  pgrep [options] <rgx> [<path> ...]
 
-  --foo {SYM=dest=vals}
-  --foo SYM=dest=vals
-  --foo dest=vals
+Positionals:
+  <rgx>                  Python regular expression
+  <path>                 Path(s) to input
 
-positional arguments:
-  rgx                   Python regular expression
-  path                  Path(s) to input
+Options:
+  --help                 Print help text and exit
+  --ignore-case          Ignore case
+  --invert-match         Select non-matching lines
+  --max-count <n>        Stop searching after N matches
+  --context <n>          Print N lines of before/after context
+  --before-context <n>   Print N lines of before context
+  --after-context <n>    Print N lines of after context
+  --color <col>          Highlight matching text: red|green|blue [off]
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -i, --ignore-case     Ignore case
-  -v, --invert-match    Select non-matching lines
-  -m N, --max-count N   Stop searching after N matches
-  -C N, --context N     Print N lines of before/after context
-  -B N, --before-context N
-                        Print N lines of before context
-  -A N, --after-context N
-                        Print N lines of after context
-  --color COL           Highlight matching text: red|green|blue [off]
+Aliases:
+  --help                 -h
+  --ignore-case          -i
+  --invert-match         -v
+  --max-count            -m
+  --context              -C
+  --before-context       -B
+  --after-context        -A
 '''
 
 ARGPARSE_OUTPUT = '''
-usage: pgrep [-h] [-i] [-v] [-m N] [-C N] [-B N] [-A N] [--color COL]
-             rgx [path ...]
+usage: pgrep [-h] [--ignore-case] [--invert-match] [--max-count <n>]
+             [--context <n>] [--before-context <n>] [--after-context <n>]
+             [--color <col>]
+             <rgx> [<path> ...]
 
 positional arguments:
-  rgx                   Python regular expression
-  path                  Path(s) to input
+  <rgx>                 Python regular expression
+  <path>                Path(s) to input
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i, --ignore-case     Ignore case
-  -v, --invert-match    Select non-matching lines
-  -m N, --max-count N   Stop searching after N matches
-  -C N, --context N     Print N lines of before/after context
-  -B N, --before-context N
+  --ignore-case, -i     Ignore case
+  --invert-match, -v    Select non-matching lines
+  --max-count <n>, -m <n>
+                        Stop searching after N matches
+  --context <n>, -C <n>
+                        Print N lines of before/after context
+  --before-context <n>, -B <n>
                         Print N lines of before context
-  -A N, --after-context N
+  --after-context <n>, -A <n>
                         Print N lines of after context
-  --color COL           Highlight matching text: red|green|blue [off]
+  --color <col>         Highlight matching text: red|green|blue [off]
 '''
 
 ####

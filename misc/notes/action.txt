@@ -2,7 +2,11 @@
 todos: TODOs
 --------
 
-Revisit grammar syntax: enhance while simplifying.
+grammar-syntax:
+
+    - Revisit Again.
+
+    - Revise based on new plan.
 
 optopus-vs-argparse-demos:
     - Realistic programs of varying complexity.
