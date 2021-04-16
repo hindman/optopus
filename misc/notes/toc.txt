@@ -20,6 +20,7 @@ toc: Table of contents
 
     discussion.txt
 
+        grammar-syntax-revisited      | Grammar syntax revisited
         strategy-reassessment         | Reassess the strategy
         world-needs-optopus           | Why the world needs a better command line argument parser
         api-vs-text                   | API-driven vs text-driven

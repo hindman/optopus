@@ -6,7 +6,7 @@ import argparse
 ACTIONS = 'create read update delete'.split()
 
 ARG_PARSE_DATA = (
-    ['groups',         dict(nargs = 2)],
+    ['groups',         dict(nargs = 2, metavar = 'GRP')],
     ['-s', '--sleep',  dict(type = float, default = 1.0, metavar = 'SEC')],
     ['-y',             dict(type = int, metavar = 'N')],
     ['-d', '--dryrun', dict(action = 'store_true')],

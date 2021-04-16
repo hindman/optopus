@@ -1,4 +1,169 @@
 --------
+grammar-syntax-revisited: Grammar syntax revisited
+--------
+
+Goals:
+
+    - Enhance:
+
+        - Program name.
+        - The option text, optionally with section titles.
+        - Opt symbols.
+        - Spec as a Python format string -- conflict with {} possibly.
+
+            - TODO: this is the key problem.
+
+    - Simplify:
+
+        - Ensure that Optopus supports the full spectrum of usages:
+
+            - Just the Opts and their help, optionally as sections:
+
+                [PROG] OPTS-HELP
+                [PROG] (SECTION OPTS-HELP)...
+
+            - Just a grammar:
+
+                [PROG] OPT...
+                [PROG] VARIANT...
+
+            - Both:
+
+                [PROG] (OPT... | VARIANT...) (OPTS-HELP | (SECTION OPTS-HELP)...)
+
+        - Prioritize ease of use for the simples cases.
+            - Program name optional.
+            - Variant names optional.
+            - Section headings optional.
+
+        - Minimize baroque syntax elements:
+            - Reduce special punctuation when possible.
+            - Meaningful whitespace is more intuitive that odd punctuation.
+            - Try to make surviving punctuation unified/congruous if possible.
+
+Variant continuation lines:
+
+    - Required whitespace indent.
+
+Punctuation markers: where needed:
+
+    - Summary of plan:
+
+        Declare section | Double colon
+        Named variant   | Colon
+        Opt help        | Colon
+        Prog            | No marker needed
+
+    - Declare a section.
+
+        - This might be the most compelling need for punctuation, since the
+          content of a section title and a section body can be so variable.
+
+    - Define Opt help.
+
+        - The syntax here is simpler:
+
+            --opt __    Help text blah
+            <pos> __    Help text blah
+
+        - Details:
+
+            - Line begins with an option or positional.
+
+            - Sometimes followed by a small subset of grammar syntax to
+              deal with sym, dest, nargs, nparams, choices.
+
+                --opt {X.x}{1,5}
+                --mode fast|slow|reg
+                <PATH.path>...
+
+            - Sometimes followed by the help text for the Opt.
+
+        - Such lines cannot be confused with named variants (names do not
+          start with option prefix or angle bracket) or unnamed variants
+          (because sections must be explicitly declared).
+
+    - To mark a variant name.
+
+        - Maybe not strictly required, but adds clarity, simplifies
+          parsing, and is intuitive since we can also use colon.
+
+    - After prog.
+
+        - A spec must start either with a section (marked with double
+          colon) or one of these three forms:
+
+            prog
+            name : defin    # 1+
+
+            prog
+            defin           # 1+
+
+            defin           # 1+
+
+            Where defin can start with:
+                --opt
+                <pos>
+                named group
+                group
+                literal
+
+        - If a spec starts with a name, it must be:
+
+            - prog.
+
+            - variant name (has an explicit marker).
+
+            - name for a group (requires equal sign next; adjust grammer to
+              parse named-assign before equal sign).
+
+Opt syms:
+
+    - An Opt sym is a symbolic name for a positional or parameter, to be used
+      in usage text rather than the more formal representations with angle or
+      curly brackets (like an Argparse metavar).
+
+        - Add to terminology.
+
+    - General syntax:
+
+        sym.dest=vals
+
+    - Required elements:
+
+        - Positionals: dest.
+        - Parameters: nothing.
+
+    - Forms:
+
+        Configuration       | Usage text    | Common
+        ------------------------------------------
+        <xy>                | <xy>          | Yes
+        <mode.xy>           | <mode>        | Yes
+        <xy=fast>           | fast          | .
+        ------------------------------------------
+        --point _ _         | --point {} {} | Yes
+        --point X Y         | --point X Y   | Yes
+        --point {X.x} {Y.y} | --point X Y   | .
+        --point {x} {y=0}   | --point X 0   | .
+        --point {.x} {.y}   | --point {} {} | .
+        --point {=0} _      | --point 0 {}  | .
+        --point {Y=0} X     | --point 0 X   | .
+        ------------------------------------------
+
+    - Key points:
+
+        - Within a definition (after we have seen an --opt), any names that
+          follow will necessarily be parameters.
+
+        - For more complex forms, braces are required.
+
+        - Syms need not be uppercase.
+
+        - The syntax is a bit odd for complex situations, but good
+          for simple ones.
+
+--------
 strategy-reassessment: Reassess the strategy
 --------
 
