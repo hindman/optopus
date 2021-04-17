@@ -4,12 +4,13 @@ todos: TODOs
 
 grammar-syntax:
 
-    - opt-help lines and unnamed variants can be confused, and
-      I still dislike my solution to the problem (see TODO).
+    - Editing pass over new plan.
 
     - Reassess whitespace rules after new plan settles.
 
-    - Revise based on new plan.
+    - Revise specification based on new plan.
+
+    - Better organize discussion material as specification is being finalized.
 
 optopus-vs-argparse-demos:
     - Realistic programs of varying complexity.
