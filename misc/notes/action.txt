@@ -4,7 +4,10 @@ todos: TODOs
 
 grammar-syntax:
 
-    - Revisit Again.
+    - opt-help lines and unnamed variants can be confused, and
+      I still dislike my solution to the problem (see TODO).
+
+    - Reassess whitespace rules after new plan settles.
 
     - Revise based on new plan.
 

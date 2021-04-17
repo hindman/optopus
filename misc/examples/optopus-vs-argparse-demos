@@ -13,10 +13,20 @@ from pathlib import Path
 class Parser:
 
     def __init__(self, *xs, **kws):
-        self.xs = xs
-        self.kws = kws
+        pass
 
     def config(self, *xs, **kws):
+        pass
+
+    def query(self, *xs, **kws):
+        return Query()
+
+class Query:
+
+    def __init__(self, *xs, **kws):
+        pass
+
+    def usage_group(self, *xs, **kws):
         pass
 
 def isfile(path):
@@ -34,6 +44,8 @@ def ispositive(n):
 #   pgrep [-i] [-v] <rgx>
 #
 # Optopus much easier: shorter, more intuitive, no API to remember.
+#
+# Size: Argparse 4.2x bulkier.
 #
 ####
 
@@ -61,6 +73,8 @@ ap.add_argument('rgx')
 # what you want and have to remember nothing more than
 # a couple of intuitive syntax rules.
 #
+# Size: Argparse 1.9x bulkier.
+#
 ####
 
 # Optopus.
@@ -82,7 +96,7 @@ ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select no
 
 ####
 #
-# Example 3: moderate
+# Example 3a: moderate.
 #
 # A pgrep with more options, plus some conversion/validation
 # and choices.
@@ -92,6 +106,8 @@ ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select no
 # Argparse configuration is notably heavier and harder to read or
 # scan. It provides less flexible conversion/validation (in the
 # argparse example, we ignore isfile and ispositive).
+#
+# Size: Argparse 1.4x bulkier.
 #
 ####
 
@@ -130,15 +146,16 @@ ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue',
 
 ####
 #
-# Example 3 detour: compare help text.
+# Example 3b: help text for moderate.
 #
 # Optopus help text is cleaner, easier to read, and more aesthetic.
+# The traditional approach for aliases can be configured easily.
 #
 ####
 
 OPTOPUS_OUTPUT = '''
 Usage:
-  pgrep [options] <rgx> [<path> ...]
+  pgrep [options] <rgx> [<path>...]
 
 Positionals:
   <rgx>                  Python regular expression
