@@ -13,6 +13,7 @@ ARG_PARSE_DATA = (
     ['-x',             dict(action = 'append', nargs = 2)],
     ['-z',             dict(nargs = '+')],
     ['--op',           dict(choices = ACTIONS, help = 'The operation to perform')],
+    ['--foo',          dict()],
 )
 
 ap = argparse.ArgumentParser()

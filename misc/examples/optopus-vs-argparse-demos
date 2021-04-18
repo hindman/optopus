@@ -82,8 +82,8 @@ ap.add_argument('rgx')
 p = Parser('''pgrep
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
-    -i --ignore-case : Ignore case
-    -v --invert-match : Select non-matching lines
+    [-i --ignore-case] : Ignore case
+    [-v --invert-match] : Select non-matching lines
 ''')
 
 # Argparse.
@@ -116,13 +116,13 @@ ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select no
 p = Parser('''pgrep
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
-    --ignore-case -i : Ignore case
-    --invert-match -v : Select non-matching lines
-    --max-count <n> -m : Stop searching after N matches
-    --context <n> -C : Print N lines of before/after context
-    --before-context <n> -B : Print N lines of before context
-    --after-context <n> -A : Print N lines of after context
-    --color red|green|blue|off : Highlight matching text [off]
+    [-i --ignore-case] : Ignore case
+    [-v --invert-match] : Select non-matching lines
+    [-m --max-count <n>] : Stop searching after N matches
+    [-C --context <n>] : Print N lines of before/after context
+    [-B --before-context <n>] : Print N lines of before context
+    [-A --after-context <n>] : Print N lines of after context
+    [--color red|green|blue|off] : Highlight matching text [off]
 ''')
 
 p.query(kind = 'opt').usage_group('options')

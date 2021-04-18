@@ -64,6 +64,8 @@ Variant definition syntax:
 
     Convenience syntax when configuring a single Opt:
 
+        DROPPING THIS
+
         Positionals      Options
         --------------------------------------------------------
         x x [x]          -f _ [_]       Brackets/braces unneeded
@@ -73,12 +75,13 @@ Variant definition syntax:
 
         - Whitespace required:
 
-            - Quoted literal containing whitespace (no user want this).
+            - Each variant must start on its own line.
 
-            - If a variant ends with an option, whitespace is needed before the
-              next variant name (otherwise the names bleed together).
+            - Continuation lines for variants and opt-help must be indented.
 
-            - To disambiguate names in the convenience syntax for single Opts.
+            - Section start must be on its own line ending in marker.
+
+            - Grammar section must have prog on first line is some usages.
 
         - Tight-binding required among syntax elements:
 
@@ -164,6 +167,10 @@ Command line argument types:
 
     - Parameters:
         - Arguments for an option.
+
+    - Sym:
+        - Like argparse metavar.
+        - Symbolic name for a positional or parameter in usage text.
 
     - Positional or parameter variant:
         - Mechanism to define a special grammar when a

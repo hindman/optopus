@@ -2,63 +2,62 @@
 grammar-syntax-revisited: Grammar syntax revisited
 --------
 
-Goals:
+Enhance spec syntax increase its power, reducing user hassle:
 
-    - Enhance:
+    - Program name.
+    - Options text, optionally with section titles.
+    - Opt symbols.
+    - Spec as a Python format string.
+    - Literal sections.
 
-        - Program name.
-        - Options text, optionally with section titles.
-        - Opt symbols.
-        - Spec as a Python format string.
-        - Literal sections.
+Simplify and unify the syntax:
 
-    - Simplify:
+    - Ensure that Optopus supports the full spectrum of usages, ranging from
+      quick-and-dirty to complex.
 
-        - Ensure that Optopus supports the full spectrum of usages:
+    - Prioritize ease of use for the simples cases.
 
-            - Just the Opts and their help, optionally as sections:
+        - Program name optional.
+        - Variant names optional.
+        - Section headings optional.
 
-                [PROG] OPTS-HELP
-                [PROG] (SECTION OPTS-HELP)...
+    - Minimize baroque syntax elements:
 
-            - Just a grammar:
+        - Reduce special punctuation when possible.
+        - Meaningful whitespace is more intuitive that odd punctuation.
+        - Make surviving punctuation as unified/congruous as possible.
 
-                [PROG] OPT...
-                [PROG] VARIANT...
-
-            - Both:
-
-                [PROG] (OPT... | VARIANT...) (OPTS-HELP | (SECTION OPTS-HELP)...)
-
-        - Prioritize ease of use for the simples cases.
-            - Program name optional.
-            - Variant names optional.
-            - Section headings optional.
-
-        - Minimize baroque syntax elements:
-            - Reduce special punctuation when possible.
-            - Meaningful whitespace is more intuitive that odd punctuation.
-            - Try to make surviving punctuation unified/congruous if possible.
-
-Clarify and simplify handling of variable inputs from end-user:
+Representing variable end-user inputs:
 
     - There are four common styles for representing variable end-user input,
-      but the current plan leaves Optopus in an odd place, mixing upper and
-      angle:
+      along with some differences in details for specific implementations,
+      especially as it relates to choices:
 
-        - Angle (git, docopt-default).
-        - Sensitive (many Python and Ruby tools).
-        - Lower (POSIX).
-        - Upper (rsync; style is less common).
-        - FlexParam (docopt-alternative).
+        Style     | Parameters  | Positionals | Choices | Examples
+        ----------------------------------------------------------------------------
+        Angle     | <>          | <>          | {}      | git, picocli
+        Sensitive | UPPER       | lower       | {}      | argparse, many Python/Ruby
+        Lower     | lower       | lower       | () []   | POSIX, many Unix utilities
+        Upper     | UPPER       | UPPER       | ?       | rsync
+        ----------------------------------------------------------------------------
+        Docopt    | <> or UPPER | <>          | () []   | .
+        Optopus   | <>          | <>          | <>      | .
+
+        - Parentheses or brackets are used where needed to resolve ambiguity
+          between parameters and arguments.
+
+        - Unclear how docopt handles choices, but I think it uses
+          parens/brackets.
+
+        - Not sure why Git uses braces for choices: angle brackets seem to work
+          fine and are consistent.
 
     - We can reject the lower and upper styles:
 
         - They work poorly for positional variants and parameter variants.
 
-        - Usage text is ambiguous with the lower conventions: we cannot
-          distinguish merge/delete (positional variants) from path
-          (variable input).
+        - Usage text is ambiguous: we cannot distinguish merge/delete
+          (positional variants) from path (variable input).
 
             frob [-f] merge [-x] [-y] path
             frob [-f] delete [-z] path
@@ -70,113 +69,111 @@ Clarify and simplify handling of variable inputs from end-user:
             frob [-f] merge [-x] [-y] PATH
             frob [-f] delete [-z] PATH
 
-        - And the Python community is used to it: argparse uses it, as did its
-          predecessor, optparse.
+        - And the Python/Ruby community is accustomed to it (from argparse and
+          its predecessor, optparse).
 
-        - It does fails if the variant values need to be uppercase. Some type
-          of quoting or other syntactic workaround would be needed:
+        - It does fail if the variant values need to be uppercase. Some type of
+          quoting or other syntactic workaround would be needed:
 
             frob [-f] `MERGE` [-x] [-y] PATH
             frob [-f] `DELETE` [-z] PATH
 
     - The angle style is the most robust:
 
-        - In order to produce good usage text for variants, literal inputs need
-          top priority.
+        - In order to produce robust usage text for variants, literal inputs
+          need top precedence.
 
-        - This demands that variable inputs be enclosed, so case-based
-          solutions are either flawed or insufficiently robust.
+        - This demands that variable inputs be enclosed, making case-based
+          solutions either flawed or insufficiently robust.
 
-        - Optopus was drifting toward {param} and <pos> as the enclosures, but
-          that would also be an odd combo lacking any precedent. Moreover, braces
-          have a semi-conventional role for choices in tools like argparse.
+        - Optopus was drifting toward {param} and <pos> as the enclosures:
 
-    - Verdict:
+            - That would also be an odd combo. The only precedent is docopt,
+              which supports it as an alternative syntax.
 
-        - Default to angle style.
+            - In addition, braces have a semi-conventional role for choices in
+              tools like argparse.
 
-            - The clarity of the approach seems to more than counterbalance the
-              small increment of extra typing.
+    - Verdict: default to angle style.
 
-            - Simplify grammar syntax around a robust, clear approach.
+        - The clarity of the approach seems to more than counterbalance the
+          small increment of extra typing: all variable inputs are enclosed in
+          the same way (positionals, parameters, and thus choices).
 
-            - The approach has strong precedent, especially from Git.
+        - The approach has strong precedent, especially from Git.
 
-            - Also use angles for choices:
+        - When needed, use parentheses or brackets to disambiguate parameters
+          and positionals. That will be rare because: (1) most use cases do not
+          require an explicit grammar; (2) most options are optional and will
+          be bracketed already; and (3) most ambiguitities can be resolved by
+          adjust option ordering in the grammar.
 
-                [--foo <a|b|c>]
+        - If needed later, support other styles for usage text and grammar
+          syntax (especially sensitive). Note that sensitive style in usage
+          text is partially supported via the SYM! notation.
 
-        - Use parentheses or brackets to disambiguate parameters and
-          positionals, as needed. That will be rare, because most options are
-          optional and will be bracketed already. And it is often possible to
-          arrange the option ordering to avoid ambiguitity.
-
-        - Later support more flexibility:
-
-            - Sensitive style for usage text.
-            - Sensitive style for grammar syntax.
-            - Maybe other styles.
-
-Dest, sym, and values:
-
-    - This syntax still seems best to me:
-
-        <sym.dest=values>
-
-    - But we should assume the most common usage pattern for single values
-      inside angle brackets.
-
-        - For positionals, the value functions as both dest and sym, so we are
-          not forced to make a decision.
-
-              <paths>
-
-        - For options, the most common need is for it to function as sym,
-          since the option name is already the dest.
-
-            --strategy <s>
-
-    - Examples:
-
-        Example                 | Usage text            | Dest
-        ------------------------------------------------------------------
-        <paths>...              | <paths>...            | paths
-        <path.paths>...         | <path>...             | paths
-        <PATH!paths>...         | PATH...               | paths
-        ------------------------------------------------------------------
-        --strategy <s>          | --strategy <s>        | strategy
-        --elems <e> <e> [<e>]   | --elems <e> <e> [<e>] | elems
-        --point <ROW.x> <COL!y> | --point <ROW> COL     | point.x, point.y
-        ------------------------------------------------------------------
-
-Variant continuation lines:
-
-    - Required whitespace indent.
-
-Punctuation markers: where needed:
+Punctuation markers:
 
     - Summary of plan:
 
-        Start of grammar variants | Double colon
-        Declare section           | Double colon
-        Named variant             | Colon
-        Opt help                  | Colon
+        Situation       | Marker       | When required
+        -------------------------------------------------
+        Grammar section | Double colon | If multi-variant
+        Other sections  | Double colon | Always
+        Opt help        | Colon        | If help text
+        Variant         | Colon        | If named
 
-    - Declare a section.
+    - Sections:
 
-        - This might be the most compelling need for punctuation, since the
-          content of a section title and a section body can be so variable.
+        - The grammar section:
 
-        - The section title can be empty.
+            - Must appear first in the spec. If user wants a different section
+              ordering: define the sections in the spec; use API to move
+              sections as needed.
 
-    - The opt-help lines:
+            - No literal text.
+
+            - Default title is `Usage`, configurable only via API.
+
+        - The grammar section, regardless of form, can be followed by zero or
+          more other sections:
+
+            - Must use marker.
+            - Can omit a title.
+            - Can define opt-help lines.
+            - Can include literal text.
+
+            - If a line parses as opt-help, it will be interpreted that way
+              (unless quoting is used).
+
+        - Placement of the double colon:
+
+            Syntax   | Help text
+            --------------------
+            Title::  | Title:
+            Title :: | Title
+
+    - Grammar section forms:
+
+        Variants | Form           | Note
+        -----------------------------------------------
+                 | [prog]         |
+        0        | [opt-help...]  | Most common use case
+        -----------------------------------------------
+                 | [prog]         |
+        1+       | variant...     | Explicit syntax
+        -----------------------------------------------
+        1        | [prog] variant | Convenience syntax
+        -----------------------------------------------
+
+    - opt-help:
 
         - Syntax:
 
             <pos>            [: help-text]
             [alias...] --opt [: help-text]
 
-        - Supported Grammar subset:
+        - Supported Opt grammar subset:
 
             sym
             dest
@@ -187,205 +184,138 @@ Punctuation markers: where needed:
             aliases
             text
 
-        - Note that opt-help lines can be confused with unnamed variants:
+        - Note that opt-help uses a grammar subset, not an alternative grammar:
 
-            - The issue is fundamental, not really addressable via fancy
-              parsing or extended peeks.
+            - This means, for example, that options are not assumed
+              to be optional: square brackets required if intended.
 
-            - An example:
+        - Note that opt-help lines can be confused with unnamed variants. The
+          issue is fundamental, not really addressable via extended peeks or
+          other fancy parsing. For example, does this spec define 3 variants or
+          3 bare-bones opt-help lines?
 
-                pgrep
-                <rgx>                 # Variants or bare-bones opt-help?
-                --ignore-case -i
-                --invert-match -v
+            pgrep
+            <rgx>
+            --ignore-case -i
+            --invert-match -v
 
-    - The most common use case is to retrieve the grammar from one or more
-      opt-help sections.
+        - The most common use case is to derive grammar from 1+ opt-help
+          sections. It works well for many standard grammar needs, and opt-help
+          is more featureful than variant (because it supports aliases and
+          text). So the no-variant use case should have the least hassle.
 
-        - Works good for standard grammar.
+Continuation lines must be indented and continguous:
 
-        - And opt-help is more featureful than variant:
+    - opt-help
+    - variant
 
-                Attr    | variant | opt-help
-                ----------------------------
-                spec    | Y       | Y
-                ntimes  | Y       | Y
-                nargs   | Y       | Y
-                nparams | Y       | Y
-                dest    | Y       | Y
-                choices | Y       | Y
-                metavar | Y       | Y
-                text    | .       | Y
-                aliases | .       | Y
+Partial marker:
 
-        - So the no-variant use case should have the least hassle.
+    - Change to exclamation to reserve backquote for quoting.
 
-    - Grammar section forms:
+Quoting mechanisms:
 
-        - Zero variants:
+    - Quoting situations:
 
-            [prog]
-            opt-help...
+        - Force text in variant to be literal arg.
+        - Prevent parsing section text as opt-help syntax.
+        - Prevent line wrapping.
 
-            [prog]
+    - Quoting type:
 
-        - One or more variants (explicit syntax):
+        Type   | Suppressed  | Default markers
+        ----------------------------------------
+        Block  | Syntax/wrap | ```    ```
+        Block  | Syntax      | ```?   ```
+        Inline | Syntax      | `      `
 
-            [prog] ::
-            variant...
+        - In grammar section, block quoting is not needed or allowed.
 
-        - Single variant (convenience syntax):
+Dest, sym, and values:
 
-            [prog] variant
+    - Syntax:
 
-    - Grammar section:
+        <sym.dest=val>
+        <sym.dest=val|val|...>
 
-        - Must appear first in the spec. If user wants a different section
-          ordering: define the sections in the spec; use API to move
-          sections as needed.
+        Where sym translates to usage text as follows:
 
-        - No literal text.
+            sym. : <sym>
+            sym! : sym
 
-        - Default title is `Usage`, configurable only via API.
+        And where a single <name> means the following:
 
-    - Continuation lines must be indented and continguous:
+            Positionals | <dest>       | The name is dest and sym
+            Options     | --dest <sym> | The name is sym
 
-        - opt-help
-        - variant
+    - Forms:
 
-    - Support quoting mechanism:
+        - Postitionals require a dest, so there are only four forms.
 
-        - Quoting situations:
-            - Force text in variant to be literal arg.
-            - Prevent parsing section text as opt-help syntax.
-            - Prevent line wrapping.
+        - Options do not require subdest, so there are eight.
 
-        - Quoting type:
+        <dest>
+        <dest=vals>
+        <sym.dest>
+        <sym.dest=vals>
 
-            Type   | Suppressed  | Default markers
-            ----------------------------------------
-            Block  | Syntax      | ```    ```
-            Block  | Syntax/wrap | ```!   ```
-            Inline | Syntax      | `      `
+        --dest <>
+        --dest <=vals>
+        --dest <sym>
+        --dest <sym=vals>
+        --dest <.subdest>
+        --dest <.subdest=vals>
+        --dest <sym.subdest>
+        --dest <sym.subdest=vals>
 
-        - Change the partial marker to exclamation point.
-            - Looks pretty good.
-            - Has some intuition.
+    - Examples without choices:
 
-    - Allow hand-crafted text in opt-help sections:
+        Example                 | Usage text            | Dest
+        ------------------------------------------------------------------
+        <paths>...              | <paths>...            | paths
+        <path.paths>...         | <path>...             | paths
+        <PATH!paths>...         | PATH...               | paths
+        ------------------------------------------------------------------
+        --strategy <s>          | --strategy <s>        | strategy
+        --elems <e> <e> [<e>]   | --elems <e> <e> [<e>] | elems
+        --point <row.x> <COL!y> | --point <row> COL     | point.x, point.y
+        --point <.x> <.y>       | --point <p> <p>       | point.x, point.y
+        --point <> <>           | --point <p> <p>       | point
+        ------------------------------------------------------------------
 
-        - If a line parses as opt-help, it will be interpreted that way.
+    - Examples involving choices and positional/parameter variants:
 
-        - Use quoting to address.
+        Example               || Usage text        || Dest
+        --------------------------------------------------------------------
+        <mode=fast|slow>      || <fast|slow>       || mode
+        <mode=fast>           || fast              || mode
+        <MODE.mode=fast|slow> || mode              || mode
+        <MODE!mode=fast|slow> || MODE              || mode
 
-    - To mark a variant name.
+Spec as a format string: not needed:
 
-        - Maybe not strictly required, but adds clarity, simplifies parsing,
-          and is intuitive since are basing all landmarks on colons.
+    - Initially I thought it would be useful to allow the spec to function as a
+      format string.
 
-    - After prog.
+    - But if the format() call occurs early (before spec parsing), there is no
+      purpose served: the user could just call format() to create the spec in
+      the first place.
 
-        - Use section marker after prog if variants are used.
+    - There might be a use case for calling format() after parsing has derived
+      grammar and opt-help metadata.
 
-Opt syms:
+        - Presumably the purpose would be to insert material into help text
+          that is more under the domain of Optopus than the user.
 
-    - TODO: this is being changed a bit.
-
-    - An Opt sym is a symbolic name for a positional or parameter, to be used
-      in usage text rather than the more formal representations with angle or
-      curly brackets (like an Argparse metavar).
-
-        - Add to terminology.
-
-    - General syntax:
-
-        sym
-        dest
-
-        sym.dest=vals
-
-    - Required elements:
-
-        - Positionals: dest.
-        - Parameters: nothing.
-
-    - Examples covering possibilities:
-
-        Configuration       | Usage text    | Common
-        ------------------------------------------
-        <xy>                | <xy>          | Yes
-        <mode.xy>           | <mode>        | Yes
-        <xy=fast>           | fast          | .
-        ------------------------------------------
-        --point _ _         | --point <> <> | Yes
-        --point X Y         | --point X Y   | Yes
-        --point <.x> <.y>   | --point <> <> | .
-        --point <X.x> <Y.y> | --point X Y   | .
-        --point <.x=0> <.y> | --point 0 <>  | .
-        --point <=0> _      | --point 0 <>  | .
-        --point <Y=0> X     | --point 0 X   | .
-        ------------------------------------------
-
-    - Key points:
-
-        - Within a definition (after we have seen an --opt), any names that
-          follow will necessarily be parameters.
-
-        - For more complex forms, braces are required.
-
-        - Syms need not be uppercase.
-
-        - The syntax is a bit odd for complex situations, but good
-          for simple ones.
-
-        - Support parameter mode to let user select among the common styles:
-
-            Style     | Parameters  | Positionals | Choices | Examples
-            ------------------------------------------------------------------------------
-            Angle     | <>          | <>          | {}      | git, picocli, docopt-default
-            Sensitive | UPPER       | lower       | {}      | argparse, clii, OptionParser
-            Lower     | lower       | lower       | () []   | POSIX, many Unix utilities
-            Upper     | UPPER       | UPPER       | ?       | rsync
-            FlexParam | <> or UPPER | <>          | () []   | docopt-supported
-
-            - Parentheses or brackets are used where needed to resolve
-              ambiguity between parameters and arguments.
-
-            - Unclear how docopt handles choices: maybe braces or parens/brackets.
-
-            - Not sure why Git uses braces for choices: angle brackets just work
-              across the board:
-
-                --foo <a>        # <a> is a sym.
-                --foo <a|b|c>    # 
-
-Spec as a Python format string:
-
-    - This complexity won't be needed. The grammar syntax is not using braces.
-
-    - Backquote any format specifications.
-
-        -f {=`{f_choices}`}    Blah blah [`{f_default}`]
-
-    - Pre-parse the text:
-
-        - Find the backquote-braced parts of the text.
-
-        - Perform the format operation on them.
-
-        - Assemble the text and then feed it to the grammar parser.
-
-        - Error pos/line/col numbers will be from the perspective of the
-          post-format text. Parser should raise errors that provide context to
-          locate the spot of failure.
+        - Defer this until a use case is known.
 
 --------
 strategy-reassessment: Reassess the strategy
 --------
 
-After further reflection and looking again at the various job-client*
-example scripts, I think I underestimated the power of the text-based
-configuration syntax.
+After further reflection and looking again at the various job-client* example
+scripts, I realize I underestimated the power of the text-based configuration
+syntax.
 
     - It's true that I did find writing the literal help text tedious. I also
       dislike the idea that it will lack dynamic formatting behavior.
@@ -397,24 +327,25 @@ configuration syntax.
       as syntax, not literal help text.
 
 Consider which parts of the ultimate help text must be typed directly by the
-programmer.
+programmer:
 
     - Option or argument names.
     - Help text for each option/argument.
     - Metavars.
     - Aliases.
     - Section names.
+    - Choice values (if simple strings).
 
 The simplest, clearest way to write that material is as a block of options
 text. Lines likes these cover all of those bases:
 
-    General:
+    General::
     --job-id -j ID    : The job id.
     --od-user -u USER : Open Directory user who submitted the job.
 
 The only other configurations are (a) syntax for complex grammars, and (b)
-stuff well handled by the API (ntimes, defaults, types, conversion, validation,
-sometimes choices, dispatch, etc).
+stuff well handled by the API (defaults, types, conversion, validation,
+dispatch, sometimes choices, etc).
 
 And this text-centric approach is flexible in allowing a variety of
 usage patterns:
@@ -429,10 +360,10 @@ usage patterns:
       generally, the literal-text approach is ineffecient in requiring a usage
       grammar every time (as docopt does).
 
-If we end up taking this approach, the write-up will need to be reframed to
-emphasize the debt to the text-based argument parsers and to criticize the API
-approach for being so inefficient. Give a good example to illustrate the
-comparison.
+The write-up will need to be reframed to emphasize the debt to the text-based
+argument parsers and to criticize the API approach for being so inefficient. In
+the writeup place greater emphasis on some practical examples illustrating the
+superiority of the text-based approach over argparse.
 
 --------
 world-needs-optopus: Why the world needs a better command line argument parser

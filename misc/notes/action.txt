@@ -4,29 +4,28 @@ todos: TODOs
 
 grammar-syntax:
 
-    - Editing pass over new plan.
+    - Revise specification.
 
-    - Reassess whitespace rules after new plan settles.
-
-    - Revise specification based on new plan.
-
-    - Better organize discussion material as specification is being finalized.
+    - Organize new discussion material as specification is finalized.
 
 optopus-vs-argparse-demos:
+
     - Realistic programs of varying complexity.
     - Demonstrate superiority of Optopus.
 
-Publish:
+Write-up: why Optopus?
+
+--------
+road-map: Road map
+--------
+
+Publish beta:
     - README
     - setup.py
     - tasks.py
     - dev.txt
     - Publish.
     - Check in pypi and confirm pip-install.
-
---------
-road-map: Road map
---------
 
 Core algorithms:
 
