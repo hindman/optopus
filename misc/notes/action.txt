@@ -2,18 +2,17 @@
 todos: TODOs
 --------
 
-grammar-syntax:
+Grammar parsing:
 
-    - Revise specification.
+    - classes-and-attributes: editing pass.
 
-    - Organize new discussion material as specification is finalized.
-
-optopus-vs-argparse-demos:
-
-    - Realistic programs of varying complexity.
-    - Demonstrate superiority of Optopus.
+    - Edit notes and draft implementation.
 
 Write-up: why Optopus?
+
+    - optopus-vs-argparse-demos
+
+    - Write-up
 
 --------
 road-map: Road map
@@ -38,8 +37,6 @@ Core algorithms:
     Look into Github Actions.
 
 Core enhancements:
-
-    Opt creation via convenience syntax.
 
     Error selection during failed argument parsing.
 
@@ -71,11 +68,13 @@ Alternative inputs: basics:
 
     Aliases.
 
-    Tight binding of option and parameter: --opt=PARAM.
+    Tight binding of option and parameter: --opt=<param>
 
     Short-flag bundling.
 
     Option-prefix customization.
+
+    Quoting customization.
 
     Non-option arguments having option prefix: negative numbers.
 
@@ -100,6 +99,8 @@ Opt enhancements:
     opening (with encoding, mode, etc). Also support `-` for stdin/stdout.
 
 Alternative inputs: handy:
+
+    Case-sensitive grammar syntax and usage text.
 
     Abbrevations for long-options.
 

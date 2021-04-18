@@ -2,6 +2,6 @@
 class Grammar:
     pass
 
-class GrammarParser:
+class SpecParser:
     pass
 

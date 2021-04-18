@@ -2,23 +2,114 @@
 grammar-syntax: Grammar syntax
 --------
 
-Overall structure:
+Spec structure:
 
-    foo` : PARTIAL_DEFINITION
-    bar  : VARIANT_DEFINITION
+    grammar-section
+    [sections...]
 
-    Defintions can span multiple lines. Leading colon is required.
+    - The grammar-section is required, but can be empty. If empty, presumably
+      opt-help lines are found in the sections.
 
-        foo` : Blah blah
-             : blah blah
-             : blah blah
-        bar  : Blah
+Grammar section forms:
+
+    Variants | Form           | Note
+    -----------------------------------------------
+             | [prog]         |
+    0        | [opt-help...]  | Most common use case
+    -----------------------------------------------
+             | [prog] ::      |
+    1+       | variant...     | Explicit syntax
+    -----------------------------------------------
+    1        | [prog] variant | Convenience syntax
+    -----------------------------------------------
+
+    - In the first two forms, prog must be on its own line. The distinction
+      lies in the explicit marker.
+
+    - In the single-variant convenience syntax, the prog and variant must be on
+      the same line.
+
+    - Literal text not allowed in this section.
+
+    - Prog must be a valid name.
+
+    - The section name cannot be configured via syntax.
+
+Opt help lines:
+
+    - Syntax:
+
+        <pos>            [: [help-text]]
+        [alias...] --opt [: [help-text]]
+
+    - Normal grammar rules apply when defining a <pos> or --opt.
+
+    - An alias is a lone option, not a full Opt configuration.
+
+    - Continuation lines must be indented and contiguous.
+
+Variants:
+
+    - Syntax:
+
+        [name[!] :] definition
+
+        Where ! denotes a partial variant.
+
+    - Continuation lines must be indented and contiguous.
+
+Sym-dest:
+
+    - Variable end-user inputs (positionals and parameters) are enclosed in
+      angle brackets, which can contain a sym-dest.
+
+        <sym-dest>
+
+    - Syntax:
+
+        <sym.dest=vals>
+        --dest <sym.subdest=vals>
+
+        Where vals can be:
+
+            val|val|... | Choices
+            val         | Positional or parameter variant.
+
+        Where sym translates to usage text as follows:
+
+            sym. : <sym>
+            sym! : sym
+
+        And where a single <name> means the following:
+
+            Positionals | <dest>       | The name is dest and sym
+            Options     | --dest <sym> | The name is sym
+
+    - Forms:
+
+        - Postitionals require a dest, so there are only four forms:
+
+            <dest>
+            <dest=vals>
+            <sym.dest>
+            <sym.dest=vals>
+
+        - Options do not require subdest, so there are eight forms:
+
+            --dest <>
+            --dest <=vals>
+            --dest <sym>
+            --dest <sym=vals>
+            --dest <.subdest>
+            --dest <.subdest=vals>
+            --dest <sym.subdest>
+            --dest <sym.subdest=vals>
 
 Variant definition syntax:
 
-    Variants:
+    Partial:
 
-        foo`             Insert the foo partial into the current partial or variant.
+        foo!             Insert foo partial into the variant.
 
     Grouping and alternatives:
 
@@ -31,45 +122,23 @@ Variant definition syntax:
     Quantifiers:
 
         ...              1 or more
-        +                1 or more
-        *                0 or more
-        ?                0 or 1
         {m,n}            Repetition: m through n, inclusive.
         ?                Non-greedy for preceding quantifier.
 
-    Positional arguments:
-
-        <xy>             Positional.
-        <xy=a|b>         Positional choices.
-        <xy=foo>         Positional variant.
-
     Options:
 
-        -x               Short.
-        --xy             Long.
+        -f               Short.
+        --foo            Long.
 
-    Option parameters:
+    Positionals and parameters:
 
-        Unnamed          Named
-        --------------------------------------------------
-        -p {}            -p {x}         Parameter.
-        -p _             .              Parameter.
-        -p {=a|b}        -p {x=a|b}     Parameter choices.
-        -p {=foo}        -p {x=foo}     Parameter variant.
+        <sym-dest>       Positional.
+        -f <sym-dest>    Option.
 
-    Literals:
+    Quoted literals:
 
-        'hello world'    Literal: can be used as positional, positional choice,
-                         positonal variant, parameter choice, or parameter variant.
-
-    Convenience syntax when configuring a single Opt:
-
-        DROPPING THIS
-
-        Positionals      Options
-        --------------------------------------------------------
-        x x [x]          -f _ [_]       Brackets/braces unneeded
-        x=a|b|c          -f a|b         Choices.
+        `hello`          Can be used as positional, positional
+                         choice/variant, or parameter choice/variant.
 
     Whitespace rules:
 
@@ -77,18 +146,45 @@ Variant definition syntax:
 
             - Each variant must start on its own line.
 
-            - Continuation lines for variants and opt-help must be indented.
+            - Continuation lines for variants and opt-help must be indented and
+              contiguous.
 
-            - Section start must be on its own line ending in marker.
+            - Section start must be on its own line, ending in marker.
 
-            - Grammar section must have prog on first line is some usages.
+            - Grammar section must have prog on first line in some usages.
 
         - Tight-binding required among syntax elements:
 
             - Option prefix with name.
 
-            - Partial name with back-quote (this could be optional, but
-              there is no benefit).
+            - Partial name with marker.
+
+Sections:
+
+    - Syntax:
+
+        [Title] ::
+        section-content
+
+    - Title is optional, but marker is required. The title, if supplied,
+      functions as a kind of identifier for the Section in the API.
+
+    - Section content:
+
+        - Consists of either ordinary text or opt-help lines, which can be
+          mixed in any line-by-line way (they cannot be on the same lines).
+
+        - If a line parses as opt-help, it will be interpreted that way (unless the
+          user prevents that via back-quoting).
+
+    - Quoting:
+
+        Situation         | Suppressed  | Default markers
+        -------------------------------------------------
+        Block quote       | Syntax/wrap | ```    ```
+        Block quote       | Syntax      | ```?   ```
+        Inline quote      | Syntax      | `      `
+        Literal backquote | Syntax      | \`
 
 --------
 syntax-examples: Syntax examples
@@ -96,48 +192,51 @@ syntax-examples: Syntax examples
 
 blort-maker:
 
-    - This is generally a subcommand-style script, plus various bells and
-      whistles to exercise most of the full grammar syntax.
+    - This is a subcommand-style script, plus various bells and whistles to
+      exercise most of the full grammar syntax.
 
-    help`         : [--help] [--syntax]
-    general`      : [--verbose] [--log-file {}] help`
-    other`        : [--hi] [--bye]
+    help!     : [--help] [--syntax]
+    general!  : [--verbose] [--log-file <>] help!
+    other!    : [--hi] [--bye]
 
-    configure     : help` general` <task=configure> --env {} --user {}
-    submit        : help` general` <task=submit> -c {} -r {} [--start-job] [--person {name} {age}]
-    get           : help` general` <task=get> -j {} [--json [--indent {}] | --b64 | --yaml]
-    drop          : help` general` <task=drop> <what=first|last|random> [--print] <n>
-    fubb          : help` other` [-a] [-b] <fubb>... (--fast | --slow)
-    zzz           : help` other` [-x] [-y] items=(<a> <b> <c> [-z]){2,7}
+    configure : help! general! <task=configure> --env <> --user <>
+    submit    : help! general! <task=submit> -c <> -r <> [--start-job] [--person <name> <age>]
+    get       : help! general! <task=get> -j <> [--json [--indent <>] | --b64 | --yaml]
+    drop      : help! general! <task=drop> <what=first|last|random> [--print] <n>
+    fubb      : help! other! [-a] [-b] <fubb>... (--fast | --slow)
+    zzz       : help! other! [-x] [-y] items=(<a> <b> <c> [-z]){2,7}
 
 neck-diagram:
 
     - This is a non-standard command line program: its grammar consists of one
       or more subcommands with a literal separator between them.
 
-    cmd` :  commands=(
+    cmd! :  commands=(
                 <cmd=snum>   <snum>             |
                 <cmd=fnum>   <fnum>             |
                 <cmd=number> <numbering=on|off> |
                 <cmd=tuning> <notes>...         |
                 <cmd=fret>   <syms>...          |
                 <cmd=invert> <syms>...
-            )...
+            )
 
-    main : cmd` [ '/' cmd` ]...
+    main : cmd! [ `/` cmd! ]...
 
-Sytax example: nab:
+Syntax example: nab:
 
     - Another separator-based grammar.
     - But an interesting separator.
 
-    cmd` : '-s' <cmd=chomp>                          |
-           '-s' <cmd=findall> <rgx>                  |
-           '-s' <cmd=grep> <rgx> [-i] [-v] [-s]      |
-           '-s' <cmd=range> <start> <stop> [<step>]  |
-           '-s' <cmd=run> <code> [-g {}] [-a]
+    cmd! : (
+            `-s` <cmd=chomp>                          |
+            `-s` <cmd=findall> <rgx>                  |
+            `-s` <cmd=grep> <rgx> [-i] [-v] [-s]      |
+            `-s` <cmd=range> <start> <stop> [<step>]  |
+            `-s` <cmd=run> <code> [-g <>] [-a]
+           )
 
-    main : [--help] commands=cmd`...
+    main : commands=(cmd!...)
+    help : --help
 
 --------
 terminology: Terminology
@@ -178,25 +277,10 @@ Command line argument types:
 
 Help text sections:
 
-    - Terminology in this project:
-        - Help text: documents everything.
-        - Usage text: documents the command-line grammar.
-        - Options text: documents the options and positional arguments, perhaps in groups.
-        - Custom sections.
-
-    - Command line style:
-        - Usage.
-        - Positional arguments.
-        - Options and/or option groups.
-        - Custom sections.
-
-    - Man-page style:
-
-        - NAME
-        - SYNOPSIS
-        - DESCRIPTION
-        - OPTIONS
-        - Custom sections.
+    - Help text: documents everything.
+    - Usage text: documents the command-line grammar.
+    - Options text: documents the options and positional arguments, perhaps in groups.
+    - Custom sections.
 
 Destination assignment:
 
@@ -222,8 +306,8 @@ Overview:
         Relationships:
 
             Parser
-                sections      = List[Section]      # 0+
-                grammar       = Grammar            # 0 or 1
+                sections      = List[Section]      # 1+   # Usage always exists.
+                grammar       = Grammar            # 1    # Empty grammar ok.
                     variants  = List[Variant]      # 0+
                         elems = List[Group or Opt] # 0+
 
@@ -234,11 +318,11 @@ Overview:
 
     Objects used during grammar parsing:
 
-        GrammarParser      | Parses a spec, returns Grammar.
-        RegexLexer         | Lexer used by GrammarParser.
-        TokType            | Token types given to lexer.
-        Token              | Emitted by lexer.
-        ParseElem          | Emitted by parser functions. Later assembled into Grammar.
+        SpecParser | Parses a spec, returns Grammar.
+        RegexLexer | Lexer used by SpecParser.
+        TokType    | Token types given to lexer.
+        Token      | Emitted by lexer.
+        ParseElem  | Emitted by parser functions. Later assembled into Grammar.
 
     Objects used during argument parsing:
 
@@ -269,6 +353,7 @@ Parser:
     sections  | Defer.
     format    | Defer. Data object to namepsace formatting attributes. Was 'formatter_config'.
     helpful   | Defer.
+    syntax    | Defer. Data object to configure syntax parsing and usage text rules.
     --------------------------------------------------------------------------------
     prog      | Drop. Handled via the spec or under format.
     wildcards | Drop. Was used to support * as a match-anything device.
@@ -281,7 +366,7 @@ Parser:
             Parser(spec = None, grammar = None, ...)
 
                 - The spec/grammar arguments are mutex and optional.
-                - Other arguments are defferred.
+                - Other arguments are deferred.
 
             parse(args = None, mode = ...) -> Result or raise
 
@@ -338,10 +423,10 @@ Parser:
 
                 - For example, setting a bunch of Opt.text values:
 
-                    config_each('text', {
-                        'foo': 'Blah',
-                        'bar': 'Blah blah',
-                    })
+                    config_each('text', dict(
+                        foo = 'Blah',
+                        bar = 'Blah blah',
+                    ))
 
         - Obtaining help text or text for the error from most recent parse():
 
@@ -482,7 +567,7 @@ Result:
 
     - An iterable mapping-like object with destinations as the attributes.
 
-GrammarParser:
+SpecParser:
 
     Attribute | Note
     --------------------------------------------------------------------------------
@@ -550,7 +635,7 @@ Token:
 ParseElem:
 
     - Simple internal data object emitted by the parsing phase of
-      GrammarParser.parse(). Subsequent work in that method will convert the
+      SpecParser.parse(). Subsequent work in that method will convert the
       ParseElem into a user-facing Grammar.
 
     Kinds:

@@ -29,7 +29,7 @@ class RegexLexer(object):
         else:
             return None
 
-class GrammarParser:
+class SpecParser:
 
     # General parsing methods (formerly in the mixin).
 
