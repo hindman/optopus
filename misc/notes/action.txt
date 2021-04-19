@@ -4,9 +4,18 @@ todos: TODOs
 
 Grammar parsing:
 
-    - classes-and-attributes: editing pass.
+    - tokenization: figure out plan:
 
-    - Edit notes and draft implementation.
+        - grammar section
+
+        - other sections
+
+    - parsing:
+
+        - parsing functions
+        - ParseElem
+
+    - Notes on the algo, both prior and new: editing pass.
 
 Write-up: why Optopus?
 

@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-import sys
 import argparse
 
 ACTIONS = 'create read update delete'.split()
@@ -13,7 +12,7 @@ ARG_PARSE_DATA = (
     ['-x',             dict(action = 'append', nargs = 2)],
     ['-z',             dict(nargs = '+')],
     ['--op',           dict(choices = ACTIONS, help = 'The operation to perform')],
-    ['--foo',          dict()],
+    ['--1blat',        dict()],  # works but you must use getattr(opts, '1blat').
 )
 
 ap = argparse.ArgumentParser()

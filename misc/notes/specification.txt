@@ -105,6 +105,22 @@ Sym-dest:
             --dest <sym.subdest>
             --dest <sym.subdest=vals>
 
+Names:
+
+    - Various grammar elements have names:
+
+        - Variants.
+        - Partials.
+        - Destinations.
+
+    - Optopus allows both typical names and non-standard ones (eg, names
+      starting with underscore or even digit).
+
+    - However, the dest will be normalized as follows:
+
+        - Hyphens converted to underscores.
+        - Attach underscore prefix to dest starting with digit.
+
 Variant definition syntax:
 
     Partial:
@@ -152,6 +168,8 @@ Variant definition syntax:
             - Section start must be on its own line, ending in marker.
 
             - Grammar section must have prog on first line in some usages.
+
+            - For opt-help lines with help text, colon must be on first line.
 
         - Tight-binding required among syntax elements:
 
@@ -341,7 +359,7 @@ Parser:
 
     - Class will likely have various getters or query functionality to make it
       easy to configure specific grammar elements. Users should not have to
-      manually navigate the Grammar hierarchy very often.
+      manually navigate the Grammar hierarchy.
 
     Attribute | Note
     --------------------------------------------------------------------------------
@@ -380,8 +398,7 @@ Parser:
                 - Query paths are based on Opt.dest, Variant.name, and
                   Group.dest or Group.index.
 
-                - The vast majority of queries will be for leaf nodes: the
-                  Opts.
+                - The vast majority of queries will be for Opts:
 
                     query('foo', 'bar')
 
@@ -598,7 +615,7 @@ RegexLexer:
 
     API:
 
-        See _old.py implementation and modifications in _draft.py.
+        See old.py implementation and modifications in draft.py.
 
 TokType:
 
@@ -638,6 +655,8 @@ ParseElem:
       SpecParser.parse(). Subsequent work in that method will convert the
       ParseElem into a user-facing Grammar.
 
+    - Attributes for each kind of ParseElem will vary.
+
     Kinds:
 
         variant
@@ -660,8 +679,8 @@ ArgResult:
 
 Target:
 
-    - A data object used during argument parsing to store the
-      information ultimately returned as a Result to end user.
+    - A data object used during argument parsing to store the information
+      ultimately returned as a Result to end user.
 
     - For the applicable parsing interpretation, a Target contains information
       about all relevant Opt/Pos and values parsed so far.

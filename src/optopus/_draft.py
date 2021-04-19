@@ -1,3 +1,49 @@
+'''
+
+TODO:
+
+    sym.dest=vals
+
+Spec tokens:
+
+    - Regex snippets:
+
+        Spippet | Pattern
+        ------------------------------------------
+        nm      | \w
+        nm-sep  | [_-]
+        name    | nm (nm-sep nm)*
+        sp-tab  | [ \t]
+
+    - Token names and regexes, in order of evaluation:
+
+        Tokens            | Pattern
+        ------------------------------------------
+        quoted-literal    | `[^`]+?`
+        newline           | \n          emit=False
+        indent            | ^ sp-tab*
+        whitespace        | \s+         emit=False
+        quantifier-range  | \{ \s* ( \d+ | \d+ \s* , | \d+ \s* , \s* \d+ ) \s* \}
+        paren-open        | \(
+        paren-close       | \)
+        brack-open        | \[
+        brack-close       | \]
+        angle-open        | \<
+        angle-close       | \>
+        choice-sep        | BAR
+        one-or-more-dots  | \.\.\.
+        question          | \?
+        long-option       | -- name
+        short-option      | - nm
+        assign            | name? =
+        section-name      | name sp-tab* ::
+        partial-defintion | name ` sp-tab* :
+        variant-defintion | name sp-tab* :
+        partial-usage     | name `
+        number            | \d+                     # Needed?
+
+'''
+
 class RegexLexer(object):
 
     # Modifications to track (LINE, COL)
@@ -36,6 +82,8 @@ class SpecParser:
     def __init__(self):
         self.curr = None
         self.prevpeek = []
+        self.lexer = RegexLexer(text, SPEC_TOKENS)
+        self.handlers = (...)
 
     def parse(self):
         # Consume and yield as many tokens as we can.
@@ -218,6 +266,7 @@ class SpecParser:
 
     def parameter_definition(self):
         # Handle nameless param via underscore.
+        # TODO: dropped the nameless-param idea.
         if self.peek(nameless-param):
             return Parameter(None, None)
 

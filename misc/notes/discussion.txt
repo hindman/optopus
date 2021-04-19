@@ -851,12 +851,69 @@ Option parameters:
 grammar-parsing-algo: Parsing the grammar syntax
 --------
 
+New notes:
+
+    - need to be able to peek farther ahead:
+
+        - in grammar section, an opt-help line can look like a variant line
+          for a few tokens, until the colon
+
+        - outside the grammar section, the same thing can occur: line
+          looks like opt-help until some token other than colon occurs
+
+    - thus, need prev-peeks deque, rather than just self.curr
+
+    - might need to emit whitespace from lexer, because some syntax rules
+      impose whitespace requirements.
+
+    - the deque offers two approaches:
+
+        - better peek tools:
+            - peek that returns token(s) rather than bool
+            - peek_until(X)
+            - peek(X)                # Look for [WHITESPACE...] X
+            - peek(X, exact = True)  # Look for X
+
+        - barf():
+            - eat freely within a single handler, holding tentative tokens
+            - but if that path fails non-fatally, call barf(toks) to put them in deque again
+
+    - track more, possibly things like:
+        - paragraph num
+        - paragraph type (text or empty)
+        - indent of the line the token started on
+        - the line itself
+
+    - advanced peek/barf solutions probably not needed for section markers,
+      because we can use high-precendence tokens like the following:
+
+        section-name
+        section-title
+        blockquote-regular
+        blockquote-syntax
+
+    - To create the section help text:
+
+        - The ParseElem coming from a section will be line-oriented.
+        - Blank and other lines are rendered as-is.
+        - OptHelp lines are generated via the derived configuration.
+
 Phase 1: input normalization:
 
     - Accept text and/or lines of text.
     - Join into a block of text.
 
-Phase 2: lexing:
+Phase 2: separate grammar section from other sections:
+
+    - The grammar section differs and other sections differ in their handlers
+      and possibly tokens.
+
+    - The other sections will use line-oriented ParseElem: SectionTitle,
+      BlankLine, OptHelp, and OtherLine.
+
+    - So parsing a spec will make two SpecParser.parse() calls.
+
+Phase 3: lexing:
 
     - Remember that the lexer analyzes character by character to emit
       a flat streem of the meaningful atomic units of the language.
@@ -865,50 +922,10 @@ Phase 2: lexing:
       of those units is syntactically valid.
 
     - Nor does it try to assemble those character-based atoms into fully
-      meaningful entitities, other than in cases where they must be assemble to
-      avoid ambiguitity with similar tokens.
+      meaningful entitities, other than in cases where they must be assembled
+      to avoid ambiguitity with similar tokens.
 
-    - Regex snippets to build the token regexes:
-
-        Spippets | Pattern
-        ------------------------------------------
-        letter   | [A-Za-z]
-        nm       | letter (letter | \d)*
-        name     | nm ([-_] nm)*
-
-    - Token names and regexes, in order of evaluation:
-
-        Tokens            | Pattern
-        ------------------------------------------
-        quoted-literal    | '[^']+?'
-        newline           | \n          emit=False
-        whitespace        | \s+         emit=False
-        quantifier-range  | \{ \s* ( \d+ | \d+ \s* , | \d+ \s* , \s* \d+ ) \s* \}
-        paren-open        | \(
-        paren-close       | \)
-        brack-open        | \[
-        brack-close       | \]
-        brace-open        | \{
-        brace-close       | \}
-        angle-open        | \<
-        angle-close       | \>
-        choice-sep        | BAR
-        zero-or-more      | \*
-        one-or-more       | +
-        one-or-more-dots  | \.\.\.
-        question          | \?
-        assign            | =
-        long-option       | -- name
-        short-option      | - letter
-        partial-defintion | name ` \s* :
-        variant-defintion | name \s* :
-        continuation      | :
-        partial-usage     | name `
-        name              | name
-        number            | \d+
-        nameless-param    | _
-
-Phase 3: parsing:
+Phase 4: parsing:
 
     - A parser's job is to eat a stream of tokens, organizing them into
       meaningful and valid units, and emitting those units to the caller.
@@ -920,27 +937,23 @@ Phase 3: parsing:
           tokens listed above.
 
     - Focus now on the full grammar. Convenience syntax can be handle later via
-      a different subclass, different tokens, different parser functions, or
+      a different subclass, different tokens, different handlers, or
       some combo.
 
-    - Parser functions should be substantive from the perspective of the
+    - Handlers should be substantive from the perspective of the
       language, not low level.
 
-    - Since a grammar is just a sequence of Variant, the mixin
-      will be given just one parser function. The more fine-grained method
-      calling will occur in the subclass. [Subsequently decided
-      to drop the mixin.]
+    - Since a grammar is just a sequence of Variant (no longer true: other
+      possibility is OptHelp), there will be just one handler. The more
+      fine-grained method calling will occur in the subclass.
 
-    - See _draft.py for draft of the parser functions and some related
+    - See draft.py for draft of the handlers and some related
       changes to RegexLexer.
 
-Phase 4: interpretation:
+Phase 5: assembly:
 
-    - Reassess whether this phase is a good idea: leaning in that
-      direction.
-
-    - The parser phase is the most complex, so don't overburden it
-      with the duty of creating the ultimate grammar elements.
+    - The parser phase is the most complex, so don't overburden it with the
+      duty of creating the ultimate grammar elements.
 
     - Instead, keep the parser simpler by having it emit simple AST-style
       objects.
@@ -2298,6 +2311,9 @@ grammar and opt-help metadata.
 
     - Presumably the purpose would be to insert material into help text that is
       more under the domain of Optopus than the user.
+
+    - Another possible use case is to call format() after end-user
+      arguments are parsed -- eg, in response to error.
 
     - Defer this until a use case is known.
 
