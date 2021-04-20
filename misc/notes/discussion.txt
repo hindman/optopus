@@ -853,6 +853,50 @@ grammar-parsing-algo: Parsing the grammar syntax
 
 New notes:
 
+    - The cleaner way to implmented extended peeks:
+
+        - Implement get_next_token() to take a peek_pos argument, which it will
+          just pass to match_token().
+
+        - That method will anchor regex searches on self.pos + peek_pos. The
+          latter has a default of 0.
+
+        - When peek_pos > 0, the lexer will not advance the lexer location
+          metadata on a hit.
+
+        - In this way we can peek are far as we like without managing a deque
+          in the parser or altering the lexer state.
+
+        - The parser's peek() method will manage peek_pos. Successful eat()
+          calls will reset peek_pos.
+
+    - Parsing grammar section:
+
+        if peek(section-variant):
+            # Get prog, if any.
+            # We expect 1+ variant.
+
+        else:
+            # Get prog, if any.
+            # We expect 0+ opt-help.
+
+    - Parsing
+
+    - Parsing section-line:
+
+        -
+
+        def section_line(self):
+            if self.peek((short-option, long-option))
+            if self.peek(
+
+                tok = self.eat_last_peek()
+                name = ...
+                params = self.parse_some(self.parameter)
+                return Opt(name, params, ...)
+            else:
+                return None
+
     - need to be able to peek farther ahead:
 
         - in grammar section, an opt-help line can look like a variant line
@@ -865,6 +909,12 @@ New notes:
 
     - might need to emit whitespace from lexer, because some syntax rules
       impose whitespace requirements.
+
+        - Another approach is to make TokType more featureful. Let it have an
+          (ATTR, ACTION) tuple. When the token is matched, the lexer will call
+          the method implied by the action name. For example, the newline token
+          would request the nextline action. This becomes a mechanism trigger
+          lexer bookkeeping.
 
     - the deque offers two approaches:
 
@@ -905,13 +955,19 @@ Phase 1: input normalization:
 
 Phase 2: separate grammar section from other sections:
 
+    - Might not need this phase if we tie the section-title token to a
+      section_mode() action, which would adjust the handlers and tokens. The
+      advantage this approach is that we do not have to worry about two parse
+      calls, plus some hacks to start the location metadata in the right place.
+
     - The grammar section differs and other sections differ in their handlers
       and possibly tokens.
 
     - The other sections will use line-oriented ParseElem: SectionTitle,
-      BlankLine, OptHelp, and OtherLine.
+      OptHelp, and OtherLine.
 
-    - So parsing a spec will make two SpecParser.parse() calls.
+    - So SpecParser.parse() will make two call to the underlying parsing
+      code -- once for grammar section and once for the rest.
 
 Phase 3: lexing:
 
@@ -1142,11 +1198,11 @@ ArgResult:
         ArgResult(POS)      | Current arg matched POS.
         ArgResult(UNKNOWN)  | For forge-ahead-mode or parse-known-mode.
 
-How to handle optional Groups:
+How to handle Groups with non-static ntimes:
 
-    - A Group can be optional overall, but have required elements if
-      the Group is triggered by the presence of any of its elements.
-      For example, if either -x or -y are present, both are needed.
+    - A Group can be optional overall (non-static ntimes=(0,1)), but have
+      required elements if the Group is triggered by the presence of any of its
+      elements. For example, if either -x or -y are present, both are needed.
 
         [ -x -y [-i] ]
 
@@ -1418,6 +1474,8 @@ The meaning of nparams, nargs, and ntimes:
         -y                      #  0        (1,1)
         [-y]                    #  0        (0,1)
         [-y {} {}]              #  2        (0,1)
+        -y {} [{}]              #  (1,2)    (1,1)
+        -y {}{3}                #  3        (1,1)      # C
 
     Positionals:                #  nargs    ntimes
 
@@ -1428,12 +1486,22 @@ The meaning of nparams, nargs, and ntimes:
         <x> <x> <x>             #  3        (1,1)      # A
         <x>{3}                  #  1        (3,3)      # B
 
-Is nargs needed? Why not handle it all with ntimes? See the examples marked A
-and B above. There is a subtle difference between the two configurations in the
-returned data, if the user requests non-flattened. Example A would produce [X1,
-X2, X2], but example B would create [[X1], [X2], [X3]]. Generally, users should
-prefer to configure positionals with nargs first, using ntimes only when
-required.
+Is nargs needed? Why not handle it all with ntimes?
+
+    - Examples A and B are similar but differ in their non-flattened data:
+
+        A: [X1, X2, X2]
+        B: [[X1], [X2], [X3]]
+
+    - Users should prefer to configure positionals with nargs first, using
+      ntimes only when required (eg, plural nargs and plural ntimes) or when
+      they want Result data organized a certain way.
+
+    - Example C illustrates that {n,m} is not just for ntimes:
+
+        - Parameters do not have their own independent ntimes attribute.
+
+        - So the quantifier is interpreted as affecting nparams.
 
 Internally, all data assigned to destinations will be stored in a fully
 explicit manner. Assume a list of lists, where nargs/nparams determines the
@@ -1450,30 +1518,28 @@ list(s).
 
     - Add plural ntimes:
 
-        -x _ _ (<z> <z>){3}
+        (<z> <z>){3}
 
-        x = [a1, a2]
-
-        z = [[a1, a2], ..., ...]
+        [[a1, a2], ..., ...]
 
     - Add a layer of nested plural ntimes:
 
-        (  --foo _ _  (-x _ _ <z> <z>){3}  ){4}
+        (
+            --foo <> <>
+            (<z> <z>){3}
+        ){4}
 
         foo: nparams 2, ntimes     4
-        x  : nparams 2, ntimes 3 x 4
         z  : nargs   2, ntimes 3 x 4
 
         foo = [[a1, a2], ..., ..., ...]
 
-        x = [
+        z = [
             [[a1, a2], ..., ...],
             ...
             ...
             ...
         ]
-
-        z = Same structure as x.
 
 Default flattening policy:
 
@@ -1750,7 +1816,7 @@ Decision:
 
     - Within a variant, all Opt/Group dest values must be unique.
 
-    - Opts having the same dest across different variatns are treated as the
+    - Opts having the same dest across different variants are treated as the
       same underlying object, unless:
 
         - The spec requires them to have different configuration, as in
@@ -2113,90 +2179,9 @@ Simplify and unify the syntax:
         - Meaningful whitespace is more intuitive that odd punctuation.
         - Make surviving punctuation as unified/congruous as possible.
 
-Representing variable end-user inputs:
+Use angle brackets for all variable end-user inputs:
 
-    - There are four common styles for representing variable end-user input,
-      along with some differences in details for specific implementations,
-      especially as it relates to choices:
-
-        Style     | Parameters  | Positionals | Choices | Examples
-        ----------------------------------------------------------------------------
-        Angle     | <>          | <>          | {}      | git, picocli
-        Sensitive | UPPER       | lower       | {}      | argparse, many Python/Ruby
-        Lower     | lower       | lower       | () []   | POSIX, many Unix utilities
-        Upper     | UPPER       | UPPER       | ?       | rsync
-        ----------------------------------------------------------------------------
-        Docopt    | <> or UPPER | <>          | () []   | .
-        Optopus   | <>          | <>          | <>      | .
-
-        - Parentheses or brackets are used where needed to resolve ambiguity
-          between parameters and arguments.
-
-        - Unclear how docopt handles choices, but I think it uses
-          parens/brackets.
-
-        - Not sure why Git uses braces for choices: angle brackets seem to work
-          fine and are consistent.
-
-    - We can reject the lower and upper styles:
-
-        - They work poorly for positional variants and parameter variants.
-
-        - Usage text is ambiguous: we cannot distinguish merge/delete
-          (positional variants) from path (variable input).
-
-            frob [-f] merge [-x] [-y] path
-            frob [-f] delete [-z] path
-
-    - The sensitive style is not so easily dismissed:
-
-        - It handles most situations:
-
-            frob [-f] merge [-x] [-y] PATH
-            frob [-f] delete [-z] PATH
-
-        - And the Python/Ruby community is accustomed to it (from argparse and
-          its predecessor, optparse).
-
-        - It does fail if the variant values need to be uppercase. Some type of
-          quoting or other syntactic workaround would be needed:
-
-            frob [-f] `MERGE` [-x] [-y] PATH
-            frob [-f] `DELETE` [-z] PATH
-
-    - The angle style is the most robust:
-
-        - In order to produce robust usage text for variants, literal inputs
-          need top precedence.
-
-        - This demands that variable inputs be enclosed, making case-based
-          solutions either flawed or insufficiently robust.
-
-        - Optopus was drifting toward {param} and <pos> as the enclosures:
-
-            - That would also be an odd combo. The only precedent is docopt,
-              which supports it as an alternative syntax.
-
-            - In addition, braces have a semi-conventional role for choices in
-              tools like argparse.
-
-    - Verdict: default to angle style.
-
-        - The clarity of the approach seems to more than counterbalance the
-          small increment of extra typing: all variable inputs are enclosed in
-          the same way (positionals, parameters, and thus choices).
-
-        - The approach has strong precedent, especially from Git.
-
-        - When needed, use parentheses or brackets to disambiguate parameters
-          and positionals. That will be rare because: (1) most use cases do not
-          require an explicit grammar; (2) most options are optional and will
-          be bracketed already; and (3) most ambiguitities can be resolved by
-          adjust option ordering in the grammar.
-
-        - If needed later, support other styles for usage text and grammar
-          syntax (especially sensitive). Note that sensitive style in usage
-          text is partially supported via the SYM! notation.
+    - See variable-end-user-input.
 
 Punctuation markers:
 
@@ -2204,7 +2189,7 @@ Punctuation markers:
 
         Situation       | Marker       | When required
         -------------------------------------------------
-        Grammar section | Double colon | If multi-variant
+        Grammar section | Double colon | If variant(s)
         Other sections  | Double colon | Always
         Opt help        | Colon        | If help text
         Variant         | Colon        | If named
@@ -2316,4 +2301,102 @@ grammar and opt-help metadata.
       arguments are parsed -- eg, in response to error.
 
     - Defer this until a use case is known.
+
+--------
+variable-end-user-input: Representing variable end-user inputs
+--------
+
+There are four common styles for representing variable end-user input, along
+with some differences in details for specific implementations, especially as it
+relates to choices:
+
+    Style     | Parameters  | Positionals | Choices | Examples
+    ----------------------------------------------------------------------------
+    Angle     | <>          | <>          | {}      | git, picocli
+    Sensitive | UPPER       | lower       | {}      | argparse, many Python/Ruby
+    Lower     | lower       | lower       | () []   | POSIX, many Unix utilities
+    Upper     | UPPER       | UPPER       | () [] ? | rsync
+    ----------------------------------------------------------------------------
+    Docopt    | <> or UPPER | <>          | () [] ? | .
+    Optopus   | <>          | <>          | <>      | .
+
+    - Unclear how docopt and rsync handle choices, but I think they use
+      parens/brackets.
+
+Upper and lower styles: easily rejected:
+
+    - They work poorly for positional variants and parameter variants.
+
+    - Usage text is ambiguous: we cannot distinguish merge/delete
+      (positional variants) from path (variable input).
+
+        frob [-f] merge [-x] [-y] path
+        frob [-f] delete [-z] path
+
+Sensitive style: better but not fully robust:
+
+    - It handles most situations:
+
+        frob [-f] merge [-x] [-y] PATH
+        frob [-f] delete [-z] PATH
+
+    - And the Python/Ruby community is accustomed to it.
+
+    - It does fail if the variant values need to be uppercase. Some type of
+      quoting or other syntactic workaround would be needed:
+
+        frob [-f] `MERGE` [-x] [-y] PATH
+        frob [-f] `DELETE` [-z] PATH
+
+Angle style: robust due to greed:
+
+    - In order to produce robust usage text for variants, literal inputs need
+      top precedence.
+
+    - More generally, treating text (whether in grammar syntax or usage text)
+      as literal by default, it an good baseline (eg, that is how regex works).
+
+    - The conclusion is that variable inputs must be enclosed, making
+      case-based solutions either flawed or insufficiently robust.
+
+    - Optopus was drifting toward {param} and <pos> as the enclosures:
+
+        - That would also be an odd combo. The only precedent is docopt,
+          which supports it only as an alternative syntax.
+
+        - In addition, braces have a semi-conventional role for choices in
+          tools like argparse, so using them for parameters would be
+          anti-conventional.
+
+    - Will there be ambiguities if parameters and positionals have the
+      same enclosure?
+
+        --point <x> <y>   # How many parameters?
+
+    - Initially, I thought that parentheses/brackets could resolve such matters
+      (see Git usage text, for example). But the brackets do not solve the
+      problem by themselves. For example, is this an optional option with 2
+      parameters or an optional group with a flag and 2 positionals?
+
+        [--point <x> <y>]
+
+    - Once again, embracing a greedy policy sorts everything out. If parameters
+      bind eagerally to angle-bracketed inputs, then the example above is a
+      2-parameter option.
+
+Verdict: angle style:
+
+    - The clarity of the approach seems to more than counterbalance the
+      small increment of extra typing: all variable inputs are enclosed in
+      the same way (positionals, parameters, and thus choices).
+
+    - The approach has strong precedent, especially from Git.
+
+    - Brackets and greedy will sort out any ambiguitity:
+
+        [--point <x> <y>] <z>  # 2-param option, required positional.
+
+    - If needed later, support other styles for usage text and grammar
+      syntax (especially sensitive). Note that sensitive style in usage
+      text is partially supported via the SYM! notation.
 

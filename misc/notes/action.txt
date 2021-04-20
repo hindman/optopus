@@ -2,13 +2,212 @@
 todos: TODOs
 --------
 
+opt-help: grammar supported:
+
+    - Not supported:
+
+        x : defin            Variants.
+        x!                   Partials.
+        x=[]  x=()           Named groups.
+        <x=1>  -y <=2>       Positional/parameter variants.
+
+    - Supported:
+
+        -x <>                Options.
+        <x>                  Positionals.
+        <sym.dest=choices>   Sym-dest with choices.
+        -x <=a|b|`do it`>    Literals in choices.
+        [] ()                Groups.
+        |                    Alternatives for choices.
+        ...  {m,n}  ?        Quantifiers.
+
+opt-help issues:
+
+    When is there a single Opt vs multiple?
+
+        <x>{2,3}           # Opt(x, nargs=(2,3))
+        <x> <x> [<x>]      # Opt(x, nargs=2)  Opt(x, nargs=1, ntimes=(0,1))
+        <x> (<x> <x>)...   # Opt(x)  Opt(x, nargs=2, ntimes=(0,None))
+
+    All of this discussion of multiple behind-the-scenes Opts with the facades
+    presenting a unified view for configuration/result seem overly complex. A
+    hassle to implement and all kinds of difficulties in usage and help text.
+
+        - Tighten and simplify.
+
+        - Disallow re-use of the same dest within a variant, example in
+          contiguous grammar syntax where the appearance of multiple Opts
+          is just a convenience syntax for nargs/nparams.
+
+            - PROBLEM:
+
+                - There is no way for nab to work if we impose this rule.
+
+            - OK:
+
+                # Contiguous and affecting only nargs.
+                <x> <x> [<x>]
+
+                # Re-use in different variants.
+                # Opts are independent, but jointly configurable.
+                a : <x> -y
+                b : <x> -z
+
+            - Not OK:
+
+                <x> -y <x> -z [<x>]
+                (<x> | <x> <x> <x>)
+
+            - What about this: does the Group get the ntimes or do the Opts?
+
+                (<x> <x> -f <>)...
+
+    OK
+
+        [<x>]
+        <x> <x> [<x>]
+
+        -x (<> | <> <> <>)     # Could work if nargs, nparams, ntimes allow collection
+                               # Except we were already using a 2-tuple.
+
+
+    INVALID in opt-help
+
+        # This is not mergeable into single Opt.
+
+        (<x> | <x> <x> <x>)
+
+The Opt independence issue is spiraling:
+
+    See:
+        How to handle Groups with non-static ntimes:
+        parsed-data-structure
+
+    Should there be a distinction between Opt.ntimes and Group.ntimes (one or
+    more groups are possible)?
+
+        The discussion in parsed-data-structure sort of implied that the
+        Group.ntimes is simply applied to the underlying Opts.
+
+        But the Groups do impose their own requirments.
+
+            [ -x -y [-i] ]
+
+            Initially, if we apply Group.ntimes to the Opts:
+                Opt(x, ntimes=(0,1))
+                Opt(y, ntimes=(0,1))
+                Opt(i, ntimes=(0,1))
+
+                But if -y is seen, the requirements for x changes.
+
+            A more formal structure seems better:
+
+                Group(
+                    Opt(x, ntimes=1),
+                    Opt(y, ntimes=1),
+                    Opt(i, ntimes=(0,1)),
+                    ntimes=(0,1),
+                )
+
+            And if there were nested Group.ntimes, we do not have a clear way
+            of applying those attributes to the Opts.
+
+                ((<z> <z>){3}){4}
+
+                Group(
+                    Opt(z, nargs=2, ntimes=3),
+                    ntimes=4,
+                )
+
+            One could try to flatten Group.ntimes down to Opts:
+
+                ((<z> <z>){3}){4}
+
+                Opt(z, nargs=2, ntimes=3, gtimes=(4,)),
+
+                [ -x -y [-i] ]
+
+                Opt(x, ntimes=1, gtimes=(0,1)),
+                Opt(y, ntimes=1, gtimes=(0,1)),
+                Opt(i, ntimes=(0,1), gtimes=(0,1)),
+
+            But Groups do have other attributes: dest and maybe validate. And
+            it seems difficult to imagine all consequences of grammar
+            flattening. Every time I experimented with it in the past, problems
+            were encountered.
+
+            It is possible that a Target might flatten gtimes down to the Opts
+            purely for convenience during parsing. But it seems important to
+            retain the ability to impose requirements at the Group level rather
+            than only at the Opt level.
+
+            During spec parsing, we can prune groups than enclose single Opts.
+
+                [-x]    # Simplifies to Opt(x, ntimes=(0,1))
+                (<x>)   # A pointless group.
+
+Simplify the opt-help syntax by requiring that the aliases consist of nothing
+more than single options (no other grammar elements):
+
+    -f [--foo <>]          # OK.
+    -o (--opt <> <>){3}    # OK.
+    [-f --foo <>]          # Do not support this??
+
+    Not sure that adding a touchy rule like that is worth it. We know that
+    opt-help lines require most of the grammar syntax (including parentheses,
+    as shown above). What's the benefit of the rule if we really have to
+    support mostly the full grammar anyway. Just parse the full expression and
+    then evaluate it to make sure it defines nothing more than a single Opt.
+
+destination-scopes: edit:
+
+    - Repeated appearances of the sames dest will create independent Opt
+      instances -- basically what you see in the grammar syntax is what you get
+      in the grammar.
+
+        NOTE: seems like a bad approach....
+
+        # Syntax.
+        <foo> (<foo> <foo>)...
+
+        # Grammar.
+        elems = (
+            Opt(foo, nargs = 1),
+            Group(
+                elems = [Opt(foo, nargs=2)],
+                ntimes = (1,None),
+            ),
+        )
+
+        - Revisit my notes on Result data structure.
+
+            - The foo target will be like this:
+
+                foo : [
+                    a1,
+                    [[a1, a2]...]
+                ]
+
+            - In result, we try to flatten, but they cannot be merged sensibly.
+              So just return as-is.
+
+    - Drop the discussion of user configuring independence:
+
+        * SEEMS BAD. JUST TIGHTEN RULES: require uniq dest within variants.
+
+        - Opts are independent in the grammar.
+        - Querying and configuration are flexible.
+        - Results are unified.
+
+Quantifiers:
+
+    - Support something like a range step?
+    - Support sets for disjoint quantities?
+
+    <x>{0,6,2}      # 0, 2, 4, 6
+    <x>{!1,2,3,5}   # 1, 2, 3, or 5
+
 Grammar parsing:
-
-    - tokenization: figure out plan:
-
-        - grammar section
-
-        - other sections
 
     - parsing:
 

@@ -55,6 +55,7 @@ toc: Table of contents
         strategy-reassessment         | Reassess the strategy
         grammar-syntax-revisited      | Grammar syntax revisited
         spec-as-format-string         | Spec as a format string not needed
+        variable-end-user-input       | Representing variable end-user inputs
 
     dev.txt
 

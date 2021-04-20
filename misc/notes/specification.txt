@@ -12,28 +12,21 @@ Spec structure:
 
 Grammar section forms:
 
-    Variants | Form           | Note
-    -----------------------------------------------
-             | [prog]         |
-    0        | [opt-help...]  | Most common use case
-    -----------------------------------------------
-             | [prog] ::      |
-    1+       | variant...     | Explicit syntax
-    -----------------------------------------------
-    1        | [prog] variant | Convenience syntax
-    -----------------------------------------------
-
-    - In the first two forms, prog must be on its own line. The distinction
-      lies in the explicit marker.
-
-    - In the single-variant convenience syntax, the prog and variant must be on
-      the same line.
-
-    - Literal text not allowed in this section.
+    Variants | Form
+    ----------------------------
+             | [prog]
+    0        | [opt-help...]
+    ----------------------------
+             | [prog] ::
+    1+       | variant...
+    ----------------------------
 
     - Prog must be a valid name.
 
-    - The section name cannot be configured via syntax.
+    - The first variant can be on same line as prog, or not.
+
+    - The grammar section does not allow regular text and cannot have its title
+      (Usage) changed via the spec.
 
 Opt help lines:
 
@@ -41,6 +34,8 @@ Opt help lines:
 
         <pos>            [: [help-text]]
         [alias...] --opt [: [help-text]]
+
+    - Note that the grammar portion of each line can contain square brackets.
 
     - Normal grammar rules apply when defining a <pos> or --opt.
 
@@ -149,33 +144,12 @@ Variant definition syntax:
     Positionals and parameters:
 
         <sym-dest>       Positional.
-        -f <sym-dest>    Option.
+        -f <sym-dest>    Parameter.
 
     Quoted literals:
 
         `hello`          Can be used as positional, positional
                          choice/variant, or parameter choice/variant.
-
-    Whitespace rules:
-
-        - Whitespace required:
-
-            - Each variant must start on its own line.
-
-            - Continuation lines for variants and opt-help must be indented and
-              contiguous.
-
-            - Section start must be on its own line, ending in marker.
-
-            - Grammar section must have prog on first line in some usages.
-
-            - For opt-help lines with help text, colon must be on first line.
-
-        - Tight-binding required among syntax elements:
-
-            - Option prefix with name.
-
-            - Partial name with marker.
 
 Sections:
 
@@ -199,10 +173,31 @@ Sections:
 
         Situation         | Suppressed  | Default markers
         -------------------------------------------------
-        Block quote       | Syntax/wrap | ```    ```
-        Block quote       | Syntax      | ```?   ```
+        Block quote       | Syntax      | ```    ```
+        Block quote       | Syntax/wrap | ```!   ```
         Inline quote      | Syntax      | `      `
         Literal backquote | Syntax      | \`
+
+Whitespace rules:
+
+    - Whitespace required:
+
+        - Each variant must start on its own line.
+
+        - Continuation lines for variants and opt-help must be indented and
+          contiguous.
+
+        - Section start must be on its own line, ending in marker.
+
+        - Grammar section must have prog on first line in some usages.
+
+        - For opt-help lines with help text, colon must be on first line.
+
+    - Tight-binding required among syntax elements:
+
+        - Option prefix with name.
+
+        - Partial name with marker.
 
 --------
 syntax-examples: Syntax examples
@@ -243,17 +238,22 @@ neck-diagram:
 Syntax example: nab:
 
     - Another separator-based grammar.
-    - But an interesting separator.
+    - Note that Opt.dest values need to be repeated.
+
+    TODO: This violates the prohibition on reusing an Opt.dest within the same
+    variant. And there is no easy workaround. The program needs all commands to
+    be in the same variant (a subcommand-style won't work here). So
+    how do we reuse Opt.dest values in the same variant?
 
     cmd! : (
-            `-s` <cmd=chomp>                          |
-            `-s` <cmd=findall> <rgx>                  |
-            `-s` <cmd=grep> <rgx> [-i] [-v] [-s]      |
-            `-s` <cmd=range> <start> <stop> [<step>]  |
-            `-s` <cmd=run> <code> [-g <>] [-a]
+            / <cmd=chomp>                             |
+            / <cmd=findall> <rgx>                     |
+            / <cmd=grep> <rgx> [-i] [-v] [-s]         |
+            / <cmd=range> <start> <stop> [<step>]     |
+            / <cmd=run> <code> [-g <>] [-a] [-v] [-i]
            )
 
-    main : commands=(cmd!...)
+    main : [--trace] commands=(cmd!)...
     help : --help
 
 --------
@@ -501,6 +501,7 @@ Variant:
 
     Attribute | Note
     --------------------------------------------------------------------------------
+    name      | .
     elems     | List[Group or Opt]
     ntimes    | .
     --------------------------------------------------------------------------------
@@ -511,6 +512,7 @@ Group:
     --------------------------------------------------------------------------------
     elems     | List[Group or Opt]
     ntimes    | .
+    dest      | .
     validate  | Defer. Callable(s).
     --------------------------------------------------------------------------------
 

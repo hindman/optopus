@@ -12,7 +12,7 @@ ARG_PARSE_DATA = (
     ['-x',             dict(action = 'append', nargs = 2)],
     ['-z',             dict(nargs = '+')],
     ['--op',           dict(choices = ACTIONS, help = 'The operation to perform')],
-    ['--1blat',        dict()],  # works but you must use getattr(opts, '1blat').
+    ['--1h',           dict()],  # works but you must use getattr(opts, '1h').
 )
 
 ap = argparse.ArgumentParser()

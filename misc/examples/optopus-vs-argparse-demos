@@ -51,7 +51,7 @@ def ispositive(n):
 
 # Optopus.
 
-p = Parser('pgrep [-i] [-v] <rgx>')
+p = Parser('pgrep :: [-i] [-v] <rgx>')
 
 # Argparse.
 

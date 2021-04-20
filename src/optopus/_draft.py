@@ -1,46 +1,61 @@
 '''
 
-TODO:
-
-    sym.dest=vals
-
 Spec tokens:
 
-    - Regex snippets:
+    Spippet   | Pattern
+    ------------------------------------------
+    nm        | \w+
+    name      | nm ([_-] nm)*
+    prog-name | name \. nm
+    sp-tab    | [ \t]
+    sp-nl     | \s* \n
+    num       | \d+
+    q         | \s* , \s*
+    quant     | num | num q | q num | num q num
 
-        Spippet | Pattern
-        ------------------------------------------
-        nm      | \w
-        nm-sep  | [_-]
-        name    | nm (nm-sep nm)*
-        sp-tab  | [ \t]
+    Tokens            | Pattern                     | Note
+    ----------------------------------------------------------------
+    quoted-block      | ```[\s\S]*?```              | .
+    quoted-literal    | `[^`]+?`                    | .
+    newline           | \n                          | Ignore
+    indent            | ^ sp-tab*                   | Ignore, act
+    whitespace        | \s+                         | Ignore
+    quantifier-range  | \{ \s* (quant) \s* \}       | .
+    paren-open        | \(                          | .
+    paren-close       | \)                          | .
+    brack-open        | \[                          | .
+    brack-close       | \]                          | .
+    angle-open        | \<                          | .
+    angle-close       | \>                          | .
+    choice-sep        | BAR                         | .
+    triple-dot        | \.\.\.                      | .
+    question          | \?                          | .
+    long-option       | -- name                     | .
+    short-option      | - nm                        | .
+    section-name      | prog-name? sp-tab* :: sp-nl | Grammar
+    section-title     | .*? :: sp-nl                | Section, act
+    section-variant   | .*? ::                      | .
+    partial-defintion | name ! sp-tab* :            | Grammar
+    variant-defintion | name sp-tab* :              | Grammar
+    partial-usage     | name !                      | Grammar
+    name-assign       | name =                      | .
+    name-nl           | name sp-nl                  | .
+    name              | name                        | .
+    assign            | =                           | .
+    sym-dot           | [!.]                        | .
+    opt-help-text     | : .*                        | .
 
-    - Token names and regexes, in order of evaluation:
+    Token         | Action
+    ------------------------------------------
+    indent        | set self.indent
+    section-title | set self.state
 
-        Tokens            | Pattern
-        ------------------------------------------
-        quoted-literal    | `[^`]+?`
-        newline           | \n          emit=False
-        indent            | ^ sp-tab*
-        whitespace        | \s+         emit=False
-        quantifier-range  | \{ \s* ( \d+ | \d+ \s* , | \d+ \s* , \s* \d+ ) \s* \}
-        paren-open        | \(
-        paren-close       | \)
-        brack-open        | \[
-        brack-close       | \]
-        angle-open        | \<
-        angle-close       | \>
-        choice-sep        | BAR
-        one-or-more-dots  | \.\.\.
-        question          | \?
-        long-option       | -- name
-        short-option      | - nm
-        assign            | name? =
-        section-name      | name sp-tab* ::
-        partial-defintion | name ` sp-tab* :
-        variant-defintion | name sp-tab* :
-        partial-usage     | name `
-        number            | \d+                     # Needed?
+    Lexer state:
+
+        The state is just a name.
+
+        TokType will have an attribute that can be used to declare the token
+        relevent only for specific lexer states. None means all states.
 
 '''
 
@@ -49,11 +64,39 @@ class RegexLexer(object):
     # Modifications to track (LINE, COL)
 
     def __init__(self, text, token_types):
-        ...
+        self.text = text
+        self.token_types = token_types
         self.pos = 0
         self.line = 0
         self.col = 0
-        ...
+        self.state = 1
+        self.max_pos = len(self.text) - 1
+
+    def get_next_token(self):
+        # Starting at self.pos, try to emit the next Token.
+        # If we find a valid token, there are two possibilities:
+        #
+        # - A Token that we should emit: just return it.
+        #
+        # - A Token that we should suppress: break out of the for-loop,
+        #   but try the while-loop again. This will allow the Lexer
+        #   to be able to ignore any number of suppressed tokens.
+        #
+        tok = True
+        while tok:
+            for tt, emit, rgx in self.token_types:
+                tok = self.match_token(rgx, tt)
+                if tok:
+                    if emit:
+                        return tok
+                    else:
+                        break
+        # If we did not return a Token above, we should be
+        # at the end of the input text.
+        if self.pos > self.max_pos:
+            return Token(EOF, None)
+        else:
+            self.error()
 
     def match_token(self, rgx, token_type):
         m = rgx.match(self.text, pos = self.pos)
@@ -75,13 +118,36 @@ class RegexLexer(object):
         else:
             return None
 
+    def error(self):
+        fmt = 'RegexLexerError: pos={}'
+        msg = fmt.format(self.pos)
+        raise RegexLexerError(msg)
+
+    # Is the new code going to need RegexLexer to be iterable?
+    # I don't think so. Commenting this out. Iteration does
+    # not make sense.
+
+    # def __iter__(self):
+    #     self.is_eof = False
+    #     return self
+
+    # def __next__(self):
+    #     if self.is_eof:
+    #         raise StopIteration
+    #     else:
+    #         tok = self.get_next_token()
+    #         if tok.isa(EOF):
+    #             self.is_eof = True
+    #         return tok
+
 class SpecParser:
 
     # General parsing methods (formerly in the mixin).
 
-    def __init__(self):
+    def __init__(self, text):
+        self.text = text
         self.curr = None
-        self.prevpeek = []
+        self.prevpeek = None
         self.lexer = RegexLexer(text, SPEC_TOKENS)
         self.handlers = (...)
 
@@ -337,7 +403,7 @@ class SpecParser:
             return None
 
     def one_or_more_dots(self):
-        tok = self.eat(one-or-more-dots)
+        tok = self.eat(triple-dot
         return (1, None) if tok else None
 
     def one_or_more(self):
