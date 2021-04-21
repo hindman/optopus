@@ -44,7 +44,6 @@ toc: Table of contents
         grammar-syntax-complexity     | Grammar syntax: is it too complex?
         optional-positional-placement | Optional positionals before required are not a problem
         parse-known-args              | Parse known arguments
-        destination-scopes            | Destination scopes
         zones-not-needed              | Zones not needed
         help-distpatching             | Help distpatching
         argparse-and-greed            | argparse and greediness
@@ -56,6 +55,10 @@ toc: Table of contents
         grammar-syntax-revisited      | Grammar syntax revisited
         spec-as-format-string         | Spec as a format string not needed
         variable-end-user-input       | Representing variable end-user inputs
+        enhanced-quantifiers          | Enhanced quantifiers
+        opt-help-lines                | Opt help lines
+        opt-independence-vs-unity     | Opt independence vs unity when sharing same dest
+        misc-new-notes                | Miscellaneous new notes
 
     dev.txt
 

@@ -1200,9 +1200,10 @@ ArgResult:
 
 How to handle Groups with non-static ntimes:
 
-    - A Group can be optional overall (non-static ntimes=(0,1)), but have
-      required elements if the Group is triggered by the presence of any of its
-      elements. For example, if either -x or -y are present, both are needed.
+    - A Group can be optional overall (optional is one type of non-static), but
+      have required elements if the Group is triggered by the presence of any
+      of its elements. For example, if either -x or -y are present, both are
+      needed.
 
         [ -x -y [-i] ]
 
@@ -1467,7 +1468,7 @@ The meaning of nparams, nargs, and ntimes:
 
     nparams : N of params (for options)
     nargs   : N args (for positionals)
-    ntimes  : Governs only optionality and repetition via {n,m} or its shortcuts.
+    ntimes  : Governs only optionality and repetition via {m,n} or its shortcuts.
 
     Options:                    #  nparams  ntimes
 
@@ -1497,7 +1498,7 @@ Is nargs needed? Why not handle it all with ntimes?
       ntimes only when required (eg, plural nargs and plural ntimes) or when
       they want Result data organized a certain way.
 
-    - Example C illustrates that {n,m} is not just for ntimes:
+    - Example C illustrates that {m,n} is not just for ntimes:
 
         - Parameters do not have their own independent ntimes attribute.
 
@@ -1775,56 +1776,6 @@ Optopus:
         - Name of the unknowns attribute.
 
         - Whether to return (Result, List[unknowns]) tuple, like argparse.
-
---------
-destination-scopes: Destination scopes
---------
-
-By default, a destination used in multiple places within a grammar are assumed
-to refer to the same underlying Opt.
-
-    Example 1:
-
-        <x> <x>
-
-    Example 2:
-
-        foo : <x> [-y]
-        bar : -z -y <x> <x>
-
-    Example 3:
-
-        foo : <x> [-y]
-        bar : -z -y [-x]
-
-    Example 4:
-
-        foo : <x> [-y]
-        bar : -z -y <x>
-
-It seems like the right default behavior, but it opens up some questions:
-
-    (1) What if the grammar contains two or more fundamentally different Opt
-    types for the same destination, as in Example 3?
-
-    (2) What if the user wants different configuration for the same destination
-    in different locations within the grammar? The nab script, for example,
-    seems to demand this kind of flexibility: each nab command needs its Opts
-    to be independently configurable.
-
-Decision:
-
-    - Within a variant, all Opt/Group dest values must be unique.
-
-    - Opts having the same dest across different variants are treated as the
-      same underlying object, unless:
-
-        - The spec requires them to have different configuration, as in
-          Examples 2 and 3.
-
-        - The user explicitly requests independence via the API.
-
-            p.query('x').independent()
 
 --------
 zones-not-needed: Zones not needed
@@ -2399,4 +2350,464 @@ Verdict: angle style:
     - If needed later, support other styles for usage text and grammar
       syntax (especially sensitive). Note that sensitive style in usage
       text is partially supported via the SYM! notation.
+
+--------
+enhanced-quantifiers: Enhanced quantifiers
+--------
+
+Quantifiers could be more featureful:
+
+    - A third parameter similar to a range step:
+
+        <x>{0,6,2}      # 0, 2, 4, 6
+
+    - Ability to support noncontiguous quantities:
+
+        <x>{!1,2,3,5}   # 1, 2, 3, or 5
+
+--------
+opt-help-lines: Opt help lines
+--------
+
+In the grammar syntax, an opt-help line allows any syntax for configuring a
+single Opt, plus two other things: aliases and help text.
+
+I considered adding a rule to require that the aliases, if any, reside
+separate from the grammar of the Opt configuration. An illustration:
+
+    -f [--foo <>]          # OK.
+    -o (--opt <> <>){3}    # OK.
+
+    [-f --foo <>]          # Not OK: the -f alias should be outside brackets.
+
+But the rule seems needlessly touchy. Since configuring a single
+Opt already requires nearly the full grammar, it makes more sense to parse
+the line as follows:
+
+    expression [: [help-text]]
+
+Then examine expression to extract any aliases and validate that it configures
+only a single Opt.
+
+--------
+opt-independence-vs-unity: Opt independence vs unity when sharing same dest
+--------
+
+The grammar syntax is very flexible, so Optopus needs to know how to handle
+unusual situations, including the repetition or reuse of the same dest.
+
+    - Contiguous repetition as a syntactic alternative for nargs/ntimes:
+
+        <x> <x> [<x>]               # Contiguous; condensed during spec parsing.
+        -x [-x]                     # Same.
+
+        -x -y -x                    # Noncontiguous; condensed (option ordering is irrelevant).
+
+    - Reuse across variants:
+
+        foo : <x> [-y]              # Same configuration.
+        bar : -z -y <x>           
+                                  
+        foo : <x> [-y]              # Different configuration.
+        bar : -z -y <x> <x>       
+                                  
+        foo : <x> [-y]              # Different type.
+        bar : -z -y [-x]
+
+    - Reuse across alternatives:
+
+        (-x -y | -a -x -z | -q)     # Same configuration.
+
+        (<x=A|B> | <x> <x> <x>)     # Different configuration.
+        (<x> | <x> <x> <x>)
+
+        (-x | <x> <x>)              # Different type.
+
+    - Reuse within an alternative:
+
+        <x> (<x> <x>)...            # Different configuration.
+        <x> <foo> <x>               # Different configuration (related to arg binding).
+
+        -x <x> <x>                  # Different type.
+
+        - Note: there are no examples here for "same configuration": contiguous
+          will be condensed; noncontiguous positionals cannot have same
+          configuration (arg binding); and noncontiguous options will be
+          condensed.
+
+    - Reuse for separator-based grammars: nab:
+
+        - The nab use case illustrates why Opt independence with the same
+          variant is needed.
+
+        - A separator-based grammar needs a single main grammar where all of
+          the subcommands can be used in sequence (including repetitions).
+
+        chomp!   : / <cmd=chomp>
+        findall! : / <cmd=findall> <rgx> [-a]
+        grep!    : / <cmd=grep> <rgx> [-i] [-v] [-s]
+        range!   : / <cmd=range> <start> <stop> [<step>] [-g]
+        run!     : / <cmd=run> <code> [-g <>] [-a] [-v] [-i]
+
+        main : [--debug] commands=(chomp! | grep! | range! | run!)...
+        help : --help
+
+    TENTATIVE POLICY:
+
+        - During spec parsing, straightforward contiguous repetitions of the
+          same dest will be condensed in the expected way.
+
+        - During configuration, the user can query for Opts in any way they
+          need. And if they define a weird spec that makes it inconvenient to
+          query for Opts individually, that is their own fault (they should
+          have added a Group dest, for example). Worst case, they can query
+          using Group/Opt indexes (rather than dests) or just query for several
+          Opts and then examine their details to pick the one they need to
+          configure.
+
+        - Grammar and argument parsing will not care about dest repetition.
+
+        - Same for Result. It will be "correct" in some sense. Even
+          incompatible Opts can be merged into a Result.dest:
+
+            -x <x> <x>
+
+            Result.x = [
+                bool,
+                [x1, x2],
+            ]
+
+        - For opt-help text, we can let it be driven by Section configuration
+          and uniqueness.
+
+            - Any section containing an opt-help configuration for an Opt will
+              display the opt-help line. This allows the common use case where
+              sometimes one might like an Opt listed in multiple places in the
+              help text.
+
+            - If two Opts having the same dest are in the same Section, Optopus
+              will generate an opt-help line for each Opt, but if the resulting
+              text is the same, it will prune the duplicate.
+
+    Why do we care about Opt independence vs unity at all?
+
+        - Grammar and argument parsing (not really):
+
+            - Both Grammar and Group just have a list of elements (Group/Opt).
+              The dest is not used as a unique key in the grammar.
+
+            - Same applies during parsing: if we see --foo among the arguments
+              we simply ask: "Is there another Opt(--foo) slot that will accept
+              this argument?" Or if we see a positional, we just look for an
+              Opt with an open slot for a positional.
+
+        - Spec parsing (maybe not):
+
+            - Sometimes a repeated use of a dest is just a convenience syntax
+              and Optopus will collapse the multitude to one Opt:
+
+                <x> <x> [<x>]    # Clearer and more conventional.
+                <x>{2,3}         # Compact but not common.
+
+            - But Optopus needs to know how to respond to specs involving
+              Opt.dest reuse in noncontiguous, odd, or incompatible ways.
+
+            --foo --bar <x> <z> <x>     # Noncontiguous, odd, but OK.
+            (<x=A|B> | <x> <x> <x>)     # Different validation rules.
+            (-x | <x> <x>)              # Different Opt types.
+
+        - But if the Grammar does not really care about dest
+          distinctiveness, why should the spec parsing worry about it. If
+          Optopus sees non-contiguous dest repetition, it can just create
+          a new Opt.
+
+        - Are there cases where a dest might be repeated in a noncontiguous
+          fashion, but the user intends the Opts to be unified?
+
+            - Maybe this:
+
+                (-x -y | -a -x -z | -q)
+
+            - But it could be rewritten:
+
+                (-x (-y | -a -z) | -q)
+
+    - Configuration and usage text (yes):
+
+        - If two Opts in a grammar have the same dest, how does the user
+          refer to them individually and collectively?
+
+        - How many opt-help lines should there be? Sometimes a user want
+          one, sometimes multiple.
+
+    - Result (yes):
+
+        - This is the place where Optopus tries to unify everything into a
+          flat structure.
+
+        - But most Opt.dest repetitions will occur across different
+          variants or alternatives, so dest repetition will not exist in
+          the Result.
+
+        - Other dest repetitions will occur if grammar elements are
+          repeated.
+
+        - Consider Result for the nab example:
+
+            - If commands dest is NOT used, the Result will be narrowly
+              correct, but very difficult for the user to understand at
+              runtime, because every dest is just a flat list of values,
+              some of them coming from different cmd invocations.
+
+                Result(
+                    debug = t1,
+                    help  = h1,
+                    cmd   = [chomp, findall, grep, grep, range, run],
+                    rgx   = [       r1,      r2,   r3              ],
+                    i     = [                i1,   i2,          i3 ],
+                    v     = [                v1,   v2,          v3 ],
+                    s     = [                s1,   s2              ],
+                    start = [                            s1        ],
+                    stop  = [                            s1        ],
+                    step  = [                            s1        ],
+                    g     = [                            g1,    g1 ],
+                    code  = [                                   c1 ],
+                    a     = [       a1,                         a2 ],
+                )
+
+            - If commands dest is used, the Result will organize things in
+              a meaningful way.
+
+                Result(
+                    debug = t1,
+                    help  = h1,
+                    commands = [
+                        Result(chomp),
+                        Result(findall, r1, a1),
+                        Result(grep, r2, i1, v1, v1),
+                        Result(grep, r3, i2, v2, v2),
+                        Result(range, s1, s1, s2),
+                        Result(run, i3, v3, g2, c1, a2),
+                    ],
+                )
+
+opt-independence: exploratory notes:
+
+    - Repeated appearances of the sames dest will create independent Opt
+      instances -- basically what you see in the grammar syntax is what you get
+      in the grammar.
+
+        # Syntax.
+        <foo> (<foo> <foo>)...
+
+        # Grammar.
+        elems = (
+            Opt(foo, nargs = 1),
+            Group(
+                elems = [Opt(foo, nargs=2)],
+                ntimes = (1,None),
+            ),
+        )
+
+        - Revisit my notes on Result data structure.
+
+            - The foo target will be like this:
+
+                foo : [
+                    a1,
+                    [[a1, a2]...]
+                ]
+
+            - In result, we try to flatten, but they cannot be merged sensibly.
+              So just return as-is.
+
+    - Drop the discussion of user configuring independence:
+
+        - Opts are independent in the grammar.
+        - Querying and configuration are flexible.
+        - Results are unified.
+
+opt-independence: more exploratory notes:
+
+    All of this discussion of multiple behind-the-scenes Opts with the facades
+    presenting a unified view for configuration/result seem overly complex. A
+    hassle to implement and all kinds of difficulties in usage and help text.
+
+        - Tighten and simplify.
+
+        - Disallow re-use of the same dest within a variant, example in
+          contiguous grammar syntax where the appearance of multiple Opts
+          is just a convenience syntax for nargs/nparams.
+
+            - PROBLEM:
+
+                - There is no way for nab to work if we impose this rule.
+
+        - The issue in nab is that we need to re-use Opt.dest values within the
+          same variant. A subcommand-style grammar will not work; this is a
+          separator-based grammar, which all of the "subcommands" need to be
+          within a single variant (main in the nab example).
+
+        - Perhaps the rule-tightening could be framed this way: Disallow reuse
+          of the same Opt.dest entirely (grammar wide). But understand dest as
+          an inherently hierarchical concept: Variant name/index => Group
+          dest(s) => Opt dest. In this case, nab would work because the
+          repeated usages of the cmd! partial are nested under the 'commands'
+          dest.
+
+            - No ... this doesn't quite work.
+
+            - The Opt.dest of 's' is reused in nab. And it is nested under
+              Group.dest of 'commands'. But the actual dest values are the
+              same: 'commands.s'.
+
+        - OK:
+
+            # Contiguous and affecting only nargs.
+            <x> <x> [<x>]
+
+            # Re-use in different variants.
+            # Opts are independent, but jointly configurable.
+            a : <x> -y
+            b : <x> -z
+
+        - Not OK:
+
+            <x> -y <x> -z [<x>]
+            (<x> | <x> <x> <x>)
+
+        - What about this: does the Group get the ntimes or do the Opts?
+
+            (<x> <x> -f <>)...
+
+    OK
+
+        [<x>]
+        <x> <x> [<x>]
+
+        -x (<> | <> <> <>)     # Could work if nargs, nparams, ntimes allow collection
+                               # Except we were already using a 2-tuple.
+
+The Opt independence issue is spiraling:
+
+    See:
+        How to handle Groups with non-static ntimes:
+        parsed-data-structure
+
+    Should there be a distinction between Opt.ntimes and Group.ntimes (one or
+    more groups are possible)?
+
+        The discussion in parsed-data-structure sort of implied that the
+        Group.ntimes is simply applied to the underlying Opts.
+
+        But the Groups do impose their own requirments.
+
+            [ -x -y [-i] ]
+
+            Initially, if we apply Group.ntimes to the Opts:
+                Opt(x, ntimes=(0,1))
+                Opt(y, ntimes=(0,1))
+                Opt(i, ntimes=(0,1))
+
+                But if -y is seen, the requirements for x changes.
+
+            A more formal structure seems better:
+
+                Group(
+                    Opt(x, ntimes=1),
+                    Opt(y, ntimes=1),
+                    Opt(i, ntimes=(0,1)),
+                    ntimes=(0,1),
+                )
+
+            And if there were nested Group.ntimes, we do not have a clear way
+            of applying those attributes to the Opts.
+
+                ((<z> <z>){3}){4}
+
+                Group(
+                    Opt(z, nargs=2, ntimes=3),
+                    ntimes=4,
+                )
+
+            One could try to flatten Group.ntimes down to Opts:
+
+                ((<z> <z>){3}){4}
+
+                Opt(z, nargs=2, ntimes=3, gtimes=(4,)),
+
+                [ -x -y [-i] ]
+
+                Opt(x, ntimes=1, gtimes=(0,1)),
+                Opt(y, ntimes=1, gtimes=(0,1)),
+                Opt(i, ntimes=(0,1), gtimes=(0,1)),
+
+            But Groups do have other attributes: dest and maybe validate. And
+            it seems difficult to imagine all consequences of grammar
+            flattening. Every time I experimented with it in the past, problems
+            were encountered.
+
+            It is possible that a Target might flatten gtimes down to the Opts
+            purely for convenience during parsing. But it seems important to
+            retain the ability to impose requirements at the Group level rather
+            than only at the Opt level.
+
+            During spec parsing, we can prune groups than enclose single Opts.
+
+                [-x]    # Simplifies to Opt(x, ntimes=(0,1))
+                (<x>)   # A pointless group.
+
+Old notes on Opt independence:
+
+    By default, a destination used in multiple places within a grammar are assumed
+    to refer to the same underlying Opt.
+
+        Example 1:
+
+            <x> <x>
+
+        Example 2:
+
+            foo : <x> [-y]
+            bar : -z -y <x> <x>
+
+        Example 3:
+
+            foo : <x> [-y]
+            bar : -z -y [-x]
+
+        Example 4:
+
+            foo : <x> [-y]
+            bar : -z -y <x>
+
+    It seems like the right default behavior, but it opens up some questions:
+
+        (1) What if the grammar contains two or more fundamentally different Opt
+        types for the same destination, as in Example 3?
+
+        (2) What if the user wants different configuration for the same destination
+        in different locations within the grammar? The nab script, for example,
+        seems to demand this kind of flexibility: each nab command needs its Opts
+        to be independently configurable.
+
+    Decision:
+
+        - Within a variant, all Opt/Group dest values must be unique.
+
+        - Opts having the same dest across different variants are treated as the
+          same underlying object, unless:
+
+            - The spec requires them to have different configuration, as in
+              Examples 2 and 3.
+
+            - The user explicitly requests independence via the API.
+
+                p.query('x').independent()
+
+--------
+misc-new-notes: Miscellaneous new notes
+--------
+
+EMPTY.
 
