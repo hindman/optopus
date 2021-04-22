@@ -2,7 +2,7 @@
 todos: TODOs
 --------
 
-opt-independence-vs-unity: edit and wrap up decisions.
+opt-independence-vs-unity: wrap up edits.
 
 Grammar parsing:
 
