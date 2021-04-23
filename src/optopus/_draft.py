@@ -6,44 +6,44 @@ Spec tokens:
     ------------------------------------------
     nm        | \w+
     name      | nm ([_-] nm)*
-    prog-name | name \. nm
-    sp-tab    | [ \t]
-    sp-nl     | \s* \n
+    prog-name | name ( \. nm )?
+    hws       | [ \t]
+    eol       | hws* \n
     num       | \d+
-    q         | \s* , \s*
-    quant     | num | num q | q num | num q num
+    q         | hws* , hws*
+    quant     | num | q | q num | num q | num q num
 
-    Tokens            | Pattern                     | Note
+    Tokens            | Pattern                 | Note
     ----------------------------------------------------------------
-    quoted-block      | ```[\s\S]*?```              | .
-    quoted-literal    | `[^`]+?`                    | .
-    newline           | \n                          | Ignore
-    indent            | ^ sp-tab*                   | Ignore, act
-    whitespace        | \s+                         | Ignore
-    quantifier-range  | \{ \s* (quant) \s* \}       | .
-    paren-open        | \(                          | .
-    paren-close       | \)                          | .
-    brack-open        | \[                          | .
-    brack-close       | \]                          | .
-    angle-open        | \<                          | .
-    angle-close       | \>                          | .
-    choice-sep        | BAR                         | .
-    triple-dot        | \.\.\.                      | .
-    question          | \?                          | .
-    long-option       | -- name                     | .
-    short-option      | - nm                        | .
-    section-name      | prog-name? sp-tab* :: sp-nl | Grammar
-    section-title     | .*? :: sp-nl                | Section, act
-    section-variant   | .*? ::                      | .
-    partial-defintion | name ! sp-tab* :            | Grammar
-    variant-defintion | name sp-tab* :              | Grammar
-    partial-usage     | name !                      | Grammar
-    name-assign       | name =                      | .
-    name-nl           | name sp-nl                  | .
-    name              | name                        | .
-    assign            | =                           | .
-    sym-dot           | [!.]                        | .
-    opt-help-text     | : .*                        | .
+    quoted-block      | ```[\s\S]*?```          | .
+    quoted-literal    | `[^`]*?`                | .
+    newline           | \n                      | Ignore
+    indent            | ^ hws*                  | Ignore, act
+    whitespace        | hws*                    | Ignore
+    quantifier-range  | \{ hws* (quant) hws* \} | .
+    paren-open        | \(                      | .
+    paren-close       | \)                      | .
+    brack-open        | \[                      | .
+    brack-close       | \]                      | .
+    angle-open        | \<                      | .
+    angle-close       | \>                      | .
+    choice-sep        | BAR                     | .
+    triple-dot        | \.\.\.                  | .
+    question          | \?                      | .
+    long-option       | -- name                 | .
+    short-option      | - nm                    | .
+    section-name      | prog-name? hws* :: eol  | Grammar
+    section-title     | .*? :: eol              | Section, act
+    section-variant   | .*? ::                  | .
+    partial-defintion | name ! hws* :           | Grammar
+    variant-defintion | name hws* :             | Grammar
+    partial-usage     | name !                  | Grammar
+    name-assign       | name =                  | .
+    name-nl           | name eol                | .
+    name              | name                    | .
+    assign            | =                       | .
+    sym-dot           | [!.]                    | .
+    opt-help-text     | : .*                    | .
 
     Token         | Action
     ------------------------------------------
@@ -55,24 +55,19 @@ Spec tokens:
         The state is just a name.
 
         TokType will have an attribute that can be used to declare the token
-        relevent only for specific lexer states. None means all states.
+        relevant only for specific lexer states. None means all states.
 
 '''
 
 class RegexLexer(object):
 
-    # Modifications to track (LINE, COL)
-
     def __init__(self, text, token_types):
         self.text = text
         self.token_types = token_types
-        self.pos = 0
-        self.line = 0
-        self.col = 0
-        self.state = 1
+        self.loc = Loc(0, 0, 0)
         self.max_pos = len(self.text) - 1
 
-    def get_next_token(self):
+    def get_next_token(self, peek_loc = None):
         # Starting at self.pos, try to emit the next Token.
         # If we find a valid token, there are two possibilities:
         #
@@ -85,7 +80,7 @@ class RegexLexer(object):
         tok = True
         while tok:
             for tt, emit, rgx in self.token_types:
-                tok = self.match_token(rgx, tt)
+                tok = self.match_token(rgx, tt, peek_loc)
                 if tok:
                     if emit:
                         return tok
@@ -98,47 +93,40 @@ class RegexLexer(object):
         else:
             self.error()
 
-    def match_token(self, rgx, token_type):
-        m = rgx.match(self.text, pos = self.pos)
-        if m:
-            # Get matched text and locations of newlines inside of it.
-            txt = m.group(0)
-            indexes = [i for i, c in enumerate(text) if c == NL]
-            # Adjust lexer location information.
-            n_chars = len(txt)
-            n_newlines = len(indexes)
-            self.pos += n_chars
-            self.line += n_newlines
-            if indexes:
-                self.col = n_chars - indexes[-1] - 1
-            else:
-                self.col += n_chars
-            # Return Token, including location information.
-            return Token(token_type, txt, Loc(self.pos, self.line, self.col))
-        else:
+    def match_token(self, rgx, token_type, peek_loc = None):
+        # Search for the token.
+        loc = peek_loc or Loc(self.pos, self.line, self.col)
+        m = rgx.match(self.text, pos = loc.pos)
+        if not m:
             return None
 
+        # Get matched text and locations of newlines inside of it.
+        txt = m.group(0)
+        indexes = [i for i, c in enumerate(text) if c == NL]
+
+        # Compute new location.
+        width = len(txt)
+        n_newlines = len(indexes)
+        col = (width - indexes[-1] - 1 if indexes else loc.col + width)
+        loc = Loc(loc.pos + width, loc.line + n_newlines, col)
+
+        # Update lexer location (unless peeking) and return.
+        tok = Token(token_type, txt, width, loc)
+        if not peek_loc:
+            self.loc = loc
+        return tok
+
     def error(self):
-        fmt = 'RegexLexerError: pos={}'
-        msg = fmt.format(self.pos)
+        fmt = 'RegexLexerError: loc={}'
+        msg = fmt.format(self.loc)
         raise RegexLexerError(msg)
 
-    # Is the new code going to need RegexLexer to be iterable?
-    # I don't think so. Commenting this out. Iteration does
-    # not make sense.
-
-    # def __iter__(self):
-    #     self.is_eof = False
-    #     return self
-
-    # def __next__(self):
-    #     if self.is_eof:
-    #         raise StopIteration
-    #     else:
-    #         tok = self.get_next_token()
-    #         if tok.isa(EOF):
-    #             self.is_eof = True
-    #         return tok
+    # I do not think the new code need RegexLexer to be iterable --
+    # or even that it makes sense for this use case.
+    #
+    # Dropping:
+    #   __iter__()
+    #   __next__()
 
 class SpecParser:
 
@@ -152,7 +140,7 @@ class SpecParser:
         self.handlers = (...)
 
     def parse(self):
-        # Consume and yield as many tokens as we can.
+        # Consume and yield as many ParseElem as we can.
         elem = True
         while elem:
             for func in self.handlers:
@@ -163,6 +151,42 @@ class SpecParser:
         # We expect EOF as the final token.
         if not self.curr.isa(EOF):
             self.error()
+
+    # ========================================
+    # New eat() method.
+    # ========================================
+
+    def eat(self, toktype, peek_pos = None):
+        # Normalize input to tuple(TokenType).
+        tts = (toktype,) if isinstance(x, TokenType) else tuple(toktype)
+
+        # Validate.
+        if not tts:
+            raise ...
+
+        # Pull from lexer.
+        if self.curr is None:
+            self.curr = self.lexer.get_next_token()
+            if self.curr.isa(EOF):
+                raise ...
+
+        # Check.
+        for tt in tts:
+            if self.curr.isa(tt):
+                if peek:
+                    return True
+                else:
+                    tok = self.curr
+                    self.curr = None
+                    self.prevpeek = None
+                    return tok
+
+        # Fail.
+        return False if peek else None
+
+    # ========================================
+    # OLD eat/peek methods.
+    # ========================================
 
     def peek(self, toktype):
         ok = self.do_eat(toktype, peek = True)
@@ -207,6 +231,8 @@ class SpecParser:
         # Fail.
         return False if peek else None
 
+    # ========================================
+
     def error(self):
         fmt = 'Invalid syntax: pos={}'
         msg = fmt.format(self.lexer.pos)
@@ -234,7 +260,16 @@ class SpecParser:
 
     # Methods specific to the grammar syntax.
 
-    def variant(self):
+    def variant(self, peek = None):
+
+        # Example peek logic.
+        if peek:
+            defs = (variant-defintion, partial-defintion)
+            return (
+                self.eat(defs, peek = peek) and
+                self.parse_some(self.expression, peek = peek)
+            )
+
         if self.peek((variant-defintion, partial-defintion)):
             tok = self.eat_last_peek()
             var_name = ...
@@ -311,6 +346,10 @@ class SpecParser:
 
     def positional_definition(self):
         # Get the choices or raise.
+        #
+        # Not sure raise makes sense here.
+        # - choices() always returns something
+        # - the method is always called via parenthesized(), which will raise
         choices = self.choices()
         if choices:
             dest = choices.dest
@@ -374,6 +413,7 @@ class SpecParser:
         # Return if no assigned value/choices.
         tok = self.eat(assign)
         if not tok:
+            # Should this return None instead?
             return Choices(dest, tuple())
 
         # Get value/choices.
@@ -403,7 +443,7 @@ class SpecParser:
             return None
 
     def one_or_more_dots(self):
-        tok = self.eat(triple-dot
+        tok = self.eat(triple-dot)
         return (1, None) if tok else None
 
     def one_or_more(self):

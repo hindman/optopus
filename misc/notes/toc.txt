@@ -58,6 +58,7 @@ toc: Table of contents
         enhanced-quantifiers          | Enhanced quantifiers
         opt-help-lines                | Opt help lines
         opt-independence-vs-unity     | Opt independence vs unity when sharing same dest
+        group-level-validation-needed | Why Group-level validation should be retained
         misc-new-notes                | Miscellaneous new notes
 
     dev.txt

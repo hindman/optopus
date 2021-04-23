@@ -43,7 +43,8 @@ def ispositive(n):
 #
 #   pgrep [-i] [-v] <rgx>
 #
-# Optopus much easier: shorter, more intuitive, no API to remember.
+# Optopus much easier: shorter, more intuitive, with less
+# API to remember.
 #
 # Size: Argparse 4.2x bulkier.
 #
@@ -98,7 +99,7 @@ ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select no
 #
 # Example 3a: moderate.
 #
-# A pgrep with more options, plus some conversion/validation
+# A pgrep with more options, plus some conversion, validation,
 # and choices.
 #
 #   pgrep [-i] [-v] <rgx> [<path>...]
@@ -107,7 +108,7 @@ ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select no
 # scan. It provides less flexible conversion/validation (in the
 # argparse example, we ignore isfile and ispositive).
 #
-# Size: Argparse 1.4x bulkier.
+# Size: Argparse 1.5x bulkier.
 #
 ####
 
@@ -125,7 +126,6 @@ p = Parser('''pgrep
     [--color red|green|blue|off] : Highlight matching text [off]
 ''')
 
-p.query(kind = 'opt').usage_group('options')
 p.config('rgx', convert = re.compile)
 p.config('path', convert = Path, validate = isfile)
 p.config('m C B A', convert = int, validate = ispositive)
@@ -149,7 +149,9 @@ ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue',
 # Example 3b: help text for moderate.
 #
 # Optopus help text is cleaner, easier to read, and more aesthetic.
-# The traditional approach for aliases can be configured easily.
+#
+# The traditional approach -- listing aliases with options -- is
+# also supported.
 #
 ####
 

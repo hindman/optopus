@@ -2,8 +2,6 @@
 todos: TODOs
 --------
 
-opt-independence-vs-unity: wrap up edits.
-
 Grammar parsing:
 
     - parsing:
@@ -17,7 +15,25 @@ Write-up: why Optopus?
 
     - optopus-vs-argparse-demos
 
+        - Simple subcommand program.
+
+        - Bigger subcommand program.
+
+        - Stuff argparse cannot do:
+
+            - Simple program with specialized grammar needs.
+
+            - Flexibile Quantifiers.
+
+            - Control over help text, via an intuitive mechanism.
+
     - Write-up
+
+        - Lead with the examples vs. argparse.
+
+        - Then show other stuff library can do.
+
+        - Then pick up the conceptual discussion: text-driven vs API-driven, etc.
 
 --------
 road-map: Road map

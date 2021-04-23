@@ -853,7 +853,7 @@ grammar-parsing-algo: Parsing the grammar syntax
 
 New notes:
 
-    - The cleaner way to implmented extended peeks:
+    - The cleaner way to implment extended peeks:
 
         - Implement get_next_token() to take a peek_pos argument, which it will
           just pass to match_token().
@@ -870,6 +870,9 @@ New notes:
         - The parser's peek() method will manage peek_pos. Successful eat()
           calls will reset peek_pos.
 
+        - Might want to have peeks return tokens too. And add Token.width
+          attribute, so the peeking caller knows how far to adjust peek_pos.
+
     - Parsing grammar section:
 
         if peek(section-variant):
@@ -880,73 +883,41 @@ New notes:
             # Get prog, if any.
             # We expect 0+ opt-help.
 
-    - Parsing
-
     - Parsing section-line:
 
-        -
+        TODO
 
-        def section_line(self):
-            if self.peek((short-option, long-option))
-            if self.peek(
+        - The ParseElem coming from a section will be line-oriented: either
+          its an opt-help line or other-line (the latter rendered as-is).
 
-                tok = self.eat_last_peek()
-                name = ...
-                params = self.parse_some(self.parameter)
-                return Opt(name, params, ...)
+        - What would help is to be able to peek not just at the upcoming tokens
+          but at the level of the parsing handlers. If we had that, you could
+          write things like this:
+
+            ohl = self.opt_help_line(peek_pos = N)
+            if ohl:
+                ...
+                return OptHelp(...)
             else:
-                return None
+                return OtherSectionLine(...)
 
-    - need to be able to peek farther ahead:
+        - Currently, some handlers are not well structured to support that,
+          because they have various conditional parts.
 
-        - in grammar section, an opt-help line can look like a variant line
-          for a few tokens, until the colon
+        - If we decompose the handlers to a finer level (eg, a separate method
+          for each type of Choices), every method would become simple and
+          strict -- meaning no optional components. [Might not be too necessary
+          in general terms. Most handlers are already amenable to peek logic.
+          Just a couple of them need adjustment -- probably manageable.]
 
-        - outside the grammar section, the same thing can occur: line
-          looks like opt-help until some token other than colon occurs
+        - That might make it possible to support handler-level peeks without
+          too much complexity.
 
-    - thus, need prev-peeks deque, rather than just self.curr
-
-    - might need to emit whitespace from lexer, because some syntax rules
-      impose whitespace requirements.
-
-        - Another approach is to make TokType more featureful. Let it have an
-          (ATTR, ACTION) tuple. When the token is matched, the lexer will call
-          the method implied by the action name. For example, the newline token
-          would request the nextline action. This becomes a mechanism trigger
-          lexer bookkeeping.
-
-    - the deque offers two approaches:
-
-        - better peek tools:
-            - peek that returns token(s) rather than bool
-            - peek_until(X)
-            - peek(X)                # Look for [WHITESPACE...] X
-            - peek(X, exact = True)  # Look for X
-
-        - barf():
-            - eat freely within a single handler, holding tentative tokens
-            - but if that path fails non-fatally, call barf(toks) to put them in deque again
-
-    - track more, possibly things like:
-        - paragraph num
-        - paragraph type (text or empty)
-        - indent of the line the token started on
-        - the line itself
-
-    - advanced peek/barf solutions probably not needed for section markers,
-      because we can use high-precendence tokens like the following:
-
-        section-name
-        section-title
-        blockquote-regular
-        blockquote-syntax
-
-    - To create the section help text:
-
-        - The ParseElem coming from a section will be line-oriented.
-        - Blank and other lines are rendered as-is.
-        - OptHelp lines are generated via the derived configuration.
+    - Rather than  emitting whitespace, make TokType more featureful. Let it
+      have an (ATTR, ACTION) tuple. When the token is matched, the lexer will
+      call the method implied by the action name. For example, the newline
+      token would request the nextline action. This becomes a mechanism trigger
+      lexer bookkeeping.
 
 Phase 1: input normalization:
 
@@ -2402,7 +2373,7 @@ examples:
         <x> <x> [<x>]               # Contiguous; can be condensed.
         -x [-x]                     # Same.
 
-        -x -y -x                    # Noncontiguous; can be condensed (option ordering irrelevant).
+        -x -y -x                    # Noncontiguous but condensable (option ordering irrelevant).
 
     - Reuse across variants:
 
@@ -2439,7 +2410,8 @@ examples:
     - Reuse for separator-based grammars: nab:
 
         - The nab use case illustrates why Opt independence within the same
-          variant is sometimes needed.
+          variant is sometimes needed (for a while I had considered disallowing
+          reuse within variants).
 
         - A separator-based grammar needs a single main grammar where all of
           the subcommands can be used in sequence (including repetitions).
@@ -2488,9 +2460,10 @@ Policy decisions:
       Opts with different types: -x <x> <x>. This causes no technical problem,
       because the Result can be merged correctly: Result.x = [bool, [x1, x2]].
       The only problem is that the data has an odd structure. The user can
-      easily fix that. If needed, Optous can support an option to generate
-      unique dests in the Result (eg, via variant/group prefixes). Also see
-      notes below for one type of complex Result (for nab).
+      easily fix that with a different Optopus configuration. If needed, Optous
+      can support an option to generate unique dests in the Result (eg, via
+      variant/group prefixes). Also see notes below for one type of complex
+      Result (for nab).
 
     - Usage text will closely mimic the naming and structure of the user's
       spec. If there is ambiguity from duplicate dests, the user either wants
@@ -2506,10 +2479,12 @@ Policy decisions:
 
 Result for the nab example:
 
-    - If commands dest is NOT used, the Result will be narrowly
-      correct, but very difficult for the user to understand at
-      runtime, because every dest is just a flat list of values,
-      some of them coming from different cmd invocations.
+    - If the 'commands' dest is NOT in the nab spec, the Result will be
+      narrowly correct, but very difficult for the user to understand at
+      runtime, because every dest would be a flat list of values, some of them
+      coming from different 'cmd' invocations. Nonetheless, there is nothing
+      narrowly "incorrect" about this outcome; if the user does not like it,
+      the solution is a better configuration.
 
         Result(
             debug = t1,
@@ -2543,70 +2518,28 @@ Result for the nab example:
             ],
         )
 
-Why Group-level validation should exist:
+--------
+group-level-validation-needed: Why Group-level validation should be retained
+--------
 
-    Should there be a distinction between Opt.ntimes and Group.ntimes (one or
-    more groups are possible)?
+If focusing just on ntimes, one might be tempted to collapse Group validation
+needs (primarily ntimes) down to the Opts. Some of the discussion in
+parsed-data-structure, for example, loosely speaks in such terms.
 
-        The discussion in parsed-data-structure sort of implied that the
-        Group.ntimes is simply applied to the underlying Opts.
+But the Groups do impose their own requirments. In this example, the ntimes of
+the Opts are inter-linked: if any one appears, the requirements of the others
+changes dynamically.
 
-        But the Groups do impose their own requirments.
+    [ -x -y [-i] ]
 
-            [ -x -y [-i] ]
-
-            Initially, if we apply Group.ntimes to the Opts:
-                Opt(x, ntimes=(0,1))
-                Opt(y, ntimes=(0,1))
-                Opt(i, ntimes=(0,1))
-
-                But if -y is seen, the requirements for x changes.
-
-            A more formal structure seems better:
-
-                Group(
-                    Opt(x, ntimes=1),
-                    Opt(y, ntimes=1),
-                    Opt(i, ntimes=(0,1)),
-                    ntimes=(0,1),
-                )
-
-            And if there were nested Group.ntimes, we do not have a clear way
-            of applying those attributes to the Opts.
-
-                ((<z> <z>){3}){4}
-
-                Group(
-                    Opt(z, nargs=2, ntimes=3),
-                    ntimes=4,
-                )
-
-            One could try to flatten Group.ntimes down to Opts:
-
-                ((<z> <z>){3}){4}
-
-                Opt(z, nargs=2, ntimes=3, gtimes=(4,)),
-
-                [ -x -y [-i] ]
-
-                Opt(x, ntimes=1, gtimes=(0,1)),
-                Opt(y, ntimes=1, gtimes=(0,1)),
-                Opt(i, ntimes=(0,1), gtimes=(0,1)),
-
-            But Groups do have other attributes: dest and maybe validate. And
-            it seems difficult to imagine all consequences of grammar
-            flattening. Every time I experimented with it in the past, problems
-            were encountered.
-
-            It is possible that a Target might flatten gtimes down to the Opts
-            purely for convenience during parsing. But it seems important to
-            retain the ability to impose requirements at the Group level rather
-            than only at the Opt level.
-
-            During spec parsing, we can prune groups than enclose single Opts.
-
-                [-x]    # Simplifies to Opt(x, ntimes=(0,1))
-                (<x>)   # A pointless group.
+But Groups do have other attributes: dest and maybe validate. And it seems
+difficult to imagine all consequences of grammar flattening. Every time I
+experimented with it in the past, problems were encountered. It is possible
+that a Target might flatten Group-level ntimes down to the Opts purely for
+convenience during parsing. But it seems important to retain the ability to
+impose requirements at the Group level rather than only at the Opt level.
+Finally, because Groups can nest, storing their requirements at the Opt level
+is not immediately straightforward.
 
 --------
 misc-new-notes: Miscellaneous new notes
