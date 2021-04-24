@@ -2,41 +2,58 @@
 
 TODO:
 
+    - How will opt-help continuation lines be parsed?
+
+        - Without tighter rules, there is no solid way to
+        distinguish contine-opt-help from other-line.
+
+        - What if we simplify everything by requiring
+        users to quote regular text?
+
+        - The backquotes would trigger a parser state.
+
+        - It's a low cost on users and a big help to keep parsing
+        straightforward.
+
+    - I think I got on the wrong track:
+
+        - Grammar section:
+
+            # None of this needs expended peek.
+
+            - Regular token peek for section-variant:
+            - If yes:
+                - Get prog.
+                - Get 1+ variants.
+                    - variant
+                        - continuation
+                    - section-title
+                        - parser state has changed
+                        - break
+
+            - Else:
+                - Get 0+ opt-help.
+                    - opt-help
+                        - continuation
+                    - section-title
+                        - parser state has changed
+                        - break
+
+        - Other sections:
+
+            - Peek-parse the line for opt-help.
+            - If yes:
+                - parse for real as opt-help
+
     x Define TokTypes
     x Implement ploc support in lexer and general parsing methods.
-    . Convert current algo to new approach: see TODO.
+    x Convert current algo to new approach: see TODO.
+    - Revisit ploc code:
+        - Current ploc code has a problem.
+        - You need to peek; then check; then eat for real.
     - Implement new approach.
 
 Implementation notes:
-
-    Implement get_next_token() to take a ploc argument, which it will just
-    pass to match_token().
-
-    That method will anchor regex searches on self.pos + ploc.pos. The latter
-    is a relative value, with default of 0.
-
-    When ploc.pos > 0, the lexer will not advance the lexer location metadata
-    on a hit.
-
-    In this way we can peek are far as we like without managing a deque in
-    the parser or altering the lexer state.
-
-    The lexer's match_token() will manage ploc along with self.loc.
-
-    Have peeks return tokens. I think the code is simpler this way.
-
-    All parser handlers need to manage ploc as well. This will allow a
-    top-level handler to delegate work to its existing handlers, and thus
-    supporting the ultimate goal of being able to peek forward for any
-    structure in the syntax -- as opposed to just peeking forward in the token
-    stream. This flexibility will allow for the ability to attempt parse each
-    section line as opt-help (falling back to other-line in event of failure).
-
-    Rather than  emitting whitespace, make TokType more featureful. Let it
-    have an (ATTR, ACTION) tuple. When the token is matched, the lexer will
-    call the method implied by the action name. For example, the newline token
-    would request the nextline action. This becomes a mechanism trigger lexer
-    bookkeeping.
 
     Parsing grammar section:
 
@@ -325,7 +342,7 @@ class SpecParser:
             else:
                 break
         if len(xs) >= require:
-            return True if ploc else xs
+            return True if ploc else tuple(xs)
         else:
             raise ...
 
@@ -453,16 +470,17 @@ class SpecParser:
         )
 
     def parameter_definition(self, ploc = None):
-        # TODO: basic edit.
-        # TODO: handle ploc.
+        # Parse the choices expression.
+        choices = self.parenthesized(angle-open, 'choices', ploc, empty_ok = True)
 
-        # Parse the expression in braces or raise.
-        choices = self.parenthesized(angle-open, 'choices', empty_ok = True)
-        if not choices:
-            raise ...
+        # Return early on failure or if we are just peeking.
+        if ploc:
+            return bool(choices.dest)
+        elif choices is None:
+            return None
 
-        # Hanlde nameless param via {}.
-        if choices.isa(EmptyToken):
+        # Handle nameless param <>.
+        if not (choices.dest or choices.vals):
             return Parameter(None, None)
 
         # Return named Parameter or ParameterVariant.
@@ -476,9 +494,6 @@ class SpecParser:
         )
 
     def choices(self, ploc = None):
-        # TODO: basic edit.
-        # TODO: handle ploc.
-
         # Used for parameters and positionals. Allows the following forms,
         # where x is a destination and V1/V2 are values.
         #   x
@@ -488,27 +503,34 @@ class SpecParser:
         #   =V1|V2|...
 
         # Get destination, if any.
-        if self.peek(name):
-            tok = self.eat_last_peek()
+        tok = self.eat(name, ploc)
+        if tok:
             dest = ...
         else:
             dest = None
 
         # Return if no assigned value/choices.
-        tok = self.eat(assign)
+        tok = self.eat(assign, ploc)
         if not tok:
-            return Choices(dest, tuple())
+            return True if ploc else Choices(dest, tuple())
 
         # Get value/choices.
         choices = []
-        while self.peek((quoted-literal, name)):
-            val = self.eat_last_peek()
-            choices.append(val)
-            if not self.eat(choice-sep):
+        while True:
+            val = self.eat((quoted-literal, name), ploc)
+            if val:
+                choices.append(val)
+                if not self.eat(choice-sep, ploc):
+                    break
+            else:
                 break
 
         # Return.
-        return Choices(dest, tuple(choices))
+        if choices:
+            return True if ploc else Choices(dest, tuple(choices))
+        else:
+            # Return None here?
+            pass
 
     def quantifier(self, ploc = None):
         quantifier_methods = (
@@ -544,16 +566,15 @@ class SpecParser:
             return None
 
     def parenthesized(self, open_tok, method_name, ploc = None, empty_ok = False):
-        # TODO: basic edit.
-        # TODO: handle ploc.
         close_tok = ...
-        if self.eat(open_tok, ploc):
+        tok = self.eat(open_tok, ploc)
+        if tok:
             method = getattr(self, method_name)
-            tok = method(ploc)
-            if not (tok or empty_ok):
+            elem = method(ploc)
+            if not (elem or empty_ok):
                 raise ...
-            elif self.eat(close_tok):
-                return tok or EmptyToken
+            elif self.eat(close_tok, ploc):
+                return True if ploc else elem
             else:
                 raise ...
         else:
