@@ -851,96 +851,12 @@ Option parameters:
 grammar-parsing-algo: Parsing the grammar syntax
 --------
 
-New notes:
-
-    - The cleaner way to implment extended peeks:
-
-        - Implement get_next_token() to take a peek_pos argument, which it will
-          just pass to match_token().
-
-        - That method will anchor regex searches on self.pos + peek_pos. The
-          latter has a default of 0.
-
-        - When peek_pos > 0, the lexer will not advance the lexer location
-          metadata on a hit.
-
-        - In this way we can peek are far as we like without managing a deque
-          in the parser or altering the lexer state.
-
-        - The parser's peek() method will manage peek_pos. Successful eat()
-          calls will reset peek_pos.
-
-        - Might want to have peeks return tokens too. And add Token.width
-          attribute, so the peeking caller knows how far to adjust peek_pos.
-
-    - Parsing grammar section:
-
-        if peek(section-variant):
-            # Get prog, if any.
-            # We expect 1+ variant.
-
-        else:
-            # Get prog, if any.
-            # We expect 0+ opt-help.
-
-    - Parsing section-line:
-
-        TODO
-
-        - The ParseElem coming from a section will be line-oriented: either
-          its an opt-help line or other-line (the latter rendered as-is).
-
-        - What would help is to be able to peek not just at the upcoming tokens
-          but at the level of the parsing handlers. If we had that, you could
-          write things like this:
-
-            ohl = self.opt_help_line(peek_pos = N)
-            if ohl:
-                ...
-                return OptHelp(...)
-            else:
-                return OtherSectionLine(...)
-
-        - Currently, some handlers are not well structured to support that,
-          because they have various conditional parts.
-
-        - If we decompose the handlers to a finer level (eg, a separate method
-          for each type of Choices), every method would become simple and
-          strict -- meaning no optional components. [Might not be too necessary
-          in general terms. Most handlers are already amenable to peek logic.
-          Just a couple of them need adjustment -- probably manageable.]
-
-        - That might make it possible to support handler-level peeks without
-          too much complexity.
-
-    - Rather than  emitting whitespace, make TokType more featureful. Let it
-      have an (ATTR, ACTION) tuple. When the token is matched, the lexer will
-      call the method implied by the action name. For example, the newline
-      token would request the nextline action. This becomes a mechanism trigger
-      lexer bookkeeping.
-
 Phase 1: input normalization:
 
     - Accept text and/or lines of text.
     - Join into a block of text.
 
-Phase 2: separate grammar section from other sections:
-
-    - Might not need this phase if we tie the section-title token to a
-      section_mode() action, which would adjust the handlers and tokens. The
-      advantage this approach is that we do not have to worry about two parse
-      calls, plus some hacks to start the location metadata in the right place.
-
-    - The grammar section differs and other sections differ in their handlers
-      and possibly tokens.
-
-    - The other sections will use line-oriented ParseElem: SectionTitle,
-      OptHelp, and OtherLine.
-
-    - So SpecParser.parse() will make two call to the underlying parsing
-      code -- once for grammar section and once for the rest.
-
-Phase 3: lexing:
+Phase 2: lexing:
 
     - Remember that the lexer analyzes character by character to emit
       a flat streem of the meaningful atomic units of the language.
@@ -952,7 +868,7 @@ Phase 3: lexing:
       meaningful entitities, other than in cases where they must be assembled
       to avoid ambiguitity with similar tokens.
 
-Phase 4: parsing:
+Phase 3: parsing:
 
     - A parser's job is to eat a stream of tokens, organizing them into
       meaningful and valid units, and emitting those units to the caller.
@@ -970,14 +886,12 @@ Phase 4: parsing:
     - Handlers should be substantive from the perspective of the
       language, not low level.
 
-    - Since a grammar is just a sequence of Variant (no longer true: other
-      possibility is OptHelp), there will be just one handler. The more
-      fine-grained method calling will occur in the subclass.
+    - Because the tokens and handlers differs somewhat between the grammar
+      section and other sections, the parsing needs to be stateful -- advancing
+      to the section state at the first section-tile line after the grammar
+      section.
 
-    - See draft.py for draft of the handlers and some related
-      changes to RegexLexer.
-
-Phase 5: assembly:
+Phase 4: assembly:
 
     - The parser phase is the most complex, so don't overburden it with the
       duty of creating the ultimate grammar elements.

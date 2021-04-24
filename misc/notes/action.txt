@@ -2,14 +2,7 @@
 todos: TODOs
 --------
 
-Grammar parsing:
-
-    - parsing:
-
-        - parsing functions
-        - ParseElem
-
-    - Notes on the algo, both prior and new: editing pass.
+Grammar parsing draft: see notes/TODOs in _draft.py.
 
 Write-up: why Optopus?
 
