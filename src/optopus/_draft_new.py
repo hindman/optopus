@@ -1,83 +1,48 @@
 '''
 
-DO NOT USE:
-
-    - Retained only temporary for easy reference.
-    - See _draft_new.py for the latest notes.
-
 TODO:
 
-    - How will opt-help continuation lines be parsed?
+    - In sections, text is now assumed to be syntax unless it is block-quoted,
+    which eliminates the need for extended peeks.
 
-        - Without tighter rules, there is no solid way to
-        distinguish contine-opt-help from other-line.
+    - Sketch of parsing states, handlers, and state transitions:
 
-        - What if we simplify everything by requiring
-        users to quote regular text?
+        state = grammar-check:
+        handlers : []
 
-        - The backquotes would trigger a parser state.
+            peek for section-variant
+            yes:
+                state = grammar-opt-help 
+                handlers : [section_title, opt_help]
+                on section_title: state = section-opt-help
+            else:
+                state = grammar-variant
+                handlers : [section_title, variant]
+                on section_title: state = section-opt-help
 
-        - It's a low cost on users and a big help to keep parsing
-        straightforward.
+        section-opt-help
+            handlers : [block_quote, section_title, opt_help]
+            on block_quote: state = section-other
 
-    - I think I got on the wrong track:
+        section-other
+            handlers : [block_quote, other_line]
+            on block_quote: state = section-opt-help
 
-        - Grammar section:
+    - Convert RegexLexer and SpecParser back to simple peeks only:
 
-            # None of this needs expended peek.
+        - Just use self.curr.
+        - When reverting, do not return to eat_last_peek().
 
-            - Regular token peek for section-variant:
-            - If yes:
-                - Get prog.
-                - Get 1+ variants.
-                    - variant
-                        - continuation
-                    - section-title
-                        - parser state has changed
-                        - break
+    - Set up the handlers, state management, and top-level SpecParser.parse().
 
-            - Else:
-                - Get 0+ opt-help.
-                    - opt-help
-                        - continuation
-                    - section-title
-                        - parser state has changed
-                        - break
+    - Adjust other code accordingly.
 
-        - Other sections:
+        - It might not be necessary to complete the draft.
 
-            - Peek-parse the line for opt-help.
-            - If yes:
-                - parse for real as opt-help
+        - Perhaps sufficient to adjust a couple of the more complex methods and
+        then just move on to real implementation.
 
-    x Define TokTypes
-    x Implement ploc support in lexer and general parsing methods.
-    x Convert current algo to new approach: see TODO.
-    - Revisit ploc code:
-        - Current ploc code has a problem.
-        - You need to peek; then check; then eat for real.
-    - Implement new approach.
-
-Implementation notes:
-
-    Parsing grammar section:
-
-        if peek(section-variant):
-            # Get prog, if any.
-            # We expect 1+ variant.
-
-        else:
-            # Get prog, if any.
-            # We expect 0+ opt-help.
-
-    Parsing section lines:
-
-        ohl = self.opt_help_line(ploc)
-        if ohl:
-            ...
-            return OptHelp(...)
-        else:
-            return OtherSectionLine(...)
+        - There is now sufficient clarity to move to implementation.
 
 Spec tokens:
 

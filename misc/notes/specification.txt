@@ -182,11 +182,19 @@ Sections:
 
     - Section content:
 
-        - Consists of either ordinary text or opt-help lines, which can be
-          mixed in any line-by-line way (they cannot be on the same lines).
+        - Sections are assumed to contain opt-help lines.
 
-        - If a line parses as opt-help, it will be interpreted that way (unless the
-          user prevents that via back-quoting).
+        - Ordinary text must be block-quoted to suppress interpretation as
+          opt-help syntax.
+
+        - Indentation:
+
+            - Optopus will generally try to preserve the original indentation
+              level of ordinary text -- specifically the indentation of the
+              first line of the paragraph.
+
+            - If line-wrapping is suppressed, Optopus will rendered lines
+              as-is, including each line's indentation.
 
     - Quoting:
 
@@ -196,6 +204,9 @@ Sections:
         Block quote       | Syntax/wrap | ```!   ```
         Inline quote      | Syntax      | `      `
         Literal backquote | Syntax      | \`
+
+        - Block quotes must reside on separate lines: no other characters other
+          than the block-quote marker.
 
 Whitespace rules:
 

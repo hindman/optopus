@@ -2274,6 +2274,10 @@ the line as follows:
 Then examine expression to extract any aliases and validate that it configures
 only a single Opt.
 
+Because it would be difficult to distinguish opt-help continuation lines from
+lines of regular text in a section, I decided to require block-quoting for
+regular text. This keeps parsing relative sane at a modest cost in usage.
+
 --------
 opt-independence-vs-unity: Opt independence vs unity when sharing same dest
 --------

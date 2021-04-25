@@ -2,8 +2,6 @@
 todos: TODOs
 --------
 
-Grammar parsing draft: see notes/TODOs in _draft.py.
-
 Write-up: why Optopus?
 
     - optopus-vs-argparse-demos
@@ -28,10 +26,6 @@ Write-up: why Optopus?
 
         - Then pick up the conceptual discussion: text-driven vs API-driven, etc.
 
---------
-road-map: Road map
---------
-
 Publish beta:
     - README
     - setup.py
@@ -40,11 +34,17 @@ Publish beta:
     - Publish.
     - Check in pypi and confirm pip-install.
 
+--------
+road-map: Road map
+--------
+
 Core algorithms:
 
-    Data-oriented exception strategy.
+    Grammar syntax lexing (see _draft_new.py for token defintions).
 
     Grammar syntax parsing.
+
+    Data-oriented exception strategy.
 
     Argument parsing.
 
