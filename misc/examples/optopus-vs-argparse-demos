@@ -9,6 +9,7 @@ import argparse
 import re
 import os
 from pathlib import Path
+from textwrap import dedent
 
 class Parser:
 
@@ -35,9 +36,12 @@ def isfile(path):
 def ispositive(n):
     return True
 
+def nonnegative(n):
+    return True
+
 ####
 #
-# Example 1: minimal.
+# Example 1: minimal command-line script.
 #
 # Bare-bones grep-clone so you can use Python regexes.
 #
@@ -63,7 +67,7 @@ ap.add_argument('rgx')
 
 ####
 #
-# Example 2: basic.
+# Example 2: basic script.
 #
 # Simple pgrep with help text and optional positionals.
 #
@@ -97,7 +101,7 @@ ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select no
 
 ####
 #
-# Example 3a: moderate.
+# Example 3a: enhanced script.
 #
 # A pgrep with more options, plus some conversion, validation,
 # and choices.
@@ -121,15 +125,12 @@ p = Parser('''pgrep
     [-v --invert-match] : Select non-matching lines
     [-m --max-count <n>] : Stop searching after N matches
     [-C --context <n>] : Print N lines of before/after context
-    [-B --before-context <n>] : Print N lines of before context
-    [-A --after-context <n>] : Print N lines of after context
-    [--color red|green|blue|off] : Highlight matching text [off]
+    [--color red|green|blue] : Highlight matching text
 ''')
 
 p.config('rgx', convert = re.compile)
 p.config('path', convert = Path, validate = isfile)
-p.config('m C B A', convert = int, validate = ispositive)
-p.config('color', default = 'off')
+p.config('m C', convert = int, validate = ispositive)
 
 # Argparse.
 
@@ -140,13 +141,11 @@ ap.add_argument('--ignore-case', '-i', action = 'store_true', help = 'Ignore cas
 ap.add_argument('--invert-match', '-v', action = 'store_true', help = 'Select non-matching lines')
 ap.add_argument('--max-count', '-m', metavar = '<n>', type = int, help = 'Stop searching after N matches')
 ap.add_argument('--context', '-C', metavar = '<n>', type = int, help = 'Print N lines of before/after context')
-ap.add_argument('--before-context', '-B', metavar = '<n>', type = int, help = 'Print N lines of before context')
-ap.add_argument('--after-context', '-A', metavar = '<n>', type = int, help = 'Print N lines of after context')
-ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue', 'off'), help = 'Highlight matching text: red|green|blue [off]')
+ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue'), help = 'Highlight matching text: red|green|blue')
 
 ####
 #
-# Example 3b: help text for moderate.
+# Example 3b: help text.
 #
 # Optopus help text is cleaner, easier to read, and more aesthetic.
 #
@@ -171,7 +170,7 @@ Options:
   --context <n>          Print N lines of before/after context
   --before-context <n>   Print N lines of before context
   --after-context <n>    Print N lines of after context
-  --color <col>          Highlight matching text: red|green|blue [off]
+  --color <col>          Highlight matching text: red|green|blue
 
 Aliases:
   --help                 -h
@@ -179,8 +178,6 @@ Aliases:
   --invert-match         -v
   --max-count            -m
   --context              -C
-  --before-context       -B
-  --after-context        -A
 '''
 
 ARGPARSE_OUTPUT = '''
@@ -201,12 +198,61 @@ optional arguments:
                         Stop searching after N matches
   --context <n>, -C <n>
                         Print N lines of before/after context
-  --before-context <n>, -B <n>
-                        Print N lines of before context
-  --after-context <n>, -A <n>
-                        Print N lines of after context
-  --color <col>         Highlight matching text: red|green|blue [off]
+  --color <col>         Highlight matching text: red|green|blue
 '''
+
+####
+#
+# Example 4: simple subcommand-style program.
+#
+# The program has expanded to include a few regex-based
+# text processing utilities.
+#
+#   wrangle grep [-i] [-v] <rgx> [<path>...]
+#   wrangle sub [-i] [-n N] <rgx> <replacement>
+#   wrangle search [-i] [-g N] [-a] <rgx>
+#
+# Argparse configuration ...
+#
+# Size: Argparse __ bulkier.
+#
+####
+
+# Optopus.
+
+p = Parser('''wrangle ::
+    <task=grep>   [-i] [-v] [-m] [-C]
+                  [--color <red|green|blue>]
+                  <rgx> [<path>...]
+    <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
+    <task=search> [-i] [-g] [-d] <rgx> [<path>...]
+
+    ::
+
+    <task>             : Task to perform
+    <rgx>              : Python regular expression
+    <path>             : Path(s) to input
+    <rep>              : Replacement text
+    -i --ignore-case   : Ignore case
+    -v --invert-match  : Select non-matching lines
+    -m --max-count <n> : Stop searching after N matches
+    -C --context <n>   : Print N lines of before/after context
+    --color            : Highlight matching text
+    -n --nsubs <n>     : N of substitutions
+    -g --group <n>     : Emit just capture group N [0 for all]
+    -d --delim <s>     : Demiter for capture groups [tab]
+''')
+
+p.config('rgx', convert = re.compile)
+p.config('path', convert = Path, validate = isfile)
+p.config('m C n', convert = int, validate = ispositive)
+p.config('g', convert = int, validate = nonnegative)
+
+# Argparse.
+
+# See ~/00_docs/comp/python/examples/argparse/subparsers.py
+
+ap = argparse.ArgumentParser(prog = 'pgrep')
 
 ####
 # Wrap up.

@@ -53,6 +53,15 @@ Variants:
 
     - Continuation lines must be indented and contiguous.
 
+    - Variants can fully configure the opts or use an abbreviated form if the
+      user has defined the Opts explicitly in opt-help lines.
+
+        - The two types of grammar configuration (variants and opt-help
+          lines) are additve.
+
+        - Subsuequent configurations never overwrite an prior settings
+          for an Opt. Each new setting is added to the prior settings.
+
 Sym-dest:
 
     - Variable end-user inputs (positionals and parameters) are enclosed in
@@ -84,20 +93,20 @@ Sym-dest:
 
         - Postitionals require a dest, so there are only four forms:
 
-            <dest>
-            <dest=vals>
-            <sym.dest>
+            <    dest     >
+            <    dest=vals>
+            <sym.dest     >
             <sym.dest=vals>
 
         - Options do not require subdest, so there are eight forms:
 
-            --dest <>
-            --dest <=vals>
-            --dest <sym>
-            --dest <sym=vals>
-            --dest <.subdest>
-            --dest <.subdest=vals>
-            --dest <sym.subdest>
+            --dest <                >
+            --dest <           =vals>    # Equal sign is optional.
+            --dest <sym             >
+            --dest <sym        =vals>
+            --dest <   .subdest     >
+            --dest <   .subdest=vals>
+            --dest <sym.subdest     >
             --dest <sym.subdest=vals>
 
 Names:
@@ -182,10 +191,18 @@ Sections:
 
     - Section content:
 
-        - Sections are assumed to contain opt-help lines.
+        - Sections are assumed to contain four types of lines:
 
-        - Ordinary text must be block-quoted to suppress interpretation as
-          opt-help syntax.
+            - variant-scope lines. Looks the same as as partial usage.
+              Subsequent opt-help lines will be scoped to that variant.
+              Applicable only when Opt.dest values are reused across variants.
+
+            - opt-help lines. Can fully configure an Opt or use an abbreviated
+              form if merely augmenting an already-configured Opt.
+
+            - block-quote lines. Just the markers; nothing else.
+
+            - regular-text lines. Allowed only after opening block-quote.
 
         - Indentation:
 

@@ -6,7 +6,7 @@ Write-up: why Optopus?
 
     - optopus-vs-argparse-demos
 
-        - Simple subcommand program.
+        . Simple subcommand program.
 
         - Bigger subcommand program.
 

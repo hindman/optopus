@@ -82,7 +82,8 @@ Spec tokens:
     partial-defintion | name ! hws* :           | Grammar
     variant-defintion | name hws* :             | Grammar
     partial-usage     | name !                  | Grammar
-    name-assign       | name =                  | .
+    name-assign       | name hws* =             | .
+    sym-dest          | name hws* \. hws* name  | .
     name-nl           | name eol                | .
     name              | name                    | .
     assign            | =                       | .
@@ -472,6 +473,15 @@ class SpecParser:
         #   =V1
         #   =V1|V2|...
 
+        # Need to parse this differently.
+        # Just looking for a name at the front
+        # will get confused about these two forms:
+        #
+        #   <sym>
+        #   <val|val|val> 
+        #
+        # There are more tokens to take advantage of now.
+
         # Get destination, if any.
         tok = self.eat(name, ploc)
         if tok:
@@ -499,7 +509,7 @@ class SpecParser:
         if choices:
             return True if ploc else Choices(dest, tuple(choices))
         else:
-            # Return None here?
+            # Return None here: equal without choices is invalid.
             pass
 
     def quantifier(self, ploc = None):
