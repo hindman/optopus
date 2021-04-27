@@ -4,16 +4,6 @@ todos: TODOs
 
 Write-up: why Optopus?
 
-    - optopus-vs-argparse-demos
-
-    - Write-up
-
-        - Lead with the examples vs. argparse.
-
-        - Then show other stuff library can do.
-
-        - Then pick up the conceptual discussion: text-driven vs API-driven, etc.
-
 Publish beta:
     - README
     - setup.py

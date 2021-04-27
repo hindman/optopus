@@ -2,6 +2,14 @@
 why-optopus: Why Python needs a better command line argument parser
 --------
 
+NOTES:
+
+    - Lead with the examples vs. argparse.
+
+    - Then show other stuff library can do.
+
+    - Then pick up the conceptual discussion: text-driven vs API-driven, etc.
+
 MORE NOTES:
 
     - I considered creating another optopus-vs-argparse demo involving an even
