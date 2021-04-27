@@ -473,6 +473,20 @@ Ruby GLI
 problems-scenarios-from-argparse: Problems scenarios from argparse
 --------
 
+https://stackoverflow.com/questions/35847084
+
+    Wants to customize help text capitalization to mimic standard English usage
+    for section titles. The answers demostrate the absurdity of trying to
+    customize argparse help text.
+
+        Usage: ...                       # Difficult: must subclass.
+
+        Positional arguments:            # Fairly easy: ap._positionals.title
+            ...
+
+        Optional arguments:              # Fairly easy: ap._optionals.title
+            ...
+
 https://stackoverflow.com/questions/18025646
 
     Grammar needed:

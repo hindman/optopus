@@ -160,12 +160,14 @@ Variant definition syntax:
         `hello`          Can be used as positional, positional
                          choice/variant, or parameter choice/variant.
 
-Variant definition syntax allowed for opt-help:
+Variant definition syntax allowed for opt-help lines:
 
     - Supported:
 
         <x>                  Positionals.
         -x <>                Options.
+        <x=1>                Positional variants.
+        -x <=2>              Parameter variants.
         <sym.dest=choices>   Sym-dest, including with choices.
         -x <=a|b|`do it`>    Literals, in choices.
         [] ()                Groups.
@@ -176,7 +178,6 @@ Variant definition syntax allowed for opt-help:
 
         x : defin            Variants.
         x!                   Partials.
-        <x=1>  -y <=2>       Positional/parameter variants.
         x=[]  x=()           Named groups.
 
 Sections:
@@ -215,15 +216,14 @@ Sections:
 
     - Quoting:
 
-        Situation         | Suppressed  | Default markers
-        -------------------------------------------------
-        Block quote       | Syntax      | ```    ```
-        Block quote       | Syntax/wrap | ```!   ```
-        Inline quote      | Syntax      | `      `
-        Literal backquote | Syntax      | \`
+        Situation           | Suppressed  | Open   | Close
+        --------------------------------------------------
+        Block quote         | Syntax      | ```    | ```
+        Block quote         | Syntax/wrap | ```!   | ```
+        Inline quote        | Syntax      | `      | `
+        Literal backquote   | Syntax      | \`     | na
 
-        - Block quotes must reside on separate lines: no other characters other
-          than the block-quote marker.
+        - Block quotes can be on their own line or not.
 
 Whitespace rules:
 

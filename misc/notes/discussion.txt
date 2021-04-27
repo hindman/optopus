@@ -2,6 +2,58 @@
 why-optopus: Why Python needs a better command line argument parser
 --------
 
+MORE NOTES:
+
+    - I considered creating another optopus-vs-argparse demo involving an even
+      bigger subcommand program.
+
+        - But I'm not sure there is much benefit to it, because the moderately
+          complex example (wrangle) is already nearly at the Argparse limit.
+
+        - Adding explicit sections and literal text blocks isn't very revealing
+          because argparse can either do it (via description and epilogue) or
+          not do it at all (text mixed in between option help lists). The
+          latter can also be described in isolation more effectively than
+          wrapped in a big example.
+
+        - Adding mutex in a big example isn't very revealing. Probably a lot
+          simpler just to describe the difference in isolation.
+
+    - Stuff that argparse can do, but Optopus does much better:
+
+        - Mutual exclusion is intuitive in Optopus, because it builds on top of
+          an existing syntax that is already familiar. In argparse, it involves
+          even more API bloat.
+
+            [-a | -b | -c]
+
+            g = ap.add_mutually_exclusive_group()
+            g.add_argument('-a', ...)
+            g.add_argument('-b', ...)
+            g.add_argument('-c', ...)
+
+        - Section titles. If you want different section titles (or if you want
+          to follow ordinary English conventions for capitalizing section
+          titles), it is not easily done.
+
+        - Regular help text before/after listing of argument/option help
+          text. Argparse does it via the parser attributes called
+          description and epilogue (more API). In Optopus, you just type
+          it.
+
+    - Stuff argparse cannot do:
+
+        - Flexible mutual exclusion: any grammatical construct, not just 2+
+          single options.
+
+        - Flexible help text: before, after, or intermixed between opt-help
+          lines.
+
+        - Any specialized grammar needs that fall outside of basic
+          mutual exclusion or subcommand-style programs.
+
+        - Flexibile Quantifiers.
+
 INTRODUCTION
 
     [Don't concede so much. Optopus is superior: easier, more efficient,
@@ -2277,6 +2329,30 @@ only a single Opt.
 Because it would be difficult to distinguish opt-help continuation lines from
 lines of regular text in a section, I decided to require block-quoting for
 regular text. This keeps parsing relative sane at a modest cost in usage.
+
+Opt-helps lines can also define help text for positional/parameter
+variants. The default help text for such elements (ie, without
+any explicit section configuration) is as follows:
+
+    # Configuration:
+
+        <task>             : Task to perform
+        <task=foo>         : Foo blah
+        <task=bar>         : Bar blah
+
+        --mode <fast|slow> : Mode to use
+        --mode <=fast>     : Fast blah
+        --mode <=slow>     : Slow blah
+
+    # Resulting help text:
+
+        Positionals: task:
+          foo                Foo blah
+          bar                Bar blah
+
+        Options: --mode:
+          --mode fast        Fast blah
+          --mode slow        Slow blah
 
 --------
 opt-independence-vs-unity: Opt independence vs unity when sharing same dest

@@ -6,18 +6,6 @@ Write-up: why Optopus?
 
     - optopus-vs-argparse-demos
 
-        . Simple subcommand program.
-
-        - Bigger subcommand program.
-
-        - Stuff argparse cannot do:
-
-            - Simple program with specialized grammar needs.
-
-            - Flexibile Quantifiers.
-
-            - Control over help text, via an intuitive mechanism.
-
     - Write-up
 
         - Lead with the examples vs. argparse.
