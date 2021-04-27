@@ -54,7 +54,7 @@ def nonnegative(n):
 
 # Optopus.
 
-p = Parser('pgrep :: [-i] [-v] <rgx>')
+p = Parser('pgrep :: [-i] [-v] <rgx> <path>')
 
 # Argparse.
 
@@ -62,6 +62,7 @@ ap = argparse.ArgumentParser(prog = 'pgrep')
 ap.add_argument('-i', action = 'store_true')
 ap.add_argument('-v', action = 'store_true')
 ap.add_argument('rgx')
+ap.add_argument('path')
 
 ####
 #
@@ -107,7 +108,7 @@ ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select no
 # and scan. It also provides less flexible conversion/validation
 # (in the argparse example, we ignore isfile and ispositive).
 #
-# Size comparison: 1.5x.
+# Size comparison: 1.4x.
 #
 ####
 
@@ -126,6 +127,7 @@ p = Parser('''pgrep
 p.config('rgx', convert = re.compile)
 p.config('path', convert = Path, validate = isfile)
 p.config('m C', convert = int, validate = ispositive)
+p.config(kind = 'option', sym = 'options')
 
 # Argparse.
 
@@ -223,7 +225,7 @@ p = Parser('''wrangle ::
                   [--color <red|green|blue>]
                   <rgx> [<path>...]
     <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
-    <task=search> [-i] [-g] [-d] <rgx> [<path>...]
+    <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
 
     ::
 
@@ -242,6 +244,7 @@ p = Parser('''wrangle ::
     -n --nsubs <n>     : N of substitutions
     -g --group <n>     : Emit just capture group N [0 for all]
     -d --delim <s>     : Delimeter for capture groups [tab]
+    -p --para          : Emit capture groups one-per-line, paragraph-style
 ''')
 
 p.config('rgx', convert = re.compile)
@@ -281,6 +284,7 @@ sp2.add_argument('path', **conf['path'])
 sp3.add_argument('--ignore-case', '-i', **conf['-i'])
 sp3.add_argument('--group', '-g', metavar = '<n>', type = int, help = 'Emit just capture group N [0 for all]')
 sp3.add_argument('--delim', '-d', metavar = '<s>', help = 'Delimeter for capture groups [tab]')
+sp3.add_argument('--para', '-p', action = 'store_true', help = 'Emit capture groups one-per-line, paragraph-style')
 sp3.add_argument('rgx', **conf['rgx'])
 sp3.add_argument('path', **conf['path'])
 
@@ -395,6 +399,7 @@ optional arguments:
   --ignore-case, -i    Ignore case
   --group <n>, -g <n>  Emit just capture group N [0 for all]
   --delim <s>, -d <s>  Delimeter for capture groups [tab]
+  --para, -p           Emit capture groups one-per-line, paragraph-style
 '''
 
 ####
