@@ -479,25 +479,27 @@ POWERFUL GRAMMARS BUILT FROM SIMPLE PARTS
 
         - Conditional requirements or exclusions. The argparse library does
           offer subparsers as one mechanism to apply conditional requirements,
-          but this seems like an awkward and heavy device for what are often
-          fairly simple grammatical needs (for example, if -x then require
-          either -y or -z; or if -a then -b is not allowed).
+          but this is an awkward and heavy device for what are often fairly
+          simple grammatical needs (for example, if -x then require either -y
+          or -z; or if -a then disallow -b).
 
-        - Logical relationship among options (for example, at least one of: -a
-          OR -b OR -a -b).
+        - Flexible specification of alternatives. Again, argparse supports this
+          partially (via subparsers or mutually exclusive options), but it
+          lacks a simple, general-purpose mechanism for alternatives (for
+          example, at least one of: -a OR -b OR -a -b).
 
-        - More flexible quantification. The argparse library supports four
-          basic quantifiers (N, ? *, and +), but it lacks support for ranges,
-          which can arise in a variety of plausible uses cases. There is no
-          strong reason not to support them.
+        - Flexible quantification. The argparse library supports four basic
+          quantifiers (N, ? *, and +), but it lacks support for ranges, which
+          can arise in a variety of plausible uses cases. There is no strong
+          reason not to support them.
 
         - More complex repetition. The argparse library can apply quantifiers
           to individual options or positionals, but not to groups (for example,
           two positionals, <x> <y>, repeatable in pairs). Sometimes the group
           that needs to be repeated is the full command-line grammar. In fact,
-          after this project I intend to work on such a program: a Python tool
-          for quick text transformation pipelines in the spirit of
-          sed/awk/perl, but with more intuitive usage, a built-in set of core
+          after Optopus, my next project involves such a program: a Python tool
+          for quick text transformation pipelines in the spirit of sed/awk/perl
+          one-liners, but with more intuitive usage, a built-in set of core
           utilities, and an easy mechanism for users to add their own. Because
           the tool is literally a pipeline for text running through various
           conversion and computation stages, it makes sense to model the
@@ -508,8 +510,27 @@ POWERFUL GRAMMARS BUILT FROM SIMPLE PARTS
         - Parameter or argument independence. When an option has multiple
           parameters or a positional has multiple arguments, most argument
           parsers force them to be configured identically. But sometimes
-          independence makes sense (for example, -a {A,B,C} {X,Y}, where each
+          independence makes sense (for example, -a <A|B|C> <X|Y>, where each
           parameter has different choices).
+
+    The deeper problem with most argument parsing libraries is that they rest
+    on a weak foundation. Perhaps a bit uncharitably, one could describe it as
+    starting with the simplest model of command-line grammar (described at the
+    start of this section) and then they tack on additional features to meet
+    some of the more common usage patterns: if users occasionally need
+    subcommand-style programs, add a new API to create and configure
+    subparsers; if users occasionally need simple mutual exclusion, add a
+    new API to define a mutually exclusive group; and so forth until the
+    library reaches the technical limits of the weak foundation.
+
+    A better model is to look to related domains for a small number of general
+    purpose and composable concepts: elements (positionals, options, and their
+    parameters), groups, alternatives, usage variants, and quantifiers. At
+    least for most developers, those concepts are most frequently observed in
+    regular expressions and in the related set of conventions observed in
+    technical documentation for command-line programs -- namely, their usage
+    syntax. By resting on simpler but composable ideas, Optopus will be able to
+    achieve both greater simplicity and greater power.
 
     Optopus addresses those and other needs by adding the missing grammatical
     pieces: groups as first-class citizens, the full set of regular expression
@@ -518,44 +539,64 @@ POWERFUL GRAMMARS BUILT FROM SIMPLE PARTS
 
     In more schematic terms, Optopus supports a wide variety of command-line
     grammar by combining a few core ideas:
-    
+
+        - Groups as first-class citizens, enclosed either by parentheses (if
+          required) or square brackets (if optional). This is one of the
+          crucial missing ingredients in most libraries, including argparse
+          which supports groups only in partial and narrow ways.
+
         - Angle brackets for any kind of variable end-user input, whether it be
           positionals (<foo>) or option parameters (--point <x> <y>).
+          Command-line programs lack a consistent convention on how to
+          represent variable inputs: there are four main styles relying on
+          different bracketing conventions (angle, square, braces) and
+          different capitalization (uppercase, lower, or mixed). For a variety
+          of technical and practical reasons, Optopus mimics Git and some other
+          tools in using angle brackets consistently.
 
-        - Square brackets for an optional element or group.
+        - Pipes to separate alternatives -- a ubiquitous convention.
 
-        - Parentheses for a required group.
-
-        - Pipes to separate alternatives.
-
-        - Quantifiers that can applied to single elements or groups.
+        - Quantifiers that can applied to single elements or groups. This
+          is another one of the crucial missing ingredients in most parsers.
 
         - The ability to name elements or groups symbolically both for display
           in usage/help text and for the purpose of naming things in the parsed
-          result.
+          result. This behavior is important not for grammatical reasons
+          but in order to be able to organize the parsed data in usable ways,
+          especially for more complex grammars.
 
         - Like regular expressions, grammar elements and parsing itself are
-          greedy by default (a policy decision needed to resolve a variety of
-          parsing ambituities).
+          greedy by default. This policy decision is necessary to resolve a
+          variety of parsing ambituities that can arise.
 
     Those simple concepts can support conventional command-line grammars and a
     wide variety of complex or specialized needs. In spite of its power, the
     grammar remains intuitive because it builds on widely familiar conventions
     for program usage text, along with a limited number of syntax enhancements
-    (most of them inspired by regular expressions). Here is an example grammar
-    for a program with two usage variants (named Add and Delete) triggered by
-    the value of the <task> positional ('add' or 'delete'), along with a third
-    variant allowing the user to request some help text showing examples. Each
-    usage variant has something noteworthy. The Add variant requires the <name>
-    and <id> positionals to come in pairs. The Delete variant uses a
-    regex-style quantifier for <id> (it can appear 1 to 5 times), and the --log
-    option is configured so that it can be accompanied by other options in
-    different combinations (either --xml or --json with an optional --indent).
-    Finally, the Examples variant takes an entirely different form from the
-    subcommand-style of the other two variants.
+    (most of them inspired by regular expressions).
+
+    Examples of most of those grammatical features have already been shown, but
+    another example might help to make things more explicit. The example below
+    defines a grammar for a program with two usage variants (named Add and
+    Delete) triggered by the value of the <task> positional ('add' or
+    'delete'), along with a third variant (named Examples) that allows the user
+    to request some help text showing examples. Each usage variant has
+    something noteworthy. The Add variant requires the <name> and <id>
+    positionals to come in pairs. The Delete variant uses a regex-style
+    quantifier for <id> (it can appear 1 to 5 times), and the --archive option is
+    configured so that it can be accompanied by other options in different
+    combinations (either --xml or --json plus an optional --indent). Finally,
+    the Examples variant takes an entirely different form from the
+    subcommand-style of the other two variants. The last variant illustrates
+    the general point note above: if you start with a narrowed vision for
+    command-line grammars and then tack on a subparser API, you can support
+    garden-variety subcommand-style programs, but nothing else; however, if you
+    start with composable, general-purpose concepts you can support
+    subcommand-style programs and all kinds of other needs as well -- without
+    any additional API burden.
 
         Add      : <task=add> (<name> <id>)...
-        Delete   : <task=delete> <id>{1,5} [--date {}] [--log [--json [--indent] | --xml]]
+        Delete   : <task=delete> <id>{1,5} [--archive [--json [--indent] | --xml]]
         Examples : --examples
 
     Defining command-line grammar via a configuration syntax inspired by usage
@@ -567,115 +608,112 @@ POWERFUL GRAMMARS BUILT FROM SIMPLE PARTS
     literal usage and help text presented to end users. Examples include docopt
     in Python or Getopt::Long::Descriptive, Getopt::Euclid, and Getopt::Declare
     in Perl. I believe my first exposure to the idea came in the early 2000s
-    from Damian Conway, the initial author of Getopt::Euclid and arguably the
-    inspiration for this library. I have been thinking, on and off, about how
-    to make a better argument parser since then.
+    from Damian Conway, a great programming educator and the initial author of
+    Getopt::Euclid. He is arguably the inspiration for this library: I have
+    been thinking, on and off, about how to make a better argument parser since
+    then. A secondary debt is owed to Vladimir Keleshev, the primary author of
+    Python's docopt. That library, in my view, has some unfortunate
+    limitations, but it is based on a some great ideas -- about argument
+    parsing and, more broadly, about the kinds of tools developers need (and do
+    not need). The 2012 PyCon video promoting the library is entertaining and
+    wonderfully polemical in the best sense of the word -- well worth the time
+    of anyone iterested in the subject. Watching the video in the early 2010s
+    rekindled my interest in the Optopus project and helped me refine ideas
+    I had been mulling over for a long time.
 
-    My experiments with argument parsing libraries convinced me that both
-    approaches have their strengths and weaknesses. Optopus builds on the
-    strengths:
+    In spite of those intellectual debts, my experiments with argument parsing
+    libraries convinced me that both approaches -- API-driven configuration vs
+    usage-syntax-driven configuration -- have their strengths and weaknesses.
+    Optopus builds on the strengths of each:
 
-        - Use a text syntax to define the core: the grammar and logical
-          relationships, along with the names to be used when referring to
-          options, parameters, positionals, groups, and usage variants, plus
-          the aliases and help text for individual positionals and options.
-          Those are the areas where the text-driven approach shines. Consider
-          the example grammar shown above: it conveys a lot of information very
-          efficiently and intuitively when compared against what most
-          API-driven libraries would require of the user (and none of them
-          could fully support the example). In spite of those benefits, most
-          programmers do not want to handcraft the end-user-facing usage and
-          help text if a computer program can do it consistently and well (not
-          to mention dyntamically responding to terminal width or to runtime
-          configurations). That is why Optopus takes substantial inspiration
-          from, but does not fully adopt, the ideas motivating the text-driven
-          parsers: Optopus treats the text primarily as a configuration syntax,
-          not literal usage text (naturally, it does provide a simple mechanism
-          for that syntax to also include blocks of literal text).
+        - Usage-syntax to define the core. Optopus encourages the use of text
+          as the primary mechanism to configure the command-line grammar and
+          the logical relationships among the elements, along with the names to
+          be used when referring to options, parameters, positionals, groups,
+          and usage variants. It also uses text for defining option aliases and
+          for the help text for individual positionals and options. Those are
+          the areas where the text-driven approach shines: either because the
+          configuration is inescapably textual (for example, help text for
+          individual positionals and options) or because text is simply a more
+          efficient and intuitive configuration mechanism than API calls.
+          Consider the example grammar shown above: it conveys a lot of
+          information very efficiently and intuitively when compared against
+          what most API-driven libraries would require of the user (and none of
+          them could fully support the example). In spite of those benefits,
+          most programmers do not want to handcraft the end-user-facing usage
+          and help text if a computer program can do it consistently and well
+          (not to mention dyntamically responding to terminal width or to
+          runtime configurations). That is why Optopus takes substantial
+          inspiration from, but does not fully adopt, the ideas motivating the
+          text-driven parsers like Getopt::Euclid and docopt: Optopus treats
+          the text primarily as a configuration syntax, not literal usage text
+          (naturally, it does provide a simple and flexible mechanism for that
+          syntax to include blocks of literal text).
 
-        - Use the programmatic API to apply other configurations: defaults,
-          conversion, validation, and various other details. The Optopus
-          library builds on the strength of the API approach in such areas and
-          adds some additional conveniences -- most notably, a bulk
-          configuration mechanism -- to keep the developer burden as low as
-          possible.
+        - Programmatic API for the rest. To apply other configurations --
+          defaults, conversion, validation, and various other details -- the
+          Optopus library builds on the strength of the API approach and adds
+          some additional conveniences -- most notably, a bulk configuration
+          mechanism -- to keep the developer burden as low as possible.
+          Although it is possible to configure things like data type,
+          conversion, validation via a text syntax, the approach has rapidly
+          diminishing returns: each feature addition requires increasingly
+          baroque syntactic features. Optopus takes a hybrid approach to
+          capitalize on the benefits of each configuration mechanism.
 
     Finally, it should be noted that all of the library's behaviors will be
     configurable via the API, including the grammar -- not merely to satisfy
     traditionalists, but because, at least for simpler use cases, configuring
     the parser's grammar via the API also works well. Users are free to select
-    whichever approach suits their preferences or their program's needs.
+    whichever approach suits their preferences and needs.
 
 DESIGNED FOR FLEXIBILITY
 
     In addition to having an insufficiently powerful grammatical foundation,
-    existing argument parsers tend to be inflexible in their design
-    and thus not open to very much customization.
+    existing argument parsers tend to be inflexible in their design and thus
+    not open to very much customization. Two areas are particularly noteworthy:
 
-    Three areas are noteworthy:
+    Help text and error text. Most libraries offer only limited controlover the
+    formatting, arrangement, and style of help and error text. Argparse, for
+    example, offers a few subclasses that adjust help text in small ways or
+    allow the user to supply regular text blocks that will be presented as-is
+    rather than wrapped. But the underlying HelpFormatter class is not friendly
+    to customization generally. Some of its stylistic choices seem non-standard
+    or inelegant to my eye and I've never found ways to adjust them without
+    awkward hacks. More fundamentally, the library is not prepared to handle
+    bigger changes, ranging from fairly standard needs (for example, help text
+    in man-page format) to more innovative approaches. Optopus will offer some
+    of those approaches directly with the aim of giving programmers the ability
+    to lighten-up and improve the readability of help text. One simple example
+    is listing option aliases in a separate section to avoid overburdening the
+    options section of the help text. Another is supporting the ability to
+    refer to groups of options by symbolic names in the usage text, a technique
+    that can greatly enhance the readability of usage text for programs with a
+    large number of options. An example:
 
-        - Help text and error text. Most libraries offer only limited controls
-          over the formatting, arrangement, and style of help and error text.
-          Argparse, for example, offers a few subclasses that adjust help text
-          in small ways or allow the user to supply regular text blocks that
-          will be presented as-is rather than line wrapped. But the underlying
-          HelpFormatter class is not friendly to customization generally. Some
-          of its stylistic choices seem non-standard or inelegant to my eye and
-          I've never found ways to adjust them without awkward hacks. More
-          fundamentally, the library is not prepared to handle bigger changes,
-          ranging from fairly standard needs (for example, help text in
-          man-page format) to more innovative approaches. Optopus will offer
-          some of those approaches directly with the aim of giving programmers
-          the ability to light-up and improve the readability of help text. One
-          simple example is listing option aliases (for example, --foo might
-          have an alias of -f) in a separate section to avoid overburdening the
-          options section of the help text. Another is supporting the ability
-          to refer to groups of options by symbolic names in the usage text, a
-          technique that can greatly enhance the readability of usage text for
-          programs with a large number of options. An example:
+        buy-car [style-options] [engine-options] <make> <model>
 
-                buy-car [style-options] [engine-options] <make> <model>
-
-        - Side effects. Many argument parsers, including argparse until Python
-          3.9, are rigid in response to invalid input. They start with sensible
-          default behavior: in the face of bad input, print brief usage text
-          and an error message, then exit. But they turn that default into a
-          requirement by providing no good way to prevent the side effects from
-          occurring (by good way, I mean one where the library would include
-          sufficient contextual data about the error, rather than just
-          providing the error text as a string). That default behavior works in
-          the most common cases, but sometimes programs have other needs.
-          Argument parsing libraries should follow ordinary best practices by
-          giving the user the ability to bypass or postpone major side effects
-          like printing and exiting. Imagine any other data oriented library
-          imposing such side effects without easy disabling.
-
-        - Parsing modes. Existing libaries tend offer the ability to parse only
-          the known arguments, but they rarely venture beyond that. One
-          possiblity is to relax other parsing rules, with an eye toward
-          parsing as much input as possible in order to glean end-user intent
-          to provide a more meaningful help. Another is to support
-          no-configuration parsing modes that will parse any input based on
-          standard rules and return a data object. The purpose is to support
-          low-stakes or temporary scripts that could benefit from a
-          command-line option or two, but are not important enough to warrant
-          very much configuration work. Optopus will eventually offer three
-          varieties of no-config parsing. Finally, it is worth emphasizing the
-          power of the grammar syntax in quickly defining a command line in
-          low-stakes situations. With two lines of code a developer can parse
-          arguments for a wide variety of simple scripts. A simple example:
-
-            p = Parser('<host> <port> [--verbose] [--size <> <>]')
-            opts = p.parse()
+    Side effects. Many argument parsers, including argparse until Python 3.9,
+    are rigid in response to invalid input. They start with sensible default
+    behavior: in the face of bad input, print brief usage text and an error
+    message, then exit. But they turn that default into a requirement by
+    providing no good way to prevent the side effects from occurring (by good
+    way, I mean one where the library would include sufficient contextual data
+    about the error, rather than just providing the error text as a string).
+    That default behavior works in the most common cases, but sometimes
+    programs have other needs. Argument parsing libraries should follow
+    ordinary best practices by giving the user the ability to bypass or
+    postpone major side effects like printing and exiting. Imagine any other
+    data oriented library imposing such effects without easy workarounds.
 
     To the extent that the existing libraries do allow customizations, the
-    mechanisms for doing that are sometimes awkward. Argparse is a good
-    example: many workarounds to user difficulties with the library involve
-    subclassing, but most argparse classes do not appear to be well-designed
-    for inheritance (and some of their docstrings seem to discourage it
-    outright). At a minimum, one a can say that the library does not provide
-    authoritative guidance on which classes are amenable to subclassing, if
-    any, and what users should do or avoid when doing so.
+    mechanisms for doing that are often awkward. Argparse is a good example:
+    many workarounds to user difficulties with the library involve subclassing,
+    but most argparse classes do not appear to be well-designed for inheritance
+    (and some of their docstrings seem to discourage it outright). At a
+    minimum, one a can say that the library does not provide authoritative
+    guidance on which classes are amenable to subclassing, if any, and what
+    users should do or avoid when doing so.
 
     Optopus will be built with an eye toward flexibility and customization. To
     the extent feasible, all controllable parameters governing the generation
@@ -687,69 +725,168 @@ DESIGNED FOR FLEXIBILITY
     evolution of the library. Instead, they will just have to write an ordinary
     hook function based on a documented API.
 
-OTHER NOTES:
+REDUCING THE BURDEN ON DEVELOPERS
 
-    - Adding explicit sections and literal text blocks isn't very revealing
-      because argparse can either do it (via description and epilogue) or
-      not do it at all (text mixed in between option help lists). The
-      latter can also be described in isolation more effectively than
-      wrapped in a big example.
+    Flexibility and customization are aimed not only at a small minority of
+    developers with strong aesethic opinions about technical documentation and
+    page layout. They also have practical ramifications. Developers of
+    command-line scripts have to build tools that users can easily understand.
+    Without that, those developers face higher short-term and long-term
+    software maintenance costs (answering user questions is a kind of
+    maintenance).
 
-    - Section titles. If you want different section titles (or if you want
-      to follow ordinary English conventions for capitalizing section
-      titles), it is not easily done.
+    In addition, argument parsers are all used in the same general context:
+    command-line programs. Those programs have many common needs during the
+    early phase of the program when arguments are parsed and validated --
+    namely, printing different types of help text and sometimes exiting or
+    occasionally collecting additional input from the end-user. Those things
+    can be done poorly or robustly and well (for example, exiting with proper
+    status code or even adding color to error output). Optopus is fundamentally
+    an argument parser and will not stray too far from that focus, but it will
+    provide commonly needed functionality related to argument handling and
+    exiting. It will also provide convenient access to any section of the
+    configured help text for any uses cases requiring more direct intervention
+    by the user's code.
 
-    - Regular help text before/after listing of argument/option help
-      text. Argparse does it via the parser attributes called
-      description and epilogue (more API). In Optopus, you just type
-      it.
+    The broad theme connecting such matters is to reduce developer hassle as it
+    relateds to argument handling when feasible. Some examples on the Optopus
+    roadmap:
 
-    - Flexible help text: before, after, or intermixed between opt-help
-      lines.
+    - As illustrated in a few of the examples above, a program's usage text can
+      made more readable and helpful to end-users by condensing groups of
+      options (or groups of choices) with symbolic names. Such techniques are
+      sometimes seen in command-line programs with large numbers of options --
+      so large than an exhaustive listing in the usage text actively undermines
+      usability because it overwhelms user attention and patience. Because
+      Optopus treats groups as first-class citizens in command-line grammar,
+      and because it will also offer flexibible querying and configuration APIs
+      allowing developers to organize options into meaningful arrangements with
+      symbolic names, developers working on larger scripts (or really any
+      script that could benefits from such devices) will have flexible
+      mechanisms to help developers generate effective usage and help text --
+      text that developers think will actually help their end-users rather than
+      text mechanically and exhaustively churned out by a rigid API.
 
-UNHELPFUL HELP
+    - Most command-line programs are sufficiently documented simply by listing
+      all arguments and options, each with a line of help text. Sometimes,
+      however, a different approach works better, such as organizing options
+      into labeled sections or simply interspercing blocks or text or
+      sub-headings in between various groupings of the listed options. Argparse
+      mostly supports those needs via argument groups -- even more API to
+      learn. For example, consider Example 4 (the wrangle script) and imagine
+      that the developer wanted to organized the help text by subcommand, with
+      various chunks of literal text and sub-headings mixed in. That can
+      probably be achieved with argparse using multiple argument groups per
+      subcommand, but most developers probably would not bother because of the
+      hassle. With Optopus, the developer would just directly type what is
+      wanted (and follow a couple of basic syntax rules). Here is an
+      illustration of what the grep section of that help text might look like.
+      Admittedly, this presentation is too elaborate for the script at hand,
+      but the point the ease of organizing help text, not the realism of the
+      example. Note that the blocks of regular text (marked by triple
+      back-quotes) will still be wrapped to proper width by Optopus (that
+      behavior is can also be turned off globablly or at the level of
+      indidividual text blocks).
 
-    - griping instead of helping
+        grep::
 
-        - high precedence
+            ```
+            The grep command emits input lines matching (or not
+            matching) the regular expression.
 
-    - special help sections
+            Positionals:
+            ```
 
-    - sometimes awkward usage text
+                <rgx> : Python regular expression
+                <path> : Path(s) to input
 
-        - API generated usage and help text can be awkward -- visually
-          confusing or overbearing -- at times, especially when they list every
-          possible usage pattern exhaustively or when the number literal
-          choices (for parameters or positionals) is moderate-to-large in size.
+            ```
+            Search options:
+            ```
 
-        - Better techniques are available. Some of them arise due
-          from usage variants or from treating groups as first-class
-          citizens in the grammar.
+                -i --ignore-case : Ignore case
+                -v --invert-match : Select non-matching lines
+                -m --max-count <n> : Stop searching after N matches
 
-INSUFFICIENT DEVELOPER SUPPORT
+            ```
+            Output options:
+            ```
 
-    - missing utilities
+                -C --context <n> : Print N lines of before/after context
+                --color <> : Highlight matching text
 
-        - Argument parsers are all used in the same general context:
-          command-line programs.
+    - Most users of command-line programs have had the experience of assembling
+      a fairly large command line of positionals and options only to be greeted
+      by an usage error message. What happens next? Ideally, the user would hit
+      the up arrow to recall the shell command and simply add `--help` to the
+      end of the command line. But most argument parsers, including argparse,
+      insist on griping rather than helping. Instead of printing relevant help
+      (which should be easy to support since `'--help' in sys.argv` is true),
+      they doggedly report the same usage error. Optopus will address that
+      issue via a mechanism call high-precedence options: if the option is
+      present among the arguments their dispatch behavior will be triggered.
+      Every Opt can have its dispatch attribute set with one or more callables
+      that will be invoked when the option is seen. And if the Opt's
+      `high_precedence` attribute is true, those dispatch functions are called
+      even in the face of end-user error. This feature is envisioned mainly for
+      help-related scenarios, but it is limited to that use case.
 
-        - Those programs have many common needs during the early phase of the
-          program where arguments are parsed and validated.
+    - Sometimes the development or debugging process could be helped by having
+      the ability to include hidden Opts, meaning that they work but are never
+      mentioned in the usage or help text. A related need is for Opts that
+      apply only under specific conditions that must be determined at runtime.
+      Although the latter is achievable via argparse -- just wrap parts of the
+      argparse setup code in the needed conditional logic -- Optopus will
+      support such behaviors via simple and flexible API configurations.
 
-        - Optopus aims to help developers by providing several of the
-          needed utilities:
+    - Argument parsing is very much concerned with the problem of data
+      conversion and validation: for example, a command-line grammar can
+      include validation-adjacent concepts, such as choices for positionals or
+      option parameters. Therfore it makes sense to prioritize ease and
+      composability of data conversion and validation. An Opt's convert and
+      validate attributes can to set to one or more callables. That approach is
+      not a revolutionary idea, of course, but it is an arrangement well-suited
+      to easy composition of functionality that the user might already have
+      at-hand, either from Python itself (int, float, re.compile,
+      os.path.isdir, and so forth), from user-written functions or classes, and
+      from third-party libraries.
 
-            quitting with proper exit codes, sometimes after printing
-            a warning or error message.
+    - Just as argument parsing is closely linked to conversion and validation,
+      its ultimate purpose is dispatch: most command-line scripts take
+      arguments, execute one or more functions in response, and then exit.
+      Optopus will include convenient mechanisms to do that type of thing. One
+      such mechanism involves the concept of usage variants. As already
+      discussed, variants provide a powerful means of expressing a command-line
+      grammar and conveying its usage text. But variants also work well as a
+      dispatch device. Both Opts and Variants can be configured with one or
+      more dispatch functions, which will be called with the parsed result,
+      along with any other args/kwargs.
 
-            hanlding --version
+    hanlding --version well
 
-            supporting hidden (developer-only or "super user" only) options
+    bulk config In most cases it's easier to configure options individually.
+    But in some situations, code can be make lighter and more readable by
+    applying configurations to multiple options at once. Optopus will support
+    this alternative through a convenient mechanism.
 
-            flexible mechansims for argument conversion, validation,
-            and dispatching.
+    Parsing modes. Existing libaries tend offer the ability to parse only the
+    known arguments, but they rarely venture beyond that. One possiblity is to
+    relax other parsing rules, with an eye toward parsing as much input as
+    possible in order to glean end-user intent to provide a more meaningful
+    help. Another is to support no-configuration parsing modes that will parse
+    any input based on standard rules and return a data object. The purpose is
+    to support low-stakes or temporary scripts that could benefit from a
+    command-line option or two, but are not important enough to warrant very
+    much configuration work. Optopus will eventually offer three varieties of
+    no-config parsing. Finally, it is worth emphasizing the power of the
+    grammar syntax in quickly defining a command line in low-stakes situations.
+    With two lines of code a developer can parse arguments for a wide variety
+    of simple scripts. A simple example:
 
-    - missing good cooperation with config files and env variables
+        p = Parser('<host> <port> [--verbose] [--size <> <>]')
+        opts = p.parse()
+
+    good cooperation with config files and env variables
 
         - Complex programs often have command-line options and arguments,
           but they also want their end-users to be able to set their
@@ -757,14 +894,43 @@ INSUFFICIENT DEVELOPER SUPPORT
 
         - An argument parser need to support that use case conveniently.
 
-    - bulk config
+        - Config file libraries to examine before working on this: configparser
+          (standard library), python-configuration, python-anyconfig. I suspect
+          the real issue is not direct integration with any particular
+          config-parsing library (there and many, following many conventions
+          for structuring the parsed data), but rather with a simple mechanism
+          for default setting. In this example, env and conf are assumed to be
+          objects obtained via a config file and environment, and the default()
+          helper simply selects the first non-None value (or the last value if
+          they are all None). In this way, command-line defaults are driven
+          first by config file, then by env var, then by hard-coded value --
+          usually that's the order people want, ranging from the least-dynamic
+          element (written in a file somewhere) to the most-dynamic
+          (command-line). In addition, the presence of a default from
+          a prior source (meaning, anything upstream of the command-line)
+          can modify whether an Opt is required or optional. It item
+          can be required in the command-line grammar, but become optional
+          if an environment variable is set, for example.
 
-        - In most cases it's easier to configure options individual.
+            o = Opt('--foo <>', default = default(conf.foo, env.foo, 123))
 
-        - But in some situations, code can be make lighter and more
-          readable by applying configurations to multiple options at once.
-          Optopus will support this alternative through a convenient
-          mechanism.
+            Or maybe a more featureful behavior like this, which would
+            allow the user to control the ordering of default-setting logic,
+            and would allow the user to delegate the work of looking at
+            env vars to Optopus.
+
+                default(
+                    conf = conf.foo,
+                    env = 'FOO',
+                    val = 123,
+                    order = 'cev',    # The default order is 'cev', but user can change.
+                )
+
+            Even maybe set order at the parser level instead:
+
+                p.confg(defaults = dict(conf = conf, order = 'cev'))
+
+                o = Opt('--foo <>', default = default('foo', 'FOO', 123))
 
 --------
 api-vs-text: API-driven vs text-driven
