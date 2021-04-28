@@ -25,40 +25,37 @@ class Parser:
     def parse_noconfig(self, args, mode):
         # Quick and dirty no-config arg parsing.
 
-        # Index of current arg and N of args.
-        ai = 0
-        n = len(args)
-
-        # Return data.
-        pos_key = 'others'
+        # Setup.
         options = OrderedDict()
-        others = []
+        pos_key = 'positionals'       # TODO: will be configurable.
+        dest = pos_key
 
         # Process arguments.
-        while ai < n:
+        for arg in args:
 
-            # Setup.
-            arg = args[ai]
-            dest = None
+            # Switch dest back to pos_key when we see the -- marker.
+            if arg == '--':           # TODO: extract to constant.
+                dest = pos_key
+                continue
 
-            # Look for an option that is not a negative integer.
+            # Set dest if we see an option that is not a negative integer.
             if not RGXS.negative_num.search(arg):
                 m = RGXS.short_option.search(arg) or RGXS.long_option.search(arg)
                 if m:
                     dest = hyphen2under(m.group(1))
+                    options.setdefault(dest, [])
+                    continue
 
-            # Store option or positional.
-            if dest:
-                options[dest] = True
-            else:
-                others.append(arg)
+            # Store arg under the current dest.
+            options.setdefault(dest, []).append(arg)
 
-            # Advance.
-            ai += 1
+        # Convert parameter-less options to flags.
+        options = {
+            dest : vals if (vals or dest == pos_key) else True
+            for dest, vals in options.items()
+        }
 
         # Return.
-        if others:
-            options[pos_key] = others
         return Result(options)
 
 def hyphen2under(s):

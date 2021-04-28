@@ -9,26 +9,36 @@ from optopus import (
 def test_parse_noconfig_flag(tr):
     p = Parser()
 
-    # Example 1: positionals and various options.
-    args = '-f AA --go BB CC --blort-maker_2 DD -27'.split()
+    # Simple use case.
+    args = 'rgx path -i -v'.split()
     exp = {
-        'f': True,
-        'go': True,
-        'blort_maker_2': True,
-        'others': ['AA', 'BB', 'CC', 'DD', '-27'],
+        'i': True,
+        'v': True,
+        'positionals': ['rgx', 'path'],
     }
     got = p.parse(args)
     assert dict(got) == exp
 
-    # Example 2: no arguments beyond [0] element.
-    args = ''.split()
+    # More elaborate inputs.
+    args = 'AA BB CC -27 -f F --go G1 G2 --blort-maker_2 -- DD EE'.split()
+    exp = {
+        'f': ['F'],
+        'go': ['G1', 'G2'],
+        'blort_maker_2': True,
+        'positionals': ['AA', 'BB', 'CC', '-27', 'DD', 'EE'],
+    }
+    got = p.parse(args)
+    assert dict(got) == exp
+
+    # No arguments.
+    args = []
     exp = {}
     got = p.parse(args)
     assert dict(got) == exp
 
-    # Example 3: just positionals.
+    # Just positionals.
     args = 'A B C'.split()
-    exp = {'others': ['A', 'B', 'C']}
+    exp = {'positionals': args}
     got = p.parse(args)
     assert dict(got) == exp
 
@@ -36,7 +46,7 @@ def test_result(tr):
     d = OrderedDict((
         ('f', True),
         ('go', True),
-        ('others', ['A', 'B']),
+        ('positionals', ['A', 'B']),
     ))
     res = Result(d)
     # Iterable.
@@ -45,7 +55,7 @@ def test_result(tr):
     assert 'go' in res
     assert res['f'] is True
     # Support for str() and len().
-    exp_str = "Result(f=True, go=True, others=['A', 'B'])"
+    exp_str = "Result(f=True, go=True, positionals=['A', 'B'])"
     assert str(res) == exp_str
     assert repr(res) == exp_str
     assert len(res) == len(d)

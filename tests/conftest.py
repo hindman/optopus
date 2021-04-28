@@ -10,7 +10,7 @@ class TestResource(object):
 
     def dump(self, val = None, label = 'dump()'):
         fmt = '\n--------\n{label} =>\n{val}'
-        msg = fmt.format(label, val)
+        msg = fmt.format(label = label, val = val)
         print(msg)
 
 class StdStreams(object):
