@@ -4,6 +4,8 @@ todos: TODOs
 
 Write-up: why Optopus?
 
+Beta: change no-config to greedy param binding.
+
 Publish beta:
     - README
     - setup.py
@@ -44,7 +46,7 @@ Help text: basic:
 
 Parsing enhancements:
 
-    Other parsing modes: key-val, greedy, unknown-ok, unconverted-ok, invalid-ok.
+    Other parsing modes: no-conf, unknown-ok, unconverted-ok, invalid-ok.
 
     No-args behaviors, such as show-help or default-args.
 
@@ -127,8 +129,6 @@ Alternative inputs: other:
     @FILE (command line arguments from a file). See argparse fromfile_prefix_chars.
 
     Case-insensitive options.
-
-    Intermixed parsing mode. See argparse.parse_intermixed_args().
 
 Text customization:
 

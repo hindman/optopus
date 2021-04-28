@@ -665,7 +665,16 @@ POWERFUL GRAMMARS BUILT FROM SIMPLE PARTS
     configurable via the API, including the grammar -- not merely to satisfy
     traditionalists, but because, at least for simpler use cases, configuring
     the parser's grammar via the API also works well. Users are free to select
-    whichever approach suits their preferences and needs.
+    whichever approach suits their preferences and needs. It is worth noting
+    that even the the API configuration can leverage as much or little of the
+    basic grammar syntax already discussed. To illustrate, the following
+    configurations achieve the same thing: an optional --dim option having an
+    alias and 2 to 3 parameters. The library's opinion favors the efficiency
+    and intuitivess of the syntax, but that opinion is not enforced and users
+    can freely operate at any point they prefer on the text-to-API spectrum.
+
+        Opt('[-d --dim <> <> [<>]]')
+        Opt('--dim', nparams = (2,3), ntimes = (0,1), aliases = '-d')
 
 DESIGNED FOR FLEXIBILITY
 
@@ -862,29 +871,42 @@ REDUCING THE BURDEN ON DEVELOPERS
       more dispatch functions, which will be called with the parsed result,
       along with any other args/kwargs.
 
+    - When a program needs more than a few Opts, it is not uncommon for some
+      them to have similar configuration needs. Optopus includes a simple,
+      minimal-hassle API to query for one or more grammar elements (mainly
+      Opts, but sometimes Variants or Groups) and apply supplemental
+      configurations to the elements contained in the query result. This was
+      shown a few in the examples above, where multiple Opts were configured in
+      one call to accept only positive integers.
+
+    - Existing libraries either ignore or support only small number of parsing
+      modes. Argparse, for example, has long supported a parse-known mode and
+      in Python 3.7 it added a parse-intermixed mode, which allows positionals
+      and options to be intermixed a bit more flexibly on the command-line. The
+      standard parsing behavior of Optopus will be similar to the flexible
+      behavior of the argparse intermixed mode. That behavior is basically the
+      logical result of applying the core concepts defining the grammar syntax,
+      along with a default greedy policy as it relates to both parsing and the
+      interpretation of the syntax itself. Users will also be able to make any
+      grammar element's quantifier non-greedy rather than greedy. In addition,
+      Optopus will support a feature that allows the user to create a set of
+      related parsing modes that relax one or more requirements: that every
+      argument align with a known Opt (similar to argparse's parse-known mode);
+      that the arguments for every Opt pass data conversion; and that they pass
+      data validation. The intended use case for relaxed parsing is either to
+      parse known part of the input and leave the rest to be handled
+      differently or to parse as much of the input as possible (even in the
+      face of some end-user errors) in order to glean more information about
+      end-user intent, perhaps with an eye toward providing more specific help.
+      Finally, Optopus will support some no-configuration parsing modes that
+      will parse any input based on standard rules and return a data object.
+      The purpose is to support low-stakes or temporary scripts that could
+      benefit from a command-line option or two, but are not important enough
+      to warrant very much configuration work. In addition to the default
+      no-config parsing, the library will include a simple mechanism to achieve
+      a few different flavors of almost-no-config parsing.
+
     hanlding --version well
-
-    bulk config In most cases it's easier to configure options individually.
-    But in some situations, code can be make lighter and more readable by
-    applying configurations to multiple options at once. Optopus will support
-    this alternative through a convenient mechanism.
-
-    Parsing modes. Existing libaries tend offer the ability to parse only the
-    known arguments, but they rarely venture beyond that. One possiblity is to
-    relax other parsing rules, with an eye toward parsing as much input as
-    possible in order to glean end-user intent to provide a more meaningful
-    help. Another is to support no-configuration parsing modes that will parse
-    any input based on standard rules and return a data object. The purpose is
-    to support low-stakes or temporary scripts that could benefit from a
-    command-line option or two, but are not important enough to warrant very
-    much configuration work. Optopus will eventually offer three varieties of
-    no-config parsing. Finally, it is worth emphasizing the power of the
-    grammar syntax in quickly defining a command line in low-stakes situations.
-    With two lines of code a developer can parse arguments for a wide variety
-    of simple scripts. A simple example:
-
-        p = Parser('<host> <port> [--verbose] [--size <> <>]')
-        opts = p.parse()
 
     good cooperation with config files and env variables
 
@@ -2197,19 +2219,44 @@ parsing modes that it supports:
     Parsing modes:
 
         Configured: these modes can be combined. They relax the rules to allow
-        deviations:
+        deviations. [I am not sold on this naming idea. Think it over.]
 
             unknown-ok
             unconverted-ok
             invalid-ok
 
-        No configuration: these modes are exclusive:
+        No configuration:
 
-            Mode    | nparams
-            -----------------
-            flag    | 0
-            key-val | 1
-            greedy  | 0+
+            Like the rest of the library, Optopus will handle no-config parsing
+            with a greedy default. Consider:
+
+            No-config parsing is only helpful for the options: positionals
+            will be dumped into a single generic bucket, so the options are
+            what matter here.
+
+            The positionals can be segregated to follow the double-hyphen
+            marker.
+
+            The rest of the input will be options and parameters, which
+            raise no ambiguous boundary questions.
+
+            This means the end user can control the result via their
+            arrangement of arguments. That seems consistent with the spirit of
+            no-config: no-configuration means imposing no requirements on the
+            end-user. Through their argument placement, the end-user determines
+            how parameters bind to options, which means they can achieve
+            different flavors of parameter binding (flag, key-val, or any N of
+            vals).
+
+            In addition, the library will support an almost-noconfig behavior
+            allowing the user to impose a specific parameter binding
+            requirement. That will be done via a quantifier controlling nparams
+            to be consumed per option.
+
+                Parser()                # Default: greedy.
+                Parser(noconf = '0')    # Flag style
+                Parser(noconf = '1')    # Key-val style
+                Parser(noconf = '2,')   # 2+
 
 Optopus:
 
