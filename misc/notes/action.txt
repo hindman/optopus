@@ -3,9 +3,11 @@ todos: TODOs
 --------
 
 Write-up.
+    - Move to README.md and format.
+    - Add links.
+    - Final editing pass.
 
 Publish beta:
-    - README
     - setup.py
     - tasks.py
     - dev.txt
