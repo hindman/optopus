@@ -33,45 +33,45 @@ available in other libraries -- namely, no-configuration parsing, which is
 handy for temporary or experimental scripts that require nothing more than
 open-ended support for options and positionals.
 
-    ```bash
-    # Install the library in the usual way:
+```bash
+# Install the library in the usual way:
 
-        $ pip install optopus
-    ```
+    $ pip install optopus
+```
 
-    ```python
-    # Write almost no code:
+```python
+# Write almost no code:
 
-        from optopus import Parser
+    from optopus import Parser
 
-        p = Parser()
-        opts = p.parse()
+    p = Parser()
+    opts = p.parse()
 
-    # Check out the returned data object:
+# Check out the returned data object:
 
-        print(opts)
-        print(opts.bar)               # Attribute access.
-        print(opts['bar'])            # Key access.
-        print('bar' in opts)          # Membership testing.
-        for dest, val in opts:        # Direct iteration.
-            print((dest, val))
+    print(opts)
+    print(opts.bar)               # Attribute access.
+    print(opts['bar'])            # Key access.
+    print('bar' in opts)          # Membership testing.
+    for dest, val in opts:        # Direct iteration.
+        print((dest, val))
 
-    # Demo usage:
-    ```
+# Demo usage:
+```
 
-    ```bash
-        $ python demo.py Z1 Z2 --bar B1 B2 -x -y Y1 -- Z3
-    ```
-    ```python
-        Result(positionals=['Z1', 'Z2', 'Z3'], bar=['B1', 'B2'], x=True, y='Y1')
-        ['B1', 'B2']
-        ['B1', 'B2']
-        True
-        ('positionals', ['Z1', 'Z2', 'Z3'])
-        ('bar', ['B1', 'B2'])
-        ('x', True)
-        ('y', 'Y1')
-    ```
+```bash
+    $ python demo.py Z1 Z2 --bar B1 B2 -x -y Y1 -- Z3
+```
+```python
+    Result(positionals=['Z1', 'Z2', 'Z3'], bar=['B1', 'B2'], x=True, y='Y1')
+    ['B1', 'B2']
+    ['B1', 'B2']
+    True
+    ('positionals', ['Z1', 'Z2', 'Z3'])
+    ('bar', ['B1', 'B2'])
+    ('x', True)
+    ('y', 'Y1')
+```
 
 #### Optopus vs. the competition
 
