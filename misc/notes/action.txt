@@ -2,16 +2,7 @@
 todos: TODOs
 --------
 
-Beta: change no-config to greedy param binding.
-
-Dispatch:
-
-    - Think about how this might work
-
-    - Maybe look at the pocket script: could it be tidied up with handy
-      dispatch? Search my scripts for other examples.
-
-Write-up: why Optopus?
+Write-up.
 
 Publish beta:
     - README
