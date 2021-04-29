@@ -703,7 +703,7 @@ Opt('--dim', nparams = (2,3), ntimes = (0,1), aliases = 'd')
 
 # All API.
 Opt(dest = 'dim', kind = 'option', nparams = (2,3), ntimes = (0,1), aliases = 'd')
-```python
+```
 
 ## Designed for flexibility
 
