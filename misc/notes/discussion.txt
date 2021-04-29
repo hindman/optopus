@@ -7,9 +7,9 @@ INTRODUCTION
     To varying degrees of success, command-line argument parsing libraries do a
     mostly adequate job handling the common use cases. They are able to parse
     garden-variety command-line inputs and provide help text to end users. Some
-    libraries also take partial steps toward supporting a larger set of
-    features, such as basic conversion and validation, varying numbers of
-    optional parameters or positional arguments, mutually exclusive options,
+    libraries take partial steps toward supporting a larger set of features,
+    such as basic conversion and validation, varying numbers of optional
+    parameters or positional arguments, mutually exclusive options,
     subcommand-style programs like git, and occasionally a small amount of help
     text customization or the ability to control error handling.
 
@@ -23,15 +23,15 @@ INTRODUCTION
     unusual, or merely particular situations; and designed carefully with an
     eye toward customization and flexibility. At every level of program
     complexity -- ranging from throwaway scripts to the next-big-thing --
-    Optopus will offer an easier and superior approach to handling command-line
-    arguments.
+    Optopus will offer a superior approach to handling command-line arguments.
 
     The library is under active development and a beta release has been
     published. The purpose of that release was mainly to reserve the project
-    name in pypi.org, but it already provides useful functionality not
-    currently available in other libraries -- namely, no-configuration parsing,
-    which is handy for quick-and-dirty, temporary, or experimental scripts that
-    require nothing more than open-ended support for options and positionals.
+    name in pypi.org, but it already provides one small bit of useful
+    functionality not currently available in other libraries -- namely,
+    no-configuration parsing, which is handy for quick-and-dirty, temporary, or
+    experimental scripts that require nothing more than open-ended support for
+    options and positionals.
 
         # Install the library in the usual way:
 
@@ -55,14 +55,15 @@ INTRODUCTION
 
         # Demo usage:
 
-            $ python foo.py --bar A B C -x D
-            Result(bar=True, x=True, positionals=['A', 'B', 'C', 'D'])
+            $ python foo.py Z1 Z2 --bar B1 B2 -x -y Y1 -- Z3
+            Result(positionals=['Z1', 'Z2', 'Z3'], bar=['B1', 'B2'], x=True, y='Y1')
+            ['B1', 'B2']
             True
             True
-            True
-            ('bar', True)
+            ('positionals', ['Z1', 'Z2', 'Z3'])
+            ('bar', ['B1', 'B2'])
             ('x', True)
-            ('positionals', ['A', 'B', 'C', 'D'])
+            ('y', 'Y1')
 
 OPTOPUS VS THE COMPETITION
 
