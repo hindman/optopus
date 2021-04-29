@@ -7,6 +7,8 @@ Write-up.
         https://guides.github.com/features/mastering-markdown/
 
     - Add links.
+        Links to example from SO or bug tracker.
+
     - Final editing pass.
 
 Publish beta:
