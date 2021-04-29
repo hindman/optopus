@@ -4,6 +4,8 @@ todos: TODOs
 
 Write-up.
     - Move to README.md and format.
+        https://guides.github.com/features/mastering-markdown/
+
     - Add links.
     - Final editing pass.
 
