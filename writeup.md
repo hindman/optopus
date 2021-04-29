@@ -1,9 +1,11 @@
 
 --------
 
-## Optopus
+# Optopus
 
-#### Python needs a better command line argument parser
+## Python needs a better command line argument parser
+
+### Python needs a better command line argument parser
 
 To varying degrees of success, command-line argument parsing libraries do a
 mostly adequate job handling the common use cases. They are able to parse
@@ -34,46 +36,44 @@ handy for temporary or experimental scripts that require nothing more than
 open-ended support for options and positionals.
 
 ```bash
-# Install the library in the usual way:
+# Install the library in the usual way.
 
-    $ pip install optopus
+$ pip install optopus
 ```
 
 ```python
-# Write almost no code:
+# Write almost no code to parse arguments.
 
-    from optopus import Parser
+from optopus import Parser
 
-    p = Parser()
-    opts = p.parse()
+p = Parser()
+opts = p.parse()
 
-# Check out the returned data object:
+# Check out the returned data object.
 
-    print(opts)
-    print(opts.bar)               # Attribute access.
-    print(opts['bar'])            # Key access.
-    print('bar' in opts)          # Membership testing.
-    for dest, val in opts:        # Direct iteration.
-        print((dest, val))
-
-# Demo usage:
+print(opts)
+print(opts.bar)               # Attribute access.
+print(opts['bar'])            # Key access.
+print('bar' in opts)          # Membership testing.
+for dest, val in opts:        # Direct iteration.
+    print((dest, val))
 ```
 
 ```bash
-    $ python demo.py Z1 Z2 --bar B1 B2 -x -y Y1 -- Z3
-```
-```python
-    Result(positionals=['Z1', 'Z2', 'Z3'], bar=['B1', 'B2'], x=True, y='Y1')
-    ['B1', 'B2']
-    ['B1', 'B2']
-    True
-    ('positionals', ['Z1', 'Z2', 'Z3'])
-    ('bar', ['B1', 'B2'])
-    ('x', True)
-    ('y', 'Y1')
+# Demo usage.
+
+$ python demo.py Z1 Z2 --bar B1 B2 -x -y Y1 -- Z3
+Result(positionals=['Z1', 'Z2', 'Z3'], bar=['B1', 'B2'], x=True, y='Y1')
+['B1', 'B2']
+['B1', 'B2']
+True
+('positionals', ['Z1', 'Z2', 'Z3'])
+('bar', ['B1', 'B2'])
+('x', True)
+('y', 'Y1')
 ```
 
-#### Optopus vs. the competition
+### Optopus vs. the competition
 
 I can talk your ears off about the subject of command-line argument parsers
 in Python, Ruby, and, from an earlier era, Perl -- their strengths and
@@ -466,7 +466,7 @@ separate help text for different usage variants (many programs do not).
       --group                -g
       --delim                -d
 
-#### Powerful grammars built from simple parts
+### Powerful grammars built from simple parts
 
 Most argument parsing libraries start from the most basic model of
 command-line usage: an ordered sequence of positionals along with an
@@ -701,7 +701,7 @@ spectrum.
     # All API.
     Opt(dest = 'dim', kind = 'option', nparams = (2,3), ntimes = (0,1), aliases = 'd')
 
-#### Designed for flexibility
+### Designed for flexibility
 
 In addition to having an insufficiently powerful grammatical foundation,
 existing argument parsers tend to be inflexible in their design and thus
@@ -760,7 +760,7 @@ method override robustly enough in the face of edge cases or future
 evolution of the library. Instead, they will just have to write an ordinary
 hook function based on a documented API.
 
-#### Reducing the burden on developers
+### Reducing the burden on developers
 
 Flexibility and customization are aimed not only at a small minority of
 developers with strong opinions about technical documentation and page
