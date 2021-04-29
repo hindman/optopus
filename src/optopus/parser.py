@@ -50,10 +50,13 @@ class Parser:
             options.setdefault(dest, []).append(arg)
 
         # Convert parameter-less options to flags.
-        options = {
-            dest : vals if (vals or dest == pos_key) else True
-            for dest, vals in options.items()
-        }
+        for dest, vals in options.items():
+            n = len(vals)
+            options[dest] = (
+                True if n == 0 else
+                vals[0] if n == 1 else
+                vals
+            )
 
         # Return.
         return Result(options)

@@ -22,7 +22,7 @@ def test_parse_noconfig_flag(tr):
     # More elaborate inputs.
     args = 'AA BB CC -27 -f F --go G1 G2 --blort-maker_2 -- DD EE'.split()
     exp = {
-        'f': ['F'],
+        'f': 'F',
         'go': ['G1', 'G2'],
         'blort_maker_2': True,
         'positionals': ['AA', 'BB', 'CC', '-27', 'DD', 'EE'],
