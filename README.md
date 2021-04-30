@@ -489,25 +489,25 @@ following buckets:
 **Mutual exclusion beyond the simplest case**. The argparse library supports
 mutual exclusion among options considered individually. But it cannot apply
 that type of requirement to groups of options (for example, `-x` OR `-y` `-z`).
-Examples: [ex1][grammar_ex01], [ex2][grammar_ex02].
+See [here][grammar_ex01] or [here][grammar_ex02].
 
 **Conditional requirements or exclusions**. The argparse library does offer
 subparsers as one mechanism to apply conditional requirements, but this can be
 a heavy device for what are often fairly simple grammatical needs (for example,
-if `-x` then require either `-y` or `-z`; or if `-a` then disallow `-b`).
-Examples: [ex1][grammar_ex03], [ex2][grammar_ex04], [ex3][grammar_ex05],
-[ex4][grammar_ex06].
+if `-x` then require either `-y` or `-z`; or if `-a` then disallow `-b`). See
+[here][grammar_ex03], [here][grammar_ex04], [here][grammar_ex05], or
+[here][grammar_ex06].
 
 **Flexible specification of alternatives**. Again, argparse supports this
 partially (via subparsers or mutually exclusive options), but it lacks a
 simple, general-purpose mechanism for alternatives (for example, either `-a` OR
-`-b` OR `-a` `-b`). Examples: [ex1][grammar_ex07], [ex2][grammar_ex08],
-[ex3][grammar_ex09].
+`-b` OR `-a` `-b`). See [here][grammar_ex07], [here][grammar_ex08], or
+[here][grammar_ex09].
 
 **Flexible quantification**. The argparse library supports four basic
 quantifiers (`N`, `?` `*`, and `+`), but it lacks support for regex-style
 ranges (e.g., `{1,3}`), which can arise in a variety of plausible uses cases.
-There is no strong reason not to support them. Examples: [ex1][grammar_ex10].
+There is no strong reason not to support them. See [here][grammar_ex10].
 
 **More complex repetition**. The argparse library can apply quantifiers to
 individual options or positionals, but not to groups (for example, two
@@ -521,14 +521,14 @@ through various conversion and computation stages, it makes sense to model the
 command-line grammar as repeatable. This use case is mostly supportable by
 cobbling together multiple argparse parsers, but it is awkward and requires a
 bit of special logic. Optopus will support an admittedly unusual use case like
-that with almost no extra API-learning cost for the user.
-Examples: [ex1][grammar_ex11], [ex2][grammar_ex12], [ex3][grammar_ex13].
+that with almost no extra API-learning cost for the user. See
+[here][grammar_ex11], [here][grammar_ex12], or [here][grammar_ex13].
 
 **Parameter or argument independence**. When an option has multiple parameters
 or a positional has multiple arguments, most argument parsers force them to be
 configured identically. But sometimes independence makes sense (for example,
-`-a <A|B|C> <X|Y>`, where each parameter has different choices). Examples:
-[ex1][grammar_ex14].
+`-a <A|B|C> <X|Y>`, where each parameter has different choices). See
+[here][grammar_ex14].
 
 The deeper problem with most argument parsing libraries is that they rest on a
 weak foundation. Perhaps a bit uncharitably, one could say that they started
