@@ -1,12 +1,12 @@
 
 # Optopus
 
-## Python needs a better command line argument parser
+## Because Python needs a better command line argument parser
 
 To varying degrees of success, command-line argument parsing libraries do a
 mostly adequate job handling the common use cases. They are able to parse
 garden-variety command-line inputs and provide help text to end users. Some
-libraries take partial steps toward supporting a larger set of features: basic
+libraries take partial steps to support a larger set of features: basic
 conversion and validation; varying numbers of optional parameters or positional
 arguments; mutually exclusive options; subcommand-style programs like git; and
 occasionally a small amount of help text customization or the ability to
@@ -17,17 +17,17 @@ scripts are written in Python using argument parsers that are just OK: they are
 less intuitive, more verbose, and more hemmed in by restrictions than they need
 to be.
 
-Optopus will change that by providing a library that is intuitive and efficient
-to configure; powerful when needed for complex, specialized, unusual, or merely
-particular situations; and designed carefully with an eye toward customization
-and flexibility. At every level of program complexity -- ranging from throwaway
+Optopus will change that by providing a library that is easy and efficient to
+configure; powerful when needed for complex, specialized, unusual, or merely
+particular situations; and designed with an eye toward customization and
+flexibility. At every level of program complexity -- ranging from throwaway
 scripts to the next-big-thing -- Optopus will offer a superior approach to
 handling command-line arguments.
 
 The library is under active development and a beta release has been published.
 The purpose of that release was mainly to reserve the project name in
 [PyPI][pypi_optopus] but it already provides one small bit of useful
-functionality not currently available in other libraries -- namely,
+functionality, one not currently available in other libraries -- namely,
 no-configuration parsing, which is handy for temporary or experimental scripts
 that require nothing more than open-ended support for options and positionals.
 
@@ -117,7 +117,7 @@ p = Parser('pgrep :: [-i] [-v] <rgx> <path>')
 
 As a second comparison, we will take the same script and make it more
 fleshed-out with some help text and the ability to support zero or more file
-path(s).
+paths.
 
 ```python
 ap = argparse.ArgumentParser(prog = 'pgrep')
@@ -129,7 +129,7 @@ ap.add_argument('path', nargs = '*', help = 'Path(s) to input')
 
 The Optopus configuration is more efficient (53% the size of argparse), more
 readable, and requires less API knowledge. You just type what you want and have
-to remember litter more than a mostly already-known syntax. Note that [Example
+to remember little more than a mostly already-known syntax. Note that [Example
 1](#example-1) used what Optopus calls a usage-variant syntax: it expressed the
 full command-line grammar in schematic form. Example 2 uses a closely related
 syntax, called opt-help syntax. Each line configures a single Opt (a
@@ -611,7 +611,7 @@ Each usage variant above has something noteworthy.
 - The Examples variant takes an entirely different form from the
   subcommand-style of the other two variants. It illustrates the general point
   noted above: if you start with a narrow vision for command-line grammars and
-  then tack on a subparser API, you can support garden-variety subcommand-style
+  then tack on a subparser API, you can support typical subcommand-style
   programs, but nothing else; however, if you start with composable concepts
   you can support subcommand-style programs and all kinds of other needs as
   well -- with almost no additional API burden on users.
