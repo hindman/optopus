@@ -130,7 +130,7 @@ ap.add_argument('path', nargs = '*', help = 'Path(s) to input')
 The Optopus configuration is more efficient (53% the size of argparse), more
 readable, and requires less API knowledge. You just type what you want and have
 to remember nothing more than an intuitive, mostly already-known syntax. Note
-that [Example 1][#example-1] used what Optopus calls a usage-variant syntax: it
+that [Example 1](#example-1) used what Optopus calls a usage-variant syntax: it
 expressed the full command-line grammar in schematic form. Example 2 uses a
 closely related syntax, called opt-help syntax. Each line configures a single
 Opt (a configuration object representing one positional argument or option)
@@ -818,7 +818,7 @@ via argument groups -- even more API to learn.
 
 Because Optopus configuration rests on a textual foundation, providing users
 with more flexibility and control over the structuring of help text is fairly
-easy to accomodate. To illustrate, consider [Example 4][#example-4] (the
+easy to accomodate. To illustrate, consider [Example 4](#example-4) (the
 wrangle script) and imagine that the developer wanted to organize the help text
 by subcommand, with various chunks of literal text and sub-headings mixed in.
 That can probably be achieved with argparse using multiple argument groups per
