@@ -3,8 +3,12 @@ todos: TODOs
 --------
 
 Write-up.
+
     - Move to README.md and format.
+
         https://guides.github.com/features/mastering-markdown/
+
+        https://github.com/hindman/optopus/blob/master/writeup.md
 
     - Add links.
         Links to example from SO or bug tracker.
