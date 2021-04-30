@@ -507,7 +507,8 @@ simple, general-purpose mechanism for alternatives (for example, either `-a` OR
 **Flexible quantification**. The argparse library supports four basic
 quantifiers (`N`, `?` `*`, and `+`), but it lacks support for regex-style
 ranges (e.g., `{1,3}`), which can arise in a variety of plausible uses cases.
-There is no strong reason not to support them. See [here][grammar_ex10].
+There is no strong reason not to support them. See [here][grammar_ex10],
+[here][grammar_ex15], or [here][grammar_ex16].
 
 **More complex repetition**. The argparse library can apply quantifiers to
 individual options or positionals, but not to groups (for example, two
@@ -927,7 +928,7 @@ text. But variants also work well as a dispatch device. Both Opts and Variants
 can be configured with one or more dispatch functions, which will be called
 with the parsed result, along with any other args/kwargs the user specifies.
 
-#### Relaxed parsing modes:
+#### Relaxed parsing modes
 
 Existing libraries either ignore or support only small number of parsing modes.
 Argparse, for example, has long supported a parse-known mode and in Python 3.7
@@ -956,7 +957,7 @@ the input as possible (even in the face of some end-user errors) in order to
 glean more information about end-user intent, perhaps with an eye toward
 providing more specific help.
 
-#### No-configuration parsing modes:
+#### No-configuration parsing modes
 
 Optopus will support some no-configuration parsing modes that will parse any
 input based on standard rules. The purpose is to support low-stakes or
@@ -1073,6 +1074,8 @@ p.config('v', default = defkeys('invert_match', 'pgrep_invert_match'))
 [grammar_ex12]: https://stackoverflow.com/questions/19114652
 [grammar_ex13]: https://stackoverflow.com/questions/62524681
 [grammar_ex14]: https://stackoverflow.com/questions/28660992
+[grammar_ex15]: https://stackoverflow.com/questions/4194948
+[grammar_ex16]: https://bugs.python.org/issue11354
 [py_argparse]: https://docs.python.org/3/library/argparse.html
 [py_bugs]: https://bugs.python.org/
 [py_optparse]: https://docs.python.org/3/library/optparse.html
