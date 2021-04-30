@@ -20,14 +20,14 @@ to be.
 Optopus will change that by providing a library that is easy and efficient to
 configure; powerful when needed for complex, specialized, unusual, or merely
 particular situations; and designed with an eye toward customization and
-flexibility. At every level of program complexity -- ranging from throwaway
-scripts to the next-big-thing -- Optopus will offer a superior approach to
+flexibility. At every level of program complexity — ranging from throwaway
+scripts to the next-big-thing — Optopus will offer a superior approach to
 handling command-line arguments.
 
 The library is under active development and a beta release has been published.
 The purpose of that release was mainly to reserve the project name in
 [PyPI][pypi_optopus] but it already provides one small bit of useful
-functionality, one not currently available in other libraries -- namely,
+functionality, one not currently available in other libraries — namely,
 no-configuration parsing, which is handy for temporary or experimental scripts
 that require nothing more than open-ended support for options and positionals.
 
@@ -103,11 +103,11 @@ ap.add_argument('path')
 
 The equivalent Optopus configuration dispenses with all of that hassle.
 Instead, it relies on the conventions that most programmers already know
-regarding command-line usage syntax -- the same syntax you just read and
+regarding command-line usage syntax — the same syntax you just read and
 understood a few paragraphs above. That syntax, along with a small number of
-sensible augmentations, will allow Optopus to reduce developer hassle
-significantly while also providing a more powerful and flexible argument
-parser. The difference between the two configurations is striking.
+sensible additions, will allow Optopus to reduce developer hassle significantly
+while also providing a more powerful and flexible argument parser. The
+difference between the two configurations is striking.
 
 ```python
 p = Parser('pgrep :: [-i] [-v] <rgx> <path>')
@@ -127,13 +127,13 @@ ap.add_argument('rgx', help = 'Python regular expression')
 ap.add_argument('path', nargs = '*', help = 'Path(s) to input')
 ```
 
-The Optopus configuration is more efficient (53% the size of argparse), more
+The Optopus configuration is more efficient (48% the size of argparse), more
 readable, and requires less API knowledge. You just type what you want and have
 to remember little more than a mostly already-known syntax. Note that [Example
 1](#example-1) used what Optopus calls a usage-variant syntax: it expressed the
 full command-line grammar in schematic form. Example 2 uses a closely related
 syntax, called opt-help syntax. Each line configures a single Opt (a
-configuration object representing one positional argument or option) using the
+configuration object representing a positional argument or option) using the
 same syntax seen in the first example, optionally accompanied by one or more
 aliases and help text. Because the opt-help syntax is more featureful at the
 level of individual Opts (it can declare aliases and help text), it is often
@@ -166,7 +166,7 @@ ap.add_argument('--context', '-C', metavar = '<n>', type = int, help = 'Print N 
 ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue'), help = 'Highlight matching text: red, green, blue')
 ```
 
-By comparison, the Optopus configuration remains compact (71% the size of
+By comparison, the Optopus configuration remains compact (67% the size of
 argparse), intuitive, and easy to scan. If you want to spiff it up further you
 can have your editor line everything up on the colon separators. Also notice
 the two phases of configuration: most of the work is done in the text syntax
@@ -223,12 +223,12 @@ optional arguments:
   --color <col>         Highlight matching text: red, green, blue
 ```
 
-The Optopus help text is cleaner, easier to read, and more aesthetic. Those
-gains mostly come from a couple of alternative techniques that Optopus supports
-but does not require: first, the ability to flexibly summarize groups of
-options symbolically in the usage text (as `[options]` in this example, which
-was done in the last `p.config()` call above); and second, the separation of
-option help from an alias listing.
+The Optopus help text is cleaner and easier to read. Those gains mostly come
+from a couple of alternative techniques that Optopus supports but does not
+require: first, the ability to flexibly summarize groups of options
+symbolically in the usage text (as `[options]` in this example, which was done
+in the last `p.config()` call above); and second, the separation of option help
+from an alias listing.
 
 ```
 Usage:
@@ -306,20 +306,20 @@ sp3.add_argument('path', **argconf['path'])
 ```
 
 Once again, the comparison with Optopus is striking. Even with subcommands, the
-Optopus configuration remains quite intuitive. The user does have to learn a
-few additional syntax rules (the double-colon as a section marker, and the
-syntax for positional usage variants like `<task=grep>`), but the API burden
-remains low. A Python programmer unfamiliar with the library could quickly
-infer the basic intent even without knowing the all of the rules. This example
-illustrates both syntax styles mentioned above: usage-variant syntax to define
-the subcommand-style grammar that our program needs in the first section (for
-convenience, this section can refer to the Opts via their short aliases);
-followed by another section using opt-help syntax to configure the individual
-Opts more fully. Finally, notice that this configuration does more than the
-argparse example: it defines the `-d` and `-p` options as alternatives
-(mutually exclusive). That behavior is achievable in argparse, at the cost of
-looking up even more API. Optopus simply builds on a usage syntax already known
-to many developers: a pipe to delimit alternatives.
+Optopus configuration remains intuitive and compact (60% the size of argparse).
+The user does have to learn a few additional syntax rules (the double-colon as
+a section marker, and the syntax for positional usage variants like
+`<task=grep>`), but the API burden remains low. A Python programmer unfamiliar
+with the library could quickly infer the basic intent even without knowing the
+all of the rules. This example illustrates both syntax styles mentioned above:
+usage-variant syntax to define the subcommand-style grammar that our program
+needs in the first section (for convenience, this section can refer to the Opts
+via their short aliases); followed by another section using opt-help syntax to
+configure the individual Opts more fully. Finally, notice that this
+configuration does more than the argparse example: it defines the `-d` and `-p`
+options as alternatives (mutually exclusive). That behavior is achievable in
+argparse, at the cost of looking up even more API. Optopus simply builds on a
+usage syntax already known to many developers: a pipe to delimit alternatives.
 
 ```python
 p = Parser('''wrangle ::
@@ -435,7 +435,6 @@ Usage:
           [--color <red|green|blue>] <rgx> [<path>...]
   wrangle sub [-h] [-i] [-n <n>] <rgx> <rep> [<path>...]
   wrangle search [-h] [-i] [-g <n>] [-d <s>] <rgx> [<path>...]
-  wrangle -h
 
 Positionals: task:
   grep                   Emit lines matching pattern
@@ -520,9 +519,9 @@ define their own. Because the tool is literally a pipeline for text running
 through various conversion and computation stages, it makes sense to model the
 command-line grammar as repeatable. This use case is mostly supportable by
 cobbling together multiple argparse parsers, but it is awkward and requires a
-bit of special logic. Optopus will support an admittedly unusual use case like
-that with almost no extra API-learning cost for the user. See
-[here][grammar_ex11], [here][grammar_ex12], or [here][grammar_ex13].
+bit of special logic. Optopus will support a use case like that with almost no
+extra API-learning cost for the user. See [here][grammar_ex11],
+[here][grammar_ex12], or [here][grammar_ex13].
 
 **Parameter or argument independence**. When an option has multiple parameters
 or a positional has multiple arguments, most argument parsers force them to be
@@ -544,7 +543,7 @@ composable concepts: elements (in this case, positionals, options, and their
 parameters), groups, alternatives, usage variants, and quantifiers. At least
 for most developers, those concepts are frequently observed in regular
 expressions and in the related set of conventions observed in technical
-documentation for command-line programs -- namely, their usage syntax. By
+documentation for command-line programs — namely, their usage syntax. By
 resting on these composable ideas, Optopus will be able to achieve both
 simplicity and greater power.
 
@@ -564,7 +563,7 @@ grammars by combining a few core ideas:
   practical reasons, Optopus mimics Git and some other tools in using angle
   brackets consistently.
 
-- Pipes to separate alternatives -- a ubiquitous convention both in usage text
+- Pipes to separate alternatives — a ubiquitous convention both in usage text
   and regex.
 
 - Quantifiers that can applied to single elements or groups. This is another
@@ -590,7 +589,7 @@ by the value of the `<task>` positional (add or delete), along with a third
 variant (named Examples) that allows the user to request some help text showing
 examples. Note that usage variants can have explicit names (as shown below) or
 not (the more common case); if defined, a variant name is mainly useful as a
-convenient label when using the Parser's configuration API.
+convenient label/handle when using the Parser's configuration API.
 
 ```python
 p = Parser('''::
@@ -690,7 +689,7 @@ they prefer along the text-to-API spectrum.
 Opt('[-d --dim <> <> [<>]]')
 
 # Hybrid.
-Opt('--dim', nparams = (2,3), ntimes = (0,1), aliases = 'd')
+Opt('-d --dim', nparams = (2,3), ntimes = (0,1))
 
 # All API.
 Opt(dest = 'dim', kind = 'option', nparams = (2,3), ntimes = (0,1), aliases = 'd')
@@ -700,7 +699,7 @@ Opt(dest = 'dim', kind = 'option', nparams = (2,3), ntimes = (0,1), aliases = 'd
 
 In addition to having an insufficiently powerful grammatical foundation,
 existing argument parsers tend to be inflexible in their design and thus not
-open to very much customization. Two areas are particularly noteworthy:
+open to very much customization. Two areas are particularly noteworthy.
 
 **Help and error text**. Most libraries offer only limited control over the
 formatting, arrangement, and style of help and error text. Argparse, for
@@ -730,12 +729,12 @@ disabling.
 
 To the extent that the existing libraries do allow customization, the
 mechanisms for doing that are often awkward. Argparse is an apt example: many
-workarounds to user difficulties with the library involve subclassing, but most
-argparse classes do not appear to be well-designed for inheritance (and some of
-their docstrings seem to discourage it outright). At a minimum, one a can say
-that the library does not provide authoritative guidance on which classes are
-amenable to subclassing, if any, and what users should do or avoid when doing
-so.
+suggested workarounds to user difficulties with the library involve
+subclassing, but most argparse classes do not appear to be well-designed for
+inheritance (and some of their docstrings seem to discourage it outright). At a
+minimum, one a can say that the library does not provide authoritative guidance
+on which classes are amenable to subclassing, if any, and what users should do
+or avoid when doing so.
 
 Optopus will be built with an eye toward flexibility and customization. To the
 extent feasible, all controllable parameters governing the generation of text
@@ -756,7 +755,7 @@ users can easily understand. Without that, those developers face higher
 short-term and long-term support costs.
 
 The broad theme connecting such matters is to reduce developer hassle as it
-relates to argument handling. Some examples on the Optopus roadmap:
+relates to argument handling. Some examples on the Optopus roadmap.
 
 #### Efficient Opt configuration API
 
@@ -771,15 +770,15 @@ configured in one call to accept only positive integers.
 
 #### Handy utilities for exiting and error messages
 
-Argument parsers are all used in the same general context (command-line
-programs) and such programs have many common needs during the early phase of
-execution when arguments are parsed and validated -- namely, printing different
-types of help or error text and sometimes exiting. Those behaviors can be
-implemented haphazardly or robustly and well (for example, exiting with a
-proper status code, emitting error messages to stderr rather than stdout, or
-even adding color to error output). Even when done well, such utilities need to
-be reimplemented (or copy-pasted) from script to script, because it is not
-necessarily worth the trouble to package them as a separate library.
+Argument parsers are all used in the same general context and such programs
+have many common needs during the early phase of execution when arguments are
+parsed and validated -- namely, printing different types of help or error text
+and sometimes exiting. Those behaviors can be implemented haphazardly or
+robustly and well (for example, exiting with a proper status code, emitting
+error messages to stderr rather than stdout, or even adding color to error
+output). Even when done well, such utilities need to be reimplemented (or
+copy-pasted) from script to script, because it is not necessarily worth the
+trouble to package them as a separate library.
 
 Optopus is fundamentally an argument parser and will not stray too far from
 that focus, but it will provide commonly needed functionality related to
@@ -955,12 +954,12 @@ the input as possible (even in the face of some end-user errors) in order to
 glean more information about end-user intent, perhaps with an eye toward
 providing more specific help.
 
-#### No-configuration parsing modes
+#### No-configuration parsing
 
-Optopus will support some no-configuration parsing modes that will parse any
-input based on standard rules. The purpose is to support low-stakes or
-temporary scripts that could benefit from a few command-line options, but are
-not important enough to warrant much configuration work.
+Optopus will support no-configuration parsing that will parse any input based
+on standard rules. The purpose is to support low-stakes or temporary scripts
+that could benefit from a few command-line options, but are not important
+enough to warrant much configuration work.
 
 In addition to the default no-config parsing, demonstrated in the introduction,
 the library will include a simple mechanism to achieve a few different flavors
