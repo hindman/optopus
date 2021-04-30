@@ -613,7 +613,7 @@ Each usage variant above has something noteworthy.
   then tack on a subparser API, you can support typical subcommand-style
   programs, but nothing else; however, if you start with composable concepts
   you can support subcommand-style programs and all kinds of other needs as
-  well -- with almost no additional API burden on users.
+  well — with almost no additional API burden on users.
 
 Defining command-line grammar via a configuration syntax based on usage text is
 not a new idea. While most argument parsing libraries are like argparse in
@@ -632,14 +632,14 @@ off, about how to make a better argument parser since then. A second debt is
 owed to Vladimir Keleshev, the primary author of Python's docopt. That library,
 in my view, has unfortunate and signficant limitations, but it is based on some
 compelling ideas. The 2012 PyCon [video][docopt_vid] promoting the library is
-entertaining and wonderfully polemical in the best sense of the word -- well
+entertaining and wonderfully polemical in the best sense of the word — well
 worth the time of anyone interested in the subject. Watching the video in the
 early 2010s rekindled my interest in the Optopus project and helped me refine
 ideas I had been mulling over for a long time.
 
 In spite of those intellectual debts to this alternative tradition in argument
 parsers, my experiments with many libraries convinced me that both approaches
--- API-driven configuration and usage-syntax-driven configuration -- have their
+— API-driven configuration and usage-syntax-driven configuration — have their
 strengths and weaknesses. Optopus aims to build on the strengths of each:
 
 **Usage-syntax to define the core**. Optopus encourages the use of text as the
@@ -674,7 +674,7 @@ features. Optopus takes a hybrid approach, combining the benefits of each
 configuration style.
 
 Finally, it should be noted that all of the library's behaviors will be
-configurable via the API, including the grammar -- not merely to satisfy
+configurable via the API, including the grammar — not merely to satisfy
 traditionalists, but because, at least for simpler use cases, configuring the
 parser's grammar via the API also works well. Note also that even the API
 configuration can leverage as much or little of the grammar syntax as desired.
@@ -738,8 +738,8 @@ or avoid when doing so.
 
 Optopus will be built with an eye toward flexibility and customization. To the
 extent feasible, all controllable parameters governing the generation of text
-will be adjustable. And for dynamic configuration needs -- whether related to
-help text, error text, side effects, or parsing -- the library will support
+will be adjustable. And for dynamic configuration needs — whether related to
+help text, error text, side effects, or parsing — the library will support
 them via hooks rather than subclassing. Developers needing special behavior
 will not have to worry whether they have implemented a method override robustly
 enough in the face of edge cases or future evolution of the library. Instead,
@@ -772,7 +772,7 @@ configured in one call to accept only positive integers.
 
 Argument parsers are all used in the same general context and such programs
 have many common needs during the early phase of execution when arguments are
-parsed and validated -- namely, printing different types of help or error text
+parsed and validated — namely, printing different types of help or error text
 and sometimes exiting. Those behaviors can be implemented haphazardly or
 robustly and well (for example, exiting with a proper status code, emitting
 error messages to stderr rather than stdout, or even adding color to error
@@ -818,7 +818,7 @@ with the parsed result, along with any other args/kwargs the user specifies.
 As illustrated in a few of the examples above, a program's usage text can be
 made more readable and helpful to end-users by condensing groups of options (or
 groups of choices) with symbolic names. Such techniques are sometimes seen in
-command-line programs with large numbers of options -- so large than an
+command-line programs with large numbers of options — so large than an
 exhaustive listing in the usage text actively undermines usability because it
 overwhelms user attention and patience. For example, this simplified snippet of
 usage text from `git diff` illustrates the technique.
@@ -843,7 +843,7 @@ arguments and options, each with a line of help text. Sometimes, however, a
 different approach works better, such as organizing options into labeled
 sections or simply interspersing blocks of text or sub-headings in between
 various groupings of the listed options. Argparse mostly supports those needs
-via argument groups -- even more API to learn.
+via argument groups — even more API to learn.
 
 Because Optopus configuration rests on a textual foundation, providing users
 with more flexibility and control over the structuring of help text is easy to
@@ -920,8 +920,8 @@ Sometimes the development or debugging process can be helped by having the
 ability to include hidden Opts, meaning that they work but are never mentioned
 in the usage or help text. A related need is for Opts that apply only under
 specific conditions that must be determined at runtime. Although the latter is
-achievable via argparse -- just wrap parts of the argparse setup code in the
-needed conditional logic -- Optopus will support such behaviors via simple API
+achievable via argparse — just wrap parts of the argparse setup code in the
+needed conditional logic — Optopus will support such behaviors via simple API
 configurations.
 
 #### Relaxed parsing modes
