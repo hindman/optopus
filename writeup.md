@@ -207,24 +207,26 @@ familiar and reasonable, if a bit awkward at times. It is also mildly annoying
 if you are among those who care about finer details related to capitalization,
 spacing, and overall readability.
 
-    # Example 3: argparse help text.
+```
+# Example 3: argparse help text.
 
-    usage: pgrep [-h] [--ignore-case] [--invert-match] [--max-count <n>]
-                 [--context <n>] [--color <col>] <rgx> [<path> ...]
+usage: pgrep [-h] [--ignore-case] [--invert-match] [--max-count <n>]
+             [--context <n>] [--color <col>] <rgx> [<path> ...]
 
-    positional arguments:
-      <rgx>                 Python regular expression
-      <path>                Path(s) to input
+positional arguments:
+  <rgx>                 Python regular expression
+  <path>                Path(s) to input
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      --ignore-case, -i     Ignore case
-      --invert-match, -v    Select non-matching lines
-      --max-count <n>, -m <n>
-                            Stop searching after N matches
-      --context <n>, -C <n>
-                            Print N lines of before/after context
-      --color <col>         Highlight matching text: red, green, blue
+optional arguments:
+  -h, --help            show this help message and exit
+  --ignore-case, -i     Ignore case
+  --invert-match, -v    Select non-matching lines
+  --max-count <n>, -m <n>
+                        Stop searching after N matches
+  --context <n>, -C <n>
+                        Print N lines of before/after context
+  --color <col>         Highlight matching text: red, green, blue
+```
 
 The Optopus help text is cleaner, easier to read, and more aesthetic. Those
 gains mostly come from a couple of alternative techniques that Optopus supports
@@ -233,29 +235,31 @@ symbolically in the usage text (as `[options]` in this example, which was done
 in the last `p.config()` call above); and second, the separation of option help
 from an alias listing.
 
-    # Example 3: optopus help text.
+```
+# Example 3: optopus help text.
 
-    Usage:
-      pgrep [options] <rgx> [<path>...]
+Usage:
+  pgrep [options] <rgx> [<path>...]
 
-    Positionals:
-      <rgx>                  Python regular expression
-      <path>                 Path(s) to input
+Positionals:
+  <rgx>                  Python regular expression
+  <path>                 Path(s) to input
 
-    Options:
-      --help                 Print help text and exit
-      --ignore-case          Ignore case
-      --invert-match         Select non-matching lines
-      --max-count <n>        Stop searching after N matches
-      --context <n>          Print N lines of before/after context
-      --color <col>          Highlight matching text: red, green, blue
+Options:
+  --help                 Print help text and exit
+  --ignore-case          Ignore case
+  --invert-match         Select non-matching lines
+  --max-count <n>        Stop searching after N matches
+  --context <n>          Print N lines of before/after context
+  --color <col>          Highlight matching text: red, green, blue
 
-    Aliases:
-      --help                 -h
-      --ignore-case          -i
-      --invert-match         -v
-      --max-count            -m
-      --context              -C
+Aliases:
+  --help                 -h
+  --ignore-case          -i
+  --invert-match         -v
+  --max-count            -m
+  --context              -C
+```
 
 As a final comparison, we will expand beyond grepping into a suite of
 regex-based text wrangling utilities: grep, sub (for search and replace), and
@@ -363,14 +367,14 @@ p.config('g', convert = int, validate = nonnegative)
 The help text comparison for the last example further highlights the awkward
 adequacy of argparse: yes it works, but no more than that.
 
+```
     # Example 4: argparse help text from four usages:
     #   wrangle --help
     #   wrangle grep --help
     #   wrangle sub --help
     #   wrangle search --help
-
-    # ----------------------------------------
-
+```
+```
     usage: wrangle [-h] <task> ...
 
     positional arguments:
@@ -381,9 +385,8 @@ adequacy of argparse: yes it works, but no more than that.
 
     optional arguments:
       -h, --help  show this help message and exit
-
-    # ----------------------------------------
-
+```
+```
     usage: wrangle grep [-h] [--ignore-case] [--invert-match] [--max-count <n>]
                         [--context <n>] [--color <col>]
                         <rgx> [<path> ...]
@@ -401,9 +404,8 @@ adequacy of argparse: yes it works, but no more than that.
       --context <n>, -C <n>
                             Print N lines of before/after context
       --color <col>         Highlight matching text: red, green, blue
-
-    # ----------------------------------------
-
+```
+```
     usage: wrangle sub [-h] [--ignore-case] [--nsubs <n>] <rgx> <rep> [<path> ...]
 
     positional arguments:
@@ -415,9 +417,8 @@ adequacy of argparse: yes it works, but no more than that.
       -h, --help           show this help message and exit
       --ignore-case, -i    Ignore case
       --nsubs <n>, -n <n>  N of substitutions
-
-    # ----------------------------------------
-
+```
+```
     usage: wrangle search [-h] [--ignore-case] [--group <n>] [--delim <s>]
                           <rgx> [<path> ...]
 
@@ -431,50 +432,53 @@ adequacy of argparse: yes it works, but no more than that.
       --group <n>, -g <n>  Emit just capture group N [0 for all]
       --delim <s>, -d <s>  Delimeter for capture groups [tab]
       --para, -p           Emit capture groups one-per-line, paragraph-style
+```
 
 The Optopus help text is cleaner, easier to read, more compact. It is also
 unified rather than separate (everything from a single usage of --help). If
 needed, the parser can be easily configured to support use cases that need
 separate help text for different usage variants (many programs do not).
 
-    # Example 4: optopus help text.
+```
+# Example 4: optopus help text.
 
-    Usage:
-      wrangle grep [-h] [-i] [-v] [-m <n>] [-C <n>]
-              [--color <red|green|blue>] <rgx> [<path>...]
-      wrangle sub [-h] [-i] [-n <n>] <rgx> <rep> [<path>...]
-      wrangle search [-h] [-i] [-g <n>] [-d <s>] <rgx> [<path>...]
-      wrangle -h
+Usage:
+  wrangle grep [-h] [-i] [-v] [-m <n>] [-C <n>]
+          [--color <red|green|blue>] <rgx> [<path>...]
+  wrangle sub [-h] [-i] [-n <n>] <rgx> <rep> [<path>...]
+  wrangle search [-h] [-i] [-g <n>] [-d <s>] <rgx> [<path>...]
+  wrangle -h
 
-    Positionals: task:
-      grep                   Emit lines matching pattern
-      sub                    Search for pattern and replace
-      search                 Emit text matching pattern
+Positionals: task:
+  grep                   Emit lines matching pattern
+  sub                    Search for pattern and replace
+  search                 Emit text matching pattern
 
-    Positionals: other:
-      <rgx>                  Python regular expression
-      <path>                 Path(s) to input
+Positionals: other:
+  <rgx>                  Python regular expression
+  <path>                 Path(s) to input
 
-    Options:
-      --help                 Print help text and exit
-      --ignore-case          Ignore case
-      --invert-match         Select non-matching lines
-      --max-count <n>        Stop searching after N matches
-      --context <n>          Print N lines of before/after context
-      --color <>             Highlight matching text: red, green, blue
-      --nsubs <n>            N of substitutions
-      --group <n>            Emit just capture group N [0 for all]
-      --delim <s>            Delimeter for capture groups [tab]
+Options:
+  --help                 Print help text and exit
+  --ignore-case          Ignore case
+  --invert-match         Select non-matching lines
+  --max-count <n>        Stop searching after N matches
+  --context <n>          Print N lines of before/after context
+  --color <>             Highlight matching text: red, green, blue
+  --nsubs <n>            N of substitutions
+  --group <n>            Emit just capture group N [0 for all]
+  --delim <s>            Delimeter for capture groups [tab]
 
-    Aliases:
-      --help                 -h
-      --ignore-case          -i
-      --invert-match         -v
-      --max-count            -m
-      --context              -C
-      --nsubs                -n
-      --group                -g
-      --delim                -d
+Aliases:
+  --help                 -h
+  --ignore-case          -i
+  --invert-match         -v
+  --max-count            -m
+  --context              -C
+  --nsubs                -n
+  --group                -g
+  --delim                -d
+```
 
 ## Powerful grammars built from simple parts
 
@@ -799,8 +803,10 @@ exhaustive listing in the usage text actively undermines usability because it
 overwhelms user attention and patience. For example, this simplified snippet of
 usage text from `git diff` illustrates the technique.
 
-    git diff [options] [<commit>] [<path>...]
-    git diff [options] --cached [<commit>] [<path>...]
+```
+git diff [options] [<commit>] [<path>...]
+git diff [options] --cached [<commit>] [<path>...]
+```
 
 Because Optopus treats groups as first-class citizens in command-line grammar,
 and because it will also offer flexibible querying and configuration APIs
@@ -832,32 +838,34 @@ text might look like. Admittedly, this presentation is too elaborate for the
 script at hand, but the main point is just to illustrate the ease of organizing
 help text as needed.
 
-    grep::
+```
+grep::
 
-        ```
-        The grep command emits input lines matching (or not
-        matching) the regular expression.
+    \```
+    The grep command emits input lines matching (or not
+    matching) the regular expression.
 
-        Positionals:
-        ```
+    Positionals:
+    \```
 
-            <rgx> : Python regular expression
-            <path> : Path(s) to input
+        <rgx> : Python regular expression
+        <path> : Path(s) to input
 
-        ```
-        Search options:
-        ```
+    \```
+    Search options:
+    \```
 
-            -i --ignore-case : Ignore case
-            -v --invert-match : Select non-matching lines
-            -m --max-count <n> : Stop searching after N matches
+        -i --ignore-case : Ignore case
+        -v --invert-match : Select non-matching lines
+        -m --max-count <n> : Stop searching after N matches
 
-        ```
-        Output options:
-        ```
+    \```
+    Output options:
+    \```
 
-            -C --context <n> : Print N lines of before/after context
-            --color <> : Highlight matching text
+        -C --context <n> : Print N lines of before/after context
+        --color <> : Highlight matching text
+```
 
 Finally, to reiterate a point noted above, the configuration syntax is not
 primarily literal help text: for example, the blocks of regular text (marked by
