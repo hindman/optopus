@@ -12,6 +12,7 @@ Publish beta:
     - setup.py
     - tasks.py
     - dev.txt
+    - requirements.txt [in prep for Github Actions later]
     - Make repo public.
     - Publish.
     - Check in pypi and confirm pip-install.

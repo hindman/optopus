@@ -317,7 +317,7 @@ convenience, this section can refer to the Opts via their short aliases);
 followed by another section using opt-help syntax to configure the individual
 Opts more fully. Finally, notice that this configuration does more than the
 argparse example: it defines the `-d` and `-p` options as alternatives
-(multually exclusive). That behavior is achievable in argparse, at the cost of
+(mutually exclusive). That behavior is achievable in argparse, at the cost of
 looking up even more API. Optopus simply builds on a usage syntax already known
 to many developers: a pipe to delimit alternatives.
 
@@ -474,8 +474,7 @@ Aliases:
 Most argument parsing libraries start from the most basic model of command-line
 usage: an ordered sequence of positionals along with an unordered set of short
 and long options that can be freely mixed among the positionals and that can
-take zero or more ordered parameters. That basic framework is sometimes
-extended to support mutually exclusive options and subcommand-style programs.
+take zero or more ordered parameters.
 
 The argparse library is a representative example in this vein: it does a
 reasonable job for common use cases but struggles with command-lines that
@@ -484,47 +483,52 @@ and the [Python bug tracker][py_bugs], for example, one can find a variety of
 desired and generally sensible use cases that argparse cannot support at all or
 can support only partially after some uncomfortable hackery.
 
-The most frequently desired grammatical features fall into the following
-buckets:
+The most frequently desired grammatical features seem to fall into the
+following buckets:
 
-- Mutual exclusion beyond the simplest case. The argparse library supports
-  mutual exclusion among options considered individually. But it cannot apply
-  that type of requirement to groups of options (for example, `-x` OR `-y` `-z`).
+**Mutual exclusion beyond the simplest case**. The argparse library supports
+mutual exclusion among options considered individually. But it cannot apply
+that type of requirement to groups of options (for example, `-x` OR `-y` `-z`).
+Examples: [ex1][grammar_ex01], [ex2][grammar_ex02].
 
-- Conditional requirements or exclusions. The argparse library does offer
-  subparsers as one mechanism to apply conditional requirements, but this can
-  be a heavy device for what are often fairly simple grammatical needs (for
-  example, if `-x` then require either `-y` or `-z`; or if `-a` then disallow
-  `-b`).
+**Conditional requirements or exclusions**. The argparse library does offer
+subparsers as one mechanism to apply conditional requirements, but this can be
+a heavy device for what are often fairly simple grammatical needs (for example,
+if `-x` then require either `-y` or `-z`; or if `-a` then disallow `-b`).
+Examples: [ex1][grammar_ex03], [ex2][grammar_ex04], [ex3][grammar_ex05],
+[ex4][grammar_ex06].
 
-- Flexible specification of alternatives. Again, argparse supports this
-  partially (via subparsers or mutually exclusive options), but it lacks a
-  simple, general-purpose mechanism for alternatives (for example, either `-a` OR
-  `-b` OR `-a` `-b`).
+**Flexible specification of alternatives**. Again, argparse supports this
+partially (via subparsers or mutually exclusive options), but it lacks a
+simple, general-purpose mechanism for alternatives (for example, either `-a` OR
+`-b` OR `-a` `-b`). Examples: [ex1][grammar_ex07], [ex2][grammar_ex08],
+[ex3][grammar_ex09].
 
-- Flexible quantification. The argparse library supports four basic quantifiers
-  (`N`, `?` `*`, and `+`), but it lacks support for regex-style ranges (eg,
-  `{1,3}`), which can arise in a variety of plausible uses cases. There is no
-  strong reason not to support them.
+**Flexible quantification**. The argparse library supports four basic
+quantifiers (`N`, `?` `*`, and `+`), but it lacks support for regex-style
+ranges (e.g., `{1,3}`), which can arise in a variety of plausible uses cases.
+There is no strong reason not to support them. Examples: [ex1][grammar_ex10].
 
-- More complex repetition. The argparse library can apply quantifiers to
-  individual options or positionals, but not to groups (for example, two
-  positionals, `<x> <y>`, repeatable in pairs). Sometimes the group that needs to
-  be repeated is the full command-line grammar. In fact, after Optopus, my next
-  project involves such a program: a Python tool for quick text transformation
-  pipelines in the spirit of sed/awk/perl one-liners, but with more intuitive
-  usage, a built-in set of core utilities, and an easy mechanism for users to
-  define their own. Because the tool is literally a pipeline for text running
-  through various conversion and computation stages, it makes sense to model
-  the command-line grammar as repeatable. This use case is mostly supportable
-  by cobbling together multiple argparse parsers, but it is awkward and
-  requires a bit of special logic. Optopus will support an admittedly unusual
-  use case like that with almost no extra API-learning cost for the user.
+**More complex repetition**. The argparse library can apply quantifiers to
+individual options or positionals, but not to groups (for example, two
+positionals, `<x> <y>`, repeatable in pairs). Sometimes the group that needs to
+be repeated is the full command-line grammar. In fact, after Optopus, my next
+project involves such a program: a Python tool for quick text transformation
+pipelines in the spirit of sed/awk/perl one-liners, but with more intuitive
+usage, a built-in set of core utilities, and an easy mechanism for users to
+define their own. Because the tool is literally a pipeline for text running
+through various conversion and computation stages, it makes sense to model the
+command-line grammar as repeatable. This use case is mostly supportable by
+cobbling together multiple argparse parsers, but it is awkward and requires a
+bit of special logic. Optopus will support an admittedly unusual use case like
+that with almost no extra API-learning cost for the user.
+Examples: [ex1][grammar_ex11], [ex2][grammar_ex12], [ex3][grammar_ex13].
 
-- Parameter or argument independence. When an option has multiple parameters or
-  a positional has multiple arguments, most argument parsers force them to be
-  configured identically. But sometimes independence makes sense (for example,
-  `-a <A|B|C> <X|Y>`, where each parameter has different choices).
+**Parameter or argument independence**. When an option has multiple parameters
+or a positional has multiple arguments, most argument parsers force them to be
+configured identically. But sometimes independence makes sense (for example,
+`-a <A|B|C> <X|Y>`, where each parameter has different choices). Examples:
+[ex1][grammar_ex14].
 
 The deeper problem with most argument parsing libraries is that they rest on a
 weak foundation. Perhaps a bit uncharitably, one could say that they started
@@ -631,7 +635,7 @@ some unfortunate limitations, but it is based on compelling ideas -- about
 argument parsing and, more broadly, about the kinds of tools developers need
 and do not need. The 2012 PyCon [video][docopt_vid] promoting the library is
 entertaining and wonderfully polemical in the best sense of the word -- well
-worth the time of anyone iterested in the subject. Watching the video in the
+worth the time of anyone interested in the subject. Watching the video in the
 early 2010s rekindled my interest in the Optopus project and helped me refine
 ideas I had been mulling over for a long time.
 
@@ -675,11 +679,11 @@ style.
 Finally, it should be noted that all of the library's behaviors will be
 configurable via the API, including the grammar -- not merely to satisfy
 traditionalists, but because, at least for simpler use cases, configuring the
-parser's grammar via the API also works well. Note also that even the the API
+parser's grammar via the API also works well. Note also that even the API
 configuration can leverage as much or little of the grammar syntax as desired.
 To illustrate, the following configurations achieve the same thing: an optional
 `--dim` having an alias and taking 2 to 3 parameters. I suspect that many
-developers will prefer the efficiency and intuitivess of the syntax, but that
+developers will prefer the efficiency and intuitiveness of the syntax, but that
 opinion is not enforced by the library. Users can freely operate at any point
 they prefer along the text-to-API spectrum.
 
@@ -767,7 +771,7 @@ fashion, making it possible to configure many Opts very efficiently. This was
 demonstrated briefly in a few in the examples above, where multiple Opts were
 configured in one call to accept only positive integers.
 
-Handy utilties for exiting and error messages:
+Handy utilities for exiting and error messages:
 
 Argument parsers are all used in the same general context (command-line
 programs) and such programs have many common needs during the early phase of
@@ -800,7 +804,7 @@ git diff [options] --cached [<commit>] [<path>...]
 ```
 
 Because Optopus treats groups as first-class citizens in command-line grammar,
-and because it will also offer flexibible querying and configuration APIs
+and because it will also offer flexible querying and configuration APIs
 allowing developers to organize options into meaningful arrangements with
 symbolic names, developers working on larger scripts (or really any script that
 could benefits from such devices) will have flexible mechanisms to generate
@@ -818,7 +822,7 @@ via argument groups -- even more API to learn.
 
 Because Optopus configuration rests on a textual foundation, providing users
 with more flexibility and control over the structuring of help text is fairly
-easy to accomodate. To illustrate, consider [Example 4](#example-4) (the
+easy to accommodate. To illustrate, consider [Example 4](#example-4) (the
 wrangle script) and imagine that the developer wanted to organize the help text
 by subcommand, with various chunks of literal text and sub-headings mixed in.
 That can probably be achieved with argparse using multiple argument groups per
@@ -862,8 +866,8 @@ Finally, to reiterate a point noted above, the configuration syntax is not
 primarily literal help text: for example, the blocks of regular text (marked by
 triple back-quotes above) will still be paragraph-wrapped to proper width by
 Optopus, while preserving the intended indentation level. And of course, that
-wrapping behavior can be turned off globablly, by section, or at the level of
-indidividual text blocks, if needed.
+wrapping behavior can be turned off globally, by section, or at the level of
+individual text blocks, if needed.
 
 #### More helpful help, via high-precedence Opts
 
@@ -942,7 +946,7 @@ can be combined as needed.
 
 - Allow-unknown: similar to parse-known behavior in argparse.
 
-- Allow-uncoverted: overlook data-conversion problems.
+- Allow-unconverted: overlook data-conversion problems.
 
 - Allow-unvalidated: overlook data-validation problems.
 
@@ -976,7 +980,7 @@ Parser(noconf = '2,')   # 2+ parameters.
 
 Those examples blur the line between config and no-config, of course, and the
 last two violate the spirit of no-config by imposing some validation
-requirements on the arguments. But they are consistist with the spirit of
+requirements on the arguments. But they are consistent with the spirit of
 Optopus, which is to make it easy to parse arguments under a variety of
 situations with minimal hassle.
 
@@ -1055,6 +1059,20 @@ p.config('v', default = defkeys('invert_match', 'pgrep_invert_match'))
 [getopt_declare]: https://metacpan.org/pod/Getopt::Declare
 [getopt_euclid]: https://metacpan.org/pod/Getopt::Euclid
 [getopt_long_desc]: https://metacpan.org/pod/Getopt::Long::Descriptive
+[grammar_ex01]: https://stackoverflow.com/questions/18025646
+[grammar_ex02]: http://bugs.python.org/issue10984
+[grammar_ex03]: https://stackoverflow.com/questions/4466197
+[grammar_ex04]: https://stackoverflow.com/questions/25626109
+[grammar_ex05]: http://bugs.python.org/issue11588
+[grammar_ex06]: https://stackoverflow.com/questions/11455218
+[grammar_ex07]: http://bugs.python.org/issue10984
+[grammar_ex08]: https://stackoverflow.com/questions/27258173
+[grammar_ex09]: https://stackoverflow.com/questions/4692556
+[grammar_ex10]: https://stackoverflow.com/questions/5257403
+[grammar_ex11]: https://stackoverflow.com/questions/27681718
+[grammar_ex12]: https://stackoverflow.com/questions/19114652
+[grammar_ex13]: https://stackoverflow.com/questions/62524681
+[grammar_ex14]: https://stackoverflow.com/questions/28660992
 [py_argparse]: https://docs.python.org/3/library/argparse.html
 [py_bugs]: https://bugs.python.org/
 [py_optparse]: https://docs.python.org/3/library/optparse.html
