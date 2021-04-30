@@ -841,27 +841,27 @@ help text as needed.
 ```
 grep::
 
-    \```
+    ```
     The grep command emits input lines matching (or not
     matching) the regular expression.
 
     Positionals:
-    \```
+    ```
 
         <rgx> : Python regular expression
         <path> : Path(s) to input
 
-    \```
+    ```
     Search options:
-    \```
+    ```
 
         -i --ignore-case : Ignore case
         -v --invert-match : Select non-matching lines
         -m --max-count <n> : Stop searching after N matches
 
-    \```
+    ```
     Output options:
-    \```
+    ```
 
         -C --context <n> : Print N lines of before/after context
         --color <> : Highlight matching text
