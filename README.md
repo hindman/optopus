@@ -24,7 +24,7 @@ flexibility. At every level of program complexity — ranging from throwaway
 scripts to the next-big-thing — Optopus will offer a superior approach to
 handling command-line arguments.
 
-The library is under active development and a beta release has been published.
+The library is under active development and a alpha release has been published.
 The purpose of that release was mainly to reserve the project name in
 [PyPI][pypi_optopus] but it already provides one small bit of useful
 functionality, one not currently available in other libraries — namely,

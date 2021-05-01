@@ -2,9 +2,12 @@
 todos: TODOs
 --------
 
-Publish beta:
+Publish alpha:
 
     - setup.py: final check
+    - create fresh virtualenvs
+    - test
+    - tox
     - dev.txt: notes.
     - commit
 
@@ -50,6 +53,8 @@ Help text: basic:
     Help text: usage.
 
     Help text: options.
+
+    Upgrade classifers to beta.
 
 Parsing enhancements:
 
