@@ -2,25 +2,6 @@
 todos: TODOs
 --------
 
-Publish alpha:
-
-    - Version commit.
-
-    - Make repo public.
-    - Check other repo settings.
-
-    - Publish to testpypi.
-    - Check
-
-    - Publish to pypi.
-    - Check
-    - Confirm local pip-install.
-    - Msg
-
---------
-road-map: Road map
---------
-
 Core algorithms:
 
     Grammar syntax lexing (see _draft_new.py for token defintions).
@@ -30,6 +11,10 @@ Core algorithms:
     Data-oriented exception strategy.
 
     Argument parsing.
+
+--------
+road-map: Road map
+--------
 
 Core enhancements:
 
