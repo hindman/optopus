@@ -4,19 +4,22 @@ todos: TODOs
 
 Publish beta:
 
-    - setup.py
+    - setup.py: final check
+    - dev.txt: notes.
+    - commit
 
-    - tasks.py
-
-    - dev.txt
-
-    - requirements.txt [in prep for Github Actions later]
+    - Version commit.
 
     - Make repo public.
+    - Check other repo settings.
 
-    - Publish.
+    - Publish to testpypi.
+    - Check
 
-    - Check in pypi and confirm pip-install.
+    - Publish to pypi.
+    - Check
+    - Confirm local pip-install.
+    - Msg
 
 --------
 road-map: Road map
@@ -32,13 +35,13 @@ Core algorithms:
 
     Argument parsing.
 
-    Look into Github Actions.
-
 Core enhancements:
 
     Error selection during failed argument parsing.
 
     Conversion/validation/choices.
+
+    Look into Github Actions for CI.
 
 Help text: basic:
 

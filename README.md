@@ -1,7 +1,7 @@
 
 # Optopus
 
-## Because Python needs a better command line argument parser
+## Because Python needs a better command-line argument parser
 
 To varying degrees of success, command-line argument parsing libraries do a
 mostly adequate job handling the common use cases. They are able to parse
@@ -475,7 +475,7 @@ and long options that can be freely mixed among the positionals and that can
 take zero or more ordered parameters.
 
 The argparse library is a representative example in this vein: it does a
-reasonable job for common use cases but struggles with command-lines that
+reasonable job for common use cases but struggles with command lines that
 require a grammar falling beyond the typical. On [Stack Overflow][stack_home]
 and the [Python bug tracker][py_bugs], for example, one can find a variety of
 desired and generally sensible use cases that argparse cannot support at all or
@@ -930,7 +930,7 @@ Existing libraries either ignore or support only small number of parsing modes.
 Argparse, for example, has long supported a [parse-known
 mode][py_argparse_known] and in Python 3.7 it added a [parse-intermixed
 mode][py_argparse_intermixed], which allows positionals and options to be
-intermixed a bit more flexibly on the command-line.
+intermixed a bit more flexibly on the command line.
 
 Standard argument parsing in Optopus will be similar to the flexibility
 exhibited by the argparse intermixed mode. That behavior is basically the
@@ -994,7 +994,7 @@ in the area of default setting, usually in this order:
 - Somewhat less persistent settings in environment variables. A setting here
   can override the value from a configuration file.
 
-- Just-in-time settings from the command line arguments. These setting override
+- Just-in-time settings from the command-line arguments. These setting override
   everything else.
 
 That order of operations implies that the data from configuration files and
