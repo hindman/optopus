@@ -3,15 +3,16 @@
 ####
 #
 # General:
-#   invoke [--dry] TASK [OPTIONS]
-#   invoke --list
-#   invoke --help TASK
+#   inv [--dry] TASK [OPTIONS]
+#   inv --list
+#   inv --help TASK
 #
 # Tasks:
-#   invoke tags
-#   invoke test [--cov]
-#   invoke tox
-#   invoke publish
+#   inv tags
+#   inv test [--cov]
+#   inv dist [--publish] [--test]
+#   inv tox
+#   inv bump [--kind <major|minor|patch>] [--local]
 #
 ####
 
@@ -58,13 +59,13 @@ def dist(c, publish = False, test = False):
         c.run(f'twine upload -r {repo} dist/*')
 
 @task
-def bump(c, t = 'minor', local = False):
+def bump(c, kind = 'minor', local = False):
     '''
-    Version bump (minor, major, or patch). Commits and pushes unless --local.
+    Version bump (minor, major, patch). Commits, pushes unless --local.
     '''
     # Validate.
     bump_types = dict(major = 0, minor = 1, patch = 2)
-    assert t in bump_types
+    assert kind in bump_types
     # Get current version as a 3-element list.
     path = 'src/optopus/version.py'
     lines = open(path).readlines()
@@ -72,8 +73,8 @@ def bump(c, t = 'minor', local = False):
     major, minor, patch = [int(x) for x in version.split('.')]
     # Compute new version.
     tup = (
-        (major + 1, 0, 0) if t == 'major' else
-        (major, minor + 1, 0) if t == 'minor' else
+        (major + 1, 0, 0) if kind == 'major' else
+        (major, minor + 1, 0) if kind == 'minor' else
         (minor, minor, patch + 1)
     )
     version = '.'.join(str(x) for x in tup)

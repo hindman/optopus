@@ -4,11 +4,6 @@ todos: TODOs
 
 Publish alpha:
 
-    - setup.py: final check
-    - create fresh virtualenvs
-    - test
-    - tox
-    - dev.txt: notes.
     - commit
 
     - Version commit.

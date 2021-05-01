@@ -8,8 +8,8 @@ Creating a new virtualenv:
     deactivate
     pyenv shell $v && pyenv versions
     mkvirtualenv optopus-$v
-    pip install --upgrade pip
-    pip install -e . -e .[dev] -e .[test]
+    pip install -U pip
+    pip install -e .[dev,test] && pip list
 
 Activate and run tests:
 
@@ -18,14 +18,13 @@ Activate and run tests:
         workon optopus-3.9.4
         pytest -s -v tests/
 
-    - With tox:
+    - With invoke:
 
-        - Manualy:
+        inv test
+        inv tox
 
-            pyenv shell 3.9.4  3.8.9  ...
-            tox
+    - With tox directly:
 
-        - Invoke:
-
-            inv tox
+        pyenv shell 3.9.4  3.8.9  ...
+        tox
 
