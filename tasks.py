@@ -79,9 +79,12 @@ def bump(c, kind = 'minor', local = False):
     )
     version = '.'.join(str(x) for x in tup)
     # Write new version file.
-    with open(path, 'w') as fh:
-        fh.write(f"__version__ = '{version}'\n\n")
-    print(f'Bumped to {version}.')
+    if c['run']['dry']:
+        print('# Dry: modify version.py.')
+    else:
+        with open(path, 'w') as fh:
+            fh.write(f"__version__ = '{version}'\n\n")
+        print(f'Bumped to {version}.')
     # Commit and push.
     if not local:
         c.run(f"git commit {path} -m 'Version {version}'")

@@ -4,8 +4,6 @@ todos: TODOs
 
 Publish alpha:
 
-    - commit
-
     - Version commit.
 
     - Make repo public.
