@@ -12,21 +12,38 @@ Spec structure:
 
 Grammar section forms:
 
-    Variants | Form
-    ----------------------------
-             | [prog]
-    0        | [opt-help...]
-    ----------------------------
-             | [prog] ::
-    1+       | variant...
-    ----------------------------
+    Variants | Opt-helps | Form
+    -------------------------------------
+             |           |
+    0        | 0         | ::
+    -------------------------------------
+             |           | [prog] ::
+    0        | 1+        | opt-help...
+    -------------------------------------
+             |           | [prog]
+    1+       | 0         | variant...
+    -------------------------------------
+
+    - Mneumonic:
+        - Double-colon is the section marker.
+        - Opt-help can resided in sections.
+        - So grammar section with double-colon means opt-help.
+
+    - Any of the grammar-section forms can be following by 0+ sections
+      containing opt-help and/or regular text.
 
     - Prog must be a valid name.
 
-    - The first variant can be on same line as prog, or not.
+    - Each opt-help must start on a fresh line.
 
-    - The grammar section does not allow regular text and cannot have its title
-      (Usage) changed via the spec.
+    - Same for variants, other than the first, which can follow prog directly.
+
+    - The grammar section does not allow regular text.
+
+    - Grammar section cannot have its title (Usage) changed via the spec.
+
+    - The first form (an empty grammar section) is needed because a one-word
+      section title would be indistinguishable from a prog.
 
 Opt help lines:
 

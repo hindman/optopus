@@ -110,7 +110,7 @@ while also providing a more powerful and flexible argument parser. The
 difference between the two configurations is striking.
 
 ```python
-p = Parser('pgrep :: [-i] [-v] <rgx> <path>')
+p = Parser('pgrep [-i] [-v] <rgx> <path>')
 ```
 
 #### Example 2
@@ -141,7 +141,7 @@ the easiest mechanism to use for non-trivial scripts that do not have any
 special grammatical needs.
 
 ```python
-p = Parser('''pgrep
+p = Parser('''pgrep ::
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
     [-i --ignore-case] : Ignore case
@@ -180,7 +180,7 @@ configuration actually does more validation (in the example, `isfile` and
 `ispositive` are assumed to be callables defined by the user).
 
 ```python
-p = Parser('''pgrep
+p = Parser('''pgrep ::
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
     [-i --ignore-case] : Ignore case
@@ -322,7 +322,7 @@ argparse, at the cost of looking up even more API. Optopus simply builds on a
 usage syntax already known to many developers: a pipe to delimit alternatives.
 
 ```python
-p = Parser('''wrangle ::
+p = Parser('''wrangle
     <task=grep>   [-i] [-v] [-m] [-C]
                   [--color <red|green|blue>]
                   <rgx> [<path>...]
@@ -592,7 +592,7 @@ not (the more common case); if defined, a variant name is mainly useful as a
 convenient label/handle when using the Parser's configuration API.
 
 ```python
-p = Parser('''::
+p = Parser('''name-db
     Add      : <task=add> (<name> <id>)...
     Delete   : <task=delete> <id>{1,5} [--archive [--json [--indent] | --xml]]
     Examples : --examples

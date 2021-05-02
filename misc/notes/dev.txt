@@ -28,3 +28,9 @@ Activate and run tests:
         pyenv shell 3.9.4  3.8.9  ...
         tox
 
+Installing from test pypi:
+
+    pip install --index-url https://test.pypi.org/simple/ optopus
+    pip uninstall attrs short-con
+    pip install attrs short-con
+
