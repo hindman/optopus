@@ -2,47 +2,16 @@
 
 TODO:
 
-    - In sections, text is now assumed to be syntax unless it is block-quoted,
-    which eliminates the need for extended peeks.
+    - Check token list again.
 
-    - Sketch of parsing states, handlers, and state transitions:
-
-        state = grammar-check:
-        handlers : []
-
-            peek for section-variant
-            yes:
-                state = grammar-opt-help 
-                handlers : [section_title, opt_help]
-                on section_title: state = section-opt-help
-            else:
-                state = grammar-variant
-                handlers : [section_title, variant]
-                on section_title: state = section-opt-help
-
-        section-opt-help
-            handlers : [block_quote, section_title, opt_help]
-            on block_quote: state = section-other
-
-        section-other
-            handlers : [block_quote, other_line]
-            on block_quote: state = section-opt-help
-
-    - Convert RegexLexer and SpecParser back to simple peeks only:
-
-        - Just use self.curr.
-        - When reverting, do not return to eat_last_peek().
-
-    - Set up the handlers, state management, and top-level SpecParser.parse().
-
-    - Adjust other code accordingly.
+    - Adjust parsing methods
 
         - It might not be necessary to complete the draft.
 
         - Perhaps sufficient to adjust a couple of the more complex methods and
         then just move on to real implementation.
 
-        - There is now sufficient clarity to move to implementation.
+    - TODOs.
 
 Spec tokens:
 
@@ -62,7 +31,7 @@ Spec tokens:
     quoted-block      | ```[\s\S]*?```          | .
     quoted-literal    | `[^`]*?`                | .
     newline           | \n                      | Ignore
-    indent            | ^ hws*                  | Ignore, act
+    indent            | ^ hws*                  | Ignore, track in Loc
     whitespace        | hws*                    | Ignore
     quantifier-range  | \{ hws* (quant) hws* \} | .
     paren-open        | \(                      | .
@@ -77,8 +46,8 @@ Spec tokens:
     long-option       | -- name                 | .
     short-option      | - nm                    | .
     section-name      | prog-name? hws* :: eol  | Grammar
-    section-title     | .*? :: eol              | Section, act
-    section-variant   | .*? ::                  | .
+    section-title     | .*? :: eol              | Section
+    section-variant   | .*? ::                  | Dropping this with recent change
     partial-defintion | name ! hws* :           | Grammar
     variant-defintion | name hws* :             | Grammar
     partial-usage     | name !                  | Grammar
@@ -90,18 +59,6 @@ Spec tokens:
     sym-dot           | [!.]                    | .
     opt-help-text     | : .*                    | .
 
-    Token         | Action
-    ------------------------------------------
-    indent        | set self.indent
-    section-title | set self.state
-
-    Lexer state:
-
-        The state is just a name.
-
-        TokType will have an attribute that can be used to declare the token
-        relevant only for specific lexer states. None means all states.
-
 '''
 
 class RegexLexer(object):
@@ -112,7 +69,7 @@ class RegexLexer(object):
         self.loc = Loc(0, 0, 0)
         self.max_pos = len(self.text) - 1
 
-    def get_next_token(self, ploc = None):
+    def get_next_token(self):
         # Starting at self.pos, try to emit the next Token.
         # If we find a valid token, there are two possibilities:
         #
@@ -125,8 +82,11 @@ class RegexLexer(object):
         tok = True
         while tok:
             for tt, emit, rgx in self.token_types:
-                tok = self.match_token(rgx, tt, ploc)
+                tok = self.match_token(rgx, tt)
                 if tok:
+                    if tok.name == 'indent':
+                        # TODO: track in location info.
+                        pass
                     if emit:
                         return tok
                     else:
@@ -138,18 +98,9 @@ class RegexLexer(object):
         else:
             self.error()
 
-    def match_token(self, rgx, token_type, ploc = None):
-        # This method is a non-standard in having two behaviors:
-        #
-        # - Returns Token or None.
-        # - If Token: updates either ploc or self.loc.
-        #
-        # The dual behavior eliminates bookkeeping hassle for
-        # peeking callers.
-
+    def match_token(self, rgx, token_type):
         # Search for the token.
-        loc = ploc or self.loc
-        m = rgx.match(self.text, pos = loc.pos)
+        m = rgx.match(self.text, pos = self.loc.pos)
         if not m:
             return None
 
@@ -160,15 +111,16 @@ class RegexLexer(object):
         # Update location information.
         width = len(txt)
         n_newlines = len(indexes)
-        loc.pos += width
-        loc.line += n_newlines
-        loc.col = (
+        self.loc.pos += width
+        self.loc.line += n_newlines
+        self.loc.col = (
             width - indexes[-1] - 1 if indexes
-            else loc.col + width
+            else self.loc.col + width
         )
 
-        # Return token.
-        tok = Token(token_type, txt, width, loc)
+        # Return token with its own Loc.
+        tokloc = attr.evolve(self.loc)
+        tok = Token(token_type, txt, width, tokloc)
         return tok
 
     def error(self):
@@ -187,157 +139,120 @@ class SpecParser:
 
     # General parsing methods (formerly in the mixin).
 
+    # TODO during implementation:
+    # - Create a Handler data-class.
+
     def __init__(self, text):
         self.text = text
         self.curr = None
+        self.state = None
+        self.handlers = None
         self.lexer = RegexLexer(text, SPEC_TOKENS)
-        self.handlers = (...)
+
+        self.states = dict(
+            grammar_opt_help = dict(
+                tokens = __,
+                handlers = [
+                    (self.section_title, 'section_opt_help'),
+                    (self.opt_help, None),
+                ],
+            ),
+            grammar_variant = dict(
+                tokens = __,
+                handlers = [
+                    (self.section_title, 'section_opt_help'),
+                    (self.variant, None),
+                ],
+            ),
+            section_opt_help = dict(
+                tokens = __,
+                handlers = [
+                    (self.block_quote, 'section_other'),
+                    (self.section_title, None),
+                    (self.opt_help, None),
+                ],
+            ),
+            section_other = dict(
+                tokens = __,
+                handlers = [
+                    (self.block_quote, 'section_opt_help'),
+                    (self.other_line, None),
+                ],
+            ),
+        )
 
     def parse(self):
+
         # Consume and yield as many ParseElem as we can.
         elem = True
+
+        # TODO
+        # Determine initial state.
+        # peek for section-name
+        # yes: state => grammar_opt_help
+        # no:  state = grammar_variant
+
         while elem:
-            for func in self.handlers:
-                elem = func()
+            for h in self.handlers:
+                elem = h.method()
                 if elem:
                     yield elem
+                    if h.next_state:
+                        self.state = h.next_state
                     break
         # We expect EOF as the final token.
         if not self.curr.isa(EOF):
             self.error()
 
-    # ========================================
-    # New eat() method.
-    # ========================================
-
-    def eat(self, toktype, ploc = None):
-        # Normalize input to tuple(TokenType).
-        tts = (toktype,) if isinstance(x, TokenType) else tuple(toktype)
-
-        # Validate.
-        if not tts:
-            raise ...
-
-        # Get the token.
-        if ploc:
-            tok = self.lexer.get_next_token(ploc)
-        else:
-            self.curr = self.curr or self.lexer.get_next_token()
-            tok = self.curr
-            if tok.isa(EOF):
+    def eat(self, toktypes*, taste = False):
+        # Pull from lexer.
+        if self.curr is None:
+            self.curr = self.lexer.get_next_token()
+            if self.curr.isa(EOF):
                 raise ...
+        # Check for corrent token type.
+        tok = None
+        for tt in toktypes:
+            if self.curr.isa(tt):
+                tok = self.curr
+                if not taste:
+                    self.swallow()
+                break
+        return tok
 
-        # Check token against destire type(s).
-        for tt in tts:
-            if tok.isa(tt):
-                if not ploc:
-                    self.curr = None
-                return tok
-
-        # Fail.
-        return None
-
-    # ========================================
-    # OLD eat/peek methods.
-    # ========================================
-
-    # def peek(self, toktype):
-    #     ok = self.do_eat(toktype, peek = True)
-    #     self.prevpeek = toktype
-    #     return ok
-
-    # def eat(self, toktype):
-    #     return self.do_eat(toktype)
-
-    # def eat_last_peek(self):
-    #     tok = self.do_eat(self.prevpeek)
-    #     if tok:
-    #         return tok
-    #     else:
-    #         raise ...
-
-    # def do_eat(self, toktype, peek = False):
-    #     # Normalize input to tuple(TokenType).
-    #     tts = (toktype,) if isinstance(x, TokenType) else tuple(toktype)
-    #
-    #     # Validate.
-    #     if not tts:
-    #         raise ...
-    #
-    #     # Pull from lexer.
-    #     if self.curr is None:
-    #         self.curr = self.lexer.get_next_token()
-    #         if self.curr.isa(EOF):
-    #             raise ...
-    #
-    #     # Check.
-    #     for tt in tts:
-    #         if self.curr.isa(tt):
-    #             if peek:
-    #                 return True
-    #             else:
-    #                 tok = self.curr
-    #                 self.curr = None
-    #                 self.prevpeek = None
-    #                 return tok
-    #
-    #     # Fail.
-    #     return False if peek else None
-
-    # ========================================
+    def swallow(self):
+        self.curr = None
 
     def error(self):
         fmt = 'Invalid syntax: pos={}'
         msg = fmt.format(self.lexer.pos)
         raise Exception(msg)
 
-    def parse_first(self, methods, ploc = None):
-        init = attr.evolve(ploc) if ploc else None
+    def parse_first(self, methods):
+        elem = None
         for m in methods:
-            x = m(ploc)
-            if x:
-                return True if ploc else x
-            elif ploc:
-                ploc.pos = init.pos
-                ploc.line = init.line
-                ploc.col = init.col
+            elem = m()
+            if elem:
+                break
         return None
 
-    def parse_some(self, method, ploc = None, require = 0):
-        init = attr.evolve(ploc) if ploc else None
-        xs = []
+    def parse_some(self, method):
+        elems = []
         while True:
-            x = method(ploc)
-            if x:
-                xs.push(x)
+            e = method()
+            if e:
+                elems.push(e)
             else:
                 break
-        if len(xs) >= require:
-            return True if ploc else tuple(xs)
-        else:
-            raise ...
+        return elems
 
     # ========================================
     # Methods specific to the grammar syntax.
 
-    def variant(self, ploc = None):
-
-        # Scenarios:
-        # - Called by a peeking handler | Forward ploc: return bool
-        # - Need peek and ploc          | Create fresh ploc
-        # - Need peek but not ploc      | Just eat
-        # - Eat directly                | Eat
-        # - Eat last peek               | Drop this
+    def variant(self):
 
         # Setup.
         defs = (variant-defintion, partial-defintion)
-
-        # Handle a forwarded peek.
-        if ploc:
-            return (
-                self.eat(defs, ploc) and
-                self.parse_some(self.expression, ploc)
-            )
 
         # Variant.
         tok = self.eat(defs)
@@ -352,11 +267,11 @@ class SpecParser:
         else:
             return None
 
-    def expresion(self, ploc = None):
-        elems = self.parse_some(self.element, ploc)
-        return bool(elems) if ploc else Expression(elems)
+    def expresion(self):
+        elems = self.parse_some(self.element)
+        return Expression(elems)
 
-    def element(self, ploc = None):
+    def element(self):
         element_methods = (
             self.quoted_literal,
             self.partial_usage,
@@ -366,68 +281,58 @@ class SpecParser:
             self.long_option,
             self.short_option,
         )
-        e = self.parse_first(element_methods, ploc)
-        if ploc:
-            return bool(e)
-        elif e:
-            q = self.quantifier(ploc)
+        e = self.parse_first(element_methods)
+        if e:
+            q = self.quantifier()
             if q:
                 e.quantifier = q
         return e
 
-    def paren_expression(self, ploc = None):
-        return self.parenthesized(paren-open, 'expression', ploc)
+    def paren_expression(self):
+        return self.parenthesized(paren-open, 'expression')
 
-    def brack_expression(self, ploc = None):
-        return self.parenthesized(brack-open, 'expression', ploc)
+    def brack_expression(self):
+        return self.parenthesized(brack-open, 'expression')
 
-    def quoted_literal(self, ploc = None):
-        tok = self.eat(quoted-literal, ploc)
-        if ploc:
-            return bool(tok)
-        elif tok:
+    def quoted_literal(self):
+        tok = self.eat(quoted-literal)
+        if tok:
             return Literal(...)
         else:
             return None
 
-    def partial_usage(self, ploc = None):
-        tok = self.eat(partial-usage, ploc)
-        if ploc:
-            return bool(tok)
-        elif tok:
+    def partial_usage(self):
+        tok = self.eat(partial-usage)
+        if tok:
             return PartialUsage(...)
         else:
             return None
 
-    def long_option(self, ploc = None):
-        return self.option(long-option, ploc)
+    def long_option(self):
+        return self.option(long-option)
 
-    def short_option(self, ploc = None):
-        return self.option(short-option, ploc)
+    def short_option(self):
+        return self.option(short-option)
 
-    def option(self, option_type, ploc = None):
-        tok = self.eat(option_type, ploc)
-        if ploc:
-            return bool(tok)
-        elif tok:
+    def option(self, option_type):
+        tok = self.eat(option_type)
+        if tok:
             name = ...
-            params = self.parse_some(self.parameter, ploc)
+            params = self.parse_some(self.parameter)
             return Opt(name, params, ...)
         else:
             return None
 
-    def positional(self, ploc = None):
-        return self.parenthesized(angle-open, 'positional_definition', ploc)
+    def positional(self):
+        return self.parenthesized(angle-open, 'positional_definition')
 
-    def parameter(self, ploc = None):
-        return self.parenthesized(brace-open, 'parameter_definition', ploc)
+    def parameter(self):
+        return self.parenthesized(brace-open, 'parameter_definition')
 
-    def positional_definition(self, ploc = None):
+    def positional_definition(self):
         # Get the choices. Positionals require a dest.
-        choices = self.choices(ploc)
-        if ploc:
-            return bool(choices.dest)
-        elif not choices.dest:
+        choices = self.choices()
+        if not choices.dest:
             raise ...
 
         # Return Positional or ParameterVariant.
@@ -440,14 +345,12 @@ class SpecParser:
             Positional(dest, vals)
         )
 
-    def parameter_definition(self, ploc = None):
+    def parameter_definition(self):
         # Parse the choices expression.
-        choices = self.parenthesized(angle-open, 'choices', ploc, empty_ok = True)
+        choices = self.parenthesized(angle-open, 'choices', empty_ok = True)
 
         # Return early on failure or if we are just peeking.
-        if ploc:
-            return bool(choices.dest)
-        elif choices is None:
+        if choices is None:
             return None
 
         # Handle nameless param <>.
@@ -464,7 +367,7 @@ class SpecParser:
             Parameter(dest, vals)
         )
 
-    def choices(self, ploc = None):
+    def choices(self):
         # Used for parameters and positionals. Allows the following forms,
         # where x is a destination and V1/V2 are values.
         #   x
@@ -478,83 +381,77 @@ class SpecParser:
         # will get confused about these two forms:
         #
         #   <sym>
-        #   <val|val|val> 
+        #   <val|val|val>
         #
         # There are more tokens to take advantage of now.
 
         # Get destination, if any.
-        tok = self.eat(name, ploc)
+        tok = self.eat(name)
         if tok:
             dest = ...
         else:
             dest = None
 
         # Return if no assigned value/choices.
-        tok = self.eat(assign, ploc)
+        tok = self.eat(assign)
         if not tok:
-            return True if ploc else Choices(dest, tuple())
+            return Choices(dest, tuple())
 
         # Get value/choices.
         choices = []
         while True:
-            val = self.eat((quoted-literal, name), ploc)
+            val = self.eat((quoted-literal, name))
             if val:
                 choices.append(val)
-                if not self.eat(choice-sep, ploc):
+                if not self.eat(choice-sep):
                     break
             else:
                 break
 
         # Return.
         if choices:
-            return True if ploc else Choices(dest, tuple(choices))
+            return Choices(dest, tuple(choices))
         else:
             # Return None here: equal without choices is invalid.
             pass
 
-    def quantifier(self, ploc = None):
+    def quantifier(self):
         quantifier_methods = (
             self.one_or_more_dots,
             self.quantifier_range,
         )
-        q = self.parse_first(quantifier_methods, ploc)
-        if ploc:
-            return bool(q)
-        elif q:
-            greedy = not self.eat(question, ploc)
+        q = self.parse_first(quantifier_methods)
+        if q:
+            greedy = not self.eat(question)
             return Quantifier(q, greedy)
         else:
             return None
 
-    def one_or_more_dots(self, ploc = None):
-        tok = self.eat(triple-dot, ploc)
-        if ploc:
-            return bool(tok)
-        elif tok:
+    def one_or_more_dots(self):
+        tok = self.eat(triple-dot)
+        if tok:
             return (1, None)
         else:
             return None
 
-    def quantifier_range(self, ploc = None):
-        tok = self.eat(quantifier-range, ploc)
-        if ploc:
-            return bool(tok)
-        elif tok:
+    def quantifier_range(self):
+        tok = self.eat(quantifier-range)
+        if tok:
             ...
             return (..., ...)
         else:
             return None
 
-    def parenthesized(self, open_tok, method_name, ploc = None, empty_ok = False):
+    def parenthesized(self, open_tok, method_name, empty_ok = False):
         close_tok = ...
-        tok = self.eat(open_tok, ploc)
+        tok = self.eat(open_tok)
         if tok:
             method = getattr(self, method_name)
-            elem = method(ploc)
+            elem = method()
             if not (elem or empty_ok):
                 raise ...
-            elif self.eat(close_tok, ploc):
-                return True if ploc else elem
+            elif self.eat(close_tok):
+                return elem
             else:
                 raise ...
         else:
