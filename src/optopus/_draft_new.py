@@ -2,16 +2,63 @@
 
 TODO:
 
-    - Check token list again.
+    Is it a good idea to use indentation as a continuation mechanism?
+    Consider this example. We know it's supposed to be 5 variants,
+    but under the current indentation rules, it's all a continuation.
+
+        <cmd=chomp>
+        <cmd=findall> <rgx> [-a]
+        <cmd=grep> <rgx> [-i] [-v] [-s]
+        <cmd=range> <start> <stop> [<step>] [-g]
+        <cmd=run> <code> [-g <>] [-a] [-v] [-i]
+
+    OK, we can fix that problem by requiring GREATER indent than
+    the first line. For example:
+
+        <cmd=chomp>
+        <cmd=findall> <rgx> [-a]
+        <cmd=grep> <rgx> [-i] [-v] [-s]
+        <cmd=range> <start> <stop>
+                    [<step>] [-g]
+        <cmd=run> <code> [-g <>]
+                  [-a] [-v] [-i]
+
+TODO:
+
+    - Handling continuation lines:
+
+        - Pass a flag throughout the parsing handler calls: cont = True.
+          And maybe it's not a flag by just an attitubute on self.
+
+        - Allowing indented continuation-lines is overwhelmingly the most
+        common situation.
+
+        - When indentation rules do not apply (at the start of a new
+        variant/opt-help), just pass a flag telling eat() to ignore indentation
+        issues. These first-line situations are when we need to set the
+        minimum-indent required for any continutations.
+
+            - This is when you set self.indent to the indent of the first token
+            of the variant/opt-help.
+
+        - Let eat() enforce indentation rules, based on Token attributes and
+        the flag passed throughout the parsing handlers.
+
+            - Tokens might need to indicate their status:
+
+                - First token on a line, with an indent value.
+                    - When we see tokens like this, we need to
+                    examine their indent.
+                - Subsequent tokens on a line.
+
+        - Let the lexer be responsible for setting Token attributes that will
+        convey sufficient indentation info to eat().
+
+        - Probably need newline-indent token to precede plain newline.
 
     - Adjust parsing methods
 
-        - It might not be necessary to complete the draft.
-
-        - Perhaps sufficient to adjust a couple of the more complex methods and
-        then just move on to real implementation.
-
-    - TODOs.
+    - Other TODOs.
 
 Spec tokens:
 
@@ -26,38 +73,37 @@ Spec tokens:
     q         | hws* , hws*
     quant     | num | q | q num | num q | num q num
 
-    Tokens            | Pattern                 | Note
-    ----------------------------------------------------------------
-    quoted-block      | ```[\s\S]*?```          | .
-    quoted-literal    | `[^`]*?`                | .
-    newline           | \n                      | Ignore
-    indent            | ^ hws*                  | Ignore, track in Loc
-    whitespace        | hws*                    | Ignore
-    quantifier-range  | \{ hws* (quant) hws* \} | .
-    paren-open        | \(                      | .
-    paren-close       | \)                      | .
-    brack-open        | \[                      | .
-    brack-close       | \]                      | .
-    angle-open        | \<                      | .
-    angle-close       | \>                      | .
-    choice-sep        | BAR                     | .
-    triple-dot        | \.\.\.                  | .
-    question          | \?                      | .
-    long-option       | -- name                 | .
-    short-option      | - nm                    | .
-    section-name      | prog-name? hws* :: eol  | Grammar
-    section-title     | .*? :: eol              | Section
-    section-variant   | .*? ::                  | Dropping this with recent change
-    partial-defintion | name ! hws* :           | Grammar
-    variant-defintion | name hws* :             | Grammar
-    partial-usage     | name !                  | Grammar
-    name-assign       | name hws* =             | .
-    sym-dest          | name hws* \. hws* name  | .
-    name-nl           | name eol                | .
-    name              | name                    | .
-    assign            | =                       | .
-    sym-dot           | [!.]                    | .
-    opt-help-text     | : .*                    | .
+    Tokens            | Pattern                  | Note
+    -------------------------------------------------------------------------------
+    literal-backquote | \\`                      | .
+    quoted-block      | ```[\s\S]*?```           | .
+    quoted-literal    | `[^`]*?`                 | .
+    newline           | \n                       | Ignore
+    indent            | ^ hws*                   | Ignore, track in Loc
+    whitespace        | hws*                     | Ignore
+    quantifier-range  | \{ hws* quant hws* \}    | .
+    paren-open        | \(                       | .
+    paren-close       | \)                       | .
+    brack-open        | \[                       | .
+    brack-close       | \]                       | .
+    angle-open        | \<                       | .
+    angle-close       | \>                       | .
+    choice-sep        | BAR                      | .
+    triple-dot        | \.\.\.                   | .
+    question          | \?                       | .
+    long-option       | -- name                  | .
+    short-option      | - \w                     | .
+    section-name      | prog-name? hws* :: eol   | Grammar
+    section-title     | .* :: eol                | Section
+    partial-defintion | name ! hws* :            | Grammar
+    variant-defintion | name hws* :              | Grammar
+    partial-usage     | name !                   | Grammar
+    name-assign       | name hws* =              | .
+    sym-dest          | name hws* [!.] hws* name | .
+    dest              | [!.] hws* name           | .
+    name              | name                     | .
+    assign            | =                        | .
+    opt-help-text     | : .*                     | .
 
 '''
 
@@ -99,16 +145,20 @@ class RegexLexer(object):
             self.error()
 
     def match_token(self, rgx, token_type):
+
         # Search for the token.
         m = rgx.match(self.text, pos = self.loc.pos)
         if not m:
             return None
 
-        # Get matched text and locations of newlines inside of it.
+        # Capture the location of the matched token (its start point).
+        tokloc = attr.evolve(self.loc)
+
+        # Get matched text and newline locations within it.
         txt = m.group(0)
         indexes = [i for i, c in enumerate(text) if c == NL]
 
-        # Update location information.
+        # Update self.loc to be where the next token will start.
         width = len(txt)
         n_newlines = len(indexes)
         self.loc.pos += width
@@ -118,8 +168,7 @@ class RegexLexer(object):
             else self.loc.col + width
         )
 
-        # Return token with its own Loc.
-        tokloc = attr.evolve(self.loc)
+        # Return token.
         tok = Token(token_type, txt, width, tokloc)
         return tok
 
@@ -127,13 +176,6 @@ class RegexLexer(object):
         fmt = 'RegexLexerError: loc={}'
         msg = fmt.format(self.loc)
         raise RegexLexerError(msg)
-
-    # I do not think the new code need RegexLexer to be iterable --
-    # or even that it makes sense for this use case.
-    #
-    # Dropping:
-    #   __iter__()
-    #   __next__()
 
 class SpecParser:
 
@@ -205,12 +247,13 @@ class SpecParser:
             self.error()
 
     def eat(self, toktypes*, taste = False):
-        # Pull from lexer.
+        # Pull from lexer if we lack a current token.
         if self.curr is None:
             self.curr = self.lexer.get_next_token()
             if self.curr.isa(EOF):
+                # Because the lexer should deal with EOF, not parser.
                 raise ...
-        # Check for corrent token type.
+        # Check for desired token type(s).
         tok = None
         for tt in toktypes:
             if self.curr.isa(tt):
@@ -221,7 +264,10 @@ class SpecParser:
         return tok
 
     def swallow(self):
-        self.curr = None
+        if self.curr is None:
+            raise ...
+        else:
+            self.curr = None
 
     def error(self):
         fmt = 'Invalid syntax: pos={}'
@@ -249,6 +295,40 @@ class SpecParser:
     # ========================================
     # Methods specific to the grammar syntax.
 
+    '''
+
+    variant
+        expresion+
+            element+
+                quoted_literal
+                partial_usage
+                paren_expression
+                    ( expresion )
+                brack_expression
+                    [ expresion ]
+                positional
+                    < positional_definition >
+                long_option
+                    --opt
+                    parameter*
+                        < parameter_definition >
+                short_option
+                    -o
+                    parameter*
+                        < parameter_definition >
+
+    # Details.
+    choices
+    quantifier
+    one_or_more_dots
+    quantifier_range
+
+    # helpers
+    parenthesized
+    option
+
+    '''
+
     def variant(self):
 
         # Setup.
@@ -272,6 +352,8 @@ class SpecParser:
         return Expression(elems)
 
     def element(self):
+        # TODO: not sure it helps to have this as a separate
+        # method. Consider moving into expression().
         element_methods = (
             self.quoted_literal,
             self.partial_usage,
@@ -327,7 +409,7 @@ class SpecParser:
         return self.parenthesized(angle-open, 'positional_definition')
 
     def parameter(self):
-        return self.parenthesized(brace-open, 'parameter_definition')
+        return self.parenthesized(angle-open, 'parameter_definition')
 
     def positional_definition(self):
         # Get the choices. Positionals require a dest.

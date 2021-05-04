@@ -246,16 +246,16 @@ Whitespace rules:
 
     - Whitespace required:
 
-        - Each variant must start on its own line.
+        - Each opt-help  must start on its own line. Same for variants, other
+          than the first.
 
-        - Continuation lines for variants and opt-help must be indented and
-          contiguous.
+        - Continuation lines for variants and opt-help must be indented more
+          than the first line of the overall expression.
+
+        - For opt-help lines with help text, the colon and at least one help
+          word must be on first line.
 
         - Section start must be on its own line, ending in marker.
-
-        - Grammar section must have prog on first line in some usages.
-
-        - For opt-help lines with help text, colon must be on first line.
 
     - Tight-binding required among syntax elements:
 
