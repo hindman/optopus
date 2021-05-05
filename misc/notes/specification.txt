@@ -244,24 +244,31 @@ Sections:
 
 Whitespace rules:
 
-    - Whitespace required:
+    - Line and indentation requirements:
 
-        - Each opt-help  must start on its own line. Same for variants, other
-          than the first.
+        - Opt-help must start on its own line.
 
-        - Continuation lines for variants and opt-help must be indented more
-          than the first line of the overall expression.
+        - Variant, if not the first, must start on its own line.
 
-        - For opt-help lines with help text, the colon and at least one help
-          word must be on first line.
+        - Continuation line must be indented more than the first.
 
-        - Section start must be on its own line, ending in marker.
+        - Section title must be on its own line, ending in marker.
 
-    - Tight-binding required among syntax elements:
+    - Line breaks not allowed:
 
-        - Option prefix with name.
+        - Within an {m,n} quantifier.
 
-        - Partial name with marker.
+        - Between a name and equal sign.
+
+        - Within a sym.dest element.
+
+    - Whitespace not allowed:
+
+        - Between option prefix and its dest.
+
+        - Between partial name and its marker.
+
+        - Within a triple-dot quantifier.
 
 --------
 syntax-examples: Syntax examples

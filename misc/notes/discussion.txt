@@ -2209,6 +2209,18 @@ Finally, because Groups can nest, storing their requirements at the Opt level
 is not immediately straightforward.
 
 --------
+readme-next-version: README for next version
+--------
+
+Add some default setting to at least one example.
+
+Ultimately, readme should be more how-to than why.
+
+As lib evolves, shorten readme to have very short intro; how to use; then brief
+discussion of why its better (maybe bullet points even), with links to longer
+discussions of why-build-it and how-it-is-better.
+
+--------
 misc-new-notes: Miscellaneous new notes
 --------
 

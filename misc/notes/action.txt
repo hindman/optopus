@@ -32,6 +32,8 @@ Help text: basic:
 
     Help text: options.
 
+    Docs: proper README; shift why-build elsewhere [see readme-next-version].
+
     Upgrade classifers to beta.
 
 Parsing enhancements:

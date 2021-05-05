@@ -2,63 +2,49 @@
 
 TODO:
 
-    Is it a good idea to use indentation as a continuation mechanism?
-    Consider this example. We know it's supposed to be 5 variants,
-    but under the current indentation rules, it's all a continuation.
+    - Continuation lines:
 
-        <cmd=chomp>
-        <cmd=findall> <rgx> [-a]
-        <cmd=grep> <rgx> [-i] [-v] [-s]
-        <cmd=range> <start> <stop> [<step>] [-g]
-        <cmd=run> <code> [-g <>] [-a] [-v] [-i]
+        - Lexer sets Token attributes about indentation.
 
-    OK, we can fix that problem by requiring GREATER indent than
-    the first line. For example:
+        - Let eat() enforce indentation rules using that info:
 
-        <cmd=chomp>
-        <cmd=findall> <rgx> [-a]
-        <cmd=grep> <rgx> [-i] [-v] [-s]
-        <cmd=range> <start> <stop>
-                    [<step>] [-g]
-        <cmd=run> <code> [-g <>]
-                  [-a] [-v] [-i]
+            - SpecParser will have self.indent = N | None
 
-TODO:
+            - If None: enforce is-first requirement:
 
-    - Handling continuation lines:
+                - Swallow if:
 
-        - Pass a flag throughout the parsing handler calls: cont = True.
-          And maybe it's not a flag by just an attitubute on self.
+                    tok.is_first or
+                    self.is_first_variant
 
-        - Allowing indented continuation-lines is overwhelmingly the most
-        common situation.
+                - Represents start variant/opt-help.
+                - Set self.indent = tok.ident
+                - Set self.is_first_variant = False on second variant.
 
-        - When indentation rules do not apply (at the start of a new
-        variant/opt-help), just pass a flag telling eat() to ignore indentation
-        issues. These first-line situations are when we need to set the
-        minimum-indent required for any continutations.
+            - If set: enforce indentation rules:
 
-            - This is when you set self.indent to the indent of the first token
-            of the variant/opt-help.
+                - Swallow token only if:
 
-        - Let eat() enforce indentation rules, based on Token attributes and
-        the flag passed throughout the parsing handlers.
+                    self.line == tok.line or
+                    self.indent < tok.indent
 
-            - Tokens might need to indicate their status:
+    - Create a Handler data-class.
 
-                - First token on a line, with an indent value.
-                    - When we see tokens like this, we need to
-                    examine their indent.
-                - Subsequent tokens on a line.
+    - Create a Token data-class.
 
-        - Let the lexer be responsible for setting Token attributes that will
-        convey sufficient indentation info to eat().
+    - SpecParser.parse(): determine initial state:
 
-        - Probably need newline-indent token to precede plain newline.
+        peek for section-name
+        yes: state => grammar_opt_help
+        no:  state = grammar_variant
+
+    - SpecParser.variant(): variants no longer require a name.
+
+    - SpecParser.element(): not helpful.
+
+        - Move logic to expression().
 
     - Adjust parsing methods
-
-    - Other TODOs.
 
 Spec tokens:
 
@@ -72,14 +58,15 @@ Spec tokens:
     num       | \d+
     q         | hws* , hws*
     quant     | num | q | q num | num q | num q num
+    bq        | (?<!\\)`
+    bq3       | (?<!\\)```
 
     Tokens            | Pattern                  | Note
     -------------------------------------------------------------------------------
-    literal-backquote | \\`                      | .
-    quoted-block      | ```[\s\S]*?```           | .
-    quoted-literal    | `[^`]*?`                 | .
+    quoted-block      | bq3 [\s\S]*? bq3         | .
+    quoted-literal    | bq [\s\S]*? bq           | .
     newline           | \n                       | Ignore
-    indent            | ^ hws*                   | Ignore, track in Loc
+    indent            | ^ hws*                   | Ignore; track; MULTILINE
     whitespace        | hws*                     | Ignore
     quantifier-range  | \{ hws* quant hws* \}    | .
     paren-open        | \(                       | .
@@ -112,8 +99,13 @@ class RegexLexer(object):
     def __init__(self, text, token_types):
         self.text = text
         self.token_types = token_types
-        self.loc = Loc(0, 0, 0)
         self.max_pos = len(self.text) - 1
+        # Location and other info given to tokens.
+        self.pos = 0
+        self.line = 1
+        self.col = 1
+        self.indent = 0
+        self.is_first = True
 
     def get_next_token(self):
         # Starting at self.pos, try to emit the next Token.
@@ -131,8 +123,10 @@ class RegexLexer(object):
                 tok = self.match_token(rgx, tt)
                 if tok:
                     if tok.name == 'indent':
-                        # TODO: track in location info.
-                        pass
+                        self.indent = tok.width
+                    elif tok.name == 'newline':
+                        self.indent = 0
+                        self.is_first = True
                     if emit:
                         return tok
                     else:
@@ -145,44 +139,50 @@ class RegexLexer(object):
             self.error()
 
     def match_token(self, rgx, token_type):
-
         # Search for the token.
-        m = rgx.match(self.text, pos = self.loc.pos)
+        m = rgx.match(self.text, pos = self.pos)
         if not m:
             return None
 
-        # Capture the location of the matched token (its start point).
-        tokloc = attr.evolve(self.loc)
-
-        # Get matched text and newline locations within it.
+        # Get matched text, width, and newline info.
         txt = m.group(0)
-        indexes = [i for i, c in enumerate(text) if c == NL]
-
-        # Update self.loc to be where the next token will start.
         width = len(txt)
+        indexes = [i for i, c in enumerate(text) if c == NL]
         n_newlines = len(indexes)
-        self.loc.pos += width
-        self.loc.line += n_newlines
-        self.loc.col = (
-            width - indexes[-1] - 1 if indexes
-            else self.loc.col + width
+
+        # Create token.
+        tok = Token(
+            token_type,
+            txt,
+            width = width,
+            pos = self.pos,
+            line = self.line,
+            col = self.col,
+            n_lines = n_newlines + 1,
+            is_first = self.is_first,
+            indent = self.indent,
         )
 
+        # Update location info.
+        self.pos += width
+        self.line += n_newlines
+        self.col = (
+            width - indexes[-1] - 1 if indexes
+            else self.col + width
+        )
+        self.is_first = False
+
         # Return token.
-        tok = Token(token_type, txt, width, tokloc)
         return tok
 
     def error(self):
-        fmt = 'RegexLexerError: loc={}'
-        msg = fmt.format(self.loc)
+        fmt = 'RegexLexerError: pos={}'
+        msg = fmt.format(self.pos)
         raise RegexLexerError(msg)
 
 class SpecParser:
 
     # General parsing methods (formerly in the mixin).
-
-    # TODO during implementation:
-    # - Create a Handler data-class.
 
     def __init__(self, text):
         self.text = text
@@ -227,12 +227,6 @@ class SpecParser:
 
         # Consume and yield as many ParseElem as we can.
         elem = True
-
-        # TODO
-        # Determine initial state.
-        # peek for section-name
-        # yes: state => grammar_opt_help
-        # no:  state = grammar_variant
 
         while elem:
             for h in self.handlers:
@@ -298,14 +292,14 @@ class SpecParser:
     '''
 
     variant
-        expresion+
-            element+
+        expression ...
+            element...
                 quoted_literal
                 partial_usage
                 paren_expression
-                    ( expresion )
+                    ( expression )
                 brack_expression
-                    [ expresion ]
+                    [ expression ]
                 positional
                     < positional_definition >
                 long_option
@@ -347,13 +341,11 @@ class SpecParser:
         else:
             return None
 
-    def expresion(self):
+    def expression(self):
         elems = self.parse_some(self.element)
         return Expression(elems)
 
     def element(self):
-        # TODO: not sure it helps to have this as a separate
-        # method. Consider moving into expression().
         element_methods = (
             self.quoted_literal,
             self.partial_usage,

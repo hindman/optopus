@@ -59,6 +59,7 @@ toc: Table of contents
         opt-help-lines                | Opt help lines
         opt-independence-vs-unity     | Opt independence vs unity when sharing same dest
         group-level-validation-needed | Why Group-level validation should be retained
+        readme-next-version           | README for next version
         misc-new-notes                | Miscellaneous new notes
 
     dev.txt
