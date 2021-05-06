@@ -2,49 +2,22 @@
 
 TODO:
 
-    - Continuation lines:
+    - SpecParser.opt_help()
 
-        - Lexer sets Token attributes about indentation.
+        - we might need another parsing state for Opt help text.
 
-        - Let eat() enforce indentation rules using that info:
+        - when we see the colon, we need to collect only
+          the opt-help-text token(s) with valid indentation
 
-            - SpecParser will have self.indent = N | None
+        - it will be a new state that does NOT want to reset self.indent
+          Instead, it just needs to change the handlers/tokens.
 
-            - If None: enforce is-first requirement:
+        - without a new state, pieces of the opt help text might
+          look like other tokens, which will disrupt the algo
 
-                - Swallow if:
+    - Setup token lists more clearly
 
-                    tok.is_first or
-                    self.is_first_variant
-
-                - Represents start variant/opt-help.
-                - Set self.indent = tok.ident
-                - Set self.is_first_variant = False on second variant.
-
-            - If set: enforce indentation rules:
-
-                - Swallow token only if:
-
-                    self.line == tok.line or
-                    self.indent < tok.indent
-
-    - Create a Handler data-class.
-
-    - Create a Token data-class.
-
-    - SpecParser.parse(): determine initial state:
-
-        peek for section-name
-        yes: state => grammar_opt_help
-        no:  state = grammar_variant
-
-    - SpecParser.variant(): variants no longer require a name.
-
-    - SpecParser.element(): not helpful.
-
-        - Move logic to expression().
-
-    - Adjust parsing methods
+    - Adjust other parsing methods
 
 Spec tokens:
 
@@ -54,49 +27,50 @@ Spec tokens:
     name      | nm ([_-] nm)*
     prog-name | name ( \. nm )?
     hws       | [ \t]
-    eol       | hws* \n
+    eol       | hws* (?=\n)
     num       | \d+
     q         | hws* , hws*
     quant     | num | q | q num | num q | num q num
     bq        | (?<!\\)`
     bq3       | (?<!\\)```
 
-    Tokens            | Pattern                  | Note
+    Tokens             | Pattern                  | Note
     -------------------------------------------------------------------------------
-    quoted-block      | bq3 [\s\S]*? bq3         | .
-    quoted-literal    | bq [\s\S]*? bq           | .
-    newline           | \n                       | Ignore
-    indent            | ^ hws*                   | Ignore; track; MULTILINE
-    whitespace        | hws*                     | Ignore
-    quantifier-range  | \{ hws* quant hws* \}    | .
-    paren-open        | \(                       | .
-    paren-close       | \)                       | .
-    brack-open        | \[                       | .
-    brack-close       | \]                       | .
-    angle-open        | \<                       | .
-    angle-close       | \>                       | .
-    choice-sep        | BAR                      | .
-    triple-dot        | \.\.\.                   | .
-    question          | \?                       | .
-    long-option       | -- name                  | .
-    short-option      | - \w                     | .
-    section-name      | prog-name? hws* :: eol   | Grammar
-    section-title     | .* :: eol                | Section
-    partial-defintion | name ! hws* :            | Grammar
-    variant-defintion | name hws* :              | Grammar
-    partial-usage     | name !                   | Grammar
-    name-assign       | name hws* =              | .
-    sym-dest          | name hws* [!.] hws* name | .
-    dest              | [!.] hws* name           | .
-    name              | name                     | .
-    assign            | =                        | .
-    opt-help-text     | : .*                     | .
+    quoted-block       | bq3 [\s\S]*? bq3         | Section
+    quoted-literal     | bq [\s\S]*? bq           | .
+    newline            | \n                       | Ignore
+    indent             | ^ hws*                   | Ignore; track; MULTILINE
+    whitespace         | hws*                     | Ignore
+    quantifier-range   | \{ hws* quant hws* \}    | .
+    paren-open         | \(                       | .
+    paren-close        | \)                       | .
+    brack-open         | \[                       | .
+    brack-close        | \]                       | .
+    angle-open         | \<                       | .
+    angle-close        | \>                       | .
+    choice-sep         | BAR                      | .
+    triple-dot         | \.\.\.                   | .
+    question           | \?                       | .
+    long-option        | -- name                  | .
+    short-option       | - \w                     | .
+    section-name       | prog-name? hws* :: eol   | Grammar
+    section-title      | .* :: eol                | Section
+    partial-defintion  | name ! hws* :            | Grammar
+    variant-defintion  | name hws* :              | Grammar
+    partial-usage      | name !                   | Grammar
+    name-assign        | name hws* =              | .
+    sym-dest           | name hws* [!.] hws* name | .
+    dest               | [!.] hws* name           | .
+    name               | name                     | .
+    assign             | =                        | .
+    opt-help-text      | : .* eol                 | OptHelpText
+    opt-help-text-cont | .* eol                   | OptHelpText
 
 '''
 
 class RegexLexer(object):
 
-    def __init__(self, text, token_types):
+    def __init__(self, text, token_types = None):
         self.text = text
         self.token_types = token_types
         self.max_pos = len(self.text) - 1
@@ -185,60 +159,70 @@ class SpecParser:
     # General parsing methods (formerly in the mixin).
 
     def __init__(self, text):
+        # The text and the lexer.
         self.text = text
-        self.curr = None
-        self.state = None
-        self.handlers = None
         self.lexer = RegexLexer(text, SPEC_TOKENS)
+        # State and handlers for that state.
+        self.state = None
+        selr.handlers = tuple()
+        # Info about current token, line, and indent of that line.
+        self.curr = None
+        self.line = None
+        self.indent = None
+        # Tokens and handlers for the parser states.
+        self.state_configs = {
+            'grammar_variant': (
+                __,
+                Handler(self.section_title, 'section_opt_help'),
+                Handler(self.variant, None),
+            ),
+            'grammar_opt_help': (
+                __,
+                Handler(self.section_title, 'section_opt_help'),
+                Handler(self.opt_help, None),
+            ),
+            'section_opt_help': (
+                __,
+                Handler(self.block_quote, None),
+                Handler(self.section_title, None),
+                Handler(self.opt_help, None),
+            ),
+        }
 
-        self.states = dict(
-            grammar_opt_help = dict(
-                tokens = __,
-                handlers = [
-                    (self.section_title, 'section_opt_help'),
-                    (self.opt_help, None),
-                ],
-            ),
-            grammar_variant = dict(
-                tokens = __,
-                handlers = [
-                    (self.section_title, 'section_opt_help'),
-                    (self.variant, None),
-                ],
-            ),
-            section_opt_help = dict(
-                tokens = __,
-                handlers = [
-                    (self.block_quote, 'section_other'),
-                    (self.section_title, None),
-                    (self.opt_help, None),
-                ],
-            ),
-            section_other = dict(
-                tokens = __,
-                handlers = [
-                    (self.block_quote, 'section_opt_help'),
-                    (self.other_line, None),
-                ],
-            ),
-        )
+    def set_state(self, next_state):
+        tup = self.state_configs[next_state]
+        self.state = next_state
+        self.lexer.tokens = tup[0]
+        self.handlers = tup[1:]
 
     def parse(self):
+        elems = list(self.do_parse())
 
-        # Consume and yield as many ParseElem as we can.
+        # Convert elems to a Grammar.
+        # There will be some validation needed here too.
+
+        # We expect EOF as the final token.
+        if not self.curr.isa(EOF):
+            self.error()
+
+    def do_parse(self):
+        # Consume and yield top-level ParseElem -- namely,
+        # section titles, block-quotes, variants, opt-helps.
         elem = True
-
         while elem:
             for h in self.handlers:
                 elem = h.method()
                 if elem:
                     yield elem
+                    # Every top-level ParseElem must start on a fresh line.
+                    self.indent = None
+                    self.line = None
+                    # Advance parser state, if needed.
                     if h.next_state:
-                        self.state = h.next_state
+                        self.set_state(h.next_state)
+                    # Break from inner loop and enter it again.
+                    # We will exit outer loop if all handlers return None.
                     break
-        # We expect EOF as the final token.
-        if not self.curr.isa(EOF):
-            self.error()
 
     def eat(self, toktypes*, taste = False):
         # Pull from lexer if we lack a current token.
@@ -247,15 +231,38 @@ class SpecParser:
             if self.curr.isa(EOF):
                 # Because the lexer should deal with EOF, not parser.
                 raise ...
-        # Check for desired token type(s).
-        tok = None
-        for tt in toktypes:
-            if self.curr.isa(tt):
-                tok = self.curr
-                if not taste:
-                    self.swallow()
-                break
-        return tok
+
+        # Check whether token follows indentation/start-of-line rules.
+        tok = self.curr
+        if self.indent is None:
+            # SpecParser has no indent yet. We expect the first token
+            # for a variant/opt-help expression. If OK, remember that
+            # token's indent and line.
+            if tok.is_first:
+                self.indent = tok.indent
+                self.line = tok.line
+                ok = True
+            else:
+                ok = False
+        else:
+            # For subsequent tokens in the expression, we expect tokens
+            # from the same line or a continuation line indented farther than
+            # the first line of the expression.
+            if self.line == tok.line:
+                ok = True
+            elif self.indent < tok.indent:
+                self.line = tok.line
+                ok = True
+            else:
+                ok = False
+
+        # Check token type.
+        if ok and any(self.curr.isa(tt) for tt in toktypes):
+            if not taste:
+                self.swallow()
+            return tok
+        else:
+            return None
 
     def swallow(self):
         if self.curr is None:
@@ -324,29 +331,36 @@ class SpecParser:
     '''
 
     def variant(self):
-
-        # Setup.
+        # Get variant/partial name, if any.
         defs = (variant-defintion, partial-defintion)
-
-        # Variant.
-        tok = self.eat(defs)
+        tok = self.eat(defs, taste = True)
         if tok:
+            self.swallow()
             var_name = ...
             is_partial = ...
-            exprs = self.parse_some(self.expression)
-            if exprs:
-                return Variant(var_name, is_partial, exprs)
-            else:
-                raise ...
         else:
-            return None
+            var_name = None
+            is_partial = False
 
-    def expression(self):
-        elems = self.parse_some(self.element)
-        return Expression(elems)
+        # Collect the ParseElem for the variant.
+        # Empty variant means a spec syntax error.
+        elems = self.elems()
+        if elems:
+            return Variant(var_name, is_partial, elems)
+        else:
+            raise ...
 
-    def element(self):
-        element_methods = (
+    def opt_help(self):
+        elems = self.elems()
+        if elems:
+            txts = []
+
+        else:
+            raise ...
+        pass
+
+    def elems(self):
+        methods = (
             self.quoted_literal,
             self.partial_usage,
             self.paren_expression,
@@ -355,18 +369,31 @@ class SpecParser:
             self.long_option,
             self.short_option,
         )
-        e = self.parse_first(element_methods)
-        if e:
-            q = self.quantifier()
-            if q:
-                e.quantifier = q
-        return e
+        elems = []
+        while True:
+            e = self.parse_first(methods)
+            if e:
+                q = self.quantifier()
+                if q:
+                    e.quantifier = q
+                elems.append(e)
+            else:
+                break
+        return elems
 
     def paren_expression(self):
-        return self.parenthesized(paren-open, 'expression')
+        elems = self.parenthesized(paren-open, 'elems')
+        if elems is None:
+            return None
+        else:
+            return Parenthesized(elems)
 
     def brack_expression(self):
-        return self.parenthesized(brack-open, 'expression')
+        elems = self.parenthesized(brack-open, 'elems')
+        if elems is None:
+            return None
+        else:
+            return Bracketed(elems)
 
     def quoted_literal(self):
         tok = self.eat(quoted-literal)
