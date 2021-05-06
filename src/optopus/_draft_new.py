@@ -1,28 +1,9 @@
 '''
 
-TODO:
-
-    - SpecParser.opt_help()
-
-        - we might need another parsing state for Opt help text.
-
-        - when we see the colon, we need to collect only
-          the opt-help-text token(s) with valid indentation
-
-        - it will be a new state that does NOT want to reset self.indent
-          Instead, it just needs to change the handlers/tokens.
-
-        - without a new state, pieces of the opt help text might
-          look like other tokens, which will disrupt the algo
-
-    - Setup token lists more clearly
-
-    - Adjust other parsing methods
-
 Spec tokens:
 
     Spippet   | Pattern
-    ------------------------------------------
+    -----------------------------------------------------
     nm        | \w+
     name      | nm ([_-] nm)*
     prog-name | name ( \. nm )?
@@ -34,37 +15,38 @@ Spec tokens:
     bq        | (?<!\\)`
     bq3       | (?<!\\)```
 
-    Tokens             | Pattern                  | Note
+    Tokens            | Pattern                  | Note
     -------------------------------------------------------------------------------
-    quoted-block       | bq3 [\s\S]*? bq3         | Section
-    quoted-literal     | bq [\s\S]*? bq           | .
-    newline            | \n                       | Ignore
-    indent             | ^ hws*                   | Ignore; track; MULTILINE
-    whitespace         | hws*                     | Ignore
-    quantifier-range   | \{ hws* quant hws* \}    | .
-    paren-open         | \(                       | .
-    paren-close        | \)                       | .
-    brack-open         | \[                       | .
-    brack-close        | \]                       | .
-    angle-open         | \<                       | .
-    angle-close        | \>                       | .
-    choice-sep         | BAR                      | .
-    triple-dot         | \.\.\.                   | .
-    question           | \?                       | .
-    long-option        | -- name                  | .
-    short-option       | - \w                     | .
-    section-name       | prog-name? hws* :: eol   | Grammar
-    section-title      | .* :: eol                | Section
-    partial-defintion  | name ! hws* :            | Grammar
-    variant-defintion  | name hws* :              | Grammar
-    partial-usage      | name !                   | Grammar
-    name-assign        | name hws* =              | .
-    sym-dest           | name hws* [!.] hws* name | .
-    dest               | [!.] hws* name           | .
-    name               | name                     | .
-    assign             | =                        | .
-    opt-help-text      | : .* eol                 | OptHelpText
-    opt-help-text-cont | .* eol                   | OptHelpText
+    quoted-block      | bq3 [\s\S]*? bq3         | Section
+    quoted-literal    | bq [\s\S]*? bq           | .
+    newline           | \n                       | Ignore
+    blank-line        | ^ hws* eol               | Ignore; MULTILINE
+    indent            | ^ hws* (?=\S)            | MULTILINE
+    whitespace        | hws*                     | Ignore
+    quantifier-range  | \{ hws* quant hws* \}    | .
+    paren-open        | \(                       | .
+    paren-close       | \)                       | .
+    brack-open        | \[                       | .
+    brack-close       | \]                       | .
+    angle-open        | \<                       | .
+    angle-close       | \>                       | .
+    choice-sep        | BAR                      | .
+    triple-dot        | \.\.\.                   | .
+    question          | \?                       | .
+    long-option       | -- name                  | .
+    short-option      | - \w                     | .
+    section-name      | prog-name? hws* :: eol   | Grammar
+    section-title     | .* :: eol                | Section
+    partial-defintion | name ! hws* :            | Grammar
+    variant-defintion | name hws* :              | Grammar
+    partial-usage     | name !                   | Grammar
+    name-assign       | name hws* =              | .
+    sym-dest          | name hws* [!.] hws* name | .
+    dest              | [!.] hws* name           | .
+    name              | name                     | .
+    assign            | =                        | .
+    opt-help-sep      | :                        | .
+    rest-of-line      | .*                       | Special
 
 '''
 
@@ -81,7 +63,7 @@ class RegexLexer(object):
         self.indent = 0
         self.is_first = True
 
-    def get_next_token(self):
+    def get_next_token(self, toktype = None):
         # Starting at self.pos, try to emit the next Token.
         # If we find a valid token, there are two possibilities:
         #
@@ -91,24 +73,27 @@ class RegexLexer(object):
         #   but try the while-loop again. This will allow the Lexer
         #   to be able to ignore any number of suppressed tokens.
         #
+        # The optional toktype argument allows the parser to request a specific
+        # TokType directly, bypassing the normal ordering in self.token_types.
+        # This is used for opt-help text (and its continuation-lines).
+        #
+        tts = (toktype,) if toktype else self.token_types
         tok = True
         while tok:
-            for tt, emit, rgx in self.token_types:
-                tok = self.match_token(rgx, tt)
+            for tt in tts:
+                tok = self.match_token(tt)
                 if tok:
                     if tok.name == 'indent':
                         self.indent = tok.width
-                    elif tok.name == 'newline':
-                        self.indent = 0
                         self.is_first = True
-                    if emit:
+                    if tt.emit:
                         return tok
                     else:
                         break
         # If we did not return a Token above, we should be
         # at the end of the input text.
         if self.pos > self.max_pos:
-            return Token(EOF, None)
+            return Token(EOF, ...)
         else:
             self.error()
 
@@ -190,16 +175,21 @@ class SpecParser:
         }
 
     def set_state(self, next_state):
-        tup = self.state_configs[next_state]
-        self.state = next_state
-        self.lexer.tokens = tup[0]
-        self.handlers = tup[1:]
+        if self.curr:
+            # Changing state while caching a prior token seems bad.
+            raise ...
+        else:
+            tup = self.state_configs[next_state]
+            self.state = next_state
+            self.lexer.tokens = tup[0]
+            self.handlers = tup[1:]
 
     def parse(self):
         elems = list(self.do_parse())
 
         # Convert elems to a Grammar.
         # There will be some validation needed here too.
+        ...
 
         # We expect EOF as the final token.
         if not self.curr.isa(EOF):
@@ -224,16 +214,24 @@ class SpecParser:
                     # We will exit outer loop if all handlers return None.
                     break
 
-    def eat(self, toktypes*, taste = False):
-        # Pull from lexer if we lack a current token.
-        if self.curr is None:
-            self.curr = self.lexer.get_next_token()
-            if self.curr.isa(EOF):
-                # Because the lexer should deal with EOF, not parser.
+    def eat(self, toktypes*, taste = False, skip_indent = True, toktype = None):
+        # Get the next token, either from self.curr or the lexer.
+        # Typically, intervening indent tokens are skipped.
+        while True:
+            # Get token.
+            if self.curr is None:
+                self.curr = self.lexer.get_next_token(toktype = toktype)
+            tok = self.curr
+            # Lexer should deal with EOF, not parser.
+            if tok.isa(EOF):
                 raise ...
+            # Skip indent or break.
+            if tok.isa(INDENT) and skip_indent:
+                self.curr = None
+            else:
+                break
 
         # Check whether token follows indentation/start-of-line rules.
-        tok = self.curr
         if self.indent is None:
             # SpecParser has no indent yet. We expect the first token
             # for a variant/opt-help expression. If OK, remember that
@@ -246,8 +244,8 @@ class SpecParser:
                 ok = False
         else:
             # For subsequent tokens in the expression, we expect tokens
-            # from the same line or a continuation line indented farther than
-            # the first line of the expression.
+            # from the same line or a continuation line indented farther
+            # than the first line of the expression.
             if self.line == tok.line:
                 ok = True
             elif self.indent < tok.indent:
@@ -258,7 +256,7 @@ class SpecParser:
 
         # Check token type.
         if ok and any(self.curr.isa(tt) for tt in toktypes):
-            if not taste:
+            if tok and not taste:
                 self.swallow()
             return tok
         else:
@@ -352,12 +350,16 @@ class SpecParser:
 
     def opt_help(self):
         elems = self.elems()
-        if elems:
-            txts = []
-
-        else:
-            raise ...
-        pass
+        txt = ''
+        if self.eat('opt-help-sep'):
+            tt = TokType(REST_OF_LINE)
+            while True:
+                tok = self.eat(toktype = tt, skip_indent = False)
+                if tok:
+                    txt = txt + ' ' + tok.text.strip()
+                if not self.eat('indent', skip_indent = False):
+                    break
+        return OptHelp(elems, txt.strip())
 
     def elems(self):
         methods = (

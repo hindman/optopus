@@ -4,9 +4,11 @@ todos: TODOs
 
 Core algorithms:
 
-    Grammar syntax lexing (see _draft_new.py for token defintions).
+    Grammar syntax lexing.
 
     Grammar syntax parsing.
+
+    Convert grammar-syntax AST into a Grammar.
 
     Data-oriented exception strategy.
 
