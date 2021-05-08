@@ -1,142 +1,109 @@
+import attr
 import re
+import short_con as sc
 
-'''
-
-Spec tokens:
-
-    Spippet   | Pattern
-    -----------------------------------------------------
-    nm        | \w+
-    name      | nm ([_-] nm)*
-    prog-name | name ( \. nm )?
-    hws       | [ \t]
-    eol       | hws* (?=\n)
-    num       | \d+
-    q         | hws* , hws*
-    quant     | num | q | q num | num q | num q num
-    bq        | (?<!\\)`
-    bq3       | (?<!\\)```
-
-    Tokens            | Pattern                  | Modes | Note
-    ---------------------------------------------------------------------------------
-    quoted-block      | bq3 [\s\S]*? bq3         | s     | .
-    quoted-literal    | bq [\s\S]*? bq           | all   | .
-    newline           | \n                       | all   | Ignore
-    blank-line        | ^ hws* eol               | all   | Ignore; MULTILINE
-    indent            | ^ hws* (?=\S)            | all   | MULTILINE
-    whitespace        | hws*                     | all   | Ignore
-    quantifier-range  | \{ hws* quant hws* \}    | all   | .
-    paren-open        | \(                       | all   | .
-    paren-close       | \)                       | all   | .
-    brack-open        | \[                       | all   | .
-    brack-close       | \]                       | all   | .
-    angle-open        | \<                       | all   | .
-    angle-close       | \>                       | all   | .
-    choice-sep        | BAR                      | all   | .
-    triple-dot        | \.\.\.                   | all   | .
-    question          | \?                       | all   | .
-    long-option       | -- name                  | all   | .
-    short-option      | - \w                     | all   | .
-    section-name      | prog-name? hws* :: eol   | v     | .
-    section-title     | .* :: eol                | all   | .
-    partial-defintion | name ! hws* :            | v     | .
-    variant-defintion | name hws* :              | v     | .
-    partial-usage     | name !                   | v     | .
-    name-assign       | name hws* =              | all   | .
-    sym-dest          | name hws* [!.] hws* name | all   | .
-    dest              | [!.] hws* name           | all   | .
-    name              | name                     | all   | .
-    assign            | =                        | all   | .
-    opt-help-sep      | :                        | o s   | .
-    rest-of-line      | .*                       |       | .
-
-'''
-
-pmodes = constants('ParserModes', 'variant opt_help section all')
+pmodes = constants('ParserModes', 'variant opt_help section')
 
 @attr.s
 class TokType:
     name = attr.ib()
+    regex = attr.ib()
+    modes = attr.ib()
+    emit = attr.ib()
 
-    # Attribute | Note
-    # --------------------------------------------------------------------------------
-    # name      | Name of token.
-    # regex     | Regex to match the token.
-    # emit      | Whether to emit back to parser [default: True].
-    # flags     | re.compile() flags
-    # modes     | .
-    # --------------------------------------------------------------------------------
+def con_regex_snippets():
+    hws = r'[ \t]*'
+    name = r'\w+(?:[_-]\w+)*'
+    num = r'\d+'
+    q = hws + ',' + hws
+    return sc.cons(
+        'Snippets',
+        hws   = hws,
+        name  = name,
+        num   = num,
+        q     = q,
+        prog  = name + r'(?:\.\w+)?',
+        eol   = hws + r'(?=\n)',
+        bq    = r'(?<!\\)`',
+        bq3   = r'(?<!\\)```',
+        pre   = '-',
+        quant = hws + '|'.join(num + q + num, num + q, q + num, num, q) + hws,
+    )
 
-from short_con import constants, cons
+def con_token_types():
+    rs = con_regex_snippets()
+    p = pmodes
+    pms = dict(
+        _ = (p.variant, p.opt_help, p.section),
+        v = (p.variant,),
+        o = (p.opt_help,),
+        s = (p.section,),
+        O = (p.opt_help, p.section),
+    )
+    tups = (
+        # Name,               Emit, Modes, Regex pattern.
+        ('quoted_block',      1,    's',   rs.bq3 + r'[\s\S]*?' + rs.bq3),
+        ('quoted_literal',    1,    '_',   rs.bq + r'[\s\S]*?' + rs.bq),
+        ('newline',           0.0,  '_',   r'\n'),
+        ('blank_line',        0.0,  '_',   '(?m)^' + rs.hws + rs.eol),
+        ('indent',            1,    '_',   '(?m)^' + rs.hws + '(?=\S)'),
+        ('whitespace',        0.0,  '_',   rs.hws),
+        ('quant_range',       1,    '_',   r'\{' + rs.quant + r'\}'),
+        ('paren_open',        1,    '_',   r'\('),
+        ('paren_close',       1,    '_',   r'\)'),
+        ('brack_open',        1,    '_',   r'\['),
+        ('brack_close',       1,    '_',   r'\]'),
+        ('angle_open',        1,    '_',   '<'),
+        ('angle_close',       1,    '_',   '>'),
+        ('choice_sep',        1,    '_',   r'\|'),
+        ('triple_dot',        1,    '_',   r'\.\.\.'),
+        ('question',          1,    '_',   r'\?'),
+        ('long_option',       1,    '_',   rs.pre + rs.pre + rs.name),
+        ('short_option',      1,    '_',   rs.pre + r'\w'),
+        ('section_name',      1,    'v',   rs.prog + '?' + rs.hws + '::' + rs.eol),
+        ('section_title',     1,    '_',   '.*::' + rs.eol),
+        ('partial_defintion', 1,    'v',   rs.name + '!' + rs.hws + ':'),
+        ('variant_defintion', 1,    'v',   rs.name + rs.hws + ':'),
+        ('partial_usage',     1,    'v',   rs.name + '!'),
+        ('name_assign',       1,    '_',   rs.name + rs.hws + '='),
+        ('sym_dest',          1,    '_',   rs.name + rs.hws + '[!.]' + rs.hws + rs.name),
+        ('dest',              1,    '_',   '[!.]' + rs.hws + rs.name),
+        ('name',              1,    '_',   rs.name),
+        ('assign',            1,    '_',   '='),
+        ('opt_help_sep',      1,    'O',   ':'),
+        ('rest_of_line',      1,    ' ',   '.*'),
+    )
+    return tuple(
+        TokType(name, re.compile(patt), pms[m], bool(emit))
+        for name, emit, m, patt in tups
+    )
 
-'''
+class RegexLexer(object):
 
-'''
-
-snips = cons('Snippets',
-    'name' = r'\w+(?:[_-]\w+)*',
-    'num'  = r'\d+',
-    'hws'  = r'[ \t]',
-    'q'    = r'[ \t]*,[ \t]*',
-)
-
-snips = cons('Snippets',
-    'name'      = r'\w+(?:[_-]\w+)*',
-    'num'       = r'\d+',
-    'hws'       = r'[ \t]',
-    'q'         = r'[ \t]*,[ \t]*',
-    'prog_name' = cons.name + r'(?:\.\w+)?',
-    'eol'       = cons.hws + r'*(?=\n)',
-    'quant'     = r'num | q | q num | num q | num q num',
-    'bq'        = r'(?<!\\)`',
-    'bq3'       = r'(?<!\\)```',
-)
-
-snips = cons('Snippets',
-    'name'      = snips.name,
-    'num'       = snips.num,
-    'hws'       = snips.hws,
-    'q'         = snips.q,
-    'prog-name' = snips.name + r'(?:\.\w+)?',
-    'eol'       = snips.hws + r'*(?=\n)',
-    'quant'     = r'num | q | q num | num q | num q num',
-    'bq'        = r'(?<!\\)`',
-    'bq3'       = r'(?<!\\)```',
-)
-
-token_types = cons('TokTypes',
-    TokType('quoted_block'
-    # quoted-block      | bq3 [\s\S]*? bq3         | s     | .
-    # quoted-literal    | bq [\s\S]*? bq           | all   | .
-)
-
-
-class regexlexer:
-
-    def __init__(self, text, token_types = none):
+    def __init__(self, text, token_types = None):
         self.text = text
         self.token_types = token_types
         self.max_pos = len(self.text) - 1
-        # location and other info given to tokens.
+        # Location and other info given to tokens.
         self.pos = 0
         self.line = 1
         self.col = 1
         self.indent = 0
-        self.is_first = true
+        self.is_first = True
 
-    def get_next_token(self, toktype = none):
-        # starting at self.pos, try to emit the next token.
-        # if we find a valid token, there are two possibilities:
+    def get_next_token(self, toktype = None):
+        # Starting at self.pos, try to emit the next Token.
+        # If we find a valid token, there are two possibilities:
         #
-        # - a token that we should emit: just return it.
+        # - A Token that we should emit: just return it.
         #
-        # - a token that we should suppress: break out of the for-loop,
-        #   but try the while-loop again. this will allow the lexer
+        # - A Token that we should suppress: break out of the for-loop,
+        #   but try the while-loop again. This will allow the Lexer
         #   to be able to ignore any number of suppressed tokens.
         #
-        # the optional toktype argument allows the parser to request a specific
-        # toktype directly, bypassing the normal ordering in self.token_types.
-        # this is used for opt-help text (and its continuation-lines).
+        # The optional toktype argument allows the parser to request a specific
+        # TokType directly, bypassing the normal ordering in self.token_types.
+        # This is used for opt-help text (and its continuation-lines).
         #
         tts = (toktype,) if toktype else self.token_types
         tok = True
