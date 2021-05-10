@@ -4,8 +4,6 @@ todos: TODOs
 
 Core algorithms:
 
-    Grammar syntax lexing.
-
     Grammar syntax parsing.
 
     Convert grammar-syntax AST into a Grammar.
