@@ -1,6 +1,11 @@
-# TODO: Fix get_token_types()
-# Move the algorithm to the code.
-# Just create a simple constants collection, keyed by kind.
+
+# TODO: NEXT:
+#   - variant()
+#   - etc for remaining methods
+
+# TODO: parse_some() and parse_first(): make sure they are helpful.
+
+# TODO: opt_help_sep: change regex back to ':' [current value is so lexer tests pass]
 
 ####
 # Imports.
@@ -12,35 +17,47 @@ import short_con as sc
 from functools import cache
 from collections import OrderedDict
 
+def attrcls(*names):
+    # Takes attribute names as list or space-delimited string.
+    # Returns a class decorator that will add attributes
+    # to the given class. Invoke this decorator so that it
+    # executes before @attr.ib().
+    names = tuple(nm for name in names for nm in name.split())
+
+    def decorator(cls):
+        for nm in names:
+            setattr(cls, nm, attr.ib())
+        return cls
+
+    return decorator
+
 ####
 # Data classes.
 ####
 
 @attr.s(frozen = True)
-class TokType:
-    kind = attr.ib()
-    regex = attr.ib()
-    modes = attr.ib()
-    emit = attr.ib()
+@attrcls('kind regex modes emit')
+class TokDef:
+    pass
 
 @attr.s(frozen = True)
+@attrcls('kind text m width pos line col nlines isfirst indent')
 class Token:
-    kind = attr.ib()
-    text = attr.ib()
-    width = attr.ib()
-    pos = attr.ib()
-    line = attr.ib()
-    col = attr.ib()
-    n_lines = attr.ib()
-    isfirst = attr.ib()
-    indent = attr.ib()
+
+    def isa(self, td):
+        return self.kind == td.kind
+
+@attr.s(frozen = True)
+@attrcls('name')
+class Prog:
+    pass
 
 ####
 # Functions to return constants collections.
 ####
 
 @cache
-def get_regex_snippets():
+def define_regex_snippets():
     hws0 = r'[ \t]*'
     hws1 = r'[ \t]+'
     name = r'\w+(?:[_-]\w+)*'
@@ -48,24 +65,26 @@ def get_regex_snippets():
     q = hws0 + ',' + hws0
     return sc.cons(
         'RegexSnippets',
-        hws0  = hws0,
-        hws1  = hws1,
-        name  = name,
-        num   = num,
-        q     = q,
-        prog  = name + r'(?:\.\w+)?',
-        eol   = hws0 + r'(?=\n)',
-        bq    = r'(?<!\\)`',
-        bq3   = r'(?<!\\)```',
-        pre   = '-',
-        quant = hws0 + '|'.join((num + q + num, num + q, q + num, num, q)) + hws0,
+        hws0   = hws0,
+        hws1   = hws1,
+        name   = name,
+        num    = num,
+        q      = q,
+        prog   = name + r'(?:\.\w+)?',
+        eol    = hws0 + r'(?=\n)',
+        bq     = r'(?<!\\)`',
+        bq3    = r'(?<!\\)```',
+        pre    = '-',
+        quant  = hws0 + '|'.join((num + q + num, num + q, q + num, num, q)) + hws0,
+        quoted = r'[\s\S]*?',
     )
 
 @cache
-def get_token_types():
+def define_tokdefs():
     # Convenience vars.
-    r = get_regex_snippets()
+    r = Snippets
     p = Pmodes
+    hw = r.hws0
     pms = {
         '_': (p.variant, p.opt_help, p.section),
         'O': (p.opt_help, p.section),
@@ -74,353 +93,62 @@ def get_token_types():
         's': (p.section,),
         '': tuple(),
     }
-    # Tuples to define TokTypes.
+
+    # Helper to wrap a regex elem in a capture.
+    c = lambda p: '(' + p + ')'
+
+    # Tuples to define TokDef instances.
     tups = (
-        # Kind,               Emit, Modes, Regex pattern.
-        ('quoted_block',      1,    's',   r.bq3 + r'[\s\S]*?' + r.bq3),
-        ('quoted_literal',    1,    '_',   r.bq + r'[\s\S]*?' + r.bq),
-        (Tkinds.newline,      0.0,  '_',   r'\n'),
-        (Tkinds.indent,       1,    '_',   '(?m)^' + r.hws1 + r'(?=\S)'),
-        ('whitespace',        0.0,  '_',   r.hws1),
-        ('quant_range',       1,    '_',   r'\{' + r.quant + r'\}'),
-        ('paren_open',        1,    '_',   r'\('),
-        ('paren_close',       1,    '_',   r'\)'),
-        ('brack_open',        1,    '_',   r'\['),
-        ('brack_close',       1,    '_',   r'\]'),
-        ('angle_open',        1,    '_',   '<'),
-        ('angle_close',       1,    '_',   '>'),
-        ('choice_sep',        1,    '_',   r'\|'),
-        ('triple_dot',        1,    '_',   r'\.\.\.'),
-        ('question',          1,    '_',   r'\?'),
-        ('long_option',       1,    '_',   r.pre + r.pre + r.name),
-        ('short_option',      1,    '_',   r.pre + r'\w'),
-        ('section_name',      1,    'v',   r.prog + '?' + r.hws0 + '::' + r.eol),
-        ('section_title',     1,    '_',   '.*::' + r.eol),
-        ('partial_defintion', 1,    'v',   r.name + '!' + r.hws0 + ':'),
-        ('variant_defintion', 1,    'v',   r.name + r.hws0 + ':'),
-        ('partial_usage',     1,    'v',   r.name + '!'),
-        ('name_assign',       1,    '_',   r.name + r.hws0 + '='),
-        ('sym_dest',          1,    '_',   r.name + r.hws0 + '[!.]' + r.hws0 + r.name),
-        ('dest',              1,    '_',   '[!.]' + r.hws0 + r.name),
-        ('name',              1,    '_',   r.name),
-        ('assign',            1,    '_',   '='),
-        ('opt_help_sep',      1,    'O',   ':.*'),  # TODO: adjust
+        # Kind,            Emit, Modes, Pattern.
+        ('quoted_block',   1,    's',   r.bq3 + c(r.quoted) + r.bq3),
+        ('quoted_literal', 1,    '_',   r.bq + c(r.quoted) + r.bq),
+        ('newline',        0.0,  '_',   r'\n'),
+        ('indent',         1,    '_',   '(?m)^' + r.hws1 + r'(?=\S)'),
+        ('whitespace',     0.0,  '_',   r.hws1),
+        ('quant_range',    1,    '_',   r'\{' + c(r.quant) + r'\}'),
+        ('paren_open',     1,    '_',   r'\('),
+        ('paren_close',    1,    '_',   r'\)'),
+        ('brack_open',     1,    '_',   r'\['),
+        ('brack_close',    1,    '_',   r'\]'),
+        ('angle_open',     1,    '_',   '<'),
+        ('angle_close',    1,    '_',   '>'),
+        ('choice_sep',     1,    '_',   r'\|'),
+        ('triple_dot',     1,    '_',   r'\.\.\.'),
+        ('question',       1,    '_',   r'\?'),
+        ('long_option',    1,    '_',   r.pre + r.pre + r.name),
+        ('short_option',   1,    '_',   r.pre + r'\w'),
+        ('section_name',   1,    'v',   c(r.prog) + '?' + hw + '::' + r.eol),
+        ('section_title',  1,    '_',   '.*::' + r.eol),
+        ('partial_def',    1,    'v',   c(r.name) + '!' + hw + ':'),
+        ('variant_def',    1,    'v',   c(r.name) + hw + ':'),
+        ('partial_usage',  1,    'v',   c(r.name) + '!'),
+        ('name_assign',    1,    '_',   c(r.name) + hw + '='),
+        ('sym_dest',       1,    '_',   c(r.name) + hw + '[!.]' + hw + c(r.name)),
+        ('dest',           1,    '_',   '[!.]' + hw + c(r.name)),
+        ('name',           1,    '_',   r.name),
+        ('assign',         1,    '_',   '='),
+        ('opt_help_sep',   1,    'O',   ':' + c('.*')),
+        ('eof',            0.0,  '',    ''),
+        ('err',            0.0,  '',    ''),
+        ('rest',           1,    '',    '.+'),
     )
-    # Create a tuple of all TokTypes.
-    tts = tuple(
-        TokType(kind, re.compile(patt), pms[m], bool(emit))
+
+    # Create a dict mapping kind to each TokDef.
+    tds = OrderedDict(
+        (kind, TokDef(kind, re.compile(patt), pms[m], bool(emit)))
         for kind, emit, m, patt in tups
     )
 
-    # Using that tuple, create dict mapping ParserMode to its TokTypes.
-    ttmap = {
-        pm : OrderedDict((tt.kind, tt) for tt in tts if pm in tt.modes)
-        for pm in p.values()
-    }
-
-    # Also add some special TokTypes.
-    ttmap[Tkinds.special] = OrderedDict(
-        (tt.kind, tt)
-        for tt in (
-            TokType(Tkinds.eof, None, tuple(), False),
-            TokType(Tkinds.err, None, tuple(), False),
-            TokType(Tkinds.rest, '.+', tuple(), True),
-        )
-    )
-
-    # Return them as a collection of constants collections.
-    return sc.constants('TokenTypes', {
-        k : sc.constants('TokenTypes', d)
-        for k, d in ttmap.items()
-    })
+    # Return them as a constants collection.
+    return sc.constants('TokDefs', tds)
 
 ####
 # Parsing and grammar constants.
 ####
 
-Tkinds = sc.constants('TokenKinds', 'eof err indent newline rest special')
 Pmodes = sc.constants('ParserModes', 'variant opt_help section')
-TokenTypes = get_token_types()
-
-####
-# Imports.
-####
-
-import attr
-import re
-import short_con as sc
-from functools import cache
-from collections import OrderedDict
-
-####
-# Data classes.
-####
-
-@attr.s(frozen = True)
-class TokType:
-    kind = attr.ib()
-    regex = attr.ib()
-    modes = attr.ib()
-    emit = attr.ib()
-
-@attr.s(frozen = True)
-class Token:
-    kind = attr.ib()
-    text = attr.ib()
-    width = attr.ib()
-    pos = attr.ib()
-    line = attr.ib()
-    col = attr.ib()
-    n_lines = attr.ib()
-    isfirst = attr.ib()
-    indent = attr.ib()
-
-####
-# Functions to return constants collections.
-####
-
-@cache
-def get_regex_snippets():
-    hws0 = r'[ \t]*'
-    hws1 = r'[ \t]+'
-    name = r'\w+(?:[_-]\w+)*'
-    num = r'\d+'
-    q = hws0 + ',' + hws0
-    return sc.cons(
-        'RegexSnippets',
-        hws0  = hws0,
-        hws1  = hws1,
-        name  = name,
-        num   = num,
-        q     = q,
-        prog  = name + r'(?:\.\w+)?',
-        eol   = hws0 + r'(?=\n)',
-        bq    = r'(?<!\\)`',
-        bq3   = r'(?<!\\)```',
-        pre   = '-',
-        quant = hws0 + '|'.join((num + q + num, num + q, q + num, num, q)) + hws0,
-    )
-
-@cache
-def get_token_types():
-    # Convenience vars.
-    r = get_regex_snippets()
-    p = Pmodes
-    pms = {
-        '_': (p.variant, p.opt_help, p.section),
-        'O': (p.opt_help, p.section),
-        'v': (p.variant,),
-        'o': (p.opt_help,),
-        's': (p.section,),
-        '': tuple(),
-    }
-    # Tuples to define TokTypes.
-    tups = (
-        # Kind,               Emit, Modes, Regex pattern.
-        ('quoted_block',      1,    's',   r.bq3 + r'[\s\S]*?' + r.bq3),
-        ('quoted_literal',    1,    '_',   r.bq + r'[\s\S]*?' + r.bq),
-        (Tkinds.newline,      0.0,  '_',   r'\n'),
-        (Tkinds.indent,       1,    '_',   '(?m)^' + r.hws1 + r'(?=\S)'),
-        ('whitespace',        0.0,  '_',   r.hws1),
-        ('quant_range',       1,    '_',   r'\{' + r.quant + r'\}'),
-        ('paren_open',        1,    '_',   r'\('),
-        ('paren_close',       1,    '_',   r'\)'),
-        ('brack_open',        1,    '_',   r'\['),
-        ('brack_close',       1,    '_',   r'\]'),
-        ('angle_open',        1,    '_',   '<'),
-        ('angle_close',       1,    '_',   '>'),
-        ('choice_sep',        1,    '_',   r'\|'),
-        ('triple_dot',        1,    '_',   r'\.\.\.'),
-        ('question',          1,    '_',   r'\?'),
-        ('long_option',       1,    '_',   r.pre + r.pre + r.name),
-        ('short_option',      1,    '_',   r.pre + r'\w'),
-        ('section_name',      1,    'v',   r.prog + '?' + r.hws0 + '::' + r.eol),
-        ('section_title',     1,    '_',   '.*::' + r.eol),
-        ('partial_defintion', 1,    'v',   r.name + '!' + r.hws0 + ':'),
-        ('variant_defintion', 1,    'v',   r.name + r.hws0 + ':'),
-        ('partial_usage',     1,    'v',   r.name + '!'),
-        ('name_assign',       1,    '_',   r.name + r.hws0 + '='),
-        ('sym_dest',          1,    '_',   r.name + r.hws0 + '[!.]' + r.hws0 + r.name),
-        ('dest',              1,    '_',   '[!.]' + r.hws0 + r.name),
-        ('name',              1,    '_',   r.name),
-        ('assign',            1,    '_',   '='),
-        ('opt_help_sep',      1,    'O',   ':.*'),  # TODO: adjust
-    )
-    # Create a tuple of all TokTypes.
-    tts = tuple(
-        TokType(kind, re.compile(patt), pms[m], bool(emit))
-        for kind, emit, m, patt in tups
-    )
-
-    # Using that tuple, create dict mapping ParserMode to its TokTypes.
-    ttmap = {
-        pm : OrderedDict((tt.kind, tt) for tt in tts if pm in tt.modes)
-        for pm in p.values()
-    }
-
-    # Also add some special TokTypes.
-    ttmap[Tkinds.special] = OrderedDict(
-        (tt.kind, tt)
-        for tt in (
-            TokType(Tkinds.eof, None, tuple(), False),
-            TokType(Tkinds.err, None, tuple(), False),
-            TokType(Tkinds.rest, '.+', tuple(), True),
-        )
-    )
-
-    # Return them as a collection of constants collections.
-    return sc.constants('TokenTypes', {
-        k : sc.constants('TokenTypes', d)
-        for k, d in ttmap.items()
-    })
-
-####
-# Parsing and grammar constants.
-####
-
-Tkinds = sc.constants('TokenKinds', 'eof err indent newline rest special')
-Pmodes = sc.constants('ParserModes', 'variant opt_help section')
-TokenTypes = get_token_types()
-
-####
-# Imports.
-####
-
-import attr
-import re
-import short_con as sc
-from functools import cache
-from collections import OrderedDict
-
-####
-# Data classes.
-####
-
-@attr.s(frozen = True)
-class TokType:
-    kind = attr.ib()
-    regex = attr.ib()
-    modes = attr.ib()
-    emit = attr.ib()
-
-@attr.s(frozen = True)
-class Token:
-    kind = attr.ib()
-    text = attr.ib()
-    width = attr.ib()
-    pos = attr.ib()
-    line = attr.ib()
-    col = attr.ib()
-    n_lines = attr.ib()
-    isfirst = attr.ib()
-    indent = attr.ib()
-
-####
-# Functions to return constants collections.
-####
-
-@cache
-def get_regex_snippets():
-    hws0 = r'[ \t]*'
-    hws1 = r'[ \t]+'
-    name = r'\w+(?:[_-]\w+)*'
-    num = r'\d+'
-    q = hws0 + ',' + hws0
-    return sc.cons(
-        'RegexSnippets',
-        hws0  = hws0,
-        hws1  = hws1,
-        name  = name,
-        num   = num,
-        q     = q,
-        prog  = name + r'(?:\.\w+)?',
-        eol   = hws0 + r'(?=\n)',
-        bq    = r'(?<!\\)`',
-        bq3   = r'(?<!\\)```',
-        pre   = '-',
-        quant = hws0 + '|'.join((num + q + num, num + q, q + num, num, q)) + hws0,
-    )
-
-@cache
-def get_token_types():
-    # Convenience vars.
-    r = get_regex_snippets()
-    p = Pmodes
-    pms = {
-        '_': (p.variant, p.opt_help, p.section),
-        'O': (p.opt_help, p.section),
-        'v': (p.variant,),
-        'o': (p.opt_help,),
-        's': (p.section,),
-        '': tuple(),
-    }
-    # Tuples to define TokTypes.
-    tups = (
-        # Kind,               Emit, Modes, Regex pattern.
-        ('quoted_block',      1,    's',   r.bq3 + r'[\s\S]*?' + r.bq3),
-        ('quoted_literal',    1,    '_',   r.bq + r'[\s\S]*?' + r.bq),
-        (Tkinds.newline,      0.0,  '_',   r'\n'),
-        (Tkinds.indent,       1,    '_',   '(?m)^' + r.hws1 + r'(?=\S)'),
-        ('whitespace',        0.0,  '_',   r.hws1),
-        ('quant_range',       1,    '_',   r'\{' + r.quant + r'\}'),
-        ('paren_open',        1,    '_',   r'\('),
-        ('paren_close',       1,    '_',   r'\)'),
-        ('brack_open',        1,    '_',   r'\['),
-        ('brack_close',       1,    '_',   r'\]'),
-        ('angle_open',        1,    '_',   '<'),
-        ('angle_close',       1,    '_',   '>'),
-        ('choice_sep',        1,    '_',   r'\|'),
-        ('triple_dot',        1,    '_',   r'\.\.\.'),
-        ('question',          1,    '_',   r'\?'),
-        ('long_option',       1,    '_',   r.pre + r.pre + r.name),
-        ('short_option',      1,    '_',   r.pre + r'\w'),
-        ('section_name',      1,    'v',   r.prog + '?' + r.hws0 + '::' + r.eol),
-        ('section_title',     1,    '_',   '.*::' + r.eol),
-        ('partial_defintion', 1,    'v',   r.name + '!' + r.hws0 + ':'),
-        ('variant_defintion', 1,    'v',   r.name + r.hws0 + ':'),
-        ('partial_usage',     1,    'v',   r.name + '!'),
-        ('name_assign',       1,    '_',   r.name + r.hws0 + '='),
-        ('sym_dest',          1,    '_',   r.name + r.hws0 + '[!.]' + r.hws0 + r.name),
-        ('dest',              1,    '_',   '[!.]' + r.hws0 + r.name),
-        ('name',              1,    '_',   r.name),
-        ('assign',            1,    '_',   '='),
-        ('opt_help_sep',      1,    'O',   ':.*'),  # TODO: adjust
-    )
-    # Create a tuple of all TokTypes.
-    tts = tuple(
-        TokType(kind, re.compile(patt), pms[m], bool(emit))
-        for kind, emit, m, patt in tups
-    )
-
-    # Using that tuple, create dict mapping ParserMode to its TokTypes.
-    ttmap = {
-        pm : OrderedDict((tt.kind, tt) for tt in tts if pm in tt.modes)
-        for pm in p.values()
-    }
-
-    # Also add some special TokTypes.
-    ttmap[Tkinds.special] = OrderedDict(
-        (tt.kind, tt)
-        for tt in (
-            TokType(Tkinds.eof, None, tuple(), False),
-            TokType(Tkinds.err, None, tuple(), False),
-            TokType(Tkinds.rest, '.+', tuple(), True),
-        )
-    )
-
-    # Return them as a collection of constants collections.
-    return sc.constants('TokenTypes', {
-        k : sc.constants('TokenTypes', d)
-        for k, d in ttmap.items()
-    })
-
-####
-# Parsing and grammar constants.
-####
-
-Tkinds = sc.constants('TokenKinds', 'eof err indent newline rest special')
-Pmodes = sc.constants('ParserModes', 'variant opt_help section')
-TokenTypes = get_token_types()
+Snippets = define_regex_snippets()
+TokDefs = define_tokdefs()
 
 ####
 # Lexer.
@@ -428,9 +156,10 @@ TokenTypes = get_token_types()
 
 class RegexLexer(object):
 
-    def __init__(self, text, token_types = None):
+    def __init__(self, text, tokdefs = None):
         self.text = text
-        self.token_types = token_types
+        self.tokdefs = tokdefs
+
         # Location and token information.
         self.maxpos = len(self.text) - 1
         self.pos = 0
@@ -438,62 +167,65 @@ class RegexLexer(object):
         self.col = 1
         self.indent = 0
         self.isfirst = True
-        # Attribute set with Token(eof | err) when lexing finishes.
+
+        # Will be set with Token(eof)/Token(err) when lexing finishes.
         self.end = None
 
-    def get_next_token(self, toktype = None):
-        # Starting at self.pos, try to emit the next Token.
+    def get_next_token(self, tokdef = None):
+        # Starting at self.pos, emit the next Token.
         #
         # For non-emitted tokens, we break out of the for-loop,
         # but enter the while-loop again. This allows the lexer
-        # to be able to ignore any number of non-emitted tokens on each
-        # call of the function.
+        # to be able to ignore any number of non-emitted tokens
+        # on each call of the function.
         #
-        # The optional toktype argument allows the parser to request a specific
-        # TokType directly, bypassing the normal ordering in self.token_types.
-        # This is used for opt-help text and its continuation-lines.
+        # The optional tokdef allows the parser to request a
+        # specific TokDef directly, bypassing the normal ordering
+        # in self.tokdefs. Used for opt-help text continuation-lines.
 
         # Return if we are already done lexing.
         if self.end:
             return self.end
 
-        # Normalize input to a tuple of TokType.
-        tts = (toktype,) if toktype else self.token_types
+        # Normalize input to a tuple of TokDef.
+        tds = (tokdef,) if tokdef else self.tokdefs
 
         # Return next Token that should be emitted.
         tok = True
         while tok:
             tok = None
-            for tt in tts:
-                m = tt.regex.match(self.text, pos = self.pos)
+            for td in tds:
+                m = td.regex.match(self.text, pos = self.pos)
                 if m:
-                    tok = self.create_token(tt.kind, m.group(0))
-                    if tt.emit:
+                    tok = self.create_token(td, m)
+                    if td.emit:
                         return tok
                     else:
                         break
 
         # We have lexed as far as we can.
         # Set self.end to Token(eof) or Token(err).
-        kind = (Tkinds.err, Tkinds.eof)[self.pos > self.maxpos]
-        self.end = self.create_token(kind, '')
+        td = (TokDefs.err, TokDefs.eof)[self.pos > self.maxpos]
+        self.end = self.create_token(td, '')
         return self.end
 
-    def create_token(self, kind, text):
-        # Get width and newline info.
+    def create_token(self, tokdef, m):
+        # Get text width and newline locations/count.
+        text = m.group(0)
         width = len(text)
         indexes = [i for i, c in enumerate(text) if c == '\n']
-        n_newlines = len(indexes)
+        n = len(indexes)
 
         # Create token.
         tok = Token(
-            kind = kind,
+            kind = tokdef.kind,
             text = text,
+            m = m,
             width = width,
             pos = self.pos,
             line = self.line,
             col = self.col,
-            n_lines = n_newlines + 1,
+            nlines = n + 1,
             isfirst = self.isfirst,
             indent = self.indent,
         )
@@ -501,17 +233,17 @@ class RegexLexer(object):
         # Update location info.
         self.isfirst = False
         self.pos += width
-        self.line += n_newlines
+        self.line += n
         self.col = (
             width - indexes[-1] - 1 if indexes
             else self.col + width
         )
 
         # Update indent info.
-        if tok.kind == Tkinds.newline:
+        if tok.isa(TokDefs.newline):
             self.indent = 0
             self.isfirst = True
-        elif tok.kind == Tkinds.indent:
+        elif tok.isa(TokDefs.indent):
             self.indent = tok.width
             self.isfirst = True
 
@@ -525,11 +257,9 @@ class RegexLexer(object):
 @attr.s(frozen = True)
 class Handler:
     method = attr.ib()
-    next_state = attr.ib()
+    next_mode = attr.ib()
 
 class SpecParser:
-
-    # General parsing methods (formerly in the mixin).
 
     def __init__(self, text):
         # The text and the lexer.
@@ -541,8 +271,8 @@ class SpecParser:
         self.line = None
         self.indent = None
 
-        # Parser state and associated handlers.
-        self.state = None
+        # Parser mode and associated handlers.
+        self.mode = None
         self.handlers = {
             None: tuple(),
             Pmodes.variant: (
@@ -560,67 +290,83 @@ class SpecParser:
             ),
         }
 
-    @property
-    def state(self):
-        return self._state
+    ####
+    # Setting the parser mode.
+    ####
 
-    @state.setter
-    def state(self, s):
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode):
         if self.curr:
-            # Changing state while caching a prior token seems bad.
+            # Changing mode while caching a prior token seems bad.
             raise ...
         else:
-            self._state = s
-            self.lexer.tokens = getattr(TokenTypes, s)
+            self._mode = mode
+            self.lexer.tokens = tuple(td for td in TokDefs if mode in td.modes)
+
+    ####
+    # Parse a spec.
+    ####
 
     def parse(self):
-        tok = self.eat(TokenTypes.opt_help
+        # Determine parsing mode:
+        #
+        #   [prog] :: opt_help...
+        #   [prog] variant...
+        #
+        tok = self.eat(TokDefs.section_name)
         if tok:
-            return Literal(...)
+            self.mode = Pmodes.opt_help
+            prog = tok.m.group(1)
         else:
-            return None
+            self.mode = Pmodes.variant
+            tok = self.eat(TokDefs.name)
+            prog = tok.text if tok else None
 
+        # Parse everything into a list of ParseElem.
+        elems = [Prog(name = prog)]
+        elems.extend(self.do_parse())
 
-        elems = list(self.do_parse())
+        # Raise if we did not parse the full text.
+        if self.lexer.end.isa(TokDefs.err):
+            raise ...
 
-        # TODO.
-        # Check self.lexer.end
-
-        # TODO.
         # Convert elems to a Grammar.
         # There will be some validation needed here too.
-        ...
-
-        # We expect EOF as the final token.
-        if not self.curr.isa(EOF):
-            self.error()
+        return Grammar(elems)
 
     def do_parse(self):
-        # Consume and yield top-level ParseElem -- namely,
-        # section titles, block-quotes, variants, opt-helps.
+        # Yields top-level ParseElem (those declared in self.handlers).
         elem = True
         while elem:
-            for h in self.handlers[self.state]:
+            for h in self.handlers[self.mode]:
                 elem = h.method()
                 if elem:
                     yield elem
                     # Every top-level ParseElem must start on a fresh line.
                     self.indent = None
                     self.line = None
-                    # Advance parser state, if needed.
-                    if h.next_state:
-                        self.set_state(h.next_state)
+                    # Advance parser mode, if needed.
+                    if h.next_mode:
+                        self.mode = h.next_mode
                     # Break from inner loop and enter again from beginning.
                     # We will exit outer loop if all handlers return None.
                     break
 
-    def eat(self, *toktypes, taste = False, skip_indent = True, toktype = None):
+    ####
+    # Eat tokens.
+    ####
+
+    def eat(self, *tokdefs, taste = False, skip_indent = True, tokdef = None):
         # Get the next token, either from self.curr or the lexer.
         # Typically, intervening indent tokens are skipped.
         while True:
             # Get token.
             if self.curr is None:
-                self.curr = self.lexer.get_next_token(toktype = toktype)
+                self.curr = self.lexer.get_next_token(tokdef = tokdef)
             tok = self.curr
             # Lexer should deal with EOF, not parser.
             if tok.isa(EOF):
@@ -655,7 +401,7 @@ class SpecParser:
                 ok = False
 
         # Check token type.
-        if ok and any(self.curr.isa(tt) for tt in toktypes):
+        if ok and any(self.curr.isa(td) for td in tokdefs):
             if tok and not taste:
                 self.swallow()
             return tok
@@ -667,6 +413,10 @@ class SpecParser:
             raise ...
         else:
             self.curr = None
+
+    ####
+    # Other stuff.
+    ####
 
     def error(self):
         fmt = 'Invalid syntax: pos={}'
@@ -690,9 +440,6 @@ class SpecParser:
             else:
                 break
         return elems
-
-    # ========================================
-    # Methods specific to the grammar syntax.
 
     '''
 
@@ -728,6 +475,10 @@ class SpecParser:
 
     '''
 
+    ####
+    # ParseElem handlers: Variant and OptHelp.
+    ####
+
     def variant(self):
         # Get variant/partial name, if any.
         defs = (variant-defintion, partial-defintion)
@@ -752,9 +503,9 @@ class SpecParser:
         elems = self.elems()
         txt = ''
         if self.eat('opt-help-sep'):
-            tt = TokType(REST_OF_LINE)
+            td = TokDef(REST_OF_LINE)
             while True:
-                tok = self.eat(toktype = tt, skip_indent = False)
+                tok = self.eat(tokdef = td, skip_indent = False)
                 if tok:
                     txt = txt + ' ' + tok.text.strip()
                 if not self.eat('indent', skip_indent = False):
