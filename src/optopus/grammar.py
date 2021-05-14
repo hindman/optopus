@@ -1,8 +1,4 @@
 
-# TODO: NEXT:
-#   - variant()
-#   - etc for remaining methods
-
 # TODO: parse_some() and parse_first(): make sure they are helpful.
 
 '''
@@ -201,9 +197,10 @@ def define_tokdefs():
         ('name',           1,    '_',   r.name),
         ('assign',         1,    '_',   '='),
         ('opt_help_sep',   1,    'O',   ':'),
+        ('choice_val',     1,    '_',   '[^\s|>]+'),
+        ('rest',           1,    '',    '.+'),
         ('eof',            0.0,  '',    ''),
         ('err',            0.0,  '',    ''),
-        ('rest',           1,    '',    '.+'),
     )
 
     # Create a dict mapping kind to each TokDef.
@@ -225,6 +222,7 @@ TokDefs = define_tokdefs()
 Chars = sc.cons(
     'Chars',
     space = ' ',
+    newline = '\n',
 )
 
 ####
@@ -290,7 +288,7 @@ class RegexLexer(object):
         # Get text width and newline locations/count.
         text = m.group(0)
         width = len(text)
-        indexes = [i for i, c in enumerate(text) if c == '\n']
+        indexes = [i for i, c in enumerate(text) if c == Chars.newline]
         n = len(indexes)
 
         # Create token.
@@ -580,8 +578,7 @@ class SpecParser:
             if e:
                 q = self.quantifier()
                 if q:
-                    # TODO: decide how to handle this.
-                    e.quantifier = q
+                    e = attr.evolve(e, quantifier = q)
                 elems.append(e)
             else:
                 break
@@ -630,6 +627,81 @@ class SpecParser:
         else:
             return None
 
+    # TODO: HERE
+
+    def choices(self, require_dest = False):
+
+        # ('sym_dest',       1,    '_',   c(r.name) + hw + '[!.]' + hw + c(r.name)),
+        # ('dest',           1,    '_',   '[!.]' + hw + c(r.name)),
+        # ('name',           1,    '_',   r.name),
+        # ('assign',         1,    '_',   '='),
+        # ('opt_help_sep',   1,    'O',   ':'),
+        # ('choice_val',     1,    '_',   '[^\s|>]+'),
+
+        # This version is better, but I think there are still
+        # possible issue:
+        # - <dest> for positionals vs <sym> for options.
+        # - The optional dest-period.
+
+        # Forms:
+        #
+        #   <    dest     >
+        #   <    dest=vals>
+        #   <sym.dest     >
+        #   <sym.dest=vals>
+        #
+        #   <                >
+        #   <           =vals>    # Equal sign is optional.
+        #   <sym             >
+        #   <sym        =vals>
+        #   <   .subdest     >
+        #   <   .subdest=vals>
+        #   <sym.subdest     >
+        #   <sym.subdest=vals>
+
+        # Try to get sym.dest.
+        tok = self.eat(TokDefs.sym_dest, TokDefs.dest)
+        if tok:
+            sym = ...
+            dest = ...
+        elif require_dest:
+            raise ...
+        else:
+            sym = None
+            dest = None
+
+        # Try to get the dest assign equal-sign.
+        assign = self.eat(TokDefs.assign)
+
+        # Try to get any choice_val.
+        vals = []
+        while True:
+            # Check for a choice_val.
+            tok = self.eat(TokDefs.choice_val, taste = True)
+            if not tok:
+                break
+
+            # Retroactively require the assign equal-sign if
+            # we got the surrounding elements.
+            if (sym or dest) and not assign:
+                raise ...
+
+            # Continue looping if choice_sep is next.
+            self.swallow()
+            vals.append(...)
+            if not self.eat(TokDefs.choice_sep):
+                break
+
+        # Handle single choice_val.
+        if len(vals) == 1:
+            val = vals[0]
+            vals = None
+        else:
+            val = None
+
+        # Return.
+        return SymDest(sym, dest, val, vals)
+
     def positional(self):
         # Try to get a Choices elem.
         ch = self.parenthesized(TokDefs.angle_open, self.choices)
@@ -645,8 +717,6 @@ class SpecParser:
             return PositionalVariant(ch.dest, val = ch.vals[0])
         else:
             return Positional(ch.dest, choices = ch.vals)
-
-    # TODO: HERE
 
     def parameter(self):
         ch = self.parenthesized(TokDefs.angle_open, self.choices, empty_ok = True)
@@ -666,54 +736,6 @@ class SpecParser:
             ParameterVariant(dest, val = val[0]) elif n == 1
             Parameter(dest, vals)
         )
-
-    def choices(self):
-        # Used for parameters and positionals. Allows the following forms,
-        # where x is a destination and V1/V2 are values.
-        #   x
-        #   x=V1
-        #   x=V1|V2|...
-        #   =V1
-        #   =V1|V2|...
-
-        # Need to parse this differently.
-        # Just looking for a name at the front
-        # will get confused about these two forms:
-        #
-        #   <sym>
-        #   <val|val|val>
-        #
-        # There are more tokens to take advantage of now.
-
-        # Get destination, if any.
-        tok = self.eat(name)
-        if tok:
-            dest = ...
-        else:
-            dest = None
-
-        # Return if no assigned value/choices.
-        tok = self.eat(assign)
-        if not tok:
-            return Choices(dest, tuple())
-
-        # Get value/choices.
-        choices = []
-        while True:
-            val = self.eat((quoted-literal, name))
-            if val:
-                choices.append(val)
-                if not self.eat(choice-sep):
-                    break
-            else:
-                break
-
-        # Return.
-        if choices:
-            return Choices(dest, tuple(choices))
-        else:
-            # Return None here: equal without choices is invalid.
-            pass
 
     def quantifier(self):
         quantifier_methods = (

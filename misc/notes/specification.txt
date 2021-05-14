@@ -118,13 +118,16 @@ Sym-dest:
         - Options do not require subdest, so there are eight forms:
 
             --dest <                >
-            --dest <           =vals>    # Equal sign is optional.
+            --dest <           =vals>    # Equal sign optional.
             --dest <sym             >
             --dest <sym        =vals>
             --dest <   .subdest     >
             --dest <   .subdest=vals>
             --dest <sym.subdest     >
             --dest <sym.subdest=vals>
+
+        - The vals in a spec must be quoted-literals or non-whitespace "words"
+          not containing right-angle-bracket or pipes.
 
 Names:
 
