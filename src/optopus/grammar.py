@@ -638,10 +638,12 @@ class SpecParser:
         # ('opt_help_sep',   1,    'O',   ':'),
         # ('choice_val',     1,    '_',   '[^\s|>]+'),
 
-        # This version is better, but I think there are still
-        # possible issue:
-        # - <dest> for positionals vs <sym> for options.
-        # - The optional dest-period.
+        # This version is better, but it doesn't handle 
+        # just <dest> or <sym>.
+
+        # Maybe it would help to have two choice_val tokens:
+        # - choice_val followed by pipe
+        # - choice_val by itself
 
         # Forms:
         #
