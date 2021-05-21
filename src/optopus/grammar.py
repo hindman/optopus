@@ -1,40 +1,4 @@
 
-# TODO: parse_some() and parse_first(): make sure they are helpful.
-
-'''
-
-variant
-    expression ...
-        element...
-            quoted_literal
-            partial_usage
-            paren_expression
-                ( expression )
-            brack_expression
-                [ expression ]
-            positional
-                < positional_definition >
-            long_option
-                --opt
-                parameter*
-                    < parameter_definition >
-            short_option
-                -o
-                parameter*
-                    < parameter_definition >
-
-# Details.
-choices
-quantifier
-one_or_more_dots
-quantifier_range
-
-# helpers
-parenthesized
-option
-
-'''
-
 ####
 # Imports.
 ####
@@ -49,7 +13,7 @@ def attrcls(*names):
     # Takes attribute names as list or space-delimited string.
     # Returns a class decorator that will add attributes
     # to the given class. Invoke this decorator so that it
-    # executes before @attr.ib().
+    # executes before @attr.s().
     names = tuple(nm for name in names for nm in name.split())
 
     def decorator(cls):
@@ -118,6 +82,31 @@ class Parenthesized:
 @attr.s(frozen = True)
 @attrcls('elems')
 class Bracketed:
+    pass
+
+@attr.s(frozen = True)
+@attrcls('sym dest symlit val vals')
+class SymDest:
+    pass
+
+@attr.s(frozen = True)
+@attrcls('sym dest symlit choices')
+class Positional:
+    pass
+
+@attr.s(frozen = True)
+@attrcls('sym dest symlit choice')
+class PositionalVariant:
+    pass
+
+@attr.s(frozen = True)
+@attrcls('sym dest symlit choices')
+class Parameter:
+    pass
+
+@attr.s(frozen = True)
+@attrcls('sym dest symlit choice')
+class ParameterVariant:
     pass
 
 ####
@@ -192,8 +181,9 @@ def define_tokdefs():
         ('variant_def',    1,    'v',   c(r.name) + hw + ':'),
         ('partial_usage',  1,    'v',   c(r.name) + '!'),
         ('name_assign',    1,    '_',   c(r.name) + hw + '='),
-        ('sym_dest',       1,    '_',   c(r.name) + hw + '[!.]' + hw + c(r.name)),
-        ('dest',           1,    '_',   '[!.]' + hw + c(r.name)),
+        ('sym_dest',       1,    '_',   c(r.name) + hw + c('[!.]') + hw + c(r.name)),
+        ('dot_dest',       1,    '_',   r'\.' + hw + c(r.name)),
+        ('solo_dest',      1,    '_',   c(r.name) + hw + r'(?=>)'),
         ('name',           1,    '_',   r.name),
         ('assign',         1,    '_',   '='),
         ('opt_help_sep',   1,    'O',   ':'),
@@ -377,7 +367,8 @@ class SpecParser:
     def mode(self, mode):
         if self.curr:
             # Changing mode while caching a prior token seems bad.
-            raise ...
+            msg = 'Cannot change parser mode if self.curr is defined'
+            raise Exception(msg)
         else:
             self._mode = mode
             self.lexer.tokens = tuple(td for td in TokDefs if mode in td.modes)
@@ -407,7 +398,8 @@ class SpecParser:
 
         # Raise if we did not parse the full text.
         if self.lexer.end.isa(TokDefs.err):
-            raise ...
+            msg = 'Failed to parse the full spec'
+            raise Exception(msg)
 
         # Convert elems to a Grammar.
         # There will be some validation needed here too.
@@ -450,11 +442,13 @@ class SpecParser:
 
             # Lexer should deal with EOF, not parser.
             if tok.isa(EOF):
-                raise ...
+                msg = 'Lexer should not emit Token(eof)'
+                raise Exception(msg)
 
             # Skip indents, unless lex_tokdef.
             if tok.isa(TokDefs.indent) and not lex_tokdef:
                 self.curr = None
+                continue
 
             # Usually we break on the first iteration.
             break
@@ -495,7 +489,8 @@ class SpecParser:
 
     def swallow(self):
         if self.curr is None:
-            raise ...
+            msg = 'Cannot swallow() unless self.curr is defined'
+            raise Exception(msg)
         else:
             self.curr = None
 
@@ -522,7 +517,8 @@ class SpecParser:
         elif elems:
             return Variant(name, is_partial, elems)
         else:
-            raise ...
+            msg = 'A Variant cannot be empty'
+            raise Exception(msg)
 
     def opt_help(self):
         # Try to get elements.
@@ -563,18 +559,17 @@ class SpecParser:
     ####
 
     def elems(self):
-        methods = (
-            self.quoted_literal,
-            self.partial_usage,
-            self.paren_expression,
-            self.brack_expression,
-            self.positional,
-            self.long_option,
-            self.short_option,
-        )
         elems = []
         while True:
-            e = self.parse_first(methods)
+            e = self.parse_first(
+                self.quoted_literal,
+                self.partial_usage,
+                self.paren_expression,
+                self.brack_expression,
+                self.positional,
+                self.long_option,
+                self.short_option,
+            )
             if e:
                 q = self.quantifier()
                 if q:
@@ -627,156 +622,133 @@ class SpecParser:
         else:
             return None
 
-    # TODO: HERE
+    def positional(self):
+        # Try to get a SymDest elem.
+        sd = self.parenthesized(TokDefs.angle_open, self.symdest, for_pos = True)
+        if not sd:
+            return None
 
-    def choices(self, require_dest = False):
-
-        # ('sym_dest',       1,    '_',   c(r.name) + hw + '[!.]' + hw + c(r.name)),
-        # ('dest',           1,    '_',   '[!.]' + hw + c(r.name)),
-        # ('name',           1,    '_',   r.name),
-        # ('assign',         1,    '_',   '='),
-        # ('opt_help_sep',   1,    'O',   ':'),
-        # ('choice_val',     1,    '_',   '[^\s|>]+'),
-
-        # This version is better, but it doesn't handle 
-        # just <dest> or <sym>.
-
-        # Maybe it would help to have two choice_val tokens:
-        # - choice_val followed by pipe
-        # - choice_val by itself
-
-        # Forms:
-        #
-        #   <    dest     >
-        #   <    dest=vals>
-        #   <sym.dest     >
-        #   <sym.dest=vals>
-        #
-        #   <                >
-        #   <           =vals>    # Equal sign is optional.
-        #   <sym             >
-        #   <sym        =vals>
-        #   <   .subdest     >
-        #   <   .subdest=vals>
-        #   <sym.subdest     >
-        #   <sym.subdest=vals>
-
-        # Try to get sym.dest.
-        tok = self.eat(TokDefs.sym_dest, TokDefs.dest)
-        if tok:
-            sym = ...
-            dest = ...
-        elif require_dest:
-            raise ...
+        # Return Positional or PositionalVariant.
+        xs = (sd.sym, sd.dest, sd.symlit)
+        if sd.val is None:
+            return Positional(*xs, choices = sd.vals)
         else:
-            sym = None
-            dest = None
+            return PositionalVariant(*xs, choice = sd.val)
+
+    def parameter(self):
+        # Try to get a SymDest elem.
+        sd = self.parenthesized(TokDefs.angle_open, self.symdest, empty_ok = True)
+        if not sd:
+            return None
+
+        # Return Parameter or ParameterVariant.
+        xs = (sd.sym, sd.dest, sd.symlit)
+        if sd.val is None:
+            return Parameter(*xs, choices = sd.vals)
+        else:
+            return ParameterVariant(*xs, choice = sd.val)
+
+    def symdest(self, for_pos = True):
+        # Try to get sym.dest portion.
+        sym = None
+        dest = None
+        symlit = False
+        tok = self.eat(TokDefs.sym_dest, TokDefs.dot_dest, TokDefs.solo_dest)
+        if tok:
+            if tok.isa(TokDefs.sym_dest):
+                # Handle <sym.dest> or <sym!dest>.
+                sym = tok.m.group(1)
+                symlit = tok.m.group(2) == Chars.exclamation
+                dest = tok.m.group(3)
+            else:
+                # Handle <.dest>, <dest>, or <sym>.
+                txt = tok.m.group(1)
+                if for_pos or tok.isa(TokDefs.dot_dest):
+                    dest = txt
+                else:
+                    sym = txt
+        elif for_pos:
+            msg = 'Positionals require at least a dest'
+            raise Exception(msg)
 
         # Try to get the dest assign equal-sign.
+        # For now, treat this as optional.
         assign = self.eat(TokDefs.assign)
 
-        # Try to get any choice_val.
+        # Try to get choice values.
         vals = []
         while True:
-            # Check for a choice_val.
-            tok = self.eat(TokDefs.choice_val, taste = True)
+            tok = self.eat(TokDefs.quoted_literal, TokDefs.choice_val, taste = True)
             if not tok:
                 break
 
-            # Retroactively require the assign equal-sign if
-            # we got the surrounding elements.
+            # If we got one, and if we already had a sym or dest,
+            # the assign equal sign becomes required.
             if (sym or dest) and not assign:
-                raise ...
+                msg = 'Found choice values without required equal sign'
+                raise Exception(msg)
+
+            # Consume and store.
+            self.swallow()
+            i = 1 if tok.isa(TokDefs.quoted_literal) else 0
+            vals.append(tok.m.group(i))
 
             # Continue looping if choice_sep is next.
-            self.swallow()
-            vals.append(...)
             if not self.eat(TokDefs.choice_sep):
                 break
 
-        # Handle single choice_val.
+        # Handle single choice value.
         if len(vals) == 1:
             val = vals[0]
             vals = None
         else:
             val = None
+            vals = tuple(vals)
 
         # Return.
-        return SymDest(sym, dest, val, vals)
-
-    def positional(self):
-        # Try to get a Choices elem.
-        ch = self.parenthesized(TokDefs.angle_open, self.choices)
-        if not ch:
-            return None
-
-        # Positionals require a dest.
-        if not ch.dest:
-            raise ...
-
-        # Return Positional or ParameterVariant.
-        if len(ch.vals) == 1:
-            return PositionalVariant(ch.dest, val = ch.vals[0])
-        else:
-            return Positional(ch.dest, choices = ch.vals)
-
-    def parameter(self):
-        ch = self.parenthesized(TokDefs.angle_open, self.choices, empty_ok = True)
-        if not ch:
-            return None
-
-        # Handle nameless param <>.
-        if not (choices.dest or choices.vals):
-            return Parameter(None, None)
-
-        # Return named Parameter or ParameterVariant.
-        dest = choices.dest
-        vals = choices.vals
-        n = len(vals)
-        return (
-            Parameter(dest, None) if n == 0
-            ParameterVariant(dest, val = val[0]) elif n == 1
-            Parameter(dest, vals)
-        )
+        return SymDest(sym, dest, symlit, val, vals)
 
     def quantifier(self):
-        quantifier_methods = (
-            self.one_or_more_dots,
-            self.quantifier_range,
-        )
-        q = self.parse_first(quantifier_methods)
+        q = self.parse_first(self.triple_dot, self.quantifier_range)
         if q:
+            m, n = q
             greedy = not self.eat(question)
-            return Quantifier(q, greedy)
+            return Quantifier(m, n, greedy)
         else:
             return None
 
-    def one_or_more_dots(self):
-        tok = self.eat(triple-dot)
-        if tok:
-            return (1, None)
-        else:
-            return None
+    def triple_dot(self):
+        tok = self.eat(TokDefs.triple_dot)
+        return (1, None) if tok else None
 
     def quantifier_range(self):
-        tok = self.eat(quantifier-range)
+        tok = self.eat(TokDefs.quant_range)
         if tok:
-            ...
-            return (..., ...)
+            text = TokDefs.whitespace.regex.sub('', tok.text)
+            xs = [
+                None if x == '' else int(x)
+                for x in text.split(Chars.comma)
+            ]
+            if len(xs) == 1:
+                return (xs[0], xs[0])
+            else:
+                return (xs[0], xs[1])
         else:
             return None
 
-    def parenthesized(self, td_open, method, empty_ok = False):
+    def parenthesized(self, td_open, method, empty_ok = False, **kws):
         td_close = ParenPairs[td_open]
         tok = self.eat(td_open)
         if tok:
-            elem = method()
+            elem = method(**kws)
             if not (elem or empty_ok):
-                raise ...
+                msg = 'Illegal empty parenthesized expression'
+                raise Exception(msg)
             elif self.eat(td_close):
                 return elem
             else:
-                raise ...
+                msg = 'Failed to find closing paren/bracket'
+                raise Exception(msg)
         else:
             return None
 
@@ -789,7 +761,7 @@ class SpecParser:
         msg = fmt.format(self.lexer.pos)
         raise Exception(msg)
 
-    def parse_first(self, methods):
+    def parse_first(self, *methods):
         elem = None
         for m in methods:
             elem = m()

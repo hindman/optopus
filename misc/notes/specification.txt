@@ -110,8 +110,8 @@ Sym-dest:
 
         - Postitionals require a dest, so there are only four forms:
 
-            <    dest     >
-            <    dest=vals>
+            <   .dest     >              # Period optional.
+            <   .dest=vals>              # Period optional.
             <sym.dest     >
             <sym.dest=vals>
 

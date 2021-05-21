@@ -2,15 +2,18 @@
 todos: TODOs
 --------
 
-Core algorithms:
+Grammar syntax parsing.
 
-    Grammar syntax parsing.
+    - Add RegexLexer.return_token() to have the lexer update its location
+      info. Needed when we switch parser modes while self.curr is defined.
 
-    Convert grammar-syntax AST into a Grammar.
+    - Implement some simple tests and get code running successfully.
 
-    Data-oriented exception strategy.
+Convert grammar-syntax AST into a Grammar.
 
-    Argument parsing.
+Implement data-oriented exception strategy.
+
+Argument parsing.
 
 --------
 road-map: Road map
