@@ -1,4 +1,6 @@
 
+# TODO: Implement some simple tests and get code running successfully.
+
 ####
 # Imports.
 ####
@@ -213,6 +215,8 @@ Chars = sc.cons(
     'Chars',
     space = ' ',
     newline = '\n',
+    exclamation = '!',
+    comma = ',',
 )
 
 ####
@@ -224,14 +228,15 @@ class RegexLexer(object):
     def __init__(self, text, tokdefs = None):
         self.text = text
         self.tokdefs = tokdefs
+        self.maxpos = len(self.text) - 1
 
         # Location and token information.
-        self.maxpos = len(self.text) - 1
         self.pos = 0
         self.line = 1
         self.col = 1
         self.indent = 0
         self.isfirst = True
+        self.prev_loc = None
 
         # Will be set with Token(eof)/Token(err) when lexing finishes.
         self.end = None
@@ -274,6 +279,27 @@ class RegexLexer(object):
         self.end = self.create_token(td, '')
         return self.end
 
+    def set_location(self, revert = False):
+        if revert and not self.prev_loc:
+            msg = 'Cannot set_location(revert) if self.prev_loc is unset'
+            raise Exception(msg)
+        elif revert:
+            t = self.prev_loc
+            self.pos = t[0]
+            self.line = t[1]
+            self.col = t[2]
+            self.indent = t[3]
+            self.isfirst = t[4]
+            self.prev_loc = None
+        else:
+            self.prev_loc = (
+                self.pos,
+                self.line,
+                self.col,
+                self.indent,
+                self.isfirst,
+            )
+
     def create_token(self, tokdef, m):
         # Get text width and newline locations/count.
         text = m.group(0)
@@ -295,7 +321,10 @@ class RegexLexer(object):
             indent = self.indent,
         )
 
-        # Update location info.
+        # Remember the current location info.
+        self.set_location()
+
+        # Update location info based on recently consumed Token.
         self.isfirst = False
         self.pos += width
         self.line += n
@@ -366,9 +395,8 @@ class SpecParser:
     @mode.setter
     def mode(self, mode):
         if self.curr:
-            # Changing mode while caching a prior token seems bad.
-            msg = 'Cannot change parser mode if self.curr is defined'
-            raise Exception(msg)
+            self.lexer.set_location(revert = True)
+            self.curr = None
         else:
             self._mode = mode
             self.lexer.tokens = tuple(td for td in TokDefs if mode in td.modes)
