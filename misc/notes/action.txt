@@ -2,16 +2,11 @@
 todos: TODOs
 --------
 
+Implement data-oriented exception strategy.
+
 Grammar syntax parsing.
 
-    - Add RegexLexer.return_token() to have the lexer update its location
-      info. Needed when we switch parser modes while self.curr is defined.
-
-    - Implement some simple tests and get code running successfully.
-
 Convert grammar-syntax AST into a Grammar.
-
-Implement data-oriented exception strategy.
 
 Argument parsing.
 

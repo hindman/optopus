@@ -1,5 +1,7 @@
 
-# TODO: Implement some simple tests and get code running successfully.
+# TODO: Better errors so I can debug failed parses: start with the failed-to-parse-full-spec.
+
+# TODO: Get the test working.
 
 ####
 # Imports.
@@ -97,6 +99,11 @@ class Positional:
     pass
 
 @attr.s(frozen = True)
+@attrcls('dest params')
+class Option:
+    pass
+
+@attr.s(frozen = True)
 @attrcls('sym dest symlit choice')
 class PositionalVariant:
     pass
@@ -109,6 +116,11 @@ class Parameter:
 @attr.s(frozen = True)
 @attrcls('sym dest symlit choice')
 class ParameterVariant:
+    pass
+
+@attr.s(frozen = True)
+@attrcls('elems')
+class Grammar:
     pass
 
 ####
@@ -189,7 +201,7 @@ def define_tokdefs():
         ('name',           1,    '_',   r.name),
         ('assign',         1,    '_',   '='),
         ('opt_help_sep',   1,    'O',   ':'),
-        ('choice_val',     1,    '_',   '[^\s|>]+'),
+        ('choice_val',     1,    '_',   r'[^\s|>]+'),
         ('rest',           1,    '',    '.+'),
         ('eof',            0.0,  '',    ''),
         ('err',            0.0,  '',    ''),
@@ -218,6 +230,11 @@ Chars = sc.cons(
     exclamation = '!',
     comma = ',',
 )
+ParenPairs = {
+    TokDefs.paren_open: TokDefs.paren_close,
+    TokDefs.brack_open: TokDefs.brack_close,
+    TokDefs.angle_open: TokDefs.angle_close,
+}
 
 ####
 # Lexer.
@@ -276,7 +293,8 @@ class RegexLexer(object):
         # We have lexed as far as we can.
         # Set self.end to Token(eof) or Token(err).
         td = (TokDefs.err, TokDefs.eof)[self.pos > self.maxpos]
-        self.end = self.create_token(td, '')
+        m = re.search('^$', '')
+        self.end = self.create_token(td, m)
         return self.end
 
     def set_location(self, revert = False):
@@ -365,8 +383,8 @@ class SpecParser:
         self.line = None
         self.indent = None
 
-        # Parser mode and associated handlers.
-        self.mode = None
+        # Parsing modes. First defines the handlers for each
+        # mode. Then set the initial mode.
         self.handlers = {
             None: tuple(),
             Pmodes.variant: (
@@ -383,6 +401,7 @@ class SpecParser:
                 Handler(self.opt_help, None),
             ),
         }
+        self.mode = Pmodes.variant
 
     ####
     # Setting the parser mode.
@@ -399,7 +418,11 @@ class SpecParser:
             self.curr = None
         else:
             self._mode = mode
-            self.lexer.tokens = tuple(td for td in TokDefs if mode in td.modes)
+            self.lexer.tokdefs = tuple(
+                td
+                for td in TokDefs.values()
+                if mode in td.modes
+            )
 
     ####
     # Parse a spec.
@@ -411,6 +434,9 @@ class SpecParser:
         #   [prog] :: opt_help...
         #   [prog] variant...
         #
+
+        # return Grammar([len(self.lexer.tokens)])
+
         tok = self.eat(TokDefs.section_name)
         if tok:
             self.mode = Pmodes.opt_help
@@ -425,7 +451,8 @@ class SpecParser:
         elems.extend(self.do_parse())
 
         # Raise if we did not parse the full text.
-        if self.lexer.end.isa(TokDefs.err):
+        e = self.lexer.end
+        if not (e and e.isa(TokDefs.eof)):
             msg = 'Failed to parse the full spec'
             raise Exception(msg)
 
@@ -468,11 +495,6 @@ class SpecParser:
                 self.curr = self.lexer.get_next_token(lex_tokdef)
             tok = self.curr
 
-            # Lexer should deal with EOF, not parser.
-            if tok.isa(EOF):
-                msg = 'Lexer should not emit Token(eof)'
-                raise Exception(msg)
-
             # Skip indents, unless lex_tokdef.
             if tok.isa(TokDefs.indent) and not lex_tokdef:
                 self.curr = None
@@ -491,7 +513,7 @@ class SpecParser:
         #   from the same line or a continuation line indented farther
         #   than the first line of the expression.
         if self.indent is None:
-            if tok.is_first:
+            if tok.isfirst:
                 self.indent = tok.indent
                 self.line = tok.line
                 ok = True
@@ -529,7 +551,7 @@ class SpecParser:
     def variant(self):
         # Get variant/partial name, if any.
         tds = (TokDefs.variant_def, TokDefs.partial_def)
-        tok = self.eat(tds, taste = True)
+        tok = self.eat(*tds, taste = True)
         if tok:
             self.swallow()
             name = tok.text
@@ -561,7 +583,7 @@ class SpecParser:
                 tok = self.eat(lex_tokdef = TokDefs.rest)
                 if tok:
                     texts.append(tok.text.strip())
-                if not self.eat(lex_tokdef = TokDefs.indent)
+                if not self.eat(lex_tokdef = TokDefs.indent):
                     break
 
         # Join text parts and return.
