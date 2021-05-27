@@ -1,7 +1,36 @@
 
-# TODO: Better errors so I can debug failed parses: start with the failed-to-parse-full-spec.
+'''
 
-# TODO: Get the test working.
+Status:
+
+    - We appear to be able to lex/parse the README examples.
+
+    - Dropped choice_val (bad idea). For now, choice vals must be names.
+
+    - Would like to stop holding state:
+
+        - Drop taste:
+            - used twice
+            - one seems unneccessary.
+            - but needed in symdest()?
+        - Drop self.curr.
+            - Seems unneeded.
+
+    - Less awkward way to get opt-help continuation lines?
+
+    - OptopusError:
+        - add kws to raise calls.
+        - better way to raise informative failed-parse errors?
+
+    - For debugging, have parser collect all eaten tokens?
+
+    - Maybe a debug mode:
+        - Parse as far as you can.
+        - Don't raise
+        - Collect tokens and elements
+        - Then have a way to dump them out nicely?
+
+'''
 
 ####
 # Imports.
@@ -12,6 +41,8 @@ import re
 import short_con as sc
 from functools import cache
 from collections import OrderedDict
+
+from .errors import OptopusError
 
 def attrcls(*names):
     # Takes attribute names as list or space-delimited string.
@@ -79,12 +110,12 @@ class PartialUsage:
     pass
 
 @attr.s(frozen = True)
-@attrcls('elems')
+@attrcls('elems quantifier')
 class Parenthesized:
     pass
 
 @attr.s(frozen = True)
-@attrcls('elems')
+@attrcls('elems quantifier')
 class Bracketed:
     pass
 
@@ -94,13 +125,23 @@ class SymDest:
     pass
 
 @attr.s(frozen = True)
-@attrcls('sym dest symlit choices')
+@attrcls('sym dest symlit choices quantifier')
 class Positional:
     pass
 
 @attr.s(frozen = True)
-@attrcls('dest params')
+@attrcls('dest params quantifier')
 class Option:
+    pass
+
+@attr.s(frozen = True)
+@attrcls('')
+class ChoiceSep:
+    pass
+
+@attr.s(frozen = True)
+@attrcls('m n greedy')
+class Quantifier:
     pass
 
 @attr.s(frozen = True)
@@ -189,19 +230,18 @@ def define_tokdefs():
         ('question',       1,    '_',   r'\?'),
         ('long_option',    1,    '_',   r.pre + r.pre + c(r.name)),
         ('short_option',   1,    '_',   r.pre + c(r'\w')),
-        ('section_name',   1,    'v',   r.head + c(r.prog) + '?' + hw + '::' + r.eol),
-        ('section_title',  1,    '_',   r.head + c('.*') + '::' + r.eol),
+        ('section_name',   1,    'v',   c(r.prog) + hw + '::' + r.eol),
+        ('section_title',  1,    '_',   c('.*') + '::' + r.eol),
         ('partial_def',    1,    'v',   c(r.name) + '!' + hw + ':'),
         ('variant_def',    1,    'v',   c(r.name) + hw + ':'),
         ('partial_usage',  1,    'v',   c(r.name) + '!'),
-        ('name_assign',    1,    '_',   c(r.name) + hw + '='),
         ('sym_dest',       1,    '_',   c(r.name) + hw + c('[!.]') + hw + c(r.name)),
         ('dot_dest',       1,    '_',   r'\.' + hw + c(r.name)),
-        ('solo_dest',      1,    '_',   c(r.name) + hw + r'(?=>)'),
+        ('solo_dest',      1,    '_',   c(r.name) + hw + r'(?=[>=])'),
         ('name',           1,    '_',   r.name),
         ('assign',         1,    '_',   '='),
         ('opt_help_sep',   1,    'O',   ':'),
-        ('choice_val',     1,    '_',   r'[^\s|>]+'),
+        # ('choice_val',     1,    '_',   r'[^\s|>]+'),
         ('rest',           1,    '',    '.+'),
         ('eof',            0.0,  '',    ''),
         ('err',            0.0,  '',    ''),
@@ -258,7 +298,7 @@ class RegexLexer(object):
         # Will be set with Token(eof)/Token(err) when lexing finishes.
         self.end = None
 
-    def get_next_token(self, lex_tokdef = None):
+    def get_next_token(self, lex_tokdefs = None):
         # Starting at self.pos, emit the next Token.
         #
         # For non-emitted tokens, we break out of the for-loop,
@@ -266,7 +306,7 @@ class RegexLexer(object):
         # to be able to ignore any number of non-emitted tokens
         # on each call of the function.
         #
-        # The optional lex_tokdef allows the parser to request a
+        # The optional lex_tokdefs allows the parser to request a
         # specific TokDef directly, bypassing the normal ordering
         # in self.tokdefs. Used for opt-help text continuation-lines.
 
@@ -275,7 +315,7 @@ class RegexLexer(object):
             return self.end
 
         # Normalize input to a tuple of TokDef.
-        tds = (lex_tokdef,) if lex_tokdef else self.tokdefs
+        tds = lex_tokdefs or self.tokdefs
 
         # Return next Token that should be emitted.
         tok = True
@@ -300,7 +340,7 @@ class RegexLexer(object):
     def set_location(self, revert = False):
         if revert and not self.prev_loc:
             msg = 'Cannot set_location(revert) if self.prev_loc is unset'
-            raise Exception(msg)
+            raise OptopusError(msg)
         elif revert:
             t = self.prev_loc
             self.pos = t[0]
@@ -386,7 +426,6 @@ class SpecParser:
         # Parsing modes. First defines the handlers for each
         # mode. Then set the initial mode.
         self.handlers = {
-            None: tuple(),
             Pmodes.variant: (
                 Handler(self.section_title, Pmodes.section),
                 Handler(self.variant, None),
@@ -451,10 +490,16 @@ class SpecParser:
         elems.extend(self.do_parse())
 
         # Raise if we did not parse the full text.
-        e = self.lexer.end
-        if not (e and e.isa(TokDefs.eof)):
+        lex = self.lexer
+        if not (lex.end and lex.end.isa(TokDefs.eof)):
             msg = 'Failed to parse the full spec'
-            raise Exception(msg)
+            raise OptopusError(
+                msg = msg,
+                pos = lex.pos,
+                line = lex.line,
+                col = lex.col,
+                curr = self.curr,
+            )
 
         # Convert elems to a Grammar.
         # There will be some validation needed here too.
@@ -482,23 +527,28 @@ class SpecParser:
     # Eat tokens.
     ####
 
-    def eat(self, *tds, taste = False, lex_tokdef = None):
+    def eat(self, *tds, taste = False, lex_tokdefs = None):
         # Get the next token, either from self.curr or the lexer.
         #
         # Note that unless the caller requested that the
         # lexer be asked for a specific TokDef, this method
         # will automatically skip any intervening indent tokens.
 
+        if tds and lex_tokdefs:
+            msg = 'eat() takes tds or lex_tokdefs, not both'
+            raise OptopusError(msg)
+
         # Get next token of interest.
         while True:
             if self.curr is None:
-                self.curr = self.lexer.get_next_token(lex_tokdef)
+                self.curr = self.lexer.get_next_token(lex_tokdefs)
             tok = self.curr
 
-            # Skip indents, unless lex_tokdef.
-            if tok.isa(TokDefs.indent) and not lex_tokdef:
-                self.curr = None
-                continue
+            # Skip indents.
+            if tok.isa(TokDefs.indent):
+                if not lex_tokdefs or TokDefs.indent not in lex_tokdefs:
+                    self.curr = None
+                    continue
 
             # Usually we break on the first iteration.
             break
@@ -530,9 +580,11 @@ class SpecParser:
 
         # Return the token if indentation was OK
         # and it is among the requested kinds.
+        tds = lex_tokdefs or tds
         if ok and any(self.curr.isa(td) for td in tds):
             if not taste:
                 self.swallow()
+            print(tok)
             return tok
         else:
             return None
@@ -540,7 +592,7 @@ class SpecParser:
     def swallow(self):
         if self.curr is None:
             msg = 'Cannot swallow() unless self.curr is defined'
-            raise Exception(msg)
+            raise OptopusError(msg)
         else:
             self.curr = None
 
@@ -568,7 +620,7 @@ class SpecParser:
             return Variant(name, is_partial, elems)
         else:
             msg = 'A Variant cannot be empty'
-            raise Exception(msg)
+            raise OptopusError(msg)
 
     def opt_help(self):
         # Try to get elements.
@@ -580,10 +632,10 @@ class SpecParser:
         texts = []
         if self.eat(TokDefs.opt_help_sep):
             while True:
-                tok = self.eat(lex_tokdef = TokDefs.rest)
+                tok = self.eat(lex_tokdefs = (TokDefs.newline, TokDefs.rest))
                 if tok:
                     texts.append(tok.text.strip())
-                if not self.eat(lex_tokdef = TokDefs.indent):
+                if not self.eat(lex_tokdefs = (TokDefs.newline, TokDefs.indent)):
                     break
 
         # Join text parts and return.
@@ -610,9 +662,11 @@ class SpecParser:
 
     def elems(self):
         elems = []
+        takes_quantifier = (Parenthesized, Bracketed, Positional, Option)
         while True:
             e = self.parse_first(
                 self.quoted_literal,
+                self.choice_sep,
                 self.partial_usage,
                 self.paren_expression,
                 self.brack_expression,
@@ -620,14 +674,23 @@ class SpecParser:
                 self.long_option,
                 self.short_option,
             )
-            if e:
+            if e and isinstance(e, takes_quantifier):
                 q = self.quantifier()
                 if q:
                     e = attr.evolve(e, quantifier = q)
                 elems.append(e)
+            elif e:
+                elems.append(e)
             else:
                 break
         return elems
+
+    def choice_sep(self):
+        tok = self.eat(TokDefs.choice_sep)
+        if tok:
+            return ChoiceSep()
+        else:
+            return None
 
     def quoted_literal(self):
         tok = self.eat(TokDefs.quoted_literal)
@@ -646,14 +709,14 @@ class SpecParser:
     def paren_expression(self):
         elems = self.parenthesized(TokDefs.paren_open, self.elems)
         if elems:
-            return Parenthesized(elems)
+            return Parenthesized(elems, None)
         else:
             return None
 
     def brack_expression(self):
         elems = self.parenthesized(TokDefs.brack_open, self.elems)
         if elems:
-            return Bracketed(elems)
+            return Bracketed(elems, None)
         else:
             return None
 
@@ -668,7 +731,7 @@ class SpecParser:
         if tok:
             dest = tok.m.group(1)
             params = self.parse_some(self.parameter)
-            return Option(dest, params)
+            return Option(dest, params, None)
         else:
             return None
 
@@ -681,7 +744,7 @@ class SpecParser:
         # Return Positional or PositionalVariant.
         xs = (sd.sym, sd.dest, sd.symlit)
         if sd.val is None:
-            return Positional(*xs, choices = sd.vals)
+            return Positional(*xs, choices = sd.vals, quantifier = None)
         else:
             return PositionalVariant(*xs, choice = sd.val)
 
@@ -698,7 +761,7 @@ class SpecParser:
         else:
             return ParameterVariant(*xs, choice = sd.val)
 
-    def symdest(self, for_pos = True):
+    def symdest(self, for_pos = False):
         # Try to get sym.dest portion.
         sym = None
         dest = None
@@ -711,7 +774,7 @@ class SpecParser:
                 symlit = tok.m.group(2) == Chars.exclamation
                 dest = tok.m.group(3)
             else:
-                # Handle <.dest>, <dest>, or <sym>.
+                # Handle <.dest>, <dest>, <dest=> or <sym>.
                 txt = tok.m.group(1)
                 if for_pos or tok.isa(TokDefs.dot_dest):
                     dest = txt
@@ -719,7 +782,13 @@ class SpecParser:
                     sym = txt
         elif for_pos:
             msg = 'Positionals require at least a dest'
-            raise Exception(msg)
+            lex = self.lexer
+            raise OptopusError(
+                msg = msg,
+                pos = lex.pos,
+                line = lex.line,
+                col = lex.col,
+            )
 
         # Try to get the dest assign equal-sign.
         # For now, treat this as optional.
@@ -727,8 +796,9 @@ class SpecParser:
 
         # Try to get choice values.
         vals = []
+        tds = (TokDefs.quoted_literal, TokDefs.name, TokDefs.solo_dest)
         while True:
-            tok = self.eat(TokDefs.quoted_literal, TokDefs.choice_val, taste = True)
+            tok = self.eat(*tds, taste = True)
             if not tok:
                 break
 
@@ -736,11 +806,11 @@ class SpecParser:
             # the assign equal sign becomes required.
             if (sym or dest) and not assign:
                 msg = 'Found choice values without required equal sign'
-                raise Exception(msg)
+                raise OptopusError(msg)
 
             # Consume and store.
             self.swallow()
-            i = 1 if tok.isa(TokDefs.quoted_literal) else 0
+            i = 0 if tok.isa(TokDefs.name) else 1
             vals.append(tok.m.group(i))
 
             # Continue looping if choice_sep is next.
@@ -762,7 +832,7 @@ class SpecParser:
         q = self.parse_first(self.triple_dot, self.quantifier_range)
         if q:
             m, n = q
-            greedy = not self.eat(question)
+            greedy = not self.eat(TokDefs.question)
             return Quantifier(m, n, greedy)
         else:
             return None
@@ -793,12 +863,20 @@ class SpecParser:
             elem = method(**kws)
             if not (elem or empty_ok):
                 msg = 'Illegal empty parenthesized expression'
-                raise Exception(msg)
+                raise OptopusError(msg)
             elif self.eat(td_close):
                 return elem
             else:
                 msg = 'Failed to find closing paren/bracket'
-                raise Exception(msg)
+                lex = self.lexer
+                raise OptopusError(
+                    msg = msg,
+                    pos = lex.pos,
+                    line = lex.line,
+                    col = lex.col,
+                    close = td_close,
+                    curr = self.curr,
+                )
         else:
             return None
 
@@ -809,7 +887,7 @@ class SpecParser:
     def error(self):
         fmt = 'Invalid syntax: pos={}'
         msg = fmt.format(self.lexer.pos)
-        raise Exception(msg)
+        raise OptopusError(msg)
 
     def parse_first(self, *methods):
         elem = None
@@ -824,7 +902,7 @@ class SpecParser:
         while True:
             e = method()
             if e:
-                elems.push(e)
+                elems.append(e)
             else:
                 break
         return elems
