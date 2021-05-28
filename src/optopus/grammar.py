@@ -1,34 +1,70 @@
 
 '''
 
-Status:
+Status and remaining issues/questions:
 
     - We appear to be able to lex/parse the README examples.
 
-    - Dropped choice_val (bad idea). For now, choice vals must be names.
+    - Although we can simplify a lot (see below), we still need the ordered
+      list of tokens to be the primary driver of the lexer. For example, we
+      want to try for quoted literals early. And it helps with skipping
+      non-emitted stuff.
 
-    - Would like to stop holding state:
+Refactor: simplify state and token validation:
 
-        - Drop taste:
-            - used twice
-            - one seems unneccessary.
-            - but needed in symdest()?
-        - Drop self.curr.
-            - Seems unneeded.
+    - Summary:
+        - Lexer emits token only if parser likes it.
+        - Move self.curr into lexer.
+        - Allows significant simplification in parser.
+        - In lexer, self.curr is easy to manage.
 
-    - Less awkward way to get opt-help continuation lines?
+    - RegexLexer.validator:
 
-    - OptopusError:
-        - add kws to raise calls.
-        - better way to raise informative failed-parse errors?
+        - A callable supplied by SpecParser.
 
-    - For debugging, have parser collect all eaten tokens?
+        - Method on that class that takes a Token and returns True if it's
+          a kind of iterest.
 
-    - Maybe a debug mode:
-        - Parse as far as you can.
-        - Don't raise
-        - Collect tokens and elements
-        - Then have a way to dump them out nicely?
+        - Requires parser to put the desired TokDefs in an attribute during
+          each eat() call. Easy to do, not too grubby.
+
+    - The lexer would emit next token, and update location information,
+      only if the parser's validator likes it.
+
+        def get_next_token(self):
+            if self.curr:
+                tok = self.curr
+                self.curr = None
+            else:
+                tok = ...
+                
+            if self.validator(tok):
+                self.update_location(tok)
+                self.curr = None
+                return tok
+            else:
+                self.curr = tok
+                return None
+
+    - Hold state in self.curr is easy to maintain. If parser wants the
+      lexer to change modes, the lexer just clears self.curr.
+
+    - Drop lex_tokdefs:
+
+        - Instead of this awkward add-on, just change parser modes.
+        - Work within the current model.
+
+Change specification: symdest vals must be quoted-literal or name. It's easy to
+parse and easy to explain/document.
+
+OptopusError:
+    - Add method to make it easy to raise failed-parse errors.
+    - Add kws to the calls.
+
+Add SpecParser.debug attribute:
+    - Parse as far as you can. Don't raise.
+    - Collect eaten tokens and assembled elements.
+    - Implement a method to print out the info.
 
 '''
 
@@ -213,35 +249,44 @@ def define_tokdefs():
     # Tuples to define TokDef instances.
     tups = (
         # Kind,            Emit, Modes, Pattern.
+        # - Quoted.
         ('quoted_block',   1,    's',   r.bq3 + c(r.quoted) + r.bq3),
         ('quoted_literal', 1,    '_',   r.bq + c(r.quoted) + r.bq),
+        # - Whitespace.
         ('newline',        0.0,  '_',   r'\n'),
         ('indent',         1,    '_',   r.head + r.hws1 + r'(?=\S)'),
         ('whitespace',     0.0,  '_',   r.hws1),
-        ('quant_range',    1,    '_',   r'\{' + c(r.quant) + r'\}'),
+        # - Sections.
+        ('section_name',   1,    'v',   c(r.prog) + hw + '::' + r.eol),
+        ('section_title',  1,    '_',   c('.*') + '::' + r.eol),
+        # - Parens.
         ('paren_open',     1,    '_',   r'\('),
         ('paren_close',    1,    '_',   r'\)'),
         ('brack_open',     1,    '_',   r'\['),
         ('brack_close',    1,    '_',   r'\]'),
         ('angle_open',     1,    '_',   '<'),
         ('angle_close',    1,    '_',   '>'),
-        ('choice_sep',     1,    '_',   r'\|'),
+        # - Quants.
+        ('quant_range',    1,    '_',   r'\{' + c(r.quant) + r'\}'),
         ('triple_dot',     1,    '_',   r'\.\.\.'),
         ('question',       1,    '_',   r'\?'),
+        # - Separators.
+        ('choice_sep',     1,    '_',   r'\|'),
+        ('assign',         1,    '_',   '='),
+        ('opt_help_sep',   1,    'O',   ':'),
+        # - Options.
         ('long_option',    1,    '_',   r.pre + r.pre + c(r.name)),
         ('short_option',   1,    '_',   r.pre + c(r'\w')),
-        ('section_name',   1,    'v',   c(r.prog) + hw + '::' + r.eol),
-        ('section_title',  1,    '_',   c('.*') + '::' + r.eol),
+        # - Variants.
         ('partial_def',    1,    'v',   c(r.name) + '!' + hw + ':'),
         ('variant_def',    1,    'v',   c(r.name) + hw + ':'),
         ('partial_usage',  1,    'v',   c(r.name) + '!'),
+        # - Sym, dest.
         ('sym_dest',       1,    '_',   c(r.name) + hw + c('[!.]') + hw + c(r.name)),
         ('dot_dest',       1,    '_',   r'\.' + hw + c(r.name)),
         ('solo_dest',      1,    '_',   c(r.name) + hw + r'(?=[>=])'),
         ('name',           1,    '_',   r.name),
-        ('assign',         1,    '_',   '='),
-        ('opt_help_sep',   1,    'O',   ':'),
-        # ('choice_val',     1,    '_',   r'[^\s|>]+'),
+        # - Special.
         ('rest',           1,    '',    '.+'),
         ('eof',            0.0,  '',    ''),
         ('err',            0.0,  '',    ''),
@@ -527,7 +572,7 @@ class SpecParser:
     # Eat tokens.
     ####
 
-    def eat(self, *tds, taste = False, lex_tokdefs = None):
+    def eat(self, *tds, lex_tokdefs = None):
         # Get the next token, either from self.curr or the lexer.
         #
         # Note that unless the caller requested that the
@@ -582,19 +627,11 @@ class SpecParser:
         # and it is among the requested kinds.
         tds = lex_tokdefs or tds
         if ok and any(self.curr.isa(td) for td in tds):
-            if not taste:
-                self.swallow()
+            self.curr = None
             print(tok)
             return tok
         else:
             return None
-
-    def swallow(self):
-        if self.curr is None:
-            msg = 'Cannot swallow() unless self.curr is defined'
-            raise OptopusError(msg)
-        else:
-            self.curr = None
 
     ####
     # Top-level ParseElem handlers.
@@ -603,9 +640,8 @@ class SpecParser:
     def variant(self):
         # Get variant/partial name, if any.
         tds = (TokDefs.variant_def, TokDefs.partial_def)
-        tok = self.eat(*tds, taste = True)
+        tok = self.eat(*tds)
         if tok:
-            self.swallow()
             name = tok.text
             is_partial = tok.isa(TokDefs.partial_def)
         else:
@@ -798,7 +834,7 @@ class SpecParser:
         vals = []
         tds = (TokDefs.quoted_literal, TokDefs.name, TokDefs.solo_dest)
         while True:
-            tok = self.eat(*tds, taste = True)
+            tok = self.eat(*tds)
             if not tok:
                 break
 
@@ -809,7 +845,6 @@ class SpecParser:
                 raise OptopusError(msg)
 
             # Consume and store.
-            self.swallow()
             i = 0 if tok.isa(TokDefs.name) else 1
             vals.append(tok.m.group(i))
 
