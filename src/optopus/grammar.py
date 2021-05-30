@@ -5,54 +5,11 @@ Status and remaining issues/questions:
 
     - We appear to be able to lex/parse the README examples.
 
-    - Although we can simplify a lot (see below), we still need the ordered
-      list of tokens to be the primary driver of the lexer. For example, we
-      want to try for quoted literals early. And it helps with skipping
-      non-emitted stuff.
+    - Implement data-oriented exception strategy.
 
-Refactor: simplify state and token validation:
+    - Convert grammar-syntax AST into a Grammar.
 
-    - Summary:
-        - Lexer emits token only if parser likes it.
-        - Move self.curr into lexer.
-        - Allows significant simplification in parser.
-        - In lexer, self.curr is easy to manage.
-
-    - RegexLexer.validator:
-
-        - A callable supplied by SpecParser.
-
-        - Method on that class that takes a Token and returns True if it's
-          a kind of iterest.
-
-        - Requires parser to put the desired TokDefs in an attribute during
-          each eat() call. Easy to do, not too grubby.
-
-    - The lexer would emit next token, and update location information,
-      only if the parser's validator likes it.
-
-        def get_next_token(self):
-            if self.curr:
-                tok = self.curr
-                self.curr = None
-            else:
-                tok = ...
-                
-            if self.validator(tok):
-                self.update_location(tok)
-                self.curr = None
-                return tok
-            else:
-                self.curr = tok
-                return None
-
-    - Hold state in self.curr is easy to maintain. If parser wants the
-      lexer to change modes, the lexer just clears self.curr.
-
-    - Drop lex_tokdefs:
-
-        - Instead of this awkward add-on, just change parser modes.
-        - Work within the current model.
+    - Need better debugging support.
 
 Change specification: symdest vals must be quoted-literal or name. It's easy to
 parse and easy to explain/document.
@@ -104,11 +61,11 @@ class TokDef:
     pass
 
 @attr.s(frozen = True)
-@attrcls('kind text m width pos line col nlines isfirst indent')
+@attrcls('kind text m width pos line col nlines isfirst indent newlines')
 class Token:
 
-    def isa(self, td):
-        return self.kind == td.kind
+    def isa(self, *tds):
+        return any(self.kind == td.kind for td in tds)
 
 @attr.s(frozen = True)
 @attrcls('name')
@@ -230,73 +187,77 @@ def define_regex_snippets():
 
 @cache
 def define_tokdefs():
+    # Helper to wrap a regex elem in a capture.
+    c = lambda s: '(' + s + ')'
+
     # Convenience vars.
     r = Snippets
-    p = Pmodes
     hw = r.hws0
-    pms = {
-        '_': (p.variant, p.opt_help, p.section),
-        'O': (p.opt_help, p.section),
-        'v': (p.variant,),
-        'o': (p.opt_help,),
-        's': (p.section,),
-        '': tuple(),
-    }
-
-    # Helper to wrap a regex elem in a capture.
-    c = lambda p: '(' + p + ')'
+    cnm = c(r.name)
 
     # Tuples to define TokDef instances.
     tups = (
-        # Kind,            Emit, Modes, Pattern.
+        # Kind             Emit  Modes    Pattern
         # - Quoted.
-        ('quoted_block',   1,    's',   r.bq3 + c(r.quoted) + r.bq3),
-        ('quoted_literal', 1,    '_',   r.bq + c(r.quoted) + r.bq),
+        ('quoted_block',   1,    '  s ',  r.bq3 + c(r.quoted) + r.bq3),
+        ('quoted_literal', 1,    'vos ',  r.bq + c(r.quoted) + r.bq),
         # - Whitespace.
-        ('newline',        0.0,  '_',   r'\n'),
-        ('indent',         1,    '_',   r.head + r.hws1 + r'(?=\S)'),
-        ('whitespace',     0.0,  '_',   r.hws1),
+        ('newline',        0.0,  'vosh',  r'\n'),
+        ('indent',         0.0,  'vosh',  r.head + r.hws1 + r'(?=\S)'),
+        ('whitespace',     0.0,  'vosh',  r.hws1),
         # - Sections.
-        ('section_name',   1,    'v',   c(r.prog) + hw + '::' + r.eol),
-        ('section_title',  1,    '_',   c('.*') + '::' + r.eol),
+        ('section_name',   1,    'v   ',  c(r.prog) + hw + '::' + r.eol),
+        ('section_title',  1,    'vos ',  c('.*') + '::' + r.eol),
         # - Parens.
-        ('paren_open',     1,    '_',   r'\('),
-        ('paren_close',    1,    '_',   r'\)'),
-        ('brack_open',     1,    '_',   r'\['),
-        ('brack_close',    1,    '_',   r'\]'),
-        ('angle_open',     1,    '_',   '<'),
-        ('angle_close',    1,    '_',   '>'),
+        ('paren_open',     1,    'vos ',  r'\('),
+        ('paren_close',    1,    'vos ',  r'\)'),
+        ('brack_open',     1,    'vos ',  r'\['),
+        ('brack_close',    1,    'vos ',  r'\]'),
+        ('angle_open',     1,    'vos ',  '<'),
+        ('angle_close',    1,    'vos ',  '>'),
         # - Quants.
-        ('quant_range',    1,    '_',   r'\{' + c(r.quant) + r'\}'),
-        ('triple_dot',     1,    '_',   r'\.\.\.'),
-        ('question',       1,    '_',   r'\?'),
+        ('quant_range',    1,    'vos ',  r'\{' + c(r.quant) + r'\}'),
+        ('triple_dot',     1,    'vos ',  r'\.\.\.'),
+        ('question',       1,    'vos ',  r'\?'),
         # - Separators.
-        ('choice_sep',     1,    '_',   r'\|'),
-        ('assign',         1,    '_',   '='),
-        ('opt_help_sep',   1,    'O',   ':'),
+        ('choice_sep',     1,    'vos ',  r'\|'),
+        ('assign',         1,    'vos ',  '='),
+        ('opt_help_sep',   1,    ' os ',  ':'),
         # - Options.
-        ('long_option',    1,    '_',   r.pre + r.pre + c(r.name)),
-        ('short_option',   1,    '_',   r.pre + c(r'\w')),
+        ('long_option',    1,    'vos ',  r.pre + r.pre + cnm),
+        ('short_option',   1,    'vos ',  r.pre + c(r'\w')),
         # - Variants.
-        ('partial_def',    1,    'v',   c(r.name) + '!' + hw + ':'),
-        ('variant_def',    1,    'v',   c(r.name) + hw + ':'),
-        ('partial_usage',  1,    'v',   c(r.name) + '!'),
+        ('partial_def',    1,    'v   ',  cnm + '!' + hw + ':'),
+        ('variant_def',    1,    'v   ',  cnm + hw + ':'),
+        ('partial_usage',  1,    'v   ',  cnm + '!'),
         # - Sym, dest.
-        ('sym_dest',       1,    '_',   c(r.name) + hw + c('[!.]') + hw + c(r.name)),
-        ('dot_dest',       1,    '_',   r'\.' + hw + c(r.name)),
-        ('solo_dest',      1,    '_',   c(r.name) + hw + r'(?=[>=])'),
-        ('name',           1,    '_',   r.name),
+        ('sym_dest',       1,    'vos ',  cnm + hw + c('[!.]') + hw + cnm),
+        ('dot_dest',       1,    'vos ',  r'\.' + hw + cnm),
+        ('solo_dest',      1,    'vos ',  cnm + hw + r'(?=[>=])'),
+        ('name',           1,    'vos ',  r.name),
         # - Special.
-        ('rest',           1,    '',    '.+'),
-        ('eof',            0.0,  '',    ''),
-        ('err',            0.0,  '',    ''),
+        ('rest_of_line',   1,    '   h',  '.+'),
+        ('eof',            0.0,  '    ',  ''),
+        ('err',            0.0,  '    ',  ''),
+    )
+
+    # Parser modes.
+    pms = dict(
+        v = Pmodes.variant,
+        o = Pmodes.opt_help,
+        s = Pmodes.section,
+        h = Pmodes.help_text,
     )
 
     # Create a dict mapping kind to each TokDef.
-    tds = OrderedDict(
-        (kind, TokDef(kind, re.compile(patt), pms[m], bool(emit)))
-        for kind, emit, m, patt in tups
-    )
+    tds = OrderedDict()
+    for kind, emit, ms, patt in tups:
+        tds[kind] = TokDef(
+            kind = kind,
+            regex = re.compile(patt),
+            modes = tuple(pms[m] for m in ms if m != Chars.space),
+            emit = bool(emit),
+        )
 
     # Return them as a constants collection.
     return sc.constants('TokDefs', tds)
@@ -305,9 +266,6 @@ def define_tokdefs():
 # Parsing and grammar constants.
 ####
 
-Pmodes = sc.constants('ParserModes', 'variant opt_help section')
-Snippets = define_regex_snippets()
-TokDefs = define_tokdefs()
 Chars = sc.cons(
     'Chars',
     space = ' ',
@@ -315,6 +273,9 @@ Chars = sc.cons(
     exclamation = '!',
     comma = ',',
 )
+Pmodes = sc.constants('ParserModes', 'variant opt_help section help_text')
+Snippets = define_regex_snippets()
+TokDefs = define_tokdefs()
 ParenPairs = {
     TokDefs.paren_open: TokDefs.paren_close,
     TokDefs.brack_open: TokDefs.brack_close,
@@ -327,125 +288,135 @@ ParenPairs = {
 
 class RegexLexer(object):
 
-    def __init__(self, text, tokdefs = None):
+    def __init__(self, text, validator, tokdefs = None):
         self.text = text
+        self.validator = validator
         self.tokdefs = tokdefs
-        self.maxpos = len(self.text) - 1
 
-        # Location and token information.
+        # Current token and final token, that latter to be set
+        # with Token(eof)/Token(err) when lexing finishes.
+        self.curr = None
+        self.end = None
+
+        # Location and token information:
+        # - pos: character index
+        # - line: line number
+        # - col: column number
+        # - indent: width of most recently read Token(indent).
+        # - isfirst: True if next Token is first on line, after any indent.
+        self.maxpos = len(self.text) - 1
         self.pos = 0
         self.line = 1
         self.col = 1
         self.indent = 0
         self.isfirst = True
-        self.prev_loc = None
 
-        # Will be set with Token(eof)/Token(err) when lexing finishes.
-        self.end = None
+    @property
+    def tokdefs(self):
+        return self._tokdefs
 
-    def get_next_token(self, lex_tokdefs = None):
-        # Starting at self.pos, emit the next Token.
+    @tokdefs.setter
+    def tokdefs(self, tokdefs):
+        # If TokDefs are changed, clear any cached Token.
+        self._tokdefs = tokdefs
+        self.curr = None
+
+    def get_next_token(self):
+        # Return if we are already done lexing.
+        if self.end:
+            return self.end
+
+        # Get the next token, either from self.curr or the matcher.
+        if self.curr:
+            tok = self.curr
+            self.curr = None
+        else:
+            tok = self.match_token()
+
+        # If we got a Token, return either the token or None --
+        # the latter if the parser is not happy with it.
+        if tok:
+            debug('LEX', tok.kind)
+            if self.validator(tok):
+                self.update_location(tok)
+                self.curr = None
+                debug('LEX', 'returning', tok.kind)
+                return tok
+            else:
+                self.curr = tok
+                return None
+
+        # And if we didn't get a token, we have lexed as far as
+        # we can. Set the end token and return it.
+        td = (TokDefs.err, TokDefs.eof)[self.pos > self.maxpos]
+        m = re.search('^$', '')
+        tok = self.create_token(td, m)
+        self.curr = None
+        self.end = tok
+        self.update_location(tok)
+        return tok
+
+    def match_token(self):
+        # Starting at self.pos, reutn the next Token.
         #
         # For non-emitted tokens, we break out of the for-loop,
         # but enter the while-loop again. This allows the lexer
         # to be able to ignore any number of non-emitted tokens
         # on each call of the function.
-        #
-        # The optional lex_tokdefs allows the parser to request a
-        # specific TokDef directly, bypassing the normal ordering
-        # in self.tokdefs. Used for opt-help text continuation-lines.
-
-        # Return if we are already done lexing.
-        if self.end:
-            return self.end
-
-        # Normalize input to a tuple of TokDef.
-        tds = lex_tokdefs or self.tokdefs
-
-        # Return next Token that should be emitted.
         tok = True
         while tok:
             tok = None
-            for td in tds:
+            for td in self.tokdefs:
                 m = td.regex.match(self.text, pos = self.pos)
                 if m:
                     tok = self.create_token(td, m)
                     if td.emit:
                         return tok
                     else:
+                        self.update_location(tok)
                         break
-
-        # We have lexed as far as we can.
-        # Set self.end to Token(eof) or Token(err).
-        td = (TokDefs.err, TokDefs.eof)[self.pos > self.maxpos]
-        m = re.search('^$', '')
-        self.end = self.create_token(td, m)
-        return self.end
-
-    def set_location(self, revert = False):
-        if revert and not self.prev_loc:
-            msg = 'Cannot set_location(revert) if self.prev_loc is unset'
-            raise OptopusError(msg)
-        elif revert:
-            t = self.prev_loc
-            self.pos = t[0]
-            self.line = t[1]
-            self.col = t[2]
-            self.indent = t[3]
-            self.isfirst = t[4]
-            self.prev_loc = None
-        else:
-            self.prev_loc = (
-                self.pos,
-                self.line,
-                self.col,
-                self.indent,
-                self.isfirst,
-            )
+        return None
 
     def create_token(self, tokdef, m):
-        # Get text width and newline locations/count.
+        # Helper to create Token from a TokDef and a regex Match.
         text = m.group(0)
-        width = len(text)
-        indexes = [i for i, c in enumerate(text) if c == Chars.newline]
-        n = len(indexes)
-
-        # Create token.
-        tok = Token(
+        newlines = tuple(
+            i for i, c in enumerate(text)
+            if c == Chars.newline
+        )
+        return Token(
             kind = tokdef.kind,
             text = text,
             m = m,
-            width = width,
+            width = len(text),
             pos = self.pos,
             line = self.line,
             col = self.col,
-            nlines = n + 1,
+            nlines = len(newlines) + 1,
             isfirst = self.isfirst,
             indent = self.indent,
+            newlines = newlines,
         )
 
-        # Remember the current location info.
-        self.set_location()
-
-        # Update location info based on recently consumed Token.
-        self.isfirst = False
-        self.pos += width
-        self.line += n
+    def update_location(self, tok):
+        debug('LEX', 'update_location', tok.kind)
+        # Update position-related info.
+        self.pos += tok.width
+        self.line += tok.nlines - 1
         self.col = (
-            width - indexes[-1] - 1 if indexes
-            else self.col + width
+            tok.width - tok.newlines[-1] - 1 if tok.newlines
+            else self.col + tok.width
         )
 
-        # Update indent info.
+        # Update indent-related info.
         if tok.isa(TokDefs.newline):
             self.indent = 0
             self.isfirst = True
         elif tok.isa(TokDefs.indent):
             self.indent = tok.width
             self.isfirst = True
-
-        # Return token.
-        return tok
+        else:
+            self.isfirst = False
 
 ####
 # SpecParser.
@@ -461,10 +432,10 @@ class SpecParser:
     def __init__(self, text):
         # The text and the lexer.
         self.text = text
-        self.lexer = RegexLexer(text)
+        self.lexer = RegexLexer(text, self.taste)
 
-        # Info about current token, line, and indent of that line.
-        self.curr = None
+        # Line and indent from the first Token of the top-level
+        # ParseElem currently under construction by the parser.
         self.line = None
         self.indent = None
 
@@ -484,8 +455,10 @@ class SpecParser:
                 Handler(self.section_title, None),
                 Handler(self.opt_help, None),
             ),
+            Pmodes.help_text: tuple(),
         }
         self.mode = Pmodes.variant
+        self.menu = None
 
     ####
     # Setting the parser mode.
@@ -497,16 +470,12 @@ class SpecParser:
 
     @mode.setter
     def mode(self, mode):
-        if self.curr:
-            self.lexer.set_location(revert = True)
-            self.curr = None
-        else:
-            self._mode = mode
-            self.lexer.tokdefs = tuple(
-                td
-                for td in TokDefs.values()
-                if mode in td.modes
-            )
+        self._mode = mode
+        self.lexer.tokdefs = tuple(
+            td
+            for td in TokDefs.values()
+            if mode in td.modes
+        )
 
     ####
     # Parse a spec.
@@ -543,7 +512,7 @@ class SpecParser:
                 pos = lex.pos,
                 line = lex.line,
                 col = lex.col,
-                curr = self.curr,
+                curr = lex.curr,
             )
 
         # Convert elems to a Grammar.
@@ -552,9 +521,12 @@ class SpecParser:
 
     def do_parse(self):
         # Yields top-level ParseElem (those declared in self.handlers).
+        debug('DO_PARSE', 'start')
         elem = True
         while elem:
+            elem = False
             for h in self.handlers[self.mode]:
+                debug('DO_PARSE', h)
                 elem = h.method()
                 if elem:
                     yield elem
@@ -572,66 +544,55 @@ class SpecParser:
     # Eat tokens.
     ####
 
-    def eat(self, *tds, lex_tokdefs = None):
-        # Get the next token, either from self.curr or the lexer.
+    def eat(self, *tds):
+        self.menu = tds
+        tok = self.lexer.get_next_token()
+        if tok is None:
+            return None
+        elif tok.isa(TokDefs.eof, TokDefs.err):
+            return None
+        else:
+            debug('EAT', tok)
+            return tok
+
+    def taste(self, tok):
+        # Returns true if the next token from the lexer is the
+        # right kind, based on last eat() call, and if it adheres
+        # to rules regarding indentation and start-of-line status.
         #
-        # Note that unless the caller requested that the
-        # lexer be asked for a specific TokDef, this method
-        # will automatically skip any intervening indent tokens.
-
-        if tds and lex_tokdefs:
-            msg = 'eat() takes tds or lex_tokdefs, not both'
-            raise OptopusError(msg)
-
-        # Get next token of interest.
-        while True:
-            if self.curr is None:
-                self.curr = self.lexer.get_next_token(lex_tokdefs)
-            tok = self.curr
-
-            # Skip indents.
-            if tok.isa(TokDefs.indent):
-                if not lex_tokdefs or TokDefs.indent not in lex_tokdefs:
-                    self.curr = None
-                    continue
-
-            # Usually we break on the first iteration.
-            break
-
-        # Check whether the token follows indentation/start-of-line rules.
-        #
-        # - If SpecParser has no indent yet, we expect the first token
-        #   for a variant/opt-help expression. If so, we remember that
-        #   token's indent and line.
+        # - If SpecParser has no indent yet, we are starting a new
+        #   top-level ParseElem. So we expect a first-of-line Token.
+        #   If so, we remember that token's indent and line.
         #
         # - For subsequent tokens in the expression, we expect tokens
         #   from the same line or a continuation line indented farther
         #   than the first line of the expression.
-        if self.indent is None:
-            if tok.isfirst:
-                self.indent = tok.indent
-                self.line = tok.line
-                ok = True
+        #
+        debug('TASTE', tok.kind)
+        if any(tok.isa(td) for td in self.menu):
+            if self.indent is None:
+                if tok.isfirst:
+                    debug('-', 1)
+                    self.indent = tok.indent
+                    self.line = tok.line
+                    return True
+                else:
+                    debug('-', 2)
+                    return False
             else:
-                ok = False
+                if self.line == tok.line:
+                    debug('-', 21)
+                    return True
+                elif self.indent < tok.indent:
+                    debug('-', 22)
+                    self.line = tok.line
+                    return True
+                else:
+                    debug('-', 23)
+                    return False
         else:
-            if self.line == tok.line:
-                ok = True
-            elif self.indent < tok.indent:
-                self.line = tok.line
-                ok = True
-            else:
-                ok = False
-
-        # Return the token if indentation was OK
-        # and it is among the requested kinds.
-        tds = lex_tokdefs or tds
-        if ok and any(self.curr.isa(td) for td in tds):
-            self.curr = None
-            print(tok)
-            return tok
-        else:
-            return None
+            debug('-', 999)
+            return False
 
     ####
     # Top-level ParseElem handlers.
@@ -667,18 +628,21 @@ class SpecParser:
         # Try to get the Opt help text and any continuation lines.
         texts = []
         if self.eat(TokDefs.opt_help_sep):
+            self.mode = Pmodes.help_text
             while True:
-                tok = self.eat(lex_tokdefs = (TokDefs.newline, TokDefs.rest))
+                tok = self.eat(TokDefs.rest_of_line)
                 if tok:
                     texts.append(tok.text.strip())
-                if not self.eat(lex_tokdefs = (TokDefs.newline, TokDefs.indent)):
+                else:
                     break
+            self.mode = Pmodes.opt_help
 
         # Join text parts and return.
         text = Chars.space.join(t for t in texts if t)
         return OptHelp(elems, text)
 
     def section_title(self):
+        debug('SECTION_TITLE', 'start')
         tok = self.eat(TokDefs.section_title)
         if tok:
             return SectionTitle(title = tok.text.strip())
@@ -910,7 +874,7 @@ class SpecParser:
                     line = lex.line,
                     col = lex.col,
                     close = td_close,
-                    curr = self.curr,
+                    curr = lex.curr,
                 )
         else:
             return None
@@ -941,4 +905,8 @@ class SpecParser:
             else:
                 break
         return elems
+
+def debug(*xs):
+    if False:
+        print(*xs)
 
