@@ -13,7 +13,7 @@ class Kwexception(Exception):
         return self.args[0]
 
     @classmethod
-    def make_error(cls, error, **kws):
+    def new(cls, error, **kws):
         # Takes an Exception and keyword arguments. If the error is already an
         # OptopusError, update its params. Otherwise, return a new error.
         if isinstance(error, OptopusError):

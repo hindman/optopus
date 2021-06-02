@@ -49,12 +49,5 @@ def test_readme_examples(tr):
     for exp, text in TESTS:
         sp = SpecParser(text)
         g = sp.parse()
-
-        tr.dump()
-        for e in g.elems:
-            print(e)
-        tr.dump()
-
-
-        # assert len(g.elems) == 7
+        return
 

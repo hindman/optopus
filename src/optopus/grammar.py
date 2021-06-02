@@ -1,18 +1,19 @@
 
 '''
 
-Status and remaining issues/questions:
+Status:
 
-    - We appear to be able to lex/parse the README examples.
+    - Able to lex/parse the README examples to an AST, but
+      not yet a Grammar. Correctness not yet checked
+
+TODO:
+
+    - Change specification: symdest vals must be quoted-literal or name. It's
+      easy to parse and easy to explain/document.
 
     - Implement data-oriented exception strategy.
 
     - Convert grammar-syntax AST into a Grammar.
-
-    - Need better debugging support.
-
-Change specification: symdest vals must be quoted-literal or name. It's easy to
-parse and easy to explain/document.
 
 OptopusError:
     - Add method to make it easy to raise failed-parse errors.
@@ -32,6 +33,7 @@ Add SpecParser.debug attribute:
 import attr
 import re
 import short_con as sc
+import inspect
 from functools import cache
 from collections import OrderedDict
 
@@ -281,6 +283,10 @@ ParenPairs = {
     TokDefs.brack_open: TokDefs.brack_close,
     TokDefs.angle_open: TokDefs.angle_close,
 }
+Debug = sc.cons(
+    'Debug',
+    emit = True,
+)
 
 ####
 # Lexer.
@@ -336,11 +342,11 @@ class RegexLexer(object):
         # If we got a Token, return either the token or None --
         # the latter if the parser is not happy with it.
         if tok:
-            debug('LEX', tok.kind)
+            debug(2, lexed = tok.kind)
             if self.validator(tok):
                 self.update_location(tok)
                 self.curr = None
-                debug('LEX', 'returning', tok.kind)
+                debug(2, returned = tok.kind)
                 return tok
             else:
                 self.curr = tok
@@ -399,7 +405,6 @@ class RegexLexer(object):
         )
 
     def update_location(self, tok):
-        debug('LEX', 'update_location', tok.kind)
         # Update position-related info.
         self.pos += tok.width
         self.line += tok.nlines - 1
@@ -490,6 +495,8 @@ class SpecParser:
 
         # return Grammar([len(self.lexer.tokens)])
 
+        debug(0)
+        debug(0, mode_check = 'started')
         tok = self.eat(TokDefs.section_name)
         if tok:
             self.mode = Pmodes.opt_help
@@ -521,12 +528,11 @@ class SpecParser:
 
     def do_parse(self):
         # Yields top-level ParseElem (those declared in self.handlers).
-        debug('DO_PARSE', 'start')
         elem = True
         while elem:
             elem = False
             for h in self.handlers[self.mode]:
-                debug('DO_PARSE', h)
+                debug(0, handler = h.method.__name__)
                 elem = h.method()
                 if elem:
                     yield elem
@@ -546,13 +552,21 @@ class SpecParser:
 
     def eat(self, *tds):
         self.menu = tds
+        debug(1, wanted = ','.join(td.kind for td in tds))
         tok = self.lexer.get_next_token()
         if tok is None:
             return None
         elif tok.isa(TokDefs.eof, TokDefs.err):
             return None
         else:
-            debug('EAT', tok)
+            debug(
+                2,
+                eaten = tok.kind,
+                text = tok.text,
+                pos = tok.pos,
+                line = tok.line,
+                col = tok.col,
+            )
             return tok
 
     def taste(self, tok):
@@ -568,30 +582,29 @@ class SpecParser:
         #   from the same line or a continuation line indented farther
         #   than the first line of the expression.
         #
-        debug('TASTE', tok.kind)
         if any(tok.isa(td) for td in self.menu):
             if self.indent is None:
                 if tok.isfirst:
-                    debug('-', 1)
+                    debug(2, isfirst = True)
                     self.indent = tok.indent
                     self.line = tok.line
                     return True
                 else:
-                    debug('-', 2)
+                    debug(2, isfirst = False)
                     return False
             else:
                 if self.line == tok.line:
-                    debug('-', 21)
+                    debug(2, indent_ok = 'line')
                     return True
                 elif self.indent < tok.indent:
-                    debug('-', 22)
+                    debug(2, indent_ok = 'indent')
                     self.line = tok.line
                     return True
                 else:
-                    debug('-', 23)
+                    debug(2, indent_ok = False)
                     return False
         else:
-            debug('-', 999)
+            debug(2, kind = False)
             return False
 
     ####
@@ -642,7 +655,6 @@ class SpecParser:
         return OptHelp(elems, text)
 
     def section_title(self):
-        debug('SECTION_TITLE', 'start')
         tok = self.eat(TokDefs.section_title)
         if tok:
             return SectionTitle(title = tok.text.strip())
@@ -906,7 +918,24 @@ class SpecParser:
                 break
         return elems
 
-def debug(*xs):
-    if False:
-        print(*xs)
+def get_caller_name(offset = 2):
+    # Get the name of a calling function.
+    x = inspect.currentframe()
+    for _ in range(offset):
+        x = x.f_back
+    x = x.f_code.co_name
+    return x
+
+def debug(indent, **kws):
+    if Debug.emit:
+        msg = ''
+        if kws:
+            func = get_caller_name()
+            gen = ('{} = {!r}'.format(k, v) for k, v in kws.items())
+            msg = '{}{}({})'.format(
+                Chars.space * (indent * 4),
+                func,
+                ', '.join(gen)
+            )
+        print(msg)
 
