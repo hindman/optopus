@@ -8,21 +8,7 @@ Status:
 
 TODO:
 
-    - Change specification: symdest vals must be quoted-literal or name. It's
-      easy to parse and easy to explain/document.
-
-    - Implement data-oriented exception strategy.
-
     - Convert grammar-syntax AST into a Grammar.
-
-OptopusError:
-    - Add method to make it easy to raise failed-parse errors.
-    - Add kws to the calls.
-
-Add SpecParser.debug attribute:
-    - Parse as far as you can. Don't raise.
-    - Collect eaten tokens and assembled elements.
-    - Implement a method to print out the info.
 
 '''
 
@@ -275,17 +261,20 @@ Chars = sc.cons(
     exclamation = '!',
     comma = ',',
 )
+
 Pmodes = sc.constants('ParserModes', 'variant opt_help section help_text')
 Snippets = define_regex_snippets()
 TokDefs = define_tokdefs()
+
 ParenPairs = {
     TokDefs.paren_open: TokDefs.paren_close,
     TokDefs.brack_open: TokDefs.brack_close,
     TokDefs.angle_open: TokDefs.angle_close,
 }
+
 Debug = sc.cons(
     'Debug',
-    emit = True,
+    emit = False,
 )
 
 ####
@@ -295,6 +284,10 @@ Debug = sc.cons(
 class RegexLexer(object):
 
     def __init__(self, text, validator, tokdefs = None):
+        # Inputs:
+        # - Text to be lexxed.
+        # - Validator function from parser to validate tokens.
+        # - TokDefs currently of interest.
         self.text = text
         self.validator = validator
         self.tokdefs = tokdefs
@@ -463,6 +456,10 @@ class SpecParser:
             Pmodes.help_text: tuple(),
         }
         self.mode = Pmodes.variant
+
+        # Tokens the parser has ever eaten and TokDefs
+        # it is currently trying to eat.
+        self.eaten = []
         self.menu = None
 
     ####
@@ -511,16 +508,9 @@ class SpecParser:
         elems.extend(self.do_parse())
 
         # Raise if we did not parse the full text.
-        lex = self.lexer
-        if not (lex.end and lex.end.isa(TokDefs.eof)):
-            msg = 'Failed to parse the full spec'
-            raise OptopusError(
-                msg = msg,
-                pos = lex.pos,
-                line = lex.line,
-                col = lex.col,
-                curr = lex.curr,
-            )
+        tok = self.lexer.end
+        if not (tok and tok.isa(TokDefs.eof)):
+            self.error('Failed to parse the full spec')
 
         # Convert elems to a Grammar.
         # There will be some validation needed here too.
@@ -567,6 +557,7 @@ class SpecParser:
                 line = tok.line,
                 col = tok.col,
             )
+            self.eaten.append(tok)
             return tok
 
     def taste(self, tok):
@@ -629,8 +620,7 @@ class SpecParser:
         elif elems:
             return Variant(name, is_partial, elems)
         else:
-            msg = 'A Variant cannot be empty'
-            raise OptopusError(msg)
+            self.error('A Variant cannot be empty')
 
     def opt_help(self):
         # Try to get elements.
@@ -793,14 +783,7 @@ class SpecParser:
                 else:
                     sym = txt
         elif for_pos:
-            msg = 'Positionals require at least a dest'
-            lex = self.lexer
-            raise OptopusError(
-                msg = msg,
-                pos = lex.pos,
-                line = lex.line,
-                col = lex.col,
-            )
+            self.error('Positionals require at least a dest')
 
         # Try to get the dest assign equal-sign.
         # For now, treat this as optional.
@@ -817,8 +800,7 @@ class SpecParser:
             # If we got one, and if we already had a sym or dest,
             # the assign equal sign becomes required.
             if (sym or dest) and not assign:
-                msg = 'Found choice values without required equal sign'
-                raise OptopusError(msg)
+                self.error('Found choice values without required equal sign')
 
             # Consume and store.
             i = 0 if tok.isa(TokDefs.name) else 1
@@ -873,20 +855,13 @@ class SpecParser:
         if tok:
             elem = method(**kws)
             if not (elem or empty_ok):
-                msg = 'Illegal empty parenthesized expression'
-                raise OptopusError(msg)
+                self.error('Empty parenthesized expression')
             elif self.eat(td_close):
                 return elem
             else:
-                msg = 'Failed to find closing paren/bracket'
-                lex = self.lexer
-                raise OptopusError(
-                    msg = msg,
-                    pos = lex.pos,
-                    line = lex.line,
-                    col = lex.col,
-                    close = td_close,
-                    curr = lex.curr,
+                self.error(
+                    msg = 'Failed to find closing paren/bracket',
+                    expected = td_close,
                 )
         else:
             return None
@@ -895,10 +870,16 @@ class SpecParser:
     # Other stuff.
     ####
 
-    def error(self):
-        fmt = 'Invalid syntax: pos={}'
-        msg = fmt.format(self.lexer.pos)
-        raise OptopusError(msg)
+    def error(self, msg, **kws):
+        lex = self.lexer
+        kws.update(
+            msg = msg,
+            pos = lex.pos,
+            line = lex.line,
+            col = lex.col,
+            current_token = lex.curr.kind if lex.curr else None,
+        )
+        raise OptopusError(**kws)
 
     def parse_first(self, *methods):
         elem = None

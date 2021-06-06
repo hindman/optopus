@@ -43,11 +43,7 @@ def test_readme_examples(tr):
          ),
     )
 
-    # tr.dump(TokDefs.name)
-    # return
-
     for exp, text in TESTS:
         sp = SpecParser(text)
         g = sp.parse()
-        return
 

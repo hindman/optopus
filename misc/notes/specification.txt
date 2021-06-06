@@ -96,6 +96,11 @@ Sym-dest:
             val|val|... | Choices
             val         | Positional or parameter variant.
 
+        Where val can be:
+
+            - Simple name consisting of \w or hyphen.
+            - Quoted-literal.
+
         Where sym translates to usage text as follows:
 
             sym. : <sym>
