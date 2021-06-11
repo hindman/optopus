@@ -504,8 +504,7 @@ class SpecParser:
             prog = tok.text if tok else None
 
         # Parse everything into a list of ParseElem.
-        elems = [Prog(name = prog)]
-        elems.extend(self.do_parse())
+        elems = list(self.do_parse())
 
         # Raise if we did not parse the full text.
         tok = self.lexer.end
@@ -514,7 +513,89 @@ class SpecParser:
 
         # Convert elems to a Grammar.
         # There will be some validation needed here too.
+
+        return self.build_grammar(prog, elems)
+
+    def build_grammar(self, prog, elems):
         return Grammar(elems)
+
+        '''
+
+        Partition elems on the first SectionTitle:
+
+            gelems : grammar section (all Variant or OptHelp)
+            selems : other
+
+        Convert selems into groups, one per section:
+
+            SectionTitle
+            0+ QuotedBlock
+            0+ OptHelp        # Can be full or mere references.
+
+        At this point, we will have:
+
+            prog : name or None
+            variants : 0+
+            opthelps : 0+
+            sections : 0+
+
+        If no variants:
+            If no opthelps:
+                - No-config parsing?
+                - Or raise?
+            Else:
+                - Create one Variant from the opthelps.
+
+        Processing a sequence of elems:
+            - Applies to Variant, Parenthesized, Bracketed.
+            
+            - First check for ChoiceSep.
+                - If present, create an Group(mutex=True) container.
+
+            ...
+
+        Sections:
+            - An ordered list of section-elems.
+            - Where each section-elem is: QuotedBlock or Opt-reference.
+
+        '''
+
+        # Top-level parsing:
+        #     variant:
+        #         section_title
+        #         variant
+        #     opt_help:
+        #         section_title
+        #         opt_help
+        #     section:
+        #         quoted_block
+        #         section_title
+        #         opt_help
+        #
+        # ParseElem: top-level:
+        #     Prog: name
+        #     Variant: name is_partial elems
+        #     OptHelp: elems text
+        #     SectionTitle: title
+        #     QuotedBlock: text
+        #
+        # ParseElem: groups:
+        #     Parenthesized: elems quantifier
+        #     Bracketed: elems quantifier
+        #     ChoiceSep:
+        #
+        # ParseElem: elems:
+        #     PartialUsage: name
+        #     Option: dest params quantifier
+        #     Positional: sym dest symlit choices quantifier
+        #     PositionalVariant: sym dest symlit choice
+        #     Parameter: sym dest symlit choices
+        #     ParameterVariant: sym dest symlit choice
+        #
+        # ParseElem: subcomponents:
+        #     SymDest: sym dest symlit val vals
+        #     Quantifier: m n greedy
+        #     QuotedLiteral: text
 
     def do_parse(self):
         # Yields top-level ParseElem (those declared in self.handlers).

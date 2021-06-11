@@ -585,6 +585,7 @@ Group:
     elems     | List[Group or Opt]
     ntimes    | .
     dest      | .
+    mutex     | If True, only one elem can be matched.
     validate  | Defer. Callable(s).
     --------------------------------------------------------------------------------
 
