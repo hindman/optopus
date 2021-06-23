@@ -8,19 +8,28 @@ def test_readme_examples(tr):
     # A minimal test to make sure we can parse the examples
     # from the README to completion.
 
+    # TODO: return these examples to the README equivalents.
+    #       Then add separate proper tests for various indentation scenarios.
+
     TESTS = (
-        (14, 'pgrep [-i] [-v] <rgx> <path>'),
+        # README examples:
+        (14, '''pgrep [-i] [-v] <rgx> <path>'''),
         (27, '''pgrep ::
-            <rgx> : Python regular expression
-            [<path>...] : Path(s) to input
+            <rgx> : Python
+                    regular
+                    expression
+            [<path>...] : Path(s) to
+                          input
             [-i --ignore-case] : Ignore case
-            [-v --invert-match] : Select non-matching lines'''),
+            [-v --invert-match] : Select non-matching
+                                  lines'''),
         (180, '''wrangle
             <task=grep>   [-i] [-v] [-m] [-C]
                           [--color <red|green|blue>]
                           <rgx> [<path>...]
             <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
-            <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
+            <task=search> [-i] [-g] [-d | -p]
+                          <rgx> [<path>...]
 
             ::
 
@@ -39,8 +48,10 @@ def test_readme_examples(tr):
             -n --nsubs <n>     : N of substitutions
             -g --group <n>     : Emit just capture group N [0 for all]
             -d --delim <s>     : Delimeter for capture groups [tab]
-            -p --para          : Emit capture groups one-per-line, paragraph-style'''
+            -p --para          : Emit capture groups one-per-line,
+                                 paragraph-style'''
          ),
+        # OTHER.
     )
 
     for exp, text in TESTS:
