@@ -3,8 +3,8 @@
 
 Status:
 
-    - Able to lex/parse the README examples to an AST, but
-      not yet a Grammar. Correctness not yet checked
+    - Able to lex/parse the README examples to an AST (with some bugs/issues
+      noted below), but not yet a Grammar. Correctness not fully checked.
 
 TODO:
 
@@ -16,11 +16,14 @@ TODO:
         - Awkward:
             - We have special logic for Pmodes.variant vs Pmodes.opt_help.
             - It's not clear we need to modify SpecParser.line for continuation lines.
+            - allow_second isn't the clearest name
 
-        - Know bug. The following two examples should be equivalent, but the
+        - Known bug. The following two examples should be equivalent, but the
           parser does the second example incorrectly because all lines are
           interpreted as continuations, because the special-logic noted above
           sets self.indent=0 when eating `pgrep` and that never changes.
+
+            FIXED NOW, I think: see allow_second.
 
             # Would correctly create 2 Variant.
             pgrep [-i] [-v] <rgx> <path>
@@ -32,9 +35,20 @@ TODO:
                     <rgx> <path>
                [--foo] <blort>
 
-        - The problem: sometimes we want the first eat() for Pmodes.variant to
-          establish self.indent and sometimes we don't (the latter is wanted
-          only with the first variant starts on the same line as the prog).
+            - The problem: sometimes we want the first eat() for Pmodes.variant to
+              establish self.indent and sometimes we don't (the latter is wanted
+              only with the first variant starts on the same line as the prog).
+
+            - There are two issues:
+
+                - Does next token have to be first on the line?
+                    - Yes for first token of top-level ParseElem.
+                    - With one exception: the first Variant: it can be first or second token.
+
+                - Should the token be used to establish a new value for SpecParser.indent?
+                    - Always yes, at least for top-level ParseElem.
+
+                - Currently, self.indent is handling both things. Hence the problem.
 
     - Convert grammar-syntax AST into a Grammar.
 
@@ -335,7 +349,7 @@ class RegexLexer(object):
         self.pos = 0
         self.line = 1
         self.col = 1
-        elf.indent = 0
+        self.indent = 0
         self.isfirst = True
 
     @property
@@ -464,6 +478,7 @@ class SpecParser:
         # ParseElem currently under construction by the parser.
         self.line = None
         self.indent = None
+        self.allow_second = False
 
         # Parsing modes. First defines the handlers for each
         # mode. Then set the initial mode.
@@ -522,6 +537,9 @@ class SpecParser:
 
         debug(0)
         debug(0, mode_check = 'started')
+
+        allow_second = False
+        prog = None
         tok = self.eat(TokDefs.section_name)
         if tok:
             self.mode = Pmodes.opt_help
@@ -529,10 +547,12 @@ class SpecParser:
         else:
             self.mode = Pmodes.variant
             tok = self.eat(TokDefs.name)
-            prog = tok.text if tok else None
+            if tok:
+                prog = tok.text
+                allow_second = True
 
         # Parse everything into a list of ParseElem.
-        elems = list(self.do_parse())
+        elems = list(self.do_parse(allow_second))
 
         # Raise if we did not parse the full text.
         tok = self.lexer.end
@@ -857,15 +877,16 @@ class SpecParser:
         #     Quantifier: m n greedy
         #     QuotedLiteral: text
 
-    def do_parse(self):
+    def do_parse(self, allow_second):
         # Yields top-level ParseElem (those declared in self.handlers).
 
         # The first OptHelp or SectionTitle must start on new line.
         # That differs from the first Variant, which is allowed
         # to immediately follow the program name, if any.
-        if self.mode == Pmodes.opt_help:
-            self.indent = None
-            self.line = None
+
+        self.indent = None
+        self.line = None
+        self.allow_second = allow_second
 
         # Emit all ParseElem that we find.
         elem = True
@@ -882,6 +903,7 @@ class SpecParser:
                     # Every subsequent top-level ParseElem must start on a fresh line.
                     self.indent = None
                     self.line = None
+                    self.allow_second = False
                     # Advance parser mode, if needed.
                     if h.next_mode:
                         self.mode = h.next_mode
@@ -926,7 +948,7 @@ class SpecParser:
         #
         if any(tok.isa(td) for td in self.menu):
             if self.indent is None:
-                if tok.isfirst:
+                if tok.isfirst or self.allow_second:
                     debug(2, isfirst = True)
                     # HERE_INDENT
                     self.indent = tok.indent

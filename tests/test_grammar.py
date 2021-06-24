@@ -52,6 +52,10 @@ def test_readme_examples(tr):
                                  paragraph-style'''
          ),
         # OTHER.
+        (0, '''pgrep
+               [-i] [-v]
+                    <rgx> <path>
+               [--foo] <blort>'''),
     )
 
     for exp, text in TESTS:
