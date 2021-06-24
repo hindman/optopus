@@ -3,52 +3,10 @@
 
 Status:
 
-    - Able to lex/parse the README examples to an AST (with some bugs/issues
-      noted below), but not yet a Grammar. Correctness not fully checked.
+    - Able to lex/parse the README examples to an AST.
+    - Looks good so far after some moderately thorough verification.
 
 TODO:
-
-    - debug() output from eat() looks like col might be off by 1 : investigate
-
-    - Sorted out most of the continuation-line problems, but the situation is
-      awkward and at least one bug remains:
-
-        - Awkward:
-            - We have special logic for Pmodes.variant vs Pmodes.opt_help.
-            - It's not clear we need to modify SpecParser.line for continuation lines.
-            - allow_second isn't the clearest name
-
-        - Known bug. The following two examples should be equivalent, but the
-          parser does the second example incorrectly because all lines are
-          interpreted as continuations, because the special-logic noted above
-          sets self.indent=0 when eating `pgrep` and that never changes.
-
-            FIXED NOW, I think: see allow_second.
-
-            # Would correctly create 2 Variant.
-            pgrep [-i] [-v] <rgx> <path>
-            [--foo] <blort>
-
-            # Would incorrectly create only 1 Variant.
-            pgrep
-               [-i] [-v]
-                    <rgx> <path>
-               [--foo] <blort>
-
-            - The problem: sometimes we want the first eat() for Pmodes.variant to
-              establish self.indent and sometimes we don't (the latter is wanted
-              only with the first variant starts on the same line as the prog).
-
-            - There are two issues:
-
-                - Does next token have to be first on the line?
-                    - Yes for first token of top-level ParseElem.
-                    - With one exception: the first Variant: it can be first or second token.
-
-                - Should the token be used to establish a new value for SpecParser.indent?
-                    - Always yes, at least for top-level ParseElem.
-
-                - Currently, self.indent is handling both things. Hence the problem.
 
     - Convert grammar-syntax AST into a Grammar.
 
@@ -187,6 +145,21 @@ class ParameterVariant:
 class Grammar:
     pass
 
+    @staticmethod
+    def pp(elem, level = 0):
+        lines = []
+        indent = '    '
+        add = lambda lev, s: lines.append(indent * lev + s)
+        add(level, elem.__class__.__name__ + '(')
+        special = ('elems', 'params')
+        for k, v in elem.__dict__.items():
+            if k not in special:
+                add(level + 1, '{} = {!r}'.format(k, v))
+        for k in special:
+            for e in getattr(elem, k, []):
+                lines.extend(Grammar.pp(e, level + 1))
+        return lines
+
 ####
 # Functions to return constants collections.
 ####
@@ -316,7 +289,7 @@ ParenPairs = {
 
 Debug = sc.cons(
     'Debug',
-    emit = True,
+    emit = False,
 )
 
 ####
@@ -440,11 +413,23 @@ class RegexLexer(object):
         )
 
     def update_location(self, tok):
-        # Update position-related info.
+        # Update the lexer's position-related info, given that
+        # the parser has accepted the Token.
+        #
+        # New column location when newlines present:
+        #
+        #     tok.text      | tok.width | tok.newlines | self.col
+        #     ---------------------------------------------------
+        #     \n            | 1         | (0,)         | 1
+        #     fubb\n        | 5         | (4,)         | 1
+        #     fubb\nbar     | 8         | (4,)         | 4
+        #     fubb\nbar\n   | 9         | (4,8)        | 1
+        #     fubb\nbar\nxy | 11        | (4,8)        | 3
+        #
         self.pos += tok.width
         self.line += tok.nlines - 1
         self.col = (
-            tok.width - tok.newlines[-1] - 1 if tok.newlines
+            tok.width - tok.newlines[-1] if tok.newlines
             else self.col + tok.width
         )
 
@@ -476,12 +461,13 @@ class SpecParser:
 
         # Line and indent from the first Token of the top-level
         # ParseElem currently under construction by the parser.
+        # And a flag for special indent validation.
         self.line = None
         self.indent = None
         self.allow_second = False
 
-        # Parsing modes. First defines the handlers for each
-        # mode. Then set the initial mode.
+        # Parsing modes. First define the handlers for each mode.
+        # Then set the initial mode.
         self.handlers = {
             Pmodes.variant: (
                 Handler(self.section_title, Pmodes.section),
@@ -517,8 +503,7 @@ class SpecParser:
     def mode(self, mode):
         self._mode = mode
         self.lexer.tokdefs = tuple(
-            td
-            for td in TokDefs.values()
+            td for td in TokDefs.values()
             if mode in td.modes
         )
 
@@ -527,29 +512,23 @@ class SpecParser:
     ####
 
     def parse(self):
-        # Determine parsing mode:
-        #
-        #   [prog] :: opt_help...
-        #   [prog] variant...
-        #
-
-        # return Grammar([len(self.lexer.tokens)])
-
+        # Determine the parsing mode for the grammar section
+        # (opt_help or variant), and get the program name, if any.
+        # Because the first variant can reside on the same line as
+        # the program name, we set the allow_second flag.
         debug(0)
         debug(0, mode_check = 'started')
-
-        allow_second = False
-        prog = None
         tok = self.eat(TokDefs.section_name)
         if tok:
             self.mode = Pmodes.opt_help
             prog = tok.m.group(1)
+            allow_second = False
         else:
             self.mode = Pmodes.variant
             tok = self.eat(TokDefs.name)
-            if tok:
-                prog = tok.text
-                allow_second = True
+            prog = tok.text if tok else None
+            allow_second = bool(tok)
+        debug(0, mode = self.mode)
 
         # Parse everything into a list of ParseElem.
         elems = list(self.do_parse(allow_second))
@@ -560,322 +539,7 @@ class SpecParser:
             self.error('Failed to parse the full spec')
 
         # Convert elems to a Grammar.
-        # There will be some validation needed here too.
-
         return self.build_grammar(prog, elems)
-
-    def build_grammar(self, prog, elems):
-        return Grammar(elems)
-
-        print()
-        print('zzzzzzzzzzzzzzz')
-        for e in elems:
-            print(e)
-        print('---------------')
-        print()
-
-        '''
-
-        ----------------------------------------------------
-
-        LOOKS OK
-
-        pgrep [-i] [-v] <rgx> <path>
-
-        Variant(
-            name=None,
-            is_partial=False,
-            elems=[
-                Bracketed(
-                    elems=[Option(dest='i', params=[], quantifier=None)],
-                    quantifier=None),
-                Bracketed(
-                    elems=[Option(dest='v', params=[], quantifier=None)],
-                    quantifier=None),
-                Positional(sym=None, dest='rgx', symlit=False, choices=(), quantifier=None),
-                Positional(sym=None, dest='path', symlit=False, choices=(), quantifier=None),
-            ],
-        )
-
-        ----------------------------------------------------
-
-        TODO: incorrect parse:
-            - continuation-line logic must have a problem
-            - The first OptHelp consume all of the subequent material as continuation.
-
-        pgrep ::
-            <rgx> : Python regular expression
-            [<path>...] : Path(s) to input
-            [-i --ignore-case] : Ignore case
-            [-v --invert-match] : Select non-matching lines
-
-        OptHelp(
-            elems=[Positional(sym=None, dest='rgx', symlit=False, choices=(), quantifier=None)],
-            text='Python regular expression [<path>...] : Path(s) to input [-i --ignore-case] : Ignore case [-v --invert-match] : Select non-matching lines'
-        )
-
-        ----------------------------------------------------
-
-        TODO: incorrect parse:
-            - similar continuation-line problem
-            - in this case, the whole grammer is interpreted as one variant; should be 3
-
-        wrangle
-            <task=grep>   [-i] [-v] [-m] [-C]
-                          [--color <red|green|blue>]
-                          <rgx> [<path>...]
-            <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
-            <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
-
-            ::
-
-            <task>             : Task to perform
-            <task=grep>        : Emit lines matching pattern
-            <task=sub>         : Search for pattern and replace
-            <task=search>      : Emit text matching pattern
-            <rgx>              : Python regular expression
-            <path>             : Path(s) to input
-            <rep>              : Replacement text
-            -i --ignore-case   : Ignore case
-            -v --invert-match  : Select non-matching lines
-            -m --max-count <n> : Stop searching after N matches
-            -C --context <n>   : Print N lines of before/after context
-            --color <>         : Highlight matching text
-            -n --nsubs <n>     : N of substitutions
-            -g --group <n>     : Emit just capture group N [0 for all]
-            -d --delim <s>     : Delimeter for capture groups [tab]
-            -p --para          : Emit capture groups one-per-line, paragraph-style
-
-        Variant(
-            name=None,
-            is_partial=False,
-            elems=[
-                PositionalVariant(sym=None, dest='task', symlit=False, choice='grep'),
-                Bracketed(elems=[Option(dest='i', params=[], quantifier=None)], quantifier=None),
-                Bracketed(elems=[Option(dest='v', params=[], quantifier=None)], quantifier=None),
-                Bracketed(elems=[Option(dest='m', params=[], quantifier=None)], quantifier=None),
-                Bracketed(elems=[Option(dest='C', params=[], quantifier=None)], quantifier=None),
-                Bracketed(elems=[Option(dest='color', params=[Parameter(sym=None, dest=None, symlit=False, choices=('red', 'green', 'blue'))], quantifier=None)], quantifier=None),
-                Positional(sym=None, dest='rgx', symlit=False, choices=(), quantifier=None),
-                Bracketed(elems=[Positional(sym=None, dest='path', symlit=False, choices=(), quantifier=Quantifier(m=1, n=None, greedy=True))], quantifier=None),
-
-                PositionalVariant(sym=None, dest='task', symlit=False, choice='sub'),
-                Bracketed(elems=[Option(dest='i', params=[], quantifier=None)], quantifier=None),
-                Bracketed(elems=[Option(dest='n', params=[], quantifier=None)], quantifier=None),
-                Positional(sym=None, dest='rgx', symlit=False, choices=(), quantifier=None),
-                Positional(sym=None, dest='rep', symlit=False, choices=(), quantifier=None),
-                Bracketed(elems=[Positional(sym=None, dest='path', symlit=False, choices=(), quantifier=Quantifier(m=1, n=None, greedy=True))], quantifier=None),
-
-                PositionalVariant(sym=None, dest='task', symlit=False, choice='search'),
-                Bracketed(elems=[Option(dest='i', params=[], quantifier=None)], quantifier=None),
-                Bracketed(elems=[Option(dest='g', params=[], quantifier=None)], quantifier=None),
-                Bracketed(elems=[Option(dest='d', params=[], quantifier=None), ChoiceSep(), Option(dest='p', params=[], quantifier=None)], quantifier=None),
-                Positional(sym=None, dest='rgx', symlit=False, choices=(), quantifier=None),
-                Bracketed(elems=[Positional(sym=None, dest='path', symlit=False, choices=(), quantifier=Quantifier(m=1, n=None, greedy=True))], quantifier=None)
-            ]
-        )
-        SectionTitle(title='::')
-        OptHelp(
-            elems = [
-                Positional(sym=None, dest='task', symlit=False, choices=(), quantifier=None),
-            ],
-            text='Task to perform'
-        )
-        OptHelp(
-            elems = [
-                PositionalVariant(sym=None, dest='task', symlit=False, choice='grep'),
-            ],
-            text='Emit lines matching pattern'
-        )
-        OptHelp(
-            elems = [
-                PositionalVariant(sym=None, dest='task', symlit=False, choice='sub'),
-            ],
-            text='Search for pattern and replace'
-        )
-        OptHelp(
-            elems = [
-                PositionalVariant(sym=None, dest='task', symlit=False, choice='search'),
-            ],
-            text='Emit text matching pattern'
-        )
-        OptHelp(
-            elems = [
-                Positional(sym=None, dest='rgx', symlit=False, choices=(), quantifier=None),
-            ],
-            text='Python regular expression'
-        )
-        OptHelp(
-            elems = [
-                Positional(sym=None, dest='path', symlit=False, choices=(), quantifier=None),
-            ],
-            text='Path(s) to input'
-        )
-        OptHelp(
-            elems = [
-                Positional(sym=None, dest='rep', symlit=False, choices=(), quantifier=None),
-            ],
-            text='Replacement text'
-        )
-        OptHelp(
-            elems = [
-                Option(dest='i', params=[], quantifier=None),
-                Option(dest='ignore-case', params=[], quantifier=None),
-            ],
-            text='Ignore case'
-        )
-        OptHelp(
-            elems = [
-                Option(dest='v', params=[], quantifier=None),
-                Option(dest='invert-match', params=[], quantifier=None),
-            ],
-            text='Select non-matching lines'
-        )
-        OptHelp(
-            elems = [
-                Option(dest='m', params=[], quantifier=None),
-                Option(
-                    dest='max-count',
-                    params=[Parameter(sym='n', dest=None, symlit=False, choices=())],
-                    quantifier=None),
-            ],
-            text='Stop searching after N matches'
-        )
-        OptHelp(
-            elems = [
-                Option(dest='C', params=[], quantifier=None),
-                Option(
-                    dest='context',
-                    params=[Parameter(sym='n', dest=None, symlit=False, choices=())],
-                    quantifier=None),
-            ],
-            text='Print N lines of before/after context'
-        )
-        OptHelp(
-            elems = [
-                Option(
-                    dest='color',
-                    params=[Parameter(sym=None, dest=None, symlit=False, choices=())],
-                    quantifier=None),
-            ],
-            text='Highlight matching text'
-        )
-        OptHelp(
-            elems = [
-                Option(dest='n', params=[], quantifier=None),
-                Option(
-                    dest='nsubs',
-                    params=[Parameter(sym='n', dest=None, symlit=False, choices=())],
-                    quantifier=None),
-            ],
-            text='N of substitutions'
-        )
-        OptHelp(
-            elems = [
-                Option(dest='g', params=[], quantifier=None),
-                Option(
-                    dest='group',
-                    params=[Parameter(sym='n', dest=None, symlit=False, choices=())],
-                    quantifier=None),
-            ],
-            text='Emit just capture group N [0 for all]'
-        )
-        OptHelp(
-            elems = [
-                Option(dest='d', params=[], quantifier=None),
-                Option(
-                    dest='delim',
-                    params=[Parameter(sym='s', dest=None, symlit=False, choices=())],
-                    quantifier=None),
-            ],
-            text='Delimeter for capture groups [tab]'
-        )
-        OptHelp(
-            elems = [
-                Option(dest='p', params=[], quantifier=None),
-                Option(dest='para', params=[], quantifier=None),
-            ],
-            text='Emit capture groups one-per-line, paragraph-style'
-        )
-
-
-        ----------------------------------------------------
-
-        Partition elems on the first SectionTitle:
-
-            gelems : grammar section (all Variant or OptHelp)
-            selems : other
-
-        Convert selems into groups, one per section:
-
-            SectionTitle
-            0+ QuotedBlock
-            0+ OptHelp        # Can be full or mere references.
-
-        At this point, we will have:
-
-            prog : name or None
-            variants : 0+
-            opthelps : 0+
-            sections : 0+
-
-        If no variants:
-            If no opthelps:
-                - No-config parsing?
-                - Or raise?
-            Else:
-                - Create one Variant from the opthelps.
-
-        Processing a sequence of elems:
-            - Applies to Variant, Parenthesized, Bracketed.
-
-            - First check for ChoiceSep.
-                - If present, create an Group(mutex=True) container.
-
-            ...
-
-        Sections:
-            - An ordered list of section-elems.
-            - Where each section-elem is: QuotedBlock or Opt-reference.
-
-        '''
-
-        # Top-level parsing:
-        #     variant:
-        #         section_title
-        #         variant
-        #     opt_help:
-        #         section_title
-        #         opt_help
-        #     section:
-        #         quoted_block
-        #         section_title
-        #         opt_help
-        #
-        # ParseElem: top-level:
-        #     Prog: name
-        #     Variant: name is_partial elems
-        #     OptHelp: elems text
-        #     SectionTitle: title
-        #     QuotedBlock: text
-        #
-        # ParseElem: groups:
-        #     Parenthesized: elems quantifier
-        #     Bracketed: elems quantifier
-        #     ChoiceSep:
-        #
-        # ParseElem: elems:
-        #     PartialUsage: name
-        #     Option: dest params quantifier
-        #     Positional: sym dest symlit choices quantifier
-        #     PositionalVariant: sym dest symlit choice
-        #     Parameter: sym dest symlit choices
-        #     ParameterVariant: sym dest symlit choice
-        #
-        # ParseElem: subcomponents:
-        #     SymDest: sym dest symlit val vals
-        #     Quantifier: m n greedy
-        #     QuotedLiteral: text
 
     def do_parse(self, allow_second):
         # Yields top-level ParseElem (those declared in self.handlers).
@@ -908,6 +572,83 @@ class SpecParser:
                     if h.next_mode:
                         self.mode = h.next_mode
                     break
+
+    def build_grammar(self, prog, elems):
+        g = Grammar(elems)
+
+        return g
+
+        '''
+
+        Partition elems on the first SectionTitle:
+
+            gelems : grammar section (all Variant or OptHelp)
+            selems : other
+
+        Convert selems into groups, one per section:
+
+            SectionTitle
+            0+ QuotedBlock
+            0+ OptHelp        # Can be full or mere references.
+
+        At this point, we will have:
+
+            prog : name or None
+            variants : 0+
+            opthelps : 0+
+            sections : 0+
+
+        If no variants:
+            If no opthelps:
+                - No-config parsing?
+                - Or raise?
+            Else:
+                - Create one Variant from the opthelps.
+
+        Processing a sequence of elems:
+
+            - Applies to Variant, Parenthesized, Bracketed.
+
+            - Organize into groups, partitioning on ChoiceSep.
+            - If multiple groups, we will end up with Group(mutext=True)
+
+            ...
+
+        Sections:
+            - An ordered list of section-elems.
+            - Where each section-elem is: QuotedBlock or Opt-reference.
+
+        '''
+
+        # ParseElem: top-level:
+        #     Variant: name is_partial elems
+        #     OptHelp: elems text
+        #     SectionTitle: title
+        #     QuotedBlock: text
+        #
+        # ParseElem: elems:
+        #     ChoiceSep:
+        #     QuotedLiteral: text
+        #         - Becomes an Opt.
+        #         - But has no dest.
+        #         - Essentially requires the variant to include a positional constant.
+        #         - Does that make it like a PositionalVariant with one choice and no dest or sym?
+        #     PartialUsage: name
+        #         - Insert the elems from the Variant(partial=True)
+        #     Parenthesized: elems quantifier
+        #         - Convert to Group or quantified Opt.
+        #     Bracketed: elems quantifier
+        #         - Convert to Group or quantified Opt.
+        #     Option: dest params quantifier
+        #     Positional: sym dest symlit choices quantifier
+        #     PositionalVariant: sym dest symlit choice
+        #     Parameter: sym dest symlit choices
+        #     ParameterVariant: sym dest symlit choice
+        #
+        # ParseElem: subcomponents:
+        #     SymDest: sym dest symlit val vals
+        #     Quantifier: m n greedy
+        #     QuotedLiteral: text
 
     ####
     # Eat tokens.
@@ -1020,9 +761,9 @@ class SpecParser:
         return OptHelp(elems, text)
 
     def section_title(self):
-        tok = self.eat(TokDefs.section_title)
+        tok = self.eat(TokDefs.section_title, TokDefs.section_name)
         if tok:
-            return SectionTitle(title = tok.text.strip())
+            return SectionTitle(title = tok.m.group(1).strip())
         else:
             return None
 
@@ -1202,6 +943,8 @@ class SpecParser:
             m, n = q
             greedy = not self.eat(TokDefs.question)
             return Quantifier(m, n, greedy)
+        elif self.eat(TokDefs.question):
+            return Quantifier(None, None, False)
         else:
             return None
 
@@ -1212,7 +955,7 @@ class SpecParser:
     def quantifier_range(self):
         tok = self.eat(TokDefs.quant_range)
         if tok:
-            text = TokDefs.whitespace.regex.sub('', tok.text)
+            text = TokDefs.whitespace.regex.sub('', tok.m.group(1))
             xs = [
                 None if x == '' else int(x)
                 for x in text.split(Chars.comma)
