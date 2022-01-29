@@ -20,7 +20,6 @@ toc: Table of contents
 
     discussion.txt
 
-        why-optopus                   | Why Python needs a better command line argument parser
         api-vs-text                   | API-driven vs text-driven
         other-lib-weaknesses          | Addressing weaknesses common in other libraries
         other-goals                   | Other goals
@@ -46,6 +45,7 @@ toc: Table of contents
         parse-known-args              | Parse known arguments
         zones-not-needed              | Zones not needed
         help-distpatching             | Help distpatching
+        dispatch                      | Dispatch
         argparse-and-greed            | argparse and greediness
         end-user-errors               | End-user errors
         converters-validators         | Converters and validators

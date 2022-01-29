@@ -2,6 +2,21 @@
 todos: TODOs
 --------
 
+Reorientation:
+    x README.md
+    - specification.txt [next: classes-and-attributes]
+    - action.txt
+    - toc.txt
+    - discussion.txt
+    - dev.txt
+    - reference.txt
+    - parser.py
+    - constants.py
+    - errors.py
+    - grammar.py
+    - _old.py
+    x version.py
+
 Implement data-oriented exception strategy.
 
 Grammar syntax parsing.

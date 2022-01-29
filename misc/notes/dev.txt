@@ -44,3 +44,7 @@ Installing from test pypi:
     pip uninstall attrs short-con
     pip install attrs short-con
 
+Tag file creation:
+
+    inv tags
+

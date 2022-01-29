@@ -24,7 +24,7 @@ flexibility. At every level of program complexity — ranging from throwaway
 scripts to the next-big-thing — Optopus will offer a superior approach to
 handling command-line arguments.
 
-The library is under active development and a alpha release has been published.
+The library is under active development and an alpha release has been published.
 The purpose of that release was mainly to reserve the project name in
 [PyPI][pypi_optopus] but it already provides one small bit of useful
 functionality, one not currently available in other libraries — namely,
@@ -670,7 +670,7 @@ strength of the API approach and adds some additional conveniences to keep the
 developer burden low. Although it is theoretically possible to configure some
 of those things via a text syntax, the approach has rapidly diminishing
 returns, because each feature addition requires increasingly baroque syntactic
-features. Optopus takes a hybrid approach, combining the benefits of each
+elements. Optopus takes a hybrid approach, combining the benefits of each
 configuration style.
 
 Finally, it should be noted that all of the library's behaviors will be
