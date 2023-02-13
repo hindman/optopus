@@ -25,6 +25,40 @@ Convert grammar-syntax AST into a Grammar.
 
 Argument parsing.
 
+Issues encounted while working on mvs: fold into the optopus plan:
+
+    - Did user supply a value or did it come from the configured default?
+
+        - After parsing occurs, how does the user tell if an opts attribute was
+          (1) supplied in the command-line args vs (2) obtain from the default.
+
+        - This an annoying problem with no good argparse solutions.
+
+    - Merging user-preferences and opts.
+
+        - User-prefs and opts tend to have the same validation needs.
+
+        - And the merge them can be tricky.
+
+            - Maybe this isn't too bad if we could solve the argparse
+              deficiency where you don't know if the opt was supplied or was
+              the default.
+
+            - If we knew that, then the merge logic would be simpler[?].
+
+                for K, V in prefs.items():
+                    if opts.K was not set by user:
+                        opts.K = V
+
+    - How does a user request a non-default location for user-prefs?
+
+        - Environment variable?
+
+    - Negatable options:
+
+        - Whether/how to display in help text.
+        - How to represent data.
+
 --------
 road-map: Road map
 --------
