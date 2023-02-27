@@ -59,6 +59,11 @@ Issues encounted while working on mvs: fold into the optopus plan:
         - Whether/how to display in help text.
         - How to represent data.
 
+    - optopus should be able to report the rank-order positions of opts on the
+      command-line. For example: the "rules" in the Perl rename script were
+      supposed to be applied in order; ditto for the Unix find command's
+      operations.
+
 --------
 road-map: Road map
 --------
