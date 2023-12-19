@@ -18,7 +18,7 @@ TODO:
 
 import attr
 import re
-import short_con as sc
+from short_con import cons, constants
 import inspect
 from functools import cache
 from collections import OrderedDict
@@ -171,8 +171,7 @@ def define_regex_snippets():
     name = r'\w+(?:[_-]\w+)*'
     num = r'\d+'
     q = hws0 + ',' + hws0
-    return sc.cons(
-        'RegexSnippets',
+    return cons(
         hws0   = hws0,
         hws1   = hws1,
         name   = name,
@@ -263,21 +262,20 @@ def define_tokdefs():
         )
 
     # Return them as a constants collection.
-    return sc.constants('TokDefs', tds)
+    return constants(tds)
 
 ####
 # Parsing and grammar constants.
 ####
 
-Chars = sc.cons(
-    'Chars',
+Chars = cons(
     space = ' ',
     newline = '\n',
     exclamation = '!',
     comma = ',',
 )
 
-Pmodes = sc.constants('ParserModes', 'variant opt_help section help_text')
+Pmodes = cons('variant opt_help section help_text')
 Snippets = define_regex_snippets()
 TokDefs = define_tokdefs()
 
@@ -287,8 +285,7 @@ ParenPairs = {
     TokDefs.angle_open: TokDefs.angle_close,
 }
 
-Debug = sc.cons(
-    'Debug',
+Debug = cons(
     emit = False,
 )
 
