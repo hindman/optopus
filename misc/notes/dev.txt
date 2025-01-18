@@ -36,7 +36,7 @@ Version bump:
 
 Publish:
 
-    inv dist [--publish] [--test]
+    inv dist [--publish] [--test] [--verbose]
 
 Installing from test pypi:
 

@@ -48,7 +48,7 @@ def tox(c):
     c.run('tox', env = d)
 
 @task
-def dist(c, publish = False, test = False):
+def dist(c, publish = False, test = False, verbose = False):
     '''
     Create distribution, optionally publishing to pypi or testpypi.
     '''
@@ -58,7 +58,8 @@ def dist(c, publish = False, test = False):
     c.run('echo')
     c.run('twine check dist/*')
     if publish:
-        c.run(f'twine upload -r {repo} dist/*')
+        vflag = '--verbose' if verbose else ''
+        c.run(f'twine upload -r {repo} dist/* {vflag}')
 
 @task
 def bump(c, kind = 'minor', local = False):
