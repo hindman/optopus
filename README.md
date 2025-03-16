@@ -680,9 +680,9 @@ parser's grammar via the API also works well. Note also that even the API
 configuration can leverage as much or little of the grammar syntax as desired.
 To illustrate, the following configurations achieve the same thing: an optional
 `--dim` having an alias and taking 2 to 3 parameters. I suspect that many
-developers will prefer the efficiency and intuitiveness of the syntax, but that
-opinion is not enforced by the library. Users can freely operate at any point
-they prefer along the text-to-API spectrum.
+developers will prefer the efficiency and intuitiveness of the text syntax, but
+that opinion is not enforced by the library. Users can freely operate at any
+point they prefer along the text-to-API spectrum.
 
 ```python
 # All text syntax.

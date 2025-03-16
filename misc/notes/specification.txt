@@ -2,10 +2,296 @@
 grammar-syntax: Grammar syntax
 --------
 
+SIMPLIFYING THE SPEC:
+
+    - Setting prog via the spec:
+        - Typically not needed or wanted.
+        - Optopus can compute it from the caller's file name.
+        - POSSIBLE DECISION:
+            - Drop prog from the spec.
+            - Make prog settable only via API.
+
+    - Purpose of section without title:
+        - The first section can be title-free.
+        - Optopus would use 'Positionals' and 'Options' in help text.
+        - What if subsequent sections lack title?
+        - Optopus could default to something generic. But that's unhelpful.
+        - For user, what's the point of a subsequent-section having no title?
+        - If new title is unwanted, don't declare a subsequent-section at all.
+        - POSSIBLE DECISION:
+            - First section can be title-free.
+            - Other sections require a title.
+
+    - Those decisions would reduce the spec grammar to the following:
+
+        [variant...]
+        [opt-help...]
+        [section...]
+
+    - That is easier to parse and document than the current plan below.
+
+    - Is there a way to ditch the need for double-colon in the simple and
+      common case of the user who just wants to configure via opt-help lines in
+      one untitled section?
+
+        - For example, can we eliminate the need for double-colon in README ex2
+          and ex3?
+
+        - As detailed in discussion.txt, opt-help lines can be confused with
+          unnamed variants.
+
+            # Is this (a) 3 variants or (b) 3 bare-bones opt-help lines?
+            <rgx>
+            [-i --ignore-case]
+            [-v --invert-match]
+
+        - The second interpretation would be more commonly observed in
+          real-world scripts, so I would like to make that use case supportable
+          without any special syntax like (a) the double-colon section marker
+          or (b) forcing opt-help lines to require either help-text (very bad)
+          or a trailing colon (bad).
+
+        - The core issue:
+
+            - If the spec starts without a titled section (by far the most
+              common usage pattern), the spec-parser does not know for sure how
+              to interpret the first section -- at least in certain bare-bones
+              scenarios.
+
+            - More precisely, the status of the initial lines in the first
+              sections are potentially ambiguous. Some variations on the
+              example cited above:
+
+                - Since <rgx> line is opt-help, all of them are.
+
+                    <rgx> : Pattern to search for
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo]
+
+                - The --foo line is opt-help. First 3 lines ambiguous:
+
+                    <rgx>
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo] : Enable foo blah-blah-blah
+
+                - The <rgx> line is variant. Others ambiguous.
+
+                    <rgx> [--algo <X|Y|Z>]
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo]
+
+                - Since --foo line must be variant, all must be.
+
+                    <rgx>
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo] [--blort <X|Y|Z>]
+
+            - The plan so far is running into complexities caused by the desire
+              to support syntax-free approaches to various use cases.
+
+                - Bare-bones configuration in opt-help style:
+
+                    <rgx>
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo]
+
+                - Bare-bones configuration in variant style:
+
+                    # Like README ex1.
+                    # But this is non-ambigous: must be a variant.
+                    [-i] [-v] <rgx> <path>
+
+                    # This example is ambigous.
+                    <rgx>
+                    <path>
+                    [--help]
+                    [--examples <A|B|C>]
+
+                    # But it is better expressed as this.
+                    (<rgx> | <path>) [--help] [--examples <A|B|C>]
+
+                    # Or even this way.
+                    # Since last line is variant, all must be.
+                    <rgx>
+                    <path>
+                    [--help] [--examples <A|B|C>]
+
+                - Conclusion from those examples:
+
+                    - The ambiguous cases involve bare-bones variant usages
+                      that are neither common nor compelling.
+
+                    - Most real-world needs for variants involve more than
+                      something that can be confused for a bare-bones opt-help.
+
+                    - More detailed analysis:
+
+                        - Lines can be one of the following:
+
+                            OH  | only an opt-help
+                            V   | only a variant
+                            AMB | ambiguous
+
+                        - Consider all of the ways that those three types of
+                          lines can first appear in the first section of a
+                          spec. [We can ignore repeats of the same type, since
+                          that does not affect the analysis.]
+
+                            - First section has only 1 type of line.
+
+                                OH  | ok
+                                V   | ok
+                                AMB | Ambiguous #1
+
+                            - First section has 2 types of lines:
+
+                                OH V     | Invalid. V cannot appear after OH.
+                                OH AMB   | ok: must be OH
+                                V OH     | ok
+                                V AMB    | Ambiguous #2
+                                AMB OH   | Ambiguous #3
+                                AMB V    | ok: must be V
+
+                            - First section has 3 types of lines:
+
+                                OH V AMB | Invalid
+                                OH AMB V | Invalid
+                                V OH AMB | ok: must be V then OH
+                                V AMB OH | Ambiguous #4
+                                AMB V OH | ok: must be V then OH
+                                AMB OH V | Invalid
+
+                        - Is there an obvious policy reponse to the ambigous cases?
+
+                            - A narrow analysis does not produce obvious decisions:
+
+                                #1 | Unclear
+                                #2 | Assume V, since we saw V already
+                                #3 | Assume OH (similar logic)
+                                #4 | Unclear
+
+                            - Alternatively, could we simply default one way or
+                              another in the face of ambiguity?
+
+                                - Perhaps.
+
+                                - Consider real consequences and what a user
+                                  must do to resolve an ambiguity.
+
+                                - If the argument parsing and help text don't
+                                  perform correctly, it will be quickly obvious
+                                  to the user.
+
+                                - How will they fix the situation?
+
+                                - If Optopus works from a fallback-default of
+                                  OH for ambigous cases, how does a user tell
+                                  us that they actually want V?
+                                    - Option 1: an API call.
+                                    - Option 2: name the variant.
+
+                                - If Optopus instead defaults to V but the user
+                                  wants OH, the fix is much easier.
+                                    - Just add help-text (which they probably
+                                      should do anyway) or, at a minimum, add a
+                                      trailing colon to the first ambigous OH
+                                      line.
+
+                        - POSSIBLE DECISION:
+
+                            - In the face of ambiguity, assume V.
+
+                            - Of course! This is consistent with the way we
+                              have resolved many other ambiguous situations via
+                              a policy of greedy parsing without back-tracking.
+
+                            - If this is the grammar, the consistent approach
+                              is to keep assuming that lines are variants until
+                              they are clearly not.
+
+                                [variant...]
+                                [opt-help...]
+                                [section...]
+
+    - SUMMARY OF DECISIONS ABOVE:
+
+        - Spec grammar, with the usual greedy parsing approach, so we assume
+          variant in the face of ambiguity about the initial lines in the first
+          "section".
+
+            [variant...]
+            [opt-help...]
+            [section...]
+
+        - The prog is not used in the spec. Settable via API.
+
+        - Sections other than the first must have titles.
+
+        - The first section might or might not be a "section". Look into this.
+
+        - None of the current README examples would require double-colon.
+
+    - Remaining question: is the first section a Section?
+
+        - TODO...
+
+    - Examples from the README:
+
+        # README ex1.
+        [-i] [-v] <rgx> <path>
+
+        # README ex2.
+        ::
+        <rgx> : Python regular expression
+        [<path>...] : Path(s) to input
+        [-i --ignore-case] : Ignore case
+        [-v --invert-match] : Select non-matching lines
+
+        # README ex3.
+        ::
+        <rgx> : Python regular expression
+        [<path>...] : Path(s) to input
+        [-i --ignore-case] : Ignore case
+        [-v --invert-match] : Select non-matching lines
+        [-m --max-count <n>] : Stop searching after N matches
+        [-C --context <n>] : Print N lines of before/after context
+        [--color red|green|blue] : Highlight matching text
+
+        # README ex4.
+        <task=grep>   [-i] [-v] [-m] [-C]
+                      [--color <red|green|blue>]
+                      <rgx> [<path>...]
+        <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
+        <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
+
+        ::
+
+        <task>             : Task to perform
+        <task=grep>        : Emit lines matching pattern
+        <task=sub>         : Search for pattern and replace
+        <task=search>      : Emit text matching pattern
+        <rgx>              : Python regular expression
+        <path>             : Path(s) to input
+        <rep>              : Replacement text
+        -i --ignore-case   : Ignore case
+        -v --invert-match  : Select non-matching lines
+        -m --max-count <n> : Stop searching after N matches
+        -C --context <n>   : Print N lines of before/after context
+        --color <>         : Highlight matching text
+        -n --nsubs <n>     : N of substitutions
+        -g --group <n>     : Emit just capture group N [0 for all]
+        -d --delim <s>     : Delimeter for capture groups [tab]
+        -p --para          : Emit capture groups one-per-line, paragraph-style
+
 Spec structure:
 
     grammar-section
-    [sections...]
+    [section...]
 
     - The grammar-section is required, but can be empty. If empty, presumably
       opt-help lines are found in the sections.
@@ -232,6 +518,7 @@ Sections:
             - variant-scope lines. Looks the same as as partial usage.
               Subsequent opt-help lines will be scoped to that variant.
               Applicable only when Opt.dest values are reused across variants.
+              [Is this concept necessary? What is a variant-scope line?]
 
             - opt-help lines. Can fully configure an Opt or use an abbreviated
               form if merely augmenting an already-configured Opt.
@@ -327,7 +614,7 @@ neck-diagram:
 Syntax example: nab:
 
     - Another separator-based grammar.
-    - Note that Opt.dest values need to be repeated [what does this mean?].
+    - Note that Opt.dest values (cmd, in this case) need to be repeated.
 
     chomp!   : / <cmd=chomp>
     findall! : / <cmd=findall> <rgx> [-a]
@@ -335,7 +622,7 @@ Syntax example: nab:
     range!   : / <cmd=range> <start> <stop> [<step>] [-g]
     run!     : / <cmd=run> <code> [-g <>] [-a] [-v] [-i]
 
-    main : [--trace] commands=(chomp! | grep! | range! | run!)...
+    main : [--trace] commands=(chomp! | findall! | grep! | range! | run!)...
     help : --help
 
 --------

@@ -35,7 +35,7 @@ The optopus library combines the best of both approaches:
 
     - Text-driven for grammar and naming:
 
-        - Even though my experiments configuring argument parsers of varyig
+        - Even though my experiments configuring argument parsers of varying
           complexity via usage text convinced me of the benefits of an
           API-driven approach, text-driven option parsers have notable
           advantages. Those advantages are focused on command-line grammar and
@@ -1125,7 +1125,7 @@ to most specific:
 
     Group           # Any grouping of grammar elements.
     Alternative     # A grouping where the end-user should choose one.
-    Variant         # An alterantive that strongly affects usage text.
+    Variant         # An alternative that strongly affects usage text.
 
 --------
 destination-assignment: General destination assignment: needed after all
@@ -1408,7 +1408,7 @@ Example API usages:
         p = Parser(...)
 
         # Some dispatching configurations.
-        de = disp(experiment,)
+        de = disp(experiment)
         di = disp(do_interactive, lib, RES)
         dr = disp(rebuild_library, limit = RES.lib, progress = RES.progress)
 
@@ -1813,7 +1813,7 @@ Punctuation markers:
         - The most common use case is to derive grammar from 1+ opt-help
           sections. It works well for many standard grammar needs, and opt-help
           is more featureful than variant (because it supports aliases and
-          text). So the no-variant use case should have the least hassle.
+          help text). So the no-variant use case should have the least hassle.
 
 Dest, sym, and values:
 
