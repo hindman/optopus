@@ -1,0 +1,4352 @@
+--------------------------------------------------------------------------------
+optopus-notes: Content, tasks, and development notes
+--------------------------------------------------------------------------------
+
+--------
+toc: Table of contents
+--------
+
+    optopus-notes | Content, tasks, and development notes
+
+        toc       | Table of contents
+        todos     | TODOs
+        road-map  | Road map
+        dev-notes | Dev notes
+
+    specification | Specification
+
+        new-plan-questions     | New plan and questions
+        grammar-syntax         | Grammar syntax
+        syntax-examples        | Syntax examples
+        terminology            | Terminology
+        classes-and-attributes | Classes and attributes
+
+    discussion | Discussion
+
+        api-vs-text                   | API-driven vs text-driven
+        other-lib-weaknesses          | Addressing weaknesses common in other libraries
+        other-goals                   | Other goals
+        standard-cli-grammar          | Standard command-line grammar
+        cli-grammar-vs-regex          | Command-line grammar vs. regex
+        subparsers-not-needed         | Optopus does not need the subparser concept
+        opt-action-not-needed         | Optopus does not need the action concept
+        explicit-option-param-syntax  | Why explicit syntax for option parameters is needed
+        high-precendence-options      | High precedence options
+        help-text-formatting          | Help text formatting
+        grammar-parsing-algo          | Parsing the grammar syntax
+        convenience-parsing-algo      | Parsing the convenience grammar syntax
+        arg-parsing-algo              | Parsing algorithm
+        alternative-parsing-algo      | Alternative parsing algorithm won't work after all
+        ambiguous-grammars            | Ambiguous grammars are not an issue
+        parsed-data-structure         | Parsed data structuring: nargs, nparams, ntimes
+        eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
+        grammar-syntax-named-unnamed  | Grammar syntax: named and unnamed arguments
+        variants-needed               | Variants: why they are needed
+        destination-assignment        | General destination assignment: needed after all
+        grammar-syntax-complexity     | Grammar syntax: is it too complex?
+        optional-positional-placement | Optional positionals before required are not a problem
+        parse-known-args              | Parse known arguments
+        zones-not-needed              | Zones not needed
+        help-distpatching             | Help distpatching
+        dispatch                      | Dispatch
+        argparse-and-greed            | argparse and greediness
+        end-user-errors               | End-user errors
+        converters-validators         | Converters and validators
+        grammar-querying-api          | Grammar querying API
+        validation-notes              | Validation notes
+        strategy-reassessment         | Reassess the strategy
+        grammar-syntax-revisited      | Grammar syntax revisited
+        spec-as-format-string         | Spec as a format string not needed
+        variable-end-user-input       | Representing variable end-user inputs
+        enhanced-quantifiers          | Enhanced quantifiers
+        opt-help-lines                | Opt help lines
+        opt-independence-vs-unity     | Opt independence vs unity when sharing same dest
+        group-level-validation-needed | Why Group-level validation should be retained
+        readme-next-version           | README for next version
+
+    reference | Reference
+
+        parsing-resources                  | Parsing resources
+        parsing-process-generally          | Parsing process generally
+        pegs-cfgs-and-packrat-parsing      | PEGs, CFGs, and packrat parsing
+        grammar-types                      | Grammar types
+        api-driven-vs-text-driven-examples | API-driven vs text-driven examples
+        other-tools                        | Other tools
+        problems-scenarios-from-argparse   | Problems scenarios from argparse
+        example-grammars                   | Example grammars
+
+--------
+todos: TODOs
+--------
+
+Reorientation:
+    x README.md
+    - notes.txt
+        
+        - Editing/reading in process.
+        - Update the specification based on new plan.
+        - Try to improve specification notes:
+            - Clearer, simpler.
+            - Define all terms.
+            - Build up with examples.
+
+    - code
+    - setup.py, etc
+    - misc: other materials: briefly review
+
+Implement data-oriented exception strategy.
+    - Can I just use kwexception?
+
+Grammar syntax parsing.
+
+Convert grammar-syntax AST into a Grammar.
+
+Argument parsing.
+
+Issues encounted while working on mvs: fold into the optopus plan:
+
+    - Did user supply a value or did it come from the configured default?
+
+        - After parsing occurs, how does the user tell if an opts attribute was
+          (1) supplied in the command-line args vs (2) obtain from the default.
+
+        - This an annoying problem with no good argparse solutions.
+
+    - Merging user-preferences and opts.
+
+        - User-prefs and opts tend to have the same validation needs.
+
+        - And the merge them can be tricky.
+
+            - Maybe this isn't too bad if we could solve the argparse
+              deficiency where you don't know if the opt was supplied or was
+              the default.
+
+            - If we knew that, then the merge logic would be simpler[?].
+
+                for K, V in prefs.items():
+                    if opts.K was not set by user:
+                        opts.K = V
+
+    - How does a user request a non-default location for user-prefs?
+
+        - Environment variable?
+
+    - Negatable options:
+
+        - Whether/how to display in help text.
+        - How to represent data.
+
+    - optopus should be able to report the rank-order positions of opts on the
+      command-line. For example: the "rules" in the Perl rename script were
+      supposed to be applied in order; ditto for the Unix find command's
+      operations.
+
+--------
+road-map: Road map
+--------
+
+Core enhancements:
+
+    Error selection during failed argument parsing.
+
+    Conversion/validation/choices.
+
+    Look into Github Actions for CI.
+
+Help text: basic:
+
+    Automatic --help.
+
+    Help text: usage.
+
+    Help text: options.
+
+    Docs: proper README; shift why-build elsewhere [see readme-next-version].
+
+    Upgrade classifers to beta.
+
+Parsing enhancements:
+
+    Other parsing modes: no-conf, unknown-ok, unconverted-ok, invalid-ok.
+
+    No-args behaviors, such as show-help or default-args.
+
+    Data flattening/non-flattening in Result.
+
+Help text: enhancements:
+
+    Help text: show defaults and choices.
+
+    Help text: sections.
+
+Alternative inputs: basics:
+
+    Aliases.
+
+    Tight binding of option and parameter: --opt=<param>
+
+    Short-flag bundling.
+
+    Option-prefix customization.
+
+    Quoting customization.
+
+    Non-option arguments having option prefix: negative numbers.
+
+    Non-option arguments having option prefix: generally via a configurable escape
+    prefix.
+
+Project health:
+
+    Add validation to user-facing callables. [consider valid8; or roll simple one]
+
+    Documentation.
+
+    Docstrings.
+
+Opt enhancements:
+
+    Opt.factory.
+
+    Negatable options: --foo and --no-foo.
+
+    File-type arguments. Let user decide behaviors: (1) validate path exists, (2)
+    opening (with encoding, mode, etc). Also support `-` for stdin/stdout.
+
+Alternative inputs: handy:
+
+    Case-sensitive grammar syntax and usage text.
+
+    Abbrevations for long-options.
+
+    Abbrevations for choices values.
+
+Dispatching:
+
+    General dispatch.
+
+    Help dispatch.
+
+    Different dispatch for --help vs -h.
+
+Grammar enhancements:
+
+    High-precendence options.
+
+    Anchored Opts.
+
+Parser enhancements:
+
+    Parser.query() and bulk configuration.
+
+    Parser utilities: warn(), help(), error(), exit().
+
+    Parser configuration to add single-letter option aliases automatically.
+
+    Group validation.
+
+Alternative inputs: other:
+
+    @FILE (command line arguments from a file). See argparse fromfile_prefix_chars.
+
+    Case-insensitive options.
+
+Text customization:
+
+    Help text: short options in separate section.
+
+    Help text: usage: symbolically named groupings.
+
+    Help text: customizations via config and/or hooks.
+
+    Help text: supplied via alternative devices (text file or blob, with
+    f-string support).
+
+    Error text: customizations via config and/or hooks.
+
+    Man-page-style help text.
+
+Development aids:
+
+    Hidden options: either totally or in specific types of help text.
+
+    Automatic --version.
+
+    Ability to emit Parser configuration as data (and re-create from data).
+
+    Bash completion.
+
+    Integration with configuration data and environment variables.
+
+Other possibilities:
+
+    Enhanced quantifiers: range-step and disjoint values.
+
+--------
+dev-notes: Dev notes
+--------
+
+Creating a new virtualenv:
+
+    v='3.9.4'
+    deactivate
+    pyenv shell $v && pyenv versions
+    mkvirtualenv optopus-$v
+    pip install -U pip
+    pip install -e .[dev,test] && pip list
+
+Activate and run tests:
+
+    - Basic:
+
+        workon optopus-3.9.4
+        pytest -s -v tests/
+
+    - With invoke:
+
+        inv test
+        inv tox
+
+    - With tox directly:
+
+        pyenv shell 3.9.4  3.8.9  ...
+        tox
+
+Version bump:
+
+    - Edit/commit all changes, including CHANGES and README.
+
+    inv bump --kind major|minor|patch
+
+Publish:
+
+    inv dist [--publish] [--test] [--verbose]
+
+Installing from test pypi:
+
+    pip install --index-url https://test.pypi.org/simple/ optopus
+    pip uninstall attrs short-con
+    pip install attrs short-con
+
+Tag file creation:
+
+    inv tags
+
+--------------------------------------------------------------------------------
+specification: Specification
+--------------------------------------------------------------------------------
+
+--------
+new-plan-questions: New plan and questions
+--------
+
+SIMPLIFYING THE SPEC:
+
+    - Setting prog via the spec:
+        - Typically not needed or wanted.
+        - Optopus can compute it from the caller's file name.
+        - POSSIBLE DECISION:
+            - Drop prog from the spec.
+            - Make prog settable only via API.
+
+    - Purpose of section without title:
+        - The first section can be title-free.
+        - Optopus would use 'Positionals' and 'Options' in help text.
+        - What if subsequent sections lack title?
+        - Optopus could default to something generic. But that's unhelpful.
+        - For user, what's the point of a subsequent-section having no title?
+        - If new title is unwanted, don't declare a subsequent-section at all.
+        - POSSIBLE DECISION:
+            - First section can be title-free.
+            - Other sections require a title.
+
+    - Those decisions would reduce the spec grammar to the following:
+
+        [variant...]
+        [opt-help...]
+        [section...]
+
+    - That is easier to parse and document than the current plan below.
+
+    - Is there a way to ditch the need for double-colon in the simple and
+      common case of the user who just wants to configure via opt-help lines in
+      one untitled section?
+
+        - For example, can we eliminate the need for double-colon in README ex2
+          and ex3?
+
+        - As detailed in discussion.txt, opt-help lines can be confused with
+          unnamed variants.
+
+            # Is this (a) 3 variants or (b) 3 bare-bones opt-help lines?
+            <rgx>
+            [-i --ignore-case]
+            [-v --invert-match]
+
+        - The second interpretation would be more commonly observed in
+          real-world scripts, so I would like to make that use case supportable
+          without any special syntax like (a) the double-colon section marker
+          or (b) forcing opt-help lines to require either help-text (very bad)
+          or a trailing colon (bad).
+
+        - The core issue:
+
+            - If the spec starts without a titled section (by far the most
+              common usage pattern), the spec-parser does not know for sure how
+              to interpret the first section -- at least in certain bare-bones
+              scenarios.
+
+            - More precisely, the status of the initial lines in the first
+              sections are potentially ambiguous. Some variations on the
+              example cited above:
+
+                - Since <rgx> line is opt-help, all of them are.
+
+                    <rgx> : Pattern to search for
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo]
+
+                - The --foo line is opt-help. First 3 lines ambiguous:
+
+                    <rgx>
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo] : Enable foo blah-blah-blah
+
+                - The <rgx> line is variant. Others ambiguous.
+
+                    <rgx> [--algo <X|Y|Z>]
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo]
+
+                - Since --foo line must be variant, all must be.
+
+                    <rgx>
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo] [--blort <X|Y|Z>]
+
+            - The plan so far is running into complexities caused by the desire
+              to support syntax-free approaches to various use cases.
+
+                - Bare-bones configuration in opt-help style:
+
+                    <rgx>
+                    [-i --ignore-case]
+                    [-v --invert-match]
+                    [--foo]
+
+                - Bare-bones configuration in variant style:
+
+                    # Like README ex1.
+                    # But this is non-ambigous: must be a variant.
+                    [-i] [-v] <rgx> <path>
+
+                    # This example is ambigous.
+                    <rgx>
+                    <path>
+                    [--help]
+                    [--examples <A|B|C>]
+
+                    # But it is better expressed as this.
+                    (<rgx> | <path>) [--help] [--examples <A|B|C>]
+
+                    # Or even this way.
+                    # Since last line is variant, all must be.
+                    <rgx>
+                    <path>
+                    [--help] [--examples <A|B|C>]
+
+                - Conclusion from those examples:
+
+                    - The ambiguous cases involve bare-bones variant usages
+                      that are neither common nor compelling.
+
+                    - Most real-world needs for variants involve more than
+                      something that can be confused for a bare-bones opt-help.
+
+                    - More detailed analysis:
+
+                        - Lines can be one of the following:
+
+                            OH  | only an opt-help
+                            V   | only a variant
+                            AMB | ambiguous
+
+                        - Consider all of the ways that those three types of
+                          lines can first appear in the first section of a
+                          spec. [We can ignore repeats of the same type, since
+                          that does not affect the analysis.]
+
+                            - First section has only 1 type of line.
+
+                                OH  | ok
+                                V   | ok
+                                AMB | Ambiguous #1
+
+                            - First section has 2 types of lines:
+
+                                OH V     | Invalid. V cannot appear after OH.
+                                OH AMB   | ok: must be OH
+                                V OH     | ok
+                                V AMB    | Ambiguous #2
+                                AMB OH   | Ambiguous #3
+                                AMB V    | ok: must be V
+
+                            - First section has 3 types of lines:
+
+                                OH V AMB | Invalid
+                                OH AMB V | Invalid
+                                V OH AMB | ok: must be V then OH
+                                V AMB OH | Ambiguous #4
+                                AMB V OH | ok: must be V then OH
+                                AMB OH V | Invalid
+
+                        - Is there an obvious policy reponse to the ambigous cases?
+
+                            - A narrow analysis does not produce obvious decisions:
+
+                                #1 | Unclear
+                                #2 | Assume V, since we saw V already
+                                #3 | Assume OH (similar logic)
+                                #4 | Unclear
+
+                            - Alternatively, could we simply default one way or
+                              another in the face of ambiguity?
+
+                                - Perhaps.
+
+                                - Consider real consequences and what a user
+                                  must do to resolve an ambiguity.
+
+                                - If the argument parsing and help text don't
+                                  perform correctly, it will be quickly obvious
+                                  to the user.
+
+                                - How will they fix the situation?
+
+                                - If Optopus works from a fallback-default of
+                                  OH for ambigous cases, how does a user tell
+                                  us that they actually want V?
+                                    - Option 1: an API call.
+                                    - Option 2: name the variant.
+
+                                - If Optopus instead defaults to V but the user
+                                  wants OH, the fix is much easier.
+                                    - Just add help-text (which they probably
+                                      should do anyway) or, at a minimum, add a
+                                      trailing colon to the first ambigous OH
+                                      line.
+
+                        - POSSIBLE DECISION:
+
+                            - In the face of ambiguity, assume V.
+
+                            - Of course! This is consistent with the way we
+                              have resolved many other ambiguous situations via
+                              a policy of greedy parsing without back-tracking.
+
+                            - If this is the grammar, the consistent approach
+                              is to keep assuming that lines are variants until
+                              they are clearly not.
+
+                                [variant...]
+                                [opt-help...]
+                                [section...]
+
+    - SUMMARY OF DECISIONS ABOVE:
+
+        - Spec grammar, with the usual greedy parsing approach, so we assume
+          variant in the face of ambiguity about the initial lines in the first
+          "section".
+
+            [variant...]
+            [opt-help...]
+            [section...]
+
+        - The prog is not used in the spec. Settable via API.
+
+        - Sections other than the first must have titles.
+
+        - The first section might or might not be a "section". Look into this.
+
+        - None of the current README examples would require double-colon.
+
+    - Examples from the README:
+
+        # README ex1.
+        [-i] [-v] <rgx> <path>
+
+        # README ex2.
+        ::
+        <rgx> : Python regular expression
+        [<path>...] : Path(s) to input
+        [-i --ignore-case] : Ignore case
+        [-v --invert-match] : Select non-matching lines
+
+        # README ex3.
+        ::
+        <rgx> : Python regular expression
+        [<path>...] : Path(s) to input
+        [-i --ignore-case] : Ignore case
+        [-v --invert-match] : Select non-matching lines
+        [-m --max-count <n>] : Stop searching after N matches
+        [-C --context <n>] : Print N lines of before/after context
+        [--color red|green|blue] : Highlight matching text
+
+        # README ex4.
+        <task=grep>   [-i] [-v] [-m] [-C]
+                      [--color <red|green|blue>]
+                      <rgx> [<path>...]
+        <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
+        <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
+
+        ::
+
+        <task>             : Task to perform
+        <task=grep>        : Emit lines matching pattern
+        <task=sub>         : Search for pattern and replace
+        <task=search>      : Emit text matching pattern
+        <rgx>              : Python regular expression
+        <path>             : Path(s) to input
+        <rep>              : Replacement text
+        -i --ignore-case   : Ignore case
+        -v --invert-match  : Select non-matching lines
+        -m --max-count <n> : Stop searching after N matches
+        -C --context <n>   : Print N lines of before/after context
+        --color <>         : Highlight matching text
+        -n --nsubs <n>     : N of substitutions
+        -g --group <n>     : Emit just capture group N [0 for all]
+        -d --delim <s>     : Delimeter for capture groups [tab]
+        -p --para          : Emit capture groups one-per-line, paragraph-style
+
+Other questions:
+    - If we adopted the new plan (above), modify README: drop double-colon.
+    - Is the first section a Section?
+        - If so, grammar-section or usage-section?
+    - See questions in opt-action-not-needed
+
+--------
+grammar-syntax: Grammar syntax
+--------
+
+Spec structure:
+
+    grammar-section
+    [section...]
+
+    - The grammar-section is required, but can be empty. If empty, presumably
+      opt-help lines are found in the sections.
+
+Grammar section forms:
+
+    - The grammar-section can contain variants, opt-helps, or neither, but not
+      both.
+
+    - Variants can reside only in the grammar-section; opt-helps can reside in
+      any section.
+
+    - The grammar-section forms, by N of variants and opt-helps in the
+      grammar-section.
+
+        Variants | Opt-helps | Form
+        -------------------------------------
+                 |           |
+        0        | 0         | ::
+        -------------------------------------
+                 |           | [prog] ::
+        0        | 1+        | opt-help...
+        -------------------------------------
+                 |           | [prog]
+        1+       | 0         | variant...
+        -------------------------------------
+        1+       | 1+        | Not allowed.
+        -------------------------------------
+
+        * All forms can be followed by other sections containing opt-helps.
+
+    - Mneumonic regarding the double-colon marker:
+        - Double-colon is the section marker.
+        - Opt-help can reside in sections.
+        - So grammar section with double-colon means opt-help.
+
+    - Prog must be a valid name.
+
+    - Must start on a fresh line:
+        - Opt-helps.
+        - Variants other than the first.
+
+    - The grammar section does not allow regular text.
+
+    - Grammar section cannot have its title (Usage) changed via the spec.
+
+    - The first form (an empty grammar section) is needed because a one-word
+      section title would be indistinguishable from a prog.
+
+Opt-help lines:
+
+    - Syntax:
+
+        <pos>            [: [help-text]]
+        [alias...] --opt [: [help-text]]
+
+    - Note that the grammar portion of each line can contain square brackets.
+
+    - Normal grammar rules apply when defining a <pos> or --opt.
+
+    - An alias is a lone option, not a full Opt configuration.
+
+    - Continuation lines must be indented and contiguous.
+
+Variants:
+
+    - Syntax:
+
+        [name[!] :] definition
+
+        * Where ! denotes a partial variant.
+
+    - Continuation lines must be indented and contiguous.
+
+    - Variants can fully configure the opts or use an abbreviated form if the
+      user has defined the Opts explicitly in opt-help lines.
+
+        - The two types of grammar configuration (variants and opt-help
+          lines) are additve.
+
+        - Subsuequent configurations never overwrite an prior settings
+          for an Opt. Each new setting is added to the prior settings.
+
+Sym-dest:
+
+    - Variable end-user inputs (positionals and parameters) are enclosed in
+      angle brackets, which can contain a sym-dest.
+
+        <sym-dest>
+
+    - Syntax:
+
+        <sym.dest=vals>
+        --dest <sym.subdest=vals>
+
+        Where vals can be:
+
+            val|val|... | Choices
+            val         | Positional or parameter variant.
+
+        Where val can be:
+
+            - Simple name consisting of \w or hyphen.
+            - Quoted-literal.
+
+        Where sym translates to usage text as follows:
+
+            sym. : <sym>
+            sym! : sym
+
+        And where a single <name> means the following:
+
+            Positionals | <dest>       | The name is dest and sym
+            Options     | --dest <sym> | The name is sym
+
+    - Forms:
+
+        - Postitionals require a dest, so there are only four forms:
+
+            <   .dest     >              # Period optional.
+            <   .dest=vals>              # Period optional.
+            <sym.dest     >
+            <sym.dest=vals>
+
+        - Options do not require subdest, so there are eight forms:
+
+            --dest <                >
+            --dest <           =vals>    # Equal sign optional.
+            --dest <sym             >
+            --dest <sym        =vals>
+            --dest <   .subdest     >
+            --dest <   .subdest=vals>
+            --dest <sym.subdest     >
+            --dest <sym.subdest=vals>
+
+        - The vals in a spec must be quoted-literals or non-whitespace "words"
+          not containing right-angle-bracket or pipes.
+
+Names:
+
+    - Various grammar elements have names:
+
+        - Variants.
+        - Partials.
+        - Destinations.
+
+    - Optopus allows both typical names and non-standard ones (eg, names
+      starting with underscore or even digit).
+
+    - However, the dest will be normalized as follows:
+
+        - Hyphens converted to underscores.
+        - Attach underscore prefix to dest starting with digit.
+
+Variant definition syntax:
+
+    Partial:
+
+        foo!             Insert foo partial into the variant.
+
+    Grouping and alternatives:
+
+        []               Grouping, optional.
+        ()               Grouping.
+        foo=[]           Named grouping, optional.
+        foo=()           Named grouping.
+        |                Alternatives.
+
+    Quantifiers:
+
+        ...              1 or more
+        {m,n}            Repetition: m through n, inclusive.
+        ?                Non-greedy for preceding quantifier.
+
+    Options:
+
+        -f               Short.
+        --foo            Long.
+
+    Positionals and parameters:
+
+        <sym-dest>       Positional.
+        -f <sym-dest>    Parameter.
+
+    Quoted literals:
+
+        `hello`          Can be used as positional, positional
+                         choice/variant, or parameter choice/variant.
+
+Variant definition syntax allowed for opt-help lines:
+
+    - Supported:
+
+        <x>                  Positionals.
+        -x <>                Options.
+        <x=1>                Positional variants.
+        -x <=2>              Parameter variants.
+        <sym.dest=choices>   Sym-dest, including with choices.
+        -x <=a|b|`do it`>    Literals, in choices.
+        [] ()                Groups.
+        |                    Alternatives, for choices.
+        ...  {m,n}  ?        Quantifiers.
+
+    - Not supported:
+
+        x : defin            Variants.
+        x!                   Partials.
+        x=[]  x=()           Named groups.
+
+Sections:
+
+    - Syntax:
+
+        [Title] ::
+        section-content
+
+    - Title is optional, but marker is required. The title, if supplied,
+      functions as a kind of identifier for the Section in the API.
+
+    - Section content:
+
+        - Sections are assumed to contain four types of lines:
+
+            - variant-scope lines. Looks the same as as partial usage.
+              Subsequent opt-help lines will be scoped to that variant.
+              Applicable only when Opt.dest values are reused across variants.
+              [Is this concept necessary? What is a variant-scope line?]
+
+            - opt-help lines. Can fully configure an Opt or use an abbreviated
+              form if merely augmenting an already-configured Opt.
+
+            - block-quote lines. Just the markers; nothing else.
+
+            - regular-text lines. Allowed only after opening block-quote.
+
+        - Indentation:
+
+            - Optopus will generally try to preserve the original indentation
+              level of ordinary text -- specifically the indentation of the
+              first line of the paragraph.
+
+            - If line-wrapping is suppressed, Optopus will rendered lines
+              as-is, including each line's indentation.
+
+    - Quoting:
+
+        Situation           | Suppressed  | Open   | Close
+        --------------------------------------------------
+        Block quote         | Syntax      | ```    | ```
+        Block quote         | Syntax/wrap | ```!   | ```
+        Inline quote        | Syntax      | `      | `
+        Literal backquote   | Syntax      | \`     | na
+
+        - Block quotes can be on their own line or not.
+
+Whitespace rules:
+
+    - Line and indentation requirements:
+
+        - Opt-help must start on its own line.
+
+        - Variant, if not the first, must start on its own line.
+
+        - Continuation line must be indented more than the first.
+
+        - Section title must be on its own line, ending in marker.
+
+    - Line breaks not allowed:
+
+        - Within an {m,n} quantifier.
+
+        - Between a name and equal sign.
+
+        - Within a sym.dest element.
+
+    - Whitespace not allowed:
+
+        - Between option prefix and its dest.
+
+        - Between partial name and its marker.
+
+        - Within a triple-dot quantifier.
+
+--------
+syntax-examples: Syntax examples
+--------
+
+blort-maker:
+
+    - This is a subcommand-style script, plus various bells and whistles to
+      exercise most of the full grammar syntax.
+
+    help!     : [--help] [--syntax]
+    general!  : [--verbose] [--log-file <>] help!
+    other!    : [--hi] [--bye]
+
+    configure : help! general! <task=configure> --env <> --user <>
+    submit    : help! general! <task=submit> -c <> -r <> [--start-job] [--person <name> <age>]
+    get       : help! general! <task=get> -j <> [--json [--indent <>] | --b64 | --yaml]
+    drop      : help! general! <task=drop> <what=first|last|random> [--print] <n>
+    fubb      : help! other! [-a] [-b] <fubb>... (--fast | --slow)
+    zzz       : help! other! [-x] [-y] items=(<a> <b> <c> [-z]){2,7}
+
+neck-diagram:
+
+    - This is a non-standard command line program: its grammar consists of one
+      or more subcommands with a literal separator between them.
+
+    cmd! :  commands=(
+                <cmd=snum>   <snum>             |
+                <cmd=fnum>   <fnum>             |
+                <cmd=number> <numbering=on|off> |
+                <cmd=tuning> <notes>...         |
+                <cmd=fret>   <syms>...          |
+                <cmd=invert> <syms>...
+            )
+
+    main : cmd! [ `/` cmd! ]...
+
+Syntax example: nab:
+
+    - Another separator-based grammar.
+    - Note that Opt.dest values (cmd, in this case) need to be repeated.
+
+    chomp!   : / <cmd=chomp>
+    findall! : / <cmd=findall> <rgx> [-a]
+    grep!    : / <cmd=grep> <rgx> [-i] [-v] [-s]
+    range!   : / <cmd=range> <start> <stop> [<step>] [-g]
+    run!     : / <cmd=run> <code> [-g <>] [-a] [-v] [-i]
+
+    main : [--trace] commands=(chomp! | findall! | grep! | range! | run!)...
+    help : --help
+
+--------
+terminology: Terminology
+--------
+
+Users:
+
+    - Library: the optopus code base.
+    - Library user (or just user): a developer using optopus.
+    - End user: a user running a program that uses optopus.
+
+Command line argument types:
+
+    - Arguments:
+        - The raw strings directly from the command line.
+
+    - Positionals:
+        - The typical non-option argument.
+
+    - Options: arguments with an option prefix.
+
+        - Long prefix.
+        - Short prefix.
+
+        - Option (parameter option)
+        - Flag
+
+    - Parameters:
+        - Arguments for an option.
+
+    - Sym:
+        - Like argparse metavar.
+        - Symbolic name for a positional or parameter in usage text.
+
+    - Positional or parameter variant:
+        - Mechanism to define a special grammar when a
+          positional or parameter takes a specific value.
+
+Help text sections:
+
+    - Help text: documents everything.
+    - Usage text: documents the command-line grammar.
+    - Options text: documents the options and positional arguments, perhaps in groups.
+    - Custom sections.
+
+Destination assignment:
+
+    - Controls how the parsed data elements are stored and named.
+
+--------
+classes-and-attributes: Classes and attributes
+--------
+
+Overview:
+
+    User-facing entities:
+
+        Parser
+        Section
+        Grammar
+        Variant
+        Group
+        Opt
+        Result
+        Query
+
+        Relationships:
+
+            Parser
+                sections      = List[Section]      # 1+   # Usage always exists.
+                grammar       = Grammar            # 1    # Empty grammar ok.
+                    variants  = List[Variant]      # 0+
+                        elems = List[Group or Opt] # 0+
+
+                parse(ARGS) -> Result
+
+            Group:
+                elems = List[Group or Opt] # 0+
+
+    Objects used during grammar parsing:
+
+        SpecParser | Parses a spec, returns Grammar.
+        RegexLexer | Lexer used by SpecParser.
+        TokType    | Token types given to lexer.
+        Token      | Emitted by lexer.
+        ParseElem  | Emitted by parser functions. Later assembled into Grammar.
+
+    Objects used during argument parsing:
+
+        State
+        ArgResult
+        Target
+
+    Entities used only for notation:
+
+        PartialUsage      | Group
+        Positional        | Opt
+        PositionalVariant | Opt
+        ParameterVariant  | Opt
+
+Parser:
+
+    - Class will likely have various getters or query functionality to make it
+      easy to configure specific grammar elements. Users should not have to
+      manually navigate the Grammar hierarchy.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    spec      | Was 'simple_spec'.
+    grammar   | Grammar. Was 'opts'.
+    mode      | Special parsing mode.
+    --------------------------------------------------------------------------------
+    auto      | Defer. True by default: exit with error on failed parse().
+    sections  | Defer.
+    format    | Defer. Data object to namepsace formatting attributes. Was 'formatter_config'.
+    helpful   | Defer.
+    syntax    | Defer. Data object to configure syntax parsing and usage text rules.
+    --------------------------------------------------------------------------------
+    prog      | Drop. [KEEP NOW] Handled via the spec or under format.
+    wildcards | Drop. Was used to support * as a match-anything device.
+    --------------------------------------------------------------------------------
+
+    API:
+
+        - Parsing:
+
+            Parser(spec = None, grammar = None, ...)
+
+                - The spec/grammar arguments are mutex and optional.
+                - Other arguments are deferred.
+
+            parse(args = None, mode = ...) -> Result or raise
+
+                - Parser can have a mode.
+                - And parse() can temporarily use a different mode.
+
+        - Querying and configuring grammar elements:
+
+            query(*paths, **kws) -> Grammar.query(...) -> Query
+
+                - Query paths are based on Opt.dest, Variant.name, and
+                  Group.dest or Group.index.
+
+                - The vast majority of queries will be for Opts:
+
+                    query('foo', 'bar')
+
+                    - Gets Opt(foo) and Opt(bar).
+
+                    - More precisely, the query gets any grammar element having
+                      those dests/names.
+
+                - In complex cases where independent Opts have the same dest,
+                  the query path can include the variant name.
+
+                    query('go foo')
+
+                    - Gets Opt(foo) inside Variant(go).
+
+                - Although Groups can have a dest, most won't. But they will
+                  have a unique index within each variant.
+
+                    query('go 2')
+
+                    - Gets the third Group in Variant(go).
+
+                - As a future enhancement, these query path elements can be
+                  interpreted as regular expressions (I doubt the need).
+
+            config(*paths, **kws) -> None
+
+                - Given Opts, configure them all in the same way.
+
+                - Just a shortcut for query(*paths).config(**kws).
+
+            config_each(attr_name, d) -> None
+
+                - Given Opts, set one attribute in different ways
+                  for each opt.
+
+                - The second argument is a dict mapping query paths to the
+                  desired value for the attribute.
+
+                - For example, setting a bunch of Opt.text values:
+
+                    config_each('text', dict(
+                        foo = 'Blah',
+                        bar = 'Blah blah',
+                    ))
+
+        - Obtaining help text or text for the error from most recent parse():
+
+            help_text(section...)
+            error_text
+            exception
+
+        - Actions like printing or exiting.
+
+            warn(msg)
+            help(section...)
+            error(msg = None, code = 1)
+            exit(msg = None, code = 0)
+
+Section
+
+    - Used to create labeled groups of Opt for help text purposes.
+    - Each variant has a corresponding section with the same name. [???]
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    name      | Short symbolic name used in API.
+    label     | Used in help text.
+    opts      | Opts belonging to the section.
+    text      | Hand-crafted help text.
+    --------------------------------------------------------------------------------
+
+Grammar:
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    variants  | List[Variant]
+    --------------------------------------------------------------------------------
+
+    API:
+
+        query(*paths, kind = KIND, negate = False) -> Query
+
+Query:
+
+    Iterable tuple-like object returned by Grammar.query(). Holds the Groups/Opts
+    that satisfy the search parameters. Supports bulk configuration.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    elems     | List[Group or Opt]
+    --------------------------------------------------------------------------------
+
+    API:
+
+        config(...) # Apply the config parameters to all Groups/Opts.
+        query(...)  # Subquery to filter down further.
+
+Variant:
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    name      | .
+    elems     | List[Group or Opt]
+    ntimes    | .
+    --------------------------------------------------------------------------------
+
+Group:
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    elems     | List[Group or Opt]
+    ntimes    | .
+    dest      | .
+    mutex     | If True, only one elem can be matched.
+    validate  | Defer. Callable(s).
+    --------------------------------------------------------------------------------
+
+Opt:
+
+    - A configurable data object to represent one option (with parameters,
+      quantifiers) or one positional (with quantifiers).
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    spec      | Was 'option_spec'.
+    grammar   | Grammar.
+    ntimes    | .
+    nargs     | .
+    nparams   | .
+    dest      | Was 'destination'.
+    default   | .
+    value     | None (typical) or the variant value.
+    choices   | None (validation deferred).
+    --------------------------------------------------------------------------------
+    help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
+    metavar   | Defer. But need a better name.
+    choices   | Defer.
+    convert   | Defer. Callable.
+    validate  | Defer. Callable.
+    text      | Defer.
+    hide      | Defer. False (visible), True (hidden), or sequence of where/what to hide
+    sections  | Defer. Sequence of section names.
+    high      | Defer. Was 'tolerant'.
+    factory   | Defer. Callable to create default.
+    aliases   | Defer.
+    dispatch  | Defer. Callable(s). Maybe 'actions'.
+    required  | Defer, maybe drop. Same as ntimes=1.
+    negaters  | Defer. For flag negatives (to overrule True default)
+    case      | Defer. Case-sensitive if True.
+    anchor    | Defer. bool
+    --------------------------------------------------------------------------------
+    option    | Internal. Not sure of purpose.
+    _opt_type | Internal. Holds an OptType.
+    arg_names | Internal. Seems related to simple spec parsing.
+    --------------------------------------------------------------------------------
+
+    For options taking multiple parameters or positionals having multiple
+    arguments, the most common use case treats the parameters/arguments as
+    values of the same kind -- meaning that that have the same type, defaults,
+    choices, conversion, validation, etc. However, sometimes users want those
+    characteristics to vary. In that case, the following attributes also
+    support a sequence of values, one per parameter/argument. In cases where
+    the nparams/nargs have no upper bound, the last value in the sequence will
+    be applied: for example, if nparams=(2,None) one could use convert=(float,
+    int), which would use int to convert any parameters beyond the second.
+
+        dest      # Needed only for parameters.
+        metavar
+        ----
+        default
+        factory
+        value
+        ----
+        choices
+        convert
+        validate
+
+    API:
+
+        config(...)
+
+Result:
+
+    - Data object returned to end-user by Parser.parse().
+
+    - An iterable mapping-like object with destinations as the attributes.
+
+SpecParser:
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    lexer     | Lexer.
+    handlers  | Sequence of token-stream handlers. Was 'parser_functions'.
+    curr      | Was 'current_token'. Managed by the mixin.
+    prevpeek  | .
+    --------------------------------------------------------------------------------
+
+    API:
+
+        parse()
+        eat()
+        error()
+
+RegexLexer:
+
+    - General-purpose regex-based lexer.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    text      | The text to be lexed.
+    toktypes  | Sequence of TokType.
+    pos       | Current index of the lexer.
+    mxpos     | Last index of the text.
+    iseof     | Becomes True when text exhausted.
+    --------------------------------------------------------------------------------
+
+    API:
+
+        See old.py implementation and modifications in draft.py.
+
+TokType:
+
+    - Internal data object given to a lexer.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    name      | Name of token.
+    regex     | Regex to match the token.
+    emit      | Whether to emit back to parser [default: True].
+    --------------------------------------------------------------------------------
+
+    Kinds:
+
+        See grammar-parsing-algo notes.
+
+Token:
+
+    - Simple internal data object emitted by a lexer.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    toktype   | TokType of the token.
+    value     | Corresponding token text.
+    pos       | Position (where matched)
+    line      | Line number.
+    col       | Column number.
+    --------------------------------------------------------------------------------
+
+    Kinds:
+
+        Same as TokType.
+
+ParseElem:
+
+    - Simple internal data object emitted by the parsing phase of
+      SpecParser.parse(). Subsequent work in that method will convert the
+      ParseElem into a user-facing Grammar.
+
+    - Attributes for each kind of ParseElem will vary.
+
+    Kinds:
+
+        variant
+        group
+        opt
+        quantifier
+        choices
+        parameter
+        literal
+
+State:
+
+    - An internal data object used during argument parsing. See
+      arg-parsing-algo notes.
+
+ArgResult:
+
+    - An internal data object used during argument parsing. See
+      arg-parsing-algo notes.
+
+Target:
+
+    - A data object used during argument parsing to store the information
+      ultimately returned as a Result to end user.
+
+    - For the applicable parsing interpretation, a Target contains information
+      about all relevant Opt/Pos and values parsed so far.
+
+    Attribute | Note
+    --------------------------------------------------------------------------------
+    poss      | List[Pos]
+    opts      | Dict[Opt]
+    vals      | Dict[DEST -> VAL]
+    --------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+discussion: Discussion
+--------------------------------------------------------------------------------
+
+--------
+api-vs-text: API-driven vs text-driven
+--------
+
+Two fundamental configuration strategies for argument parsers:
+
+    - API-driven:
+
+        - User configures a parser via the programmatic API.
+        - The parser generates the help text.
+        - Typically allows user to override with literal help text, if desired.
+        - Examples: argparse and many others.
+
+    - Text-driven:
+
+        - User writes usage and options text.
+        - Library derives the parser from that text.
+        - This approach is much less common.
+        - Examples: docopt.
+
+The optopus library combines the best of both approaches:
+
+    - API-driven.
+
+        - Tends to require less typing.
+
+        - Generated usage text is mostly fine, especially for simpler projects.
+
+        - Most developers probably prefer an API-driven approach over
+          hand-formatting help text themselves.
+
+        - API-generated help text will follow the conventions for documenting
+          command-line programs -- conventions that few developers have studied
+          in depth and would rather not worry about.
+
+    - Text-driven for grammar and naming:
+
+        - Even though my experiments configuring argument parsers of varying
+          complexity via usage text convinced me of the benefits of an
+          API-driven approach, text-driven option parsers have notable
+          advantages. Those advantages are focused on command-line grammar and
+          the associated naming for parsed data returned to the caller.
+
+        - The text-driven approach emphasizes the idea of usage variants, a
+          technique that can greatly enhance usage-text readability --
+          especially for complex programs but also for small ones.
+
+                git diff [<commit>] [--] [<path>...]
+                git diff --cached [<commit>] [--] [<path>...]
+                git diff <commit> <commit> [--] [<path>...]
+
+                frob [--debug] [--foo <f>] <path>...
+                frob --help
+                frob --version
+
+        - Usage variants open up a range of possibilities in the kinds of
+          command-line grammars that can be supported. API-driven parsers
+          struggle with command-lines that need any grammar falling beyond the
+          most typical cases. On stackoverflow and bugs.python.org, for
+          example, one can find many command-line use cases (some of them quite
+          simple) that are not supported easily by argparse but that are
+          straightforward in docopt.
+
+        - Finally, usage syntax is both efficient and intuitive. When internet
+          users discuss command-line grammar scenarios, they invariably use a
+          usage syntax to specify the desired grammar. In my own research, I
+          experimented with defining the needed grammars via an API, but I
+          consistently found the text-based approach simpler to express and
+          read. [For a good example, see this argparse discussion where a user
+          describes a problem in general terms and suggests how the argparse
+          API could be augmented to handle such cases -- and the discussion
+          both are somewhat difficult to understand without very careful
+          reading and thinking. Then the user provides a short one-line usage
+          syntax, and the issue is immediately clear.
+          https://bugs.python.org/issue11588]
+
+Configuration via usage syntax is focused on grammar:
+
+    - Optopus keeps that syntax fairly clean, readable, and intutive by
+      focusing it solely on the grammar and naming -- the area where it excels.
+      Other details, if any are neeeded, are handled via the API.
+
+    - The syntax is also intuitive because it relies heavily on common
+      conventions for documenting command-line programs.
+
+    - The syntax will look roughly like familiar usage text, plus a small
+      number of additional syntax elements focused on supporting flexible
+      command-line grammar.
+
+          - Usage variants. Discussed above.
+
+          - Partial variants, which use the variant concept to define a named
+            group of options and/or arguments that can then be inserted into
+            one or more usage variants -- avoiding repetition in the definition
+            of complex grammars (argparse does this via parents).
+
+          - Named destinations for any group of elements in the grammar.
+
+    - The syntax opens up a wide range of possibilities for complex programs or
+      unusual grammars
+
+    - But it also helps at the micro scale, simplifying the configuration of
+      individual options.
+
+--------
+other-lib-weaknesses: Addressing weaknesses common in other libraries
+--------
+
+Providing users with simple ways to handle command-line grammars and usage
+variants (just noted).
+
+Supporting everything from quick-and-dirty scripts to complex, highly
+customized command-line programs:
+
+    - At once extreme, optopus allows you to parse any default-behavior
+      command line, with zero configuration. Just import and go. This parser
+      won't enforce any rules, but it will tell you what the end-user entered
+      -- which is good enough for many types of quick-and-dirty scripts,
+      debugging sessions, experiments, and even early prototypes.
+
+            import optopus
+            opts = optopus.parse_args()
+
+    - At the other extreme, you could build the next Git or a variety of
+      programs with idiosyncratic grammars, heavily customized help text, and
+      many other features.
+
+    - Sitting between the two extremes are numerous conveniences and sensible
+      defaults to make option parsing easy, no matter what level of control
+      your application needs.
+
+Allowing users to control the generated help text in a fine-grained manner.
+
+    - Program complexity increases the need to organize and fine-tune help
+      text, but not necessarily to write and layout the whole thing
+      (text-driven libraries require that).
+
+    - Optopus provides many mechanisms for that fine tuning:
+
+        - Simple top-level configurations to control basic layout,
+          capitalization, punctuation, etc.
+
+        - Ability to group options into sections.
+
+        - Ability to supply hand-crafted sections whenever needed and to locate
+          those sections with precision in the output.
+
+        - Ability to control nearly all parameters driving the help text
+          contruction process via configuration and, where necessary, through
+          the programmatic hooks. There should be no need to subclass optopus
+          or delve into the parser's innards.
+
+        - Support for common styles: command-line vs man-page.
+
+Allowing users to enhance usage-text readability by being able to refer to
+groups of options and to omit either short or long options.
+
+    - API-generated usage text tends to be poor not only because it lacks usage
+      variants but also because the generated text exhaustively lists all
+      options in all of their permutations (short and long).
+
+    - Especially as the number of options grows, readability can be improved
+      greatly by referring to sets of options by symbolic names rather than by
+      enumerating every possibility.
+
+    - Similarly, readability can be enhanced by focusing the usage text on just
+      the long-options (or just the short-options) and then providing a mapping
+      between short and long options latter in the help text.
+
+Allowing users to define their arguments and options in ways that encourage
+modularity.
+
+    - In optopus a user defines/configures options and arguments as atomic
+      units, separate from the issues of command-line grammar, usage variants,
+      and options help text.
+
+    - Each of those atomic units can be attached to one or more groups of
+      related options.
+
+    - Then those options or option-groups can be leveraged when defining the
+      command-line grammar, when expressing the generated usage text, and when
+      organizing the options text into sections.
+
+Providing users with full access to the parser configuration, both via the API
+and in the form of standard, serializable data structures.
+
+Providing users more conventient mechanisms to reduce repetition in
+the configuration of the parser.
+
+--------
+other-goals: Other goals
+--------
+
+Prioritize the simple use cases. Yes, add features and customization
+capability. But do that without sacrificing super super usage patterns.
+
+Usage should be intuitive and declarative, especially for the simplest and most
+common use cases. It should not depend on bizarre syntax or on user-created
+complex data structures.
+
+The parser's configuration should be expressible as a data structure -- and
+creatable from one. This is important for testing, debugging, easy integration
+with config files, and using other libraries for data validation.
+
+For complex programs or special needs, users should have full control over
+documentation. This includes both usage/help text and the styling of error
+messages.
+
+Easy system for validators to be combined flexibly.
+
+Should easily support different help types: (a) brief usage/synopsis, (b) full
+help or man-page, and (c) extras or examples.
+
+Include ability to merge options from several sources: ENV variables, config
+files, command-line options. Note that the purpose of the configuration sources
+(ENV vars and config files) is to set the default values used by the
+command-line option parser. When defaults are supplied, it should also cause a
+required option to become non-required (in other words, whenever default is set
+for an option, it causes required to become False.
+
+Make it easy to test the option parser.
+
+Error handling should be under the user's control, if they want it. This is a
+serious flaw in some parsers (eg argparse). The library should support both
+"automatic" mode (where the parser will eagerly print help or error message and
+then exit) or non-automatic mode (where the parser will simply return an object
+containing all information and allow the user to decide what to do. [Note that
+argparse has addressed this, in whole or in part, in Python 3.9].
+
+Should have a design that is friendly to customization. Allow users to
+customize by writing simple functions or hooks rather than having to subclass.
+Consider using the pluggy library so that users can implement simple function
+hooks.
+
+Start simple: begin with core behaviors; don't support more flexibility until a
+basic working system is in place.
+
+Where possible, rely on convention over configuration: sensible defaults to
+allow the most common path to be followed with minimal setup.
+
+Provide good support for --version. Show the application's name and version
+number.
+
+Provide helper functions for warn(), exit().
+
+Support various configuration styles: per option configuration (argparse and
+many other libraries do this); and thematic or bulk (make one type of setting
+on multiple options at once).
+
+Allow the user to have hidden options (eg for developers only).
+
+Support file and dir types as arguments, with checks for existence or non-existence.
+
+For file path arguments, support the ability to treat `-` as stdin or stdout.
+
+Support an easy way to get bash completion.
+
+Support @somefile.txt: user supplies command-line args via a file.
+
+Support parse_known_args().
+
+Support abbreviated option names when there is no ambiguity.
+
+Support some no-configuration argument parsing strategies: default (options are
+flags), key-val (options take single args by default), greedy (options consume
+as many params as possible).
+
+Support conversion/validation.
+
+Support dispatch mechanisms.
+
+The parser's configuration is likely to be organized as a fairly deep tree
+behind the scenes. But make it easy for the user to query that tree to obtain
+nodes of interest for configuration and other purposes. Primarily this means
+quickly getting Opt instances, but there could be other types of interest as
+well.
+
+Let users control the important aspects of the help text: section ordering;
+section titles; layout style (eg, compact 2-column or man-page); capitalization
+rules; widths; conventions for showing default values; etc.
+
+--------
+standard-cli-grammar: Standard command-line grammar
+--------
+
+Typical rules of command-line grammar, as commonly understood in Unix tradition:
+
+    - Options start with a prefix:
+
+        --long
+        -s
+
+    - Options can take zero or more ordered parameters.
+
+    - Positional arguments are ordered among each other:
+
+        P1 P2 P3 ...
+
+    - Options can be ordered in any way:
+
+        --x4 --x1 --x3 --x2 ...
+
+    - Options can be freely interspersed among the ordered positional arguments.
+
+        --x3 P1 --x1 --x4 P2 --x2 P3 ...
+
+    - Short options can be bundled:
+
+        -x -y -z
+        -xyz
+
+--------
+cli-grammar-vs-regex: Command-line grammar vs. regex
+--------
+
+Although Optopus usage syntax borrows many concepts from regular expressions,
+command-line grammar parsing is not readily amenable to handling via regex
+parsing approaches.
+
+Positionals are ordered among themselves, but options can appear in any order
+(ignoring boundaries and anchors). That flexibility makes it not very intuitive
+to convert a command-line grammar into a manageable regular expression. At
+every stage, any of the options are possible. But then once an option appears,
+it cannot appear again (ignoring repeatables). That means command-line parsing
+is context-sensitive.
+
+--------
+subparsers-not-needed: Optopus does not need the subparser concept
+--------
+
+The subparser concept is much less powerful and flexible than the key concept
+of a command-line grammar, along with the related ideas of usage variants and
+flexible destination assignment. It's also less intuitive.
+
+The universe of command-line programs could be broken down into a sizable
+majority and two small minorities:
+
+    - A sizable majority that needs neither subparsers nor a complex grammar.
+
+    - A small minority that align conceptually with the subparser concept. But
+      command-line grammar supports this use case even better.
+
+    - A small minority that are forced by the limitations of current argument
+      parsing libraries to resort to subparsers even though the concept does
+      not align very well with their needs.
+
+--------
+opt-action-not-needed: Optopus does not need the action concept
+--------
+
+Arguments can be configured in argparse with an 'action' parameter. The
+parameter is a bit overloaded and misleading. It does control some actions (eg,
+showing help text), but mostly it is used as a sometimes misnamed device for option type
+and destination assignment.
+
+    Action       | Option type       | Example         | Stored      | Notes
+    ----------------------------------------------------------------------------------
+    store_true   | 1 flag            | --frob          | True (N=1)  | .
+    store_false  | 1 flag            | --frob          | False       | To override a True default
+    count        | 1+ flags          | -v -v           | N           | .
+    store        | Single            | --foo F         | F           | .
+    append       | Repeatable single | -x A -x B       | [A, B]      | Overwrite on repeat
+    extend       | Repeatable multi  | -x A B -x C D E | [A B C D E] | .
+    help         | High precedence   | .               |             | .
+    version      | "    "            | .               | .           | .
+    ----------------------------------------------------------------------------------
+    store_const  | 1 flag            | --frob          | X           | Not necessary
+    append_const | 1+ flag           | --frob --frob   | [X x]       | Not necessary
+
+Questions during reread of this section:
+    - How will Optopus achieve store_false?
+    - Is data storage for extend reasonable?
+
+--------
+explicit-option-param-syntax: Why explicit syntax for option parameters is needed
+--------
+
+Imagine that the grammar did not require explicit surrouding markers for
+parameters, positionals, and literal values: {}, <>, an ''. Every type of
+confusion would be possible.
+
+    frob --type x y z   # Meaning of x, y, z unclear.
+
+Some ways to address that problem:
+
+    - Minimize syntax burden. Require that literals be quoted (because rarely
+      needed) and positionals use angle brackets (because it is conventional).
+
+    - Enforce consistency: require all 3 types of markers (and because braces
+      for params are also conventional).
+
+    - Be creative: require that literals be quoted and give users a mechanism
+      to disambiguate when needed. Probably a bad idea: these issues can be
+      tricky to think through. Also, for non-standard grammars, a small bit of
+      extra typing seems easy compared to having to reason about subleties.
+
+--------
+high-precendence-options: High precedence options
+--------
+
+Most options control the primary behaviors of a program. But some are
+special, most notably those related to user help:
+
+    --help
+    --version
+    --examples
+    --demo
+
+Argument parsing libraries often provide an convenient mechanism for --help and
+sometimes --version, but rarely anything else. In addition, they tend to
+provide such features in a way that is slightly misleading (at least in a
+strict sense) and definitely not as convenient for users as it could be.
+
+Consider a simple subcommand-style program. Assume that both <id> and the
+parameter for -n should be integers and that the program has both general help
+text and subcommand help text.
+
+    demo [--help] [-n {}] (print|delete) <id>
+
+At least by default, if the end-user supplies the --help option, an argument
+parser should (1) print help text and exit, (2) select the help text that is
+relevant given the other command-line arguments, and (3) ignore errors in the
+other command-line arguments. Some examples of desired behavior:
+
+    demo --help                # General help.
+    demo --help delete         # Delete help.
+    demo --help -n HI delete   # Same, in spite of invalid -n parameter.
+
+Most argument parsers fail on #3 (they gripe instead of helping) and they do
+not easily support #2.
+
+Optopus addresses those problems with two mechanisms: high-precendence options
+and flexible dispatching. If an option is configured to be high-precendence,
+its presence among the command-line arguments will trigger whatever action it
+has been configured to perform, and that dispatching configuration will take
+precendence over error reporting. When high-precendence options are used, the
+parser performs a best-effort parsing to collect as much contextual information
+as it can before calling the code responsible taking action.
+
+There are limits, of course. Some types of bad input can reduce the accuracy of
+that best-effort parse. In this example, -Q in an unknown option and is treated
+by default as a flag taking no parameters, which then means that HI is is
+interpretted an invalid subcommand.
+
+    demo --help -Q HI delete   # General help rather than delete help.
+
+--------
+help-text-formatting: Help text formatting
+--------
+
+Text wrapping:
+
+    - Respect terminal widths, if known and within boundaries:
+
+        min_width = 40
+        max_width = 100
+
+    - Allow users to adjust those parameters.
+
+    - User-supplied text:
+
+        - Break into paragraphs (but preserve info about N of blank lines
+          between paragraphs).
+
+        - Rewrap to the desired width (probably using textwrap module).
+
+        - Leave indented paragraphs as-is.
+
+        - Provide an easy syntax for users to suppress line wrapping
+          within the text (eg something borrowed from markdown)
+
+Option parameters:
+
+    - Avoid the typical verbosity of API-based help text. By default,
+      use a compact notation for parameters:
+
+        [--foo {}] [--bar {}] [--bazz {} {} {}]
+
+    - Let users set their own defaults too:
+
+        p = Parser()
+        p.defaults(metavar = 'X')
+
+--------
+grammar-parsing-algo: Parsing the grammar syntax
+--------
+
+Phase 1: input normalization:
+
+    - Accept text and/or lines of text.
+    - Join into a block of text.
+
+Phase 2: lexing:
+
+    - Remember that the lexer analyzes character by character to emit
+      a flat streem of the meaningful atomic units of the language.
+
+    - It does not engage in validation logic to assess whether the arrangement
+      of those units is syntactically valid.
+
+    - Nor does it try to assemble those character-based atoms into fully
+      meaningful entitities, other than in cases where they must be assembled
+      to avoid ambiguitity with similar tokens.
+
+Phase 3: parsing:
+
+    - A parser's job is to eat a stream of tokens, organizing them into
+      meaningful and valid units, and emitting those units to the caller.
+
+        - Previously, I tried to write the lexer code with a parsing mindset.
+          That was too hard.
+
+        - Now we just have to figure out how to organize the consumption of the
+          tokens listed above.
+
+    - Focus now on the full grammar. Convenience syntax can be handle later via
+      a different subclass, different tokens, different handlers, or
+      some combo.
+
+    - Handlers should be substantive from the perspective of the
+      language, not low level.
+
+    - Because the tokens and handlers differs somewhat between the grammar
+      section and other sections, the parsing needs to be stateful -- advancing
+      to the section state at the first section-tile line after the grammar
+      section.
+
+Phase 4: assembly:
+
+    - The parser phase is the most complex, so don't overburden it with the
+      duty of creating the ultimate grammar elements.
+
+    - Instead, keep the parser simpler by having it emit simple AST-style
+      objects.
+
+    - The last phase converts the AST to true grammar elements.
+
+--------
+convenience-parsing-algo: Parsing the convenience grammar syntax
+--------
+
+The grammar can be built from the parts we already have:
+
+    P1         = positional | positional_definition
+    P2         = [ P1 ]
+
+    O1         = short_option | long_option
+    O2         = parameter | parameter_definition
+    O3         = [ O2 ]
+
+    single_pos = P1+ P2*
+    single_opt = O1 O2+ O3*
+
+Apply extra validation at the end to disallow:
+
+    Only a single Opt (if P1 repeats, they must have same dest).
+    Group
+    PositionalVariant
+    ParameterVariant
+
+To orchestrate things we can adjust the SpecParser initializer:
+
+    def __init__(self, text, single = False):
+        self.lexer = RegexLexer(text, GRAMMAR_TOKENS)
+        if single:
+            self.parser_functions = (self.single_pos, self.single_opt)
+        else:
+            self.parser_functions = (self.variant,)
+
+--------
+arg-parsing-algo: Parsing algorithm
+--------
+
+Notation and terminology:
+
+    - Purely notational concepts:
+
+        Pos:         A positional Opt.
+        MGroup:      A Group having mutex=True.
+        Alternative: A Variant or MGroup.
+        OPT:         When current arg looks like an Opt.
+        POS:         When current arg looks like a Pos.
+
+    - Parsing terms:
+
+        - Alternatives: the Variants and MGroups determine how many
+          alternatives we will try.
+
+        - Interpretations: within an alternative, there can be multiple valid
+          interpretations of the arguments -- specifically how they are
+          allocated to Opts either as positionals or params.
+
+        - Backtracking terms:
+
+            - Current interpretation or parsing route: the interpretation you
+              are currently on, based on a successful parse of the current arg.
+
+            - Foregone interpretation: the interpretation that you could have
+              selected, but did not -- so you push it to the stack before proceeding
+              with the current interpretation.
+
+Some key insights related to backtracking:
+
+    - Parsing decisions that might require backtracking come from positional
+      arguments or parameters, not options. Options, if present, are
+      non-ambiguous: either they are known and allowed, or not.
+
+    - Backtracking is needed when your current parsing route ends up attaching
+      a param to an Opt or an argument to a Pos but then that route ultimately
+      fails (on a later argument). You need to backtrack to check any foregone
+      alternative interpretations of the input arguments.
+
+    - Alternative interpretations are possible only for Opt with non-static
+      nparams, Pos with non-static nargs, or Pos with non-static ntimes.
+
+    - So pushing to the stack needs to happen when your parsing decision for
+      the current argument creates a foregone alternative.
+
+    - This occurs only for successful parsing of the current argument; never
+      for errors.
+
+    - Variants and MGroups also don't require a backtracking mechanism.
+
+        - Rather, you want to process all of the alternatives in order, based
+          on the Grammar. Each alternative either succeeds or fails. And you
+          stop on the first success.
+
+        - The best time to load the stack with these alternatives is before the
+          while-stack loop begins. This will ensure that each alternative will
+          be tried in order. Because we are using a stack, backtracking within
+          any specific alternative (due to non-static nparams/nargs) will
+          finish before the algorithm advances to a fresh alternative.
+
+        - If you were to try to push foregone interpretations to the stack when
+          an alternative fails, you interfere with the correct ordering of the
+          alternatives. Perhaps even worse, it's not easy to know within the
+          while-stack loop when an alternative has totally failed. Each
+          iteration of the loop can be either starting a fresh alternative or
+          exploring one of the different interpretations possible within the
+          alternative.
+
+A backtracking example:
+
+    Grammar:
+        Opt('-f', nparams = (1,3))
+        Opt('x', nargs = (3,4))
+
+    Input:
+        -f V1 V2 V3 V4 V5
+
+    Parsing logic:
+
+        -f : Valid: attach it to Opt(-f).
+
+        V1 : Attach to Opt(-f)
+
+        V2 : Because Opt(-f) is greedy by default, attach. But
+             this attachment is not required due to non-static
+             nparams. Before pushing the new State where V2
+             is attached to Opt(-f), we should push the foregone
+             interpretation -- namely, where we restrict Opt(-f)
+             to nparams of (1,1).
+
+        V3 : Same logic: attach and push foregone interpretation.
+
+        V4 : Attach to Opt(x).
+
+        V5 : Same.
+
+        -  : Now we're out of arguments and have not
+             satisfied Opt(x). So this interpretation fails.
+             The next State in the stack will restrict
+             Opt(-f) to nparams of (2,2), which will succeed.
+
+    Logic if Opt(-f) had been non-greedy.
+
+        V2 : Don't attach to Opt(-f). Now the foregone interpretation
+             is for Opt(-f) with nparams of (2,3). Push that
+             to the stack.
+
+State:
+
+    - Data object to hold parsing state as the various interpretations from the
+      grammar are being tried during the while-stack loop.
+
+    - Attributes:
+
+        ai: index of args.
+
+        next_pos: next available Pos [or None].
+
+        nps: nparams remaining for the active Opt [or None].
+
+        avail: map of available Opt to remaining ntimes [0 for exhausted].
+
+        target: Target instance holding parsed data accumulated so far.
+
+        err: error that terminated the current alterantive [or None].
+
+        variant: name/id/index for the current variant; relevant for
+        error selection/reporting, not parsing directly.
+
+ArgResult:
+
+    Data object to represent info need to capture the result-so-far
+    for the parsing the current arg. Some likely attributes:
+
+        err: data object holding error info
+        opt: matched Opt
+        val: converted value
+
+    Notation used here:
+
+        ArgResult(ERR: ...) | Current arg failed.
+        ArgResult(OPT)      | Current arg matched OPT.
+        ArgResult(PARAM)    | Current arg matched PARAM.
+        ArgResult(POS)      | Current arg matched POS.
+        ArgResult(UNKNOWN)  | For forge-ahead-mode or parse-known-mode.
+
+How to handle Groups with non-static ntimes:
+
+    - A Group can be optional overall (optional is one type of non-static), but
+      have required elements if the Group is triggered by the presence of any
+      of its elements. For example, if either -x or -y are present, both are
+      needed.
+
+        [ -x -y [-i] ]
+
+    - When to handle such matters:
+
+        - During parse. For example, when we see -x, then we would
+          immediately adjust ntimes for -y.
+
+        - After a successfull ArgResult. Before checking Opts for sufficient
+          nparams, nargs, ntimes, we would first adjust those expectations
+          based on any Groups that were activated by the presence of the Opts.
+
+    - The latter, for two reasons:
+
+        - Groups can alter quantifier expections. It makes sense to do all of
+          that quantifier checking together.
+
+        - More fundamentally, an optional Group can contain positionals and
+          params. Like in the rest of the grammar, greedy is the default. That
+          means positionals within optional Groups should be attached eagerly.
+          It could get very messy trying to support some special logic just for
+          optional Groups. The user has multiple ways to configure the grammar
+          if the default greediness isn't desired.
+
+Algorithm: setup:
+
+    Stuff from the end-user or user:
+
+        args = [...]
+
+        P = Parser(...)
+        G = P.grammar
+
+    Initialize the stack that drives the algorithm. For every allowed combo of
+    Variant and MGroup, add a State instance to represent the initial
+    conditions of each alternative.
+
+        # The stack of States.
+        stack = [S1, S2, ...]
+        stack = list(reversed(stack))
+
+        # Every State examined and whether the entire parse is complete.
+        history = []
+        success = False
+
+        # Parser-wide inventory of all known OPT.
+        known_opts = G.get_all_options()
+
+Algorithm: parsing loop:
+
+    while stack and not success:
+
+        # Prep.
+
+        S = stack.pop()
+        arg = args[S.ai]
+        T = P.get_arg_type(arg)
+        ares = ArgResult()
+
+        # Check arg type.
+
+        if T is OPT:
+
+            # Handle aliases and fuzzy match.
+            if arg not in S.avail:
+                arg = P.fuzzy_match(arg)
+
+            if arg not in known_opts:
+                ares = ArgResult(ERR: globally unknown OPT)
+            elif arg not in S.avail:
+                ares = ArgResult(ERR: inapplicable OPT)
+            elif S.nps is not None:
+                ares = ArgResult(ERR: expected param but got OPT)
+            elif S.avail[arg] == 0:
+                ares = ArgResult(ERR: OPT occurred too many times)
+            else:
+                ares = ArgResult(OPT)
+
+        else:
+            if S.nps[arg]:
+                ares = ArgResult(PARAM)
+            elif S.next_pos is not None:
+                ares = ArgResult(POS)
+            else:
+                ares = ArgResult(ERR: too many POS arguments)
+
+        # Conversion and validation for PARAM and POS.
+
+        if not ares.ERR and not ares.OPT:
+            null = object()
+            val = null
+            ok = null
+            err = None
+            try:
+                val = ares.opt.convert(arg)
+                ok = ares.opt.validate(val)
+            except (...) as e:
+                ares.err = captured info about the error
+
+            if ok is not True and (forge-ahead-mode or parse-known-mode):
+                # Treat as success.
+                ares.best_effort = True
+                ares.val = arg
+            elif val is null:
+                ares = ArgResult(ERR: conversion raised an error)
+            elif ok is null:
+                ares = ArgResult(ERR: validation raised an error)
+            elif ok is False:
+                ares = ArgResult(ERR: validation returned False)
+            else:
+                # Success.
+                ares.val = val
+
+        # Handle less restrictive parsing modes.
+
+        if ares.ERR and (forge-ahead-mode or parse-known-mode):
+            ares = ArgResult(UNKNOWN)
+
+        # Check for overall success if args exhausted.
+
+        if ares.ERR is None and S.ai + 1 == len(args):
+
+            - First check whether any Groups have been activated by the present
+              Opts. If so, adjust expected ntimes accordingly.
+
+            - Then check that all Opts have sufficient nparams, nargs, ntimes.
+
+            if OK:
+                success = True
+            else:
+                ares = ArgResult(ERR: insufficient ntimes/nparams/nargs)
+
+        # Store history, push foregone, check overall success.
+
+        if ares.ERR:
+            # On error, just store the history.
+            S.target.add(ares)
+            history.append(S)
+
+        else:
+
+            # Check for foregone interpretation.
+            # Not yet sure if we should perform these steps for ArgResult(UNKNOWN).
+            if not success and (ares.PARAM or ares.POS):
+                If either of these apply:
+                    - Matched Opt has non-static nparams.
+                    - Match Pos has non-static nargs or ntimes.
+                Then:
+                    S2 = new State to represent the foregone parsing route
+                    stack.push(S2)
+
+            # Store history.
+            S.target.add(ares)
+            history.append(S)
+
+            # Create next parsing State.
+            S1 = new State based on current parsing route
+            stack.push(S1)
+
+Algorithm: wrap up:
+
+    if success:
+        return history[-1].target
+
+    else:
+        - Examine history to find most relevant error.
+        - Return or raise, depending on Parser configuration.
+
+Post-parsing logic:
+
+    target = self.do_parse(...)
+
+    Load the data from target into a Result. Details will vary based on Parser
+    configuration and parsing-mode.
+
+--------
+alternative-parsing-algo: Alternative parsing algorithm won't work after all
+--------
+
+The algorithm:
+
+    - When parse() is called, there will be N command line arguments.
+      Command-line use cases never have large N.
+
+    - Using the parser configuration, assemble data on the aspects of the
+      grammar that are not static. The most common non-static configurations:
+      varying nargs, nparams, or ntimes; variants; and alternatives.
+
+    - For grammar elements that have no inherent boundaries (eg, an option
+      taking 1+ params), interpret them in as bounded by using N as the upper
+      limit.
+
+    - Use all of that information to generate all static grammars that satisfy
+      the actual grammar.
+
+    - Check each static grammar against the command line arguments.
+
+    - A successful parse finds exactly one successful static grammar.
+
+What causes a grammar to generate multiple possibilities?
+
+    .                     | Where expressed | Note
+    -----------------------------------------------------
+    Varying nargs/nparams | Opt             | .
+    Varying ntimes        | Opt or Phrase   | Includes required.
+    Alternatives          | Phrase          | Includes variants.
+    Aliases               | Opt             | .
+
+Benefits of the algorithm:
+
+    - This code seems easy to write:
+
+        - The generation of static grammars seems like a manageable
+          situation involving itertools.
+
+        - Parsing a static grammar very simple: no backtracking required.
+
+    - It provides a run-time guard for users against ambiguous grammars.
+
+Three concerns:
+
+    - The approach seems non-standard. A classic stack algorithm seems to suit
+      the situation. And that code might not be any harder to write -- perhaps
+      just a bit less familiar. Why reinvent the wheel? Make sure there's a
+      good reason.
+
+    - Modern operating systems and shells have very large limits on the max
+      size of command lines and N of arguments. Why build a good argument
+      parsing tool that would fail at moderate values for N -- especially
+      when a linear algorithm is known?
+
+    - There won't necessarily be only one successful parse of the static
+      grammars, as noted in the discussion of ambiguous grammars. By using a
+      greedy assignment policy the parser can ignore that matter. But regular
+      expressions have a greedy concept precisely because without it there can
+      be more than one successful parse of an input. [On further reflection,
+      this point argues against expecting only one successful static grammar.
+      But if you try the static grammars in the correct order, based on greedy
+      policies in place, you can stop at the first success -- as regex does.]
+
+--------
+ambiguous-grammars: Ambiguous grammars are not an issue
+--------
+
+From a strictly grammatical perspective, only one positional can have a
+non-static nargs or ntimes, because there isn't exactly one valid way to attach
+the values to the destination attributes. A similar problem occurs when an
+option has non-static nparams and a positional has non-static nargs.
+Two examples:
+
+    <xray>...    <y>...
+    --xray {}... <y>...
+
+But that's not a problem, because Optopus can do what regular expression
+engines do: greedy assignment by default, non-greedy by configuration.
+
+--------
+parsed-data-structure: Parsed data structuring: nargs, nparams, ntimes
+--------
+
+The meaning of nparams, nargs, and ntimes:
+
+    nparams : N of params (for options)
+    nargs   : N args (for positionals)
+    ntimes  : Governs only optionality and repetition via {m,n} or its shortcuts.
+
+    Options:                    #  nparams  ntimes
+
+        -y                      #  0        (1,1)
+        [-y]                    #  0        (0,1)
+        [-y {} {}]              #  2        (0,1)
+        -y {} [{}]              #  (1,2)    (1,1)
+        -y {}{3}                #  3        (1,1)      # C
+
+    Positionals:                #  nargs    ntimes
+
+        <x>                     #  1        (1,1)
+        [<x>]                   #  1        (0,1)
+        (<x> <x> <x>){0,2}      #  3        (0,2)
+        -----------------------------------------
+        <x> <x> <x>             #  3        (1,1)      # A
+        <x>{3}                  #  1        (3,3)      # B
+
+Is nargs needed? Why not handle it all with ntimes?
+
+    - Examples A and B are similar but differ in their non-flattened data:
+
+        A: [X1, X2, X2]
+        B: [[X1], [X2], [X3]]
+
+    - Users should prefer to configure positionals with nargs first, using
+      ntimes only when required (eg, plural nargs and plural ntimes) or when
+      they want Result data organized a certain way.
+
+    - Example C illustrates that {m,n} is not just for ntimes:
+
+        - Parameters do not have their own independent ntimes attribute.
+
+        - So the quantifier is interpreted as affecting nparams.
+
+Internally, all data assigned to destinations will be stored in a fully
+explicit manner. Assume a list of lists, where nargs/nparams determines the
+length of the innermost lists and ntimes determines the length of the outer
+list(s).
+
+    - Singular nargs, nparams, and ntimes:
+
+        a1     # Either value or bool (latter if nargs/nparams is zero).
+
+    - Add plural nargs/nparams:
+
+        [a1, a2, ...]
+
+    - Add plural ntimes:
+
+        (<z> <z>){3}
+
+        [[a1, a2], ..., ...]
+
+    - Add a layer of nested plural ntimes:
+
+        (
+            --foo <> <>
+            (<z> <z>){3}
+        ){4}
+
+        foo: nparams 2, ntimes     4
+        z  : nargs   2, ntimes 3 x 4
+
+        foo = [[a1, a2], ..., ..., ...]
+
+        z = [
+            [[a1, a2], ..., ...],
+            ...
+            ...
+            ...
+        ]
+
+Default flattening policy:
+
+    - If the grammar does not contain nested plural ntimes, data
+      will be flattened as much as possible, as shown in table below.
+
+    - User can request non-flattened data or flattened (the latted
+      to flatten even the 2x2 or nested scenarios).
+
+    nargs or | ntimes    | ntimes 2+                   | ntimes 2+
+    nparams  | 0 or 1    | Flattened                   | Non-flattened
+    ------------------------------------------------------------------
+    0        | bool      | [bool, ...]                 | [[bool], ...]
+    1        | a1        | [a1, ...]                   | [[a1], ...]
+    2+       | [a1, ...] | [[a1, ...], [a1, ...], ...] | .
+
+--------
+eager-attachment-at-bounary: Eager option attachment at repetition boundaries
+--------
+
+In the following example, the -z option will bind eagerly to the repeated
+triplets of positionals.
+
+    Grammar:                  cmds=(<a> <b> <c> [-z]){2,7}
+    Example input:            A1 B1 C1 -z A2 B2 C2
+    Returned data for cmds:   opts.cmds[1] = Namespace(a=A1, b=B1, c=C1, z=False)
+
+That policy is consistent with greedy parsing elsewhere. Configuration for this
+issue will have to be done via the API.
+
+--------
+grammar-syntax-named-unnamed: Grammar syntax: named and unnamed arguments
+--------
+
+Positionals must be named:
+
+    frob <a> <b> [<c>]
+
+Option arguments can be named or unnamed:
+
+                                        # opts.mode:
+    frob --mode {group} {name} {n}      # - Data object with attributes.
+    frob --mode {} {} {}                # - Tuple.
+
+--------
+variants-needed: Variants: why they are needed
+--------
+
+Are variants needed give that the grammar syntax already has support for
+alternatives?
+
+Partial variants are a useful device to express some grammars more
+conveniently.
+
+Usage variants are a good mechanism for the user to help Optopus generate more
+readable usage text and more relevant portions of it in response to errors.
+
+Variants can provide a low-config mechanism for subcommand-style programs to
+provide subcommand help text.
+
+Variants have been a useful concept, and their names convenient handles, when
+thinking about and planning this project. That utility might come in handy
+later.
+
+So one might think of the following related concepts, from most general
+to most specific:
+
+    Group           # Any grouping of grammar elements.
+    Alternative     # A grouping where the end-user should choose one.
+    Variant         # An alternative that strongly affects usage text.
+
+--------
+destination-assignment: General destination assignment: needed after all
+--------
+
+Optopus does need generalized destination assignment. At a minimum, it needs
+that feature not just for Opt, but also for partial variants. And once you go
+that far, you might as well generalize it.
+
+Consider examples like neck-diagram (nab is similar). With destination
+assignment, the specific Opt destinations (cmd, snum, syms, etc) will be nested
+underneath the 'commands' namespace (the outer destination assignment). The returned
+data would have this structure:
+
+    opts.commands : (
+        Namespace(cmd = 'snum', snum = 6),
+        Namespace(cmd = 'tuning', notes = ('E', 'A', ...)),
+        Namespace(cmd = 'fret', syms = ('1', '3', '5')),
+        ...
+    )
+
+Without the outer assignment, the returned data would be grouped by the Opt
+destination names -- which badly jumbles everything up:
+
+    opts = Namespace(
+        cmd   : ['snum, 'tuning', 'fnum', 'fret', 'fret', ...]
+        snum  : ['6']
+        fnum  : ['5']
+        notes : [[...]]
+        syms  : [[...], [...], ]
+    )
+
+--------
+grammar-syntax-complexity: Grammar syntax: is it too complex?
+--------
+
+To evaluate the question, I focused on the least intuitive aspect of the syntax
+and compared it against the API-driven alternative:
+
+Alternatives:
+
+    - This is an easy call: syntax is intuitive and API usage for this
+      situation is annoying.
+
+    - This is a strong example of the superiority of text syntax for grammar
+      configuration relative to API.
+
+Quantifiers:
+
+    - The ... is intuitive and practically a convention.
+
+    - The {m,n} syntax directly mimics regex and is also quite intutive.
+
+General destination assignment:
+
+    - This feature is powerful: it allows grammar variation when
+      a positional or parameter takes a specific value.
+
+    - Configuring such matters via the API requires the user to understand how
+      the library works a bit too closely.
+
+Partials:
+
+    - API usage would require the user make multiple configurations to mark a
+      variant as partial and then insert it wherever needed.
+
+    - The partial syntax isn't heavy; in fact, it's moderately intuitve and
+      without it, the grammar syntax might even be a bit less immediately
+      understandable.
+
+Zones and anchoring:
+
+    - I suspect the desire for zones and anchoring is moderately low but still
+      more than nothing.
+
+    - Also, configuring these parameters via the API is simple to understand
+      and requires little code.
+
+    - While the zone syntax not too obtrusive, and it is a mixture of intuitive
+      (zone markers) and not very intuitive (anchor markers)
+
+    - Infrequent use case, easy to handle via API: let's drop it from grammar syntax.
+
+    - Another question: is the zone concept needed, or could Group do the same
+      thing? I increasingly think so.
+
+High precedence:
+
+    - Setting this attribute is easy in the API.
+
+    - Although the syntax is not heavy, it's also not fully intuitive.
+
+    - The majority of use cases will get the built-in help behavior, and the
+      library could interpret --help and --version options as high precedence
+      by default.
+
+    - Infrequent use case, easy via the API: let's drop it.
+
+--------
+optional-positional-placement: Optional positionals before required are not a problem
+--------
+
+One might be concerned about Grammars containing optional positionals before
+required ones. For example:
+
+    [<m>] <x> <y>
+
+But this is not a problem is we just adhere consistently to greedy policy.
+If the user wants positionals attached to <x> and <y> before <m>, they
+can express the grammar differently.
+
+--------
+parse-known-args: Parse known arguments
+--------
+
+How argparse handles it:
+
+    - Instead of returning a single Namespace it returns a tuple:
+
+        (Namespace, List[unknown args])
+
+    - It does still apply all validations to any supplied arguments.
+
+I have found that approach mildly annoying:
+
+    - It requires a change to the calling code to call a different
+      method and to unpack the 2-tuple.
+
+    - That makes it a bit less convenient to drive via typical configuration
+      mechanisms.
+
+I think it makes more sense for Optopus to treat parse-known-args as one of the
+parsing modes that it supports:
+
+    Parsing modes:
+
+        Configured: these modes can be combined. They relax the rules to allow
+        deviations. [I am not sold on this naming idea. Think it over.]
+
+            unknown-ok
+            unconverted-ok
+            invalid-ok
+
+        No configuration:
+
+            Like the rest of the library, Optopus will handle no-config parsing
+            with a greedy default. Consider:
+
+            No-config parsing is only helpful for the options: positionals
+            will be dumped into a single generic bucket, so the options are
+            what matter here.
+
+            The positionals can be segregated to follow the double-hyphen
+            marker.
+
+            The rest of the input will be options and parameters, which
+            raise no ambiguous boundary questions.
+
+            This means the end user can control the result via their
+            arrangement of arguments. That seems consistent with the spirit of
+            no-config: no-configuration means imposing no requirements on the
+            end-user. Through their argument placement, the end-user determines
+            how parameters bind to options, which means they can achieve
+            different flavors of parameter binding (flag, key-val, or any N of
+            vals).
+
+            In addition, the library will support an almost-noconfig behavior
+            allowing the user to impose a specific parameter binding
+            requirement. That will be done via a quantifier controlling nparams
+            to be consumed per option.
+
+                Parser()                # Default: greedy.
+                Parser(noconf = '0')    # Flag style
+                Parser(noconf = '1')    # Key-val style
+                Parser(noconf = '2,')   # 2+
+
+Optopus:
+
+    - By default:
+
+        - Continue to return a single Result object.
+
+        - Put the unknown arguments in an attribute with an uncommon name, such
+          as 'others' or 'unknowns'.
+
+    - Let the user configure this:
+
+        - Name of the unknowns attribute.
+
+        - Whether to return (Result, List[unknowns]) tuple, like argparse.
+
+--------
+zones-not-needed: Zones not needed
+--------
+
+In my planning I think the concept of Zones was not useful. A zone has no
+purpose on its own; rather, it existed purely to support anchoring. And the
+anchoring configuration was applied to Opts, not Zones. Just use Groups and
+allow Opts to be anchored within them.
+
+--------
+help-distpatching: Help distpatching
+--------
+
+Optopus aims to support behavior like this:
+
+    frob --help              # Print general help.
+    frob configure --help    # Print help for the configure task.
+
+How does the user configure this help dispatching. More generally, what about
+supporting other help-printing scenarios that rely not on --help but on some
+other options: for example, I've had programs where I want --examples to print
+some usage examples for the end-user.
+
+    - Simple use case: standard help feature for a command-line program.
+
+        p = Parser(help = True|False)
+
+    - Help hook: any time the library's help feature is triggered, call the
+      user's function with some params and let them return something to tell
+      the library which help section(s) to print, if any.
+
+        p = Parser(help = CALLABLE)
+
+    - That approach is flexible for the general case, but it does not speak to
+      the most common type of complex use case (a program with subcommands,
+      where the subcommands and help sections have a 1:1 correspondence). Some
+      additional conveniences to support dispatching based on subcommands --
+      or, more correctly, based on the value taken by a specific Opt.
+
+        # For 1:1 correspondence between help sections and Opt values.
+        o = Opt('task', help = 'sections')
+
+        # For more flexibility, supply mapping from Opt value to section name.
+        o = Opt('task', help = DICT)
+
+--------
+dispatch: Dispatch
+--------
+
+Dispatching is probably can be pretty simple: tie one or more callables to
+Variants, Opts, or even Groups (hard to think of many use cases for the latter,
+but it is probably easy to support).
+
+The argument passing details are important. Not everyone wants opts to be
+passed everywhere. In other notes, I planned to have dispatch functions called
+with three arguments: VAL, OPT, RES (where OPT is the Opt triggering the call,
+VAL is the Result value for that Opt, and RES is the parsed Result). But I'm
+not sure that plan is very good.
+
+Dispatch occurs after argument parsing and validation. At that point, it is not
+clear why the dispatch function needs VAL and OPT. Nor does it seem like users
+want all of their dispatch functions tied to a rigid signature (eg, always
+passing RES everywhere).
+
+What might users want to pass to dispatch calls?
+
+    - The parsed Result (which does not exist at config-time).
+    - Other objects (eg lib).
+    - One or more Result.DEST values, perhaps as kwargs.
+
+Example API usages:
+
+    - The example is based on my pocket script, which could be reframed with
+      usage variants such as experiment, interactive, and rebuild.
+
+    - The imported RES is a simple configuration object to tell Optopus
+      to pass the parsed Result to the dispatch function.
+
+    - The RES.foo examples mean to pass the value of Result.foo.
+
+    - And the disp() function returns a configured object telling Optopus which
+      args/kwargs to pass to the function. Its signature is 1+ callables plus
+      kwargs.
+
+        from optopus import Parser, RES, disp
+
+        # Load the library and configure the Parser.
+        lib = ...
+        p = Parser(...)
+
+        # Some dispatching configurations.
+        de = disp(experiment)
+        di = disp(do_interactive, lib, RES)
+        dr = disp(rebuild_library, limit = RES.lib, progress = RES.progress)
+
+        # Tie those dispatchers to usage variants.
+        p.config('experiment', dispatch = de)
+        p.config('interactive', dispatch = di)
+        p.config('rebuild', dispatch = dr)
+
+That example illustrates one way to achieve a fairly generalized support for
+dispatching. A simpler usage form might also be nice -- namely, either a single
+callable or a sequence of callables. In this case they are simply passed the
+parsed Result.
+
+    p.config('foo', dispatch = f)
+    p.config('foo', dispatch = (g, h))
+
+Also worth considering whether it makes any sense to tie dispatching to
+positional and parameter variants. For example:
+
+    p.config('task=experiment', dispatch = de)
+    p.config('task=interactive', dispatch = di)
+    p.config('task=rebuild', dispatch = dr)
+
+--------
+argparse-and-greed: argparse and greediness
+--------
+
+The argparse library does attach arguments greedily, but it makes no attempt
+to backtrack. An example:
+
+    Grammar:
+
+        -z {}... <y> <y>
+
+    Example input:
+
+        -z A B C D E F
+
+    Behavior:
+
+        - Attach everything to -z.
+        - Raise error because <y> not given.
+
+--------
+end-user-errors: End-user errors
+--------
+
+The problem:
+
+    - Each Parser.parse(args) call will generate up to N failures, one per
+      interpretation.
+
+    - Ideally, we would report the error most aligned with end-user intent.
+
+    - How do we select the error to report?
+
+Initial ideas for mechanisms to select the most relevant error:
+
+    - Error type, under the theory that some errors are more likely to
+      convey intent about which alternative was (or was not) intended.
+
+    - Percentage of input args matched, under regular parsing or
+      perhaps forge-ahead parsing.
+
+    - Percentage of available options present in the arguments, under the
+      theory that the presence of options is one of the more telling indicators
+      of intent. This metric is fairly easy to compute (a frequency distribution
+      of options present).
+
+Inferring intent from error types is tempting but not always so powerful:
+
+    - Globally unknown options are an easy case: always select this error,
+      because it's true under any interpretation.
+
+    - One might think that an inapplicable option conveys that the current
+      interpretation was not intended. But it's easy to create
+      counter-examples: for example, a large N of arguments that work perfectly
+      for the current interpretation, but the end-user inadvertently included
+      an option for a different variant as the first argument (maybe when
+      editing a prior command from shell history).
+
+    - Invalid values might seem like an indication the current interpretation
+      was intended, under the theory that the args were allocated to a slot but
+      just failed in the details. But to know that with any confidence you need
+      forge-ahead parsing.
+
+The resolution is to consider how other parsers behave:
+
+    - They always try to consume as much of the input as possible. This suggests
+      that the first criterion for error-selection is S.ai.
+
+    - Multiple interpretations can fail with the same S.ai. To resolve ties,
+      consider how errors can occur (consuming an OPT, consuming a POS, or
+      during final checks). For each of those cases, the error-reporting
+      precedence is fairly clear-cut [listed below].
+
+    - To resolve ties, report the error associated with the earliest
+      alternative, based on the grammar.
+
+Types of errors in precedence order, by failure source:
+
+    - Trying to consume an OPT:
+
+        - Globally unknown option.
+
+        - Inapplicable option for current alternative (but known to grammar).
+
+    - Trying to consume a POS:
+
+        - Conversion/validation problems: params.
+
+        - Conversion/validation problems: positionals.
+
+        - Excess arguments.
+
+    - Making final checks:
+
+        - Insufficient ntimes: option.
+
+        - Insufficient nparams.
+
+        - Insufficient ntimes: positional.
+
+        - Insufficient nargs.
+
+--------
+converters-validators: Converters and validators
+--------
+
+Function signatures:
+
+    Function  | Arity | Signature
+    -------------------------------------------------------
+    Converter | 1     | STR            => OBJ/raise
+    Validator | 3     | VAL, OPT, RES  => True/False/raise
+    Dispatch  | 3     | VAL, OPT, RES  => None
+
+--------
+grammar-querying-api: Grammar querying API
+--------
+
+Grammary querying API
+
+    - Because the Grammar can be a tree structure, the API needs good syntax to
+      query for grammar elements, both for configuration needs (including the
+      ability to perform bulk configurations) and for complex validations.
+
+    - Possible approach:
+
+        g.get(NAME, NAME, ...)          # Get one, dive-style.
+        g.get(NAME, [NAME, ...], ...)   # Get multiple.
+
+--------
+validation-notes: Validation notes
+--------
+
+What to validate:
+
+    - Only user-facing code: the entry points.
+
+    - Let internal code blow up if given bad input.
+
+Consider using a library:
+
+    - valid8 is interesting but seems a bit over-engineered.
+
+    - Its docs point to other tools that could have interesting ideas.
+
+If not a library, consider implementing a simple validation module for the
+project:
+
+    - Some of the libraries I saw treated the process very formally, with a
+      large API to learn.
+
+    - A simpler approach seems better.
+
+        validate(
+            value,      # Value to check.
+            convert,    # Callable: value => converted-value
+            validate,   # Callable: converted-value => bool
+            error,      # Error to raise.
+        )
+
+Where should validation logic reside?
+
+    - Option 1: near the call site, so that you do not have to look elsewhere
+      to understand the function.
+
+        - Using decorator. Validation library writers seem attracted to this
+          approach, but I don't see the appeal. It does not save any typing,
+          and I find decorators with a lot of content to be awkward looking --
+          aesthetically unappealing.
+
+            @validate(
+                x = (
+                    int,
+                    lambda x: x in range(1,11),
+                    'x parameter must be interger 1 through 10: {val}',
+                ),
+                y = (...),
+                z = (...),
+            )
+            def bar(x, y, z):
+                ...
+
+        - Or just using an ordinary function:
+
+            def bar(x, y, z):
+                validate(
+                    x,
+                    int,
+                    lambda x: x in range(1,11),
+                    'x parameter must be interger 1 through 10: {val}',
+                )
+                validate(y, ...)
+                validate(z, ...)
+                ...
+
+    - Option 2: put validation logic a separate module, consolidating such
+      details in one location. Let readers focus on the happy-path substance of
+      the function, not the grubby validation logic, exception raising, etc.
+      That code is mostly formulaic anyway -- stick it in the footnotes.
+
+            # Main code.
+
+            @validate
+            def bar(x, y, z):
+                ...
+
+            # Validation module:
+
+            register_validators(
+                bar = (
+                    x,
+                    int,
+                    lambda x: x in range(1,11),
+                    'x parameter must be interger 1 through 10: {val}',
+                ),
+                ...
+            )
+
+        Under this approach, you want the validators to be composable, with the
+        ability to define a bigger validator using smaller validators.
+        And such compositions may need some helpers:
+
+            validate_all()
+
+--------
+strategy-reassessment: Reassess the strategy
+--------
+
+After further reflection and looking again at the various job-client* example
+scripts, I realize I underestimated the power of the text-based configuration
+syntax.
+
+    - It's true that I did find writing the literal help text tedious. I also
+      dislike the idea that it will lack dynamic formatting behavior.
+
+    - However, the API based configuration is very ineffecient and repetitive
+      compared to the brevity, clarity, and intutiveness of the text approach.
+
+    - Perhaps the right path, again, is to used text-driven configuration, but
+      as syntax, not literal help text.
+
+Consider which parts of the ultimate help text must be typed directly by the
+programmer:
+
+    - Option or argument names.
+    - Help text for each option/argument.
+    - Metavars.
+    - Aliases.
+    - Section names.
+    - Choice values (if simple strings).
+
+The simplest, clearest way to write that material is as a block of options
+text. Lines likes these cover all of those bases:
+
+    General::
+    --job-id -j ID    : The job id.
+    --od-user -u USER : Open Directory user who submitted the job.
+
+The only other configurations are (a) syntax for complex grammars, and (b)
+stuff well handled by the API (defaults, types, conversion, validation,
+dispatch, sometimes choices, etc).
+
+And this text-centric approach is flexible in allowing a variety of
+usage patterns:
+
+    - It can be treated as literal options text, for those who prefer that
+      approach. Essentialy, Optopus will support a Docopt mode.
+
+    - But treating it as configuration syntax will be easier for many who (1)
+      don't want to have to lay everything out precisely and (2) especially
+      don't want to have to define a usage grammar even for programs with
+      standard command-line needs. If the API approach is ineffecient
+      generally, the literal-text approach is ineffecient in requiring a usage
+      grammar every time (as docopt does).
+
+The write-up will need to be reframed to emphasize the debt to the text-based
+argument parsers and to criticize the API approach for being so inefficient. In
+the writeup place greater emphasis on some practical examples illustrating the
+superiority of the text-based approach over argparse.
+
+--------
+grammar-syntax-revisited: Grammar syntax revisited
+--------
+
+Enhance spec syntax increase its power, reducing user hassle:
+
+    - Program name.
+    - Options text, optionally with section titles.
+    - Opt symbols.
+    - Regular text.
+
+Simplify and unify the syntax:
+
+    - Ensure that Optopus supports the full spectrum of usages, ranging from
+      quick-and-dirty to complex.
+
+    - Prioritize ease of use for the simplest cases.
+
+        - Program name optional.
+        - Variant names optional.
+        - Section headings optional.
+
+    - Minimize baroque syntax elements:
+
+        - Reduce special punctuation when possible.
+        - Meaningful whitespace is more intuitive that odd punctuation.
+        - Make surviving punctuation as unified/congruous as possible.
+
+Use angle brackets for all variable end-user inputs:
+
+    - See variable-end-user-input.
+
+Punctuation markers:
+
+    - Summary of plan:
+
+        Situation       | Marker       | When required
+        -------------------------------------------------
+        Grammar section | Double colon | If variant(s)
+        Other sections  | Double colon | Always
+        Opt help        | Colon        | If help text
+        Variant         | Colon        | If named
+
+    - Sections:
+
+        - The grammar section:
+
+            - Must appear first in the spec. If user wants a different section
+              ordering: define the sections in the spec; use API to move
+              sections as needed.
+
+            - No regular text.
+
+            - Default title is `Usage`, configurable only via API.
+
+        - The grammar section, regardless of form, can be followed by zero or
+          more other sections that:
+
+            - Must use marker.
+            - Can omit a title.
+            - Can define opt-help lines.
+            - Can include regular text.
+
+            - If a line parses as opt-help, it will be interpreted that way
+              (unless quoting is used).
+
+        - What if the user does not want a trailing colon on section titles?
+
+            - Let them adjust via the API.
+
+    - opt-help:
+
+        - Supported Opt grammar subset:
+
+            sym
+            dest
+            nargs
+            nparams
+            ntimes
+            choices
+            aliases
+            text
+
+        - Note that opt-help uses a grammar subset, not an alternative grammar:
+
+            - This means, for example, that options are not assumed
+              to be optional: square brackets required if intended.
+
+        - Note that opt-help lines can be confused with unnamed variants. The
+          issue is fundamental, not really addressable via extended peeks or
+          other fancy parsing. For example, does this spec define 3 variants or
+          3 bare-bones opt-help lines?
+
+            pgrep
+            <rgx>
+            --ignore-case -i
+            --invert-match -v
+
+        - The most common use case is to derive grammar from 1+ opt-help
+          sections. It works well for many standard grammar needs, and opt-help
+          is more featureful than variant (because it supports aliases and
+          help text). So the no-variant use case should have the least hassle.
+
+Dest, sym, and values:
+
+    - Examples without choices:
+
+        Example                 | Usage text            | Dest
+        ------------------------------------------------------------------
+        <paths>...              | <paths>...            | paths
+        <path.paths>...         | <path>...             | paths
+        <PATH!paths>...         | PATH...               | paths
+        ------------------------------------------------------------------
+        --strategy <s>          | --strategy <s>        | strategy
+        --elems <e> <e> [<e>]   | --elems <e> <e> [<e>] | elems
+        --point <row.x> <COL!y> | --point <row> COL     | point.x, point.y
+        --point <.x> <.y>       | --point <p> <p>       | point.x, point.y
+        --point <> <>           | --point <p> <p>       | point
+        ------------------------------------------------------------------
+
+    - Examples involving choices and positional/parameter variants:
+
+        Example               || Usage text        || Dest
+        --------------------------------------------------------------------
+        <mode=fast|slow>      || <fast|slow>       || mode
+        <mode=fast>           || fast              || mode
+        <MODE.mode=fast|slow> || mode              || mode
+        <MODE!mode=fast|slow> || MODE              || mode
+
+--------
+spec-as-format-string: Spec as a format string not needed
+--------
+
+Initially I thought it would be useful to allow the spec to function as a
+format string.
+
+But if the format() call occurs early (before spec parsing), there is no
+purpose served: the user could just call format() to create the spec in the
+first place.
+
+There might be a use case for calling format() after parsing has derived
+grammar and opt-help metadata.
+
+    - Presumably the purpose would be to insert material into help text that is
+      more under the domain of Optopus than the user.
+
+    - Another possible use case is to call format() after end-user
+      arguments are parsed -- eg, in response to error.
+
+    - Defer this until a use case is known.
+
+--------
+variable-end-user-input: Representing variable end-user inputs
+--------
+
+There are four common styles for representing variable end-user input, along
+with some differences in details for specific implementations, especially as it
+relates to choices:
+
+    Style     | Parameters  | Positionals | Choices | Examples
+    ----------------------------------------------------------------------------
+    Angle     | <>          | <>          | {}      | git, picocli
+    Sensitive | UPPER       | lower       | {}      | argparse, many Python/Ruby
+    Lower     | lower       | lower       | () []   | POSIX, many Unix utilities
+    Upper     | UPPER       | UPPER       | () [] ? | rsync
+    ----------------------------------------------------------------------------
+    Docopt    | <> or UPPER | <>          | () [] ? | .
+    Optopus   | <>          | <>          | <>      | .
+
+    - Unclear how docopt and rsync handle choices, but I think they use
+      parens/brackets.
+
+Upper and lower styles: easily rejected:
+
+    - They work poorly for positional variants and parameter variants.
+
+    - Usage text is ambiguous: we cannot distinguish merge/delete
+      (positional variants) from path (variable input).
+
+        frob [-f] merge [-x] [-y] path
+        frob [-f] delete [-z] path
+
+Sensitive style: better but not fully robust:
+
+    - It handles most situations:
+
+        frob [-f] merge [-x] [-y] PATH
+        frob [-f] delete [-z] PATH
+
+    - And the Python/Ruby community is accustomed to it.
+
+    - It does fail if the variant values need to be uppercase. Some type of
+      quoting or other syntactic workaround would be needed:
+
+        frob [-f] `MERGE` [-x] [-y] PATH
+        frob [-f] `DELETE` [-z] PATH
+
+Angle style: robust due to greed:
+
+    - In order to produce robust usage text for variants, literal inputs need
+      top precedence.
+
+    - More generally, treating text (whether in grammar syntax or usage text)
+      as literal by default, it an good baseline (eg, that is how regex works).
+
+    - The conclusion is that variable inputs must be enclosed, making
+      case-based solutions either flawed or insufficiently robust.
+
+    - Optopus was drifting toward {param} and <pos> as the enclosures:
+
+        - That would also be an odd combo. The only precedent is docopt,
+          which supports it only as an alternative syntax.
+
+        - In addition, braces have a semi-conventional role for choices in
+          tools like argparse, so using them for parameters would be
+          anti-conventional.
+
+    - Will there be ambiguities if parameters and positionals have the
+      same enclosure?
+
+        --point <x> <y>   # How many parameters?
+
+    - Initially, I thought that parentheses/brackets could resolve such matters
+      (see Git usage text, for example). But the brackets do not solve the
+      problem by themselves. For example, is this an optional option with 2
+      parameters or an optional group with a flag and 2 positionals?
+
+        [--point <x> <y>]
+
+    - Once again, embracing a greedy policy sorts everything out. If parameters
+      bind eagerally to angle-bracketed inputs, then the example above is a
+      2-parameter option.
+
+Verdict: angle style:
+
+    - The clarity of the approach seems to more than counterbalance the
+      small increment of extra typing: all variable inputs are enclosed in
+      the same way (positionals, parameters, and thus choices).
+
+    - The approach has strong precedent, especially from Git.
+
+    - Brackets and greedy will sort out any ambiguitity:
+
+        [--point <x> <y>] <z>  # 2-param option, required positional.
+
+    - If needed later, support other styles for usage text and grammar
+      syntax (especially sensitive). Note that sensitive style in usage
+      text is partially supported via the SYM! notation.
+
+--------
+enhanced-quantifiers: Enhanced quantifiers
+--------
+
+Quantifiers could be more featureful:
+
+    - A third parameter similar to a range step:
+
+        <x>{0,6,2}      # 0, 2, 4, 6
+
+    - Ability to support noncontiguous quantities:
+
+        <x>{!1,2,3,5}   # 1, 2, 3, or 5
+
+--------
+opt-help-lines: Opt help lines
+--------
+
+In the grammar syntax, an opt-help line allows any syntax for configuring a
+single Opt, plus two other things: aliases and help text.
+
+I considered adding a rule to require that the aliases, if any, reside
+separate from the grammar of the Opt configuration. An illustration:
+
+    -f [--foo <>]          # OK.
+    -o (--opt <> <>){3}    # OK.
+
+    [-f --foo <>]          # Not OK: the -f alias should be outside brackets.
+
+But the rule seems needlessly touchy. Since configuring a single
+Opt already requires nearly the full grammar, it makes more sense to parse
+the line as follows:
+
+    expression [: [help-text]]
+
+Then examine expression to extract any aliases and validate that it configures
+only a single Opt.
+
+Because it would be difficult to distinguish opt-help continuation lines from
+lines of regular text in a section, I decided to require block-quoting for
+regular text. This keeps parsing relative sane at a modest cost in usage.
+
+Opt-helps lines can also define help text for positional/parameter
+variants. The default help text for such elements (ie, without
+any explicit section configuration) is as follows:
+
+    # Configuration:
+
+        <task>             : Task to perform
+        <task=foo>         : Foo blah
+        <task=bar>         : Bar blah
+
+        --mode <fast|slow> : Mode to use
+        --mode <=fast>     : Fast blah
+        --mode <=slow>     : Slow blah
+
+    # Resulting help text:
+
+        Positionals: task:
+          foo                Foo blah
+          bar                Bar blah
+
+        Options: --mode:
+          --mode fast        Fast blah
+          --mode slow        Slow blah
+
+--------
+opt-independence-vs-unity: Opt independence vs unity when sharing same dest
+--------
+
+The grammar syntax is very flexible, so Optopus needs to know how to handle
+unusual situations, including the repetition or reuse of the same dest. Several
+examples:
+
+    - Contiguous repetition as a syntactic alternative for nargs/ntimes:
+
+        <x> <x> [<x>]               # Contiguous; can be condensed.
+        -x [-x]                     # Same.
+
+        -x -y -x                    # Noncontiguous but condensable (option ordering irrelevant).
+
+    - Reuse across variants:
+
+        foo : <x> [-y]              # Same configuration.
+        bar : -z -y <x>
+
+        foo : <x> [-y]              # Different configuration.
+        bar : -z -y <x> <x>
+
+        foo : <x> [-y]              # Different type.
+        bar : -z -y [-x]
+
+    - Reuse across alternatives:
+
+        (-x -y | -a -x -z | -q)     # Same configuration.
+
+        (<x=A|B> | <x> <x> <x>)     # Different configuration.
+        (<x> | <x> <x> <x>)
+
+        (-x | <x> <x>)              # Different type.
+
+    - Reuse within an alternative:
+
+        <x> (<x> <x>)...            # Different configuration.
+        <x> <foo> <x>               # Different configuration (related to arg binding).
+
+        -x <x> <x>                  # Different type.
+
+        - Note: there are no examples here for "same configuration": contiguous
+          will be condensed; noncontiguous positionals cannot have same
+          configuration (arg binding); and noncontiguous options will be
+          condensed.
+
+    - Reuse for separator-based grammars: nab:
+
+        - The nab use case illustrates why Opt independence within the same
+          variant is sometimes needed (for a while I had considered disallowing
+          reuse within variants).
+
+        - A separator-based grammar needs a single main grammar where all of
+          the subcommands can be used in sequence (including repetitions).
+          But subcommands are often likely to need Opts with the same dest.
+
+        chomp!   : / <cmd=chomp>
+        findall! : / <cmd=findall> <rgx> [-a]
+        grep!    : / <cmd=grep> <rgx> [-i] [-v] [-s]
+        range!   : / <cmd=range> <start> <stop> [<step>] [-g]
+        run!     : / <cmd=run> <code> [-g <>] [-a] [-v] [-i]
+
+        main : [--debug] commands=(chomp! | grep! | range! | run!)...
+        help : --help
+
+Opt independence vs unity has possible ramifications in several areas:
+
+    - Spec parsing.
+    - Grammar creation.
+    - Grammar configuration.
+    - Argument parsing.
+    - Result creation.
+    - Usage text creation.
+    - Opt help lines creation.
+
+Policy decisions:
+
+    - During spec parsing, contiguous repetitions of the same dest will be
+      condensed when possible. Otherwise, independent Opts will be created.
+
+    - A Grammar is just a list of elements, either Groups or Opts (and a Group
+      has the same structure). The dest is not used as an unique identifier, so
+      no problems are caused by repetition.
+
+    - During configuration, the user can query for Opts flexibly. If they
+      define a weird spec that makes it inconvenient to query for Opts
+      individually, then can easily adjust by defining things like Variant.name
+      or Group.dest to disambiguate. Worst case, they can query using Group/Opt
+      indexes (rather than dests) or just query for several Opts and then
+      examine their details to select the one needed for configuration.
+
+    - Argument parsing need not care about dest uniqueness. The parsing is akin
+      to seeing arguments and putting them into viable slots. No deep problems
+      are caused by multiple slots accepting the same kinds of things.
+
+    - Result creation is the place where unification by dest occurs. Consider
+      Opts with different types: -x <x> <x>. This causes no technical problem,
+      because the Result can be merged correctly: Result.x = [bool, [x1, x2]].
+      The only problem is that the data has an odd structure. The user can
+      easily fix that with a different Optopus configuration. If needed, Optous
+      can support an option to generate unique dests in the Result (eg, via
+      variant/group prefixes). Also see notes below for one type of complex
+      Result (for nab).
+
+    - Usage text will closely mimic the naming and structure of the user's
+      spec. If there is ambiguity from duplicate dests, the user either wants
+      it or they can easy adjust by configuring syms/dests differently.
+
+    - For Opt help text, Section configuration can drive the process. Any
+      section containing an opt-help configuration for an Opt will display the
+      opt-help line. This allows the common use case where an Opt should be
+      listed in multiple places in the help text. If two Opts having the same
+      dest are in the same Section, Optopus will generate an opt-help line for
+      each Opt, but if the resulting text is the same, it will prune the
+      duplicate(s).
+
+Result for the nab example:
+
+    - If the 'commands' dest is NOT in the nab spec, the Result will be
+      narrowly correct, but very difficult for the user to understand at
+      runtime, because every dest would be a flat list of values, some of them
+      coming from different 'cmd' invocations. Nonetheless, there is nothing
+      narrowly "incorrect" about this outcome; if the user does not like it,
+      the solution is a better configuration.
+
+        Result(
+            debug = t1,
+            help  = h1,
+            cmd   = [chomp, findall, grep, grep, range, run],
+            rgx   = [       r1,      r2,   r3              ],
+            i     = [                i1,   i2,          i3 ],
+            v     = [                v1,   v2,          v3 ],
+            s     = [                s1,   s2              ],
+            start = [                            s1        ],
+            stop  = [                            s1        ],
+            step  = [                            s1        ],
+            g     = [                            g1,    g1 ],
+            code  = [                                   c1 ],
+            a     = [       a1,                         a2 ],
+        )
+
+    - If commands dest is used, the Result will organize things in
+      a meaningful way.
+
+        Result(
+            debug = t1,
+            help  = h1,
+            commands = [
+                Result(chomp),
+                Result(findall, r1, a1),
+                Result(grep, r2, i1, v1, v1),
+                Result(grep, r3, i2, v2, v2),
+                Result(range, s1, s1, s2),
+                Result(run, i3, v3, g2, c1, a2),
+            ],
+        )
+
+--------
+group-level-validation-needed: Why Group-level validation should be retained
+--------
+
+If focusing just on ntimes, one might be tempted to collapse Group validation
+needs (primarily ntimes) down to the Opts. Some of the discussion in
+parsed-data-structure, for example, loosely speaks in such terms.
+
+But the Groups do impose their own requirments. In this example, the ntimes of
+the Opts are inter-linked: if any one appears, the requirements of the others
+changes dynamically.
+
+    [ -x -y [-i] ]
+
+But Groups do have other attributes: dest and maybe validate. And it seems
+difficult to imagine all consequences of grammar flattening. Every time I
+experimented with it in the past, problems were encountered. It is possible
+that a Target might flatten Group-level ntimes down to the Opts purely for
+convenience during parsing. But it seems important to retain the ability to
+impose requirements at the Group level rather than only at the Opt level.
+Finally, because Groups can nest, storing their requirements at the Opt level
+is not immediately straightforward.
+
+--------
+readme-next-version: README for next version
+--------
+
+Add some default setting to at least one example.
+
+Ultimately, readme should be more how-to than why.
+
+As lib evolves, shorten readme to have very short intro; how to use; then brief
+discussion of why its better (maybe bullet points even), with links to longer
+discussions of why-build-it and how-it-is-better.
+
+--------------------------------------------------------------------------------
+reference: Reference
+--------------------------------------------------------------------------------
+
+--------
+parsing-resources: Parsing resources
+--------
+
+Extended Backus–Naur form (EBNF):
+
+    https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
+
+Recursive descent parser:
+
+    https://en.wikipedia.org/wiki/Recursive_descent_parser
+
+Parsing expression grammar (PEG):
+
+    # Very useful on PEGs, packrat parsing, and CFGs (notes below).
+    https://stackoverflow.com/questions/1410477/what-is-packrat-parsing
+
+    https://en.wikipedia.org/wiki/Parsing_expression_grammar
+
+Code examples:
+
+    Pyparsing: https://github.com/pyparsing/pyparsing/
+
+    Build a simple interpreter: https://github.com/rspivak/lsbasi
+
+    http://jayconrod.com/posts/37/a-simple-interpreter-from-scratch-in-python-part-1
+
+Books:
+
+    Language Implementation Patterns: Create Your Own Domain-Specific and General Programming Languages
+
+--------
+parsing-process-generally: Parsing process generally
+--------
+
+Given a grammar, generate an appropriate parser.
+
+Given input text, use a lexer to generate typed tokens.
+
+Feed the tokens into the parsers, which determines validity and returns a
+syntax tree.
+
+--------
+pegs-cfgs-and-packrat-parsing: PEGs, CFGs, and packrat parsing
+--------
+
+Resource:
+
+    https://stackoverflow.com/questions/1410477/what-is-packrat-parsing
+
+Many parsers use context-free grammars (CFG). For example:
+
+    E -> E * E | E + E | (E) | N
+    N -> D | DN
+    D -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+
+    Rule 1: nonterminal E can be replaced E * E, etc.
+    Rule 2: nonterminal N can be replaced by D or DN.
+    Rule 3: nonterminal D can be replaced by any single digit.
+
+    The rules can generate any simple arithmetic expression using +, *, parens,
+    and single digits.
+
+CFGs are a compact way to represent a collection of strings and they have a
+rich and well-understood theory. However, they have two main drawbacks.
+
+    - A CFG defines a collection of strings, but doesn't tell you how to check
+      check a string for validity. This means that whether a particular CFG
+      will lend itself to a nice parser depends on the particulars of how the
+      parser works, meaning that the grammar author may need to familiarize
+      themselves with the internal workings of their parser generator to
+      understand what restrictions are placed on the sorts of grammar
+      structures can arise.
+
+    - Grammars can be ambiguous. For example, the above grammar generates the
+      string 2 + 3 * 4, but does so in two ways. In one way, we essentially get
+      the grouping 2 + (3 * 4), which is what's intended. The other one gives
+      us (2 + 3) * 4, which is not what's meant. This means that grammar
+      authors either need to ensure that the grammar is unambiguous or need to
+      introduce precedence declarations auxiliary to the grammar to tell the
+      parser how to resolve the conflicts. This can be a bit of a hassle.
+
+Parsing expression grammars (PEG) are alternatives to CFGs. Here's the same
+arithmetic example in PEG form:
+
+    E -> F + E | F
+    F -> T * F | T
+    T -> D* | (E)
+    D -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 / 9
+
+A key feature of PEGs is explicit ordering of parsing alternatives. The syntax
+can be read as "First try this, then this, etc". In that sense, PEGs directly
+encode into the grammar structure itself how the parsing is to be done. This
+approach resolves the ambiguity noted above and lends itself toward direct
+translation from grammar to parser generation.
+
+The Packrat Parsing Algorithm builds on the PEG approach. The algorithm is
+conceptually quite simple. At a high level, a packrat parser begins with the
+start symbol, then tries the ordered choices, one at a time, in sequence until
+it finds one that works. As it works through those choices, it may find that it
+needs to match another nonterminal, in which case it recursively tries matching
+that nonterminal on the rest of the string. If a particular choice fails, the
+parser backtracks and then tries the next production.
+
+The algorithm combines the PEG approach with memoization (essentially dynamic
+programming without the bookkeeping) to achieve linear performance.
+
+--------
+grammar-types: Grammar types
+--------
+
+References:
+
+    https://en.wikipedia.org/wiki/Chomsky_hierarchy
+    https://en.wikipedia.org/wiki/Formal_grammar
+    https://stackoverflow.com/questions/14589346/is-c-context-free-or-context-sensitive
+    https://www.quora.com/What-is-an-intuitive-way-to-describe-the-differences-between-context-sensitive-context-free-and-regular-grammars-Explanations-with-examples-relating-to-human-language-would-be-particularly-helpful
+
+Formal grammars:
+
+    In formal language theory, a grammar describes how to form strings from a
+    language's alphabet (or elemental values) that are valid according to the
+    language's syntax.
+
+    More specically, a grammar consists of:
+
+        - A finite set N of nonterminal symbols (disjoint from the strings
+          formed from G).
+
+        - A finite set T of terminal symbols (disjoint from N).
+
+        - A finite set P of production rules for rewriting strings via
+          substitution.
+
+    A grammar is usually thought of as a language generator. However, it can
+    also sometimes be used as the basis for a recognizer -- a function in
+    computing that determines whether a given string belongs to the language or
+    is grammatically incorrect. To describe such recognizers, formal language
+    theory uses separate formalisms, known as automata theory.
+
+    Parsing is the process of recognizing an utterance (a string in natural
+    languages) by breaking it down to a set of symbols and analyzing each one
+    against the grammar of the language.
+
+    Most languages have the meanings of their utterances structured according
+    to their syntax—a practice known as compositional semantics. As a result,
+    the first step to describing the meaning of an utterance in language is to
+    break it down part by part and look at its analyzed form (known as its
+    parse tree in computer science, and as its deep structure in generative
+    grammar).
+
+Chomsky Hierarchy:
+
+    The following table summarizes each of Chomsky's four types of grammars, the
+    class of language it generates, the type of automaton that recognizes it, and
+    the form its rules must have.
+
+    Grammar | Languages               | Recognizer automaton       | Allowed production rules
+    -----------------------------------------------------------------------------------
+    Type-3  | Regular                 | Finite state               | A   => a | aB
+    Type-2  | Context-free            | Non-deterministic pushdown | A   => x
+    Type-1  | Context-sensitive       | LB-ND Turing machine       | xAy => xzy
+    Type-0  | Recursively enumberable | Turing machine             | z   => x
+
+    Symbols and abbreviations:
+
+        * These symbols are not standard. Typically, uppercase are terminals,
+          lowercase are non-terminals, and Greek are sequences of either.
+
+        a     | Terminal
+        ---------------------------------------------
+        M     | Non-terminal
+        N     | Same
+        ---------------------------------------------
+        x     | Sequence of terminals or non-terminals
+        y     | Same
+        z     | Same, and this one cannot empty
+        ---------------------------------------------
+        LB-ND | Linear-bounded non-deterministic
+
+    Understanding the production rules:
+
+        - Regular grammar (Type-3) is very rigid. Every non-terminal produces
+          at least a left-side terminal. The automaton requires no memory and
+          can make each decision based on the information directly at hand.
+
+            Classic example (using regex quantifier notation):
+
+                L = a{n}
+
+                X = ''
+                X = a
+                X = Xa
+
+            In other words, the language consisting of all strings of
+            consisting of zero or more letter a.
+
+        - Context-free grammar (Type-2) is more open: a non-terminal can
+          generate sequences of terminals and/or non-terminals. The constraint
+          is that every non-terminal maps to exactly one pre-defined thing.
+          Mappings never change dynamically during parsing. This automaton
+          requires memory to support backtracking (classically, a stack).
+
+            Classic example:
+
+                L = a{n} b{n}
+
+                X = ''
+                X = ab
+                X = aXa
+                X = bXb
+
+            To recognize strings in this language, the parser needs to remember
+            how many letter a were seen.
+
+        - Context-sensitive (Type-1) can be understood in relation to
+          context-free. If you look only at the middle terms, you see the
+          context-free production rule just discussed (A => z). But now what
+          each non-terminal maps to can differ depending on the context (x and
+          y are the surrounding context on both sides of the rule).
+
+            Classic example:
+
+                L = a{n} b{n} c{n}
+
+            At first, I did not understand why this is any different than a{n}
+            b{n}. Couldn't you just remember N in the same way? Perhaps the
+            answer lies less in the ordinary practicalities of how one would
+            implement a real parser but in writing the grammar rules.
+
+        - Context-sensitive (Type-0) is wide open, no constraints on the
+          grammar.
+
+--------
+api-driven-vs-text-driven-examples: API-driven vs text-driven examples
+--------
+
+# Simple programs.
+examples/get-pocket-items
+examples/daily-reading
+
+# More complex examples: contrast the API vs the text examples.
+misc/examples/job-client-via-api
+misc/examples/job-client-via-api-thematic
+misc/examples/job-client-via-text
+misc/examples/job-client-via-text-subparsers
+
+--------
+other-tools: Other tools
+--------
+
+App::Cmd
+
+    - Conclusion: not sure that I'm sold on this.
+
+    - The documentation is difficult.
+
+    - The module uses Params::Validate and Getopt::Long::Descriptive, and it
+      does not appear to be flexible in that regard.
+
+Getopt::Long::Descriptive
+
+    - Front end for Getopt::Long
+
+    - Promising in several respects.
+
+    - One could write a subclass to modify help text output.
+
+    - But it does not support the basic element of a option arg name (eg
+      --logfile PATH)
+
+    - So subclassing will take you only so far.
+
+    - Supports concept of "implies": if -X, then -Y and -Z are required.
+
+    - Support concept of a hidden option (not in help text).
+
+Getopt::Tabular
+
+    - Tabular spec definition
+
+    - Validation
+
+    - Help text: not bad, but not controllable
+
+    - Can parse an array besides ARGV
+
+    - Looks unmaintained.
+
+Getopt::Lucid:
+
+    - Interesting approach
+
+    - Emphasizes readability of specification
+
+    - Uses a chainable module when defining specs
+
+    - Also allows you to merge options with config
+
+    - Does not produce help text
+
+Getopt::Euclid
+
+    - Creates parser from your application's POD, specifically:
+
+    - The POD can also include validation assertions.
+
+    - Still active.
+
+    - Takes input from @ARGV and puts results in %ARGV
+
+    - I don't like the fact that it uses globals and is non-OO
+
+Getopt::Simple
+
+    - Wrapper around Getopt::Long
+
+    - Produces help text.
+
+Getopt::Declare
+
+    - Builds option parser from a help-text string
+
+    - It's an interesting idea.
+
+    - Requires a special syntax to define the spec and that syntax is embedded
+      in the help string
+
+Other Perl modules briefly checked:
+
+    - Abridged
+    - Auto
+    - Base
+    - Chain
+    - Clade
+    - Compac
+    - Complete::Args
+    - Easy
+    - Fancy
+    - Flex
+    - Helpful
+    - Lazy
+    - LL
+    - OO
+    - Param
+    - Plus
+    - Regex
+    - Tiny
+    - Usaginator
+    - Params::Validate
+    - Params::Smart
+    - Getargs::Mixed
+    - Getargs::Long
+    - Pod::WikiDoc
+
+Pod::Usage
+
+    - You document your application with POD.
+
+    - Then you simply use  Getopt::Long and PodUsage.
+
+    - In addition to getting a usage message, you get a man page (based on
+      pod2man) and your application is CPAN-ready.
+
+    - As a result, you have a decent level of control over the look of the
+      usage and help text. To the extent that you can't control appearance, at
+      least your documentation looks standard.
+
+    - When you invoke pod2usage, you can specify a verbosity level, which
+      controls the POD sections that are rendered.
+
+    - The main drawback is POD itself.
+
+    - You could wrap the module to simplify usage further: trap the WARN from
+      GetOptions and invoke your own help(); then invoke pod2usage if --help or
+      --man are requested.
+
+MooseX::GetOpt
+
+    - Front end for Geopt::Long
+    - Requires using Moose
+    - Not many new ideas here
+
+Python plac module
+
+    - This module wraps argparse.
+
+    - It deduces the needed parser based on: the signature of the main()
+      function (for positional arguments); annotations of the main() function
+      (for options).
+
+    - Advertises itself as being super easy to use and setup, but by the time
+      you create all of the awkward-looking annotations, it seems like argparse
+      would have been simpler.
+
+Ruby Trollop
+
+    - Very simple to use
+
+    - Not much customizability.
+
+Python argparse module
+
+    - Important concept: the module should parse/validate arguments or options
+
+Python's docopt:
+
+    - Primary ideas: (1) write good usage text and build opt parser from it.
+      and (2) parsing should be separate from validation.
+
+    - Tried to use it, but seems half-baked:
+
+        - The parsing code is up to the task of achieving goal of infering
+          complex logic and arg/option interdependencies from a usage text).
+
+        - It's easy to cause their demo example (misc/examples/naval-fate) to
+          fail just be making a few obvious changes to the configuration.
+
+    - There is a fundamental problem with separating arg parsing from data
+      validation. Because docopt does not validate, it lacks the concept like
+      argparse's `choices`. As a result, a library focused on giving the user
+      clear usage text has no mechanism for telling the user what the allowed
+      values are for an option-argument.
+
+    - The library also has an awkward way of creating the returned opts
+      dictionary, with keys like `--foo` and `<path>`.
+
+    - The library's returned dict also divorces an option's presence (a
+      True/False flag) from the value of its argument. For example, a spec like
+      `-C PATH` would produce a dict like `{'-C': True, 'PATH', '/tmp/blah'}`.
+      That seems like a fundamental problem.
+
+Python: Click
+
+    - Interesting but opinionated
+
+    - Explicitly rejects customizability of help output
+
+    - Option parsing configuration ends up spread widely across your code base,
+      next to the actual functions that do the work, rather than centralized
+
+    - Is lazily composable
+
+    - Follows the Unix command line conventions
+
+    - Supports loading values from environment variables
+
+    - Supports for prompting of custom values
+
+    - Nestable and composable
+
+    - Supports file handling
+
+    - Useful helpers: getting terminal dimensions; ANSI colors; fetching direct
+      keyboard input; screen clearing; finding config paths; launching apps and
+      editors.
+
+Python invoke:
+
+    - Part of the Fabric ecosystem.
+
+    - Good for a collection of small tools used by a project.
+
+    - Not a full CLI arg parser.
+
+Ruby Thor
+
+    - Similar to Fabric in its approach.
+
+Ruby GLI
+
+--------
+problems-scenarios-from-argparse: Problems scenarios from argparse
+--------
+
+https://stackoverflow.com/questions/35847084
+
+    Wants to customize help text capitalization to mimic standard English usage
+    for section titles. The answers demostrate the absurdity of trying to
+    customize argparse help text.
+
+        Usage: ...                       # Difficult: must subclass.
+
+        Positional arguments:            # Fairly easy: ap._positionals.title
+            ...
+
+        Optional arguments:              # Fairly easy: ap._optionals.title
+            ...
+
+https://stackoverflow.com/questions/18025646
+
+    Grammar needed:
+
+        frob -x [other-opts]
+        frob -y -z [other-opts]
+
+https://stackoverflow.com/questions/4466197
+
+    Grammar needed:
+
+        frob [ -s | -f [-m] ] <host>
+        frob -h
+
+https://stackoverflow.com/questions/28660992
+
+    Grammar needed:
+
+        - Option takes 2 args.
+            - The 1st arg must be A|B|C.
+            - The 2nd arg must be X|Y|Z.
+
+        frob [-a {A,B,C} {X,Y,Z}]
+        frob -h
+
+    Solvable if the parser allows `choices` to take a list:
+
+        dict(
+            option = '-a',
+            nargs = 2,
+            choices = [(A, B, C), (X, Y, Z)],
+        )
+
+https://stackoverflow.com/questions/25626109
+
+    Grammar needed: if -x if present, -a and -b are also required.
+
+        frob          [-y] [-z]
+        frob -x -a -b [-y] [-z]
+
+http://bugs.python.org/issue11588
+
+    Grammar needed:
+
+        - Sets of arguments that must occur together.
+
+        frob -o           [-x]
+        frob -r (-p | -s) [-x]
+
+    Grammar needed:
+
+        frob -a -b [-x]
+        frob -c -d [-x]
+
+http://bugs.python.org/issue10984
+
+    Grammar needed:
+
+        - User has three flags: -a -b -c
+        - Plus some other flags: -x -y
+        - The -b flag is incompatible with both -a and -c.
+
+        frob [-b]      [-x] [-y]
+        frob [-a] [-c] [-x] [-y]
+
+https://stackoverflow.com/questions/11455218
+
+    Grammar needed:
+
+        - If -y is given, -x is required.
+
+        frob [-x] [-z]
+        frob -y -x [-z]
+
+https://stackoverflow.com/questions/27681718
+
+    Grammar needed:
+
+        frob [-x] [-y] (<a> <b> <c>)...
+
+    Approach:
+
+        - Allow groups of positionals to be repeated, with append-like action.
+
+https://stackoverflow.com/questions/19114652
+
+    Grammar needed:
+
+        - The entire CLI grammar can be repeated.
+
+        frob (version <n> --file <p1> <p2>)...
+
+    Control how choices are listed in usage text:
+
+        - eg, don't repeat them.
+
+            -n {foo,bar,baz}, --name {foo,bar,baz}
+
+        - or refer to them by name, and then define the name later
+
+            --othername FOO
+
+            where FOO
+                foo
+                bar
+                baz
+
+Help text with subparsers:
+
+    frob -h
+        - some people want just top-level help
+        - others want all help : top-level all subparsers
+
+https://stackoverflow.com/questions/4042452
+
+    If program has required args/options, but it is run
+    with zero args, provide help text, not error text.
+
+    It's trivial if you have a grammar:
+
+        frob <x> <y> [-z]
+        frob --help
+        frob
+
+https://stackoverflow.com/questions/27258173
+
+    - Required: -x, -y, or both (but not neither).
+
+    frob -x [-y] [-z]
+    frob -y [-x] [-z]
+
+https://stackoverflow.com/questions/5257403
+
+    - wants nargs to allow a range: eg, 1 to 3.
+
+    - this works, but starts to look ugly if N gets larger
+
+        frob -x A [B [C]]
+
+        frob -x A [B [C [D [E [F]]]]]
+
+    - other possibilities:
+
+        frob -x A...{7}
+        frob -x A...{1,3}
+        frob -x A...{0,3}
+        frob -x A...{3,}
+
+https://stackoverflow.com/questions/4692556
+
+    Need just the literal 'all' or 1+ positions.
+
+    frob [-x] [-y] all
+    frob [-x] [-y] <pos>...
+
+https://stackoverflow.com/questions/62524681
+
+    - Wants a grammar where each -C option resets the configuration,
+      and where the specifically declared configurations are linked
+      to the -p option.
+
+    - The desired end result is a list of configurations.
+
+    frob -w 100 -c 50 -C -w 1000 -c 500 -p /foo -C -w 5% -c 3% -p /bar
+         ----(3)-----    ---------(1)----------    --------(2)--------
+
+    1. Configuration for the /foo volume.
+    2. Ditto, for /bar volume.
+    3. Configuration settings for all other volumes.
+
+job-client:
+
+    Allow for extra options for job-client devs, based on env var.
+
+    Special options that exit-with-msg (without griping about other issues):
+        --version
+        --examples
+        --autocomplete
+
+    General and task-specific help (without griping about other issues):
+        job-client -h
+        job-client TASK -h
+        job-client -h TASK -h
+
+    Using a YAML config file:
+
+        - Settings from the config file should control the `default`
+          settings for the argument parser.
+
+        - When running `job-client configure`, you do not want to load the
+          existing config file.
+
+--------
+example-grammars: Example grammars
+--------
+
+Example 1:
+
+    [-b]      [-x] [-y]   # -a and -b are mutex,
+    [-a] [-c] [-x] [-y]   # and -b also allows -c
+
+Example 2:
+
+    [-x]  [-z] <a>
+    -y -x [-z] <a> [<b>]   # If -y, then -x is required and <b> is allowed.
+
+Example 3:
+
+    [-x] [-y] (<a> <b> <c>)...
+
+Example 4:
+
+    (-x | -y | -z -q) [-a] <b>
+
+Example 5:
+
+    (-a -x | -b... | [-a] -c -d) [-e | -f] [-g] <h> [<i>...] ([-j -k]... | -m -n)
+
