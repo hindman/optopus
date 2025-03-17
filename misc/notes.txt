@@ -82,71 +82,33 @@ todos: TODOs
 Reorientation:
 
     x README.md
+    x notes.txt
 
-    . notes.txt
-
-        . Reread in progress: see __HERE__
-
-        - Update the specification based on new plan.
+    - Update the specification sections based on new plan.
 
         - Try to improve specification notes:
             - Clearer, simpler.
             - Define all terms.
             - Build up with examples -- more of them.
 
-    - Reread code
-
-    - Reread setup.py, etc
+        - In syntax-examples, mention misc/ scripts used to compare text-vs-API
 
     - Scan through other materials in misc.
 
+    - Reread setup.py, etc
+
+    - Reread: arg-parsing-algo
+
+    - Reread code
+
 Implement data-oriented exception strategy.
-    - Can I just use kwexception?
+    - I think I can use kwexception.
 
 Grammar syntax parsing.
 
 Convert grammar-syntax AST into a Grammar.
 
 Argument parsing.
-
-Issues encounted while working on mvs: fold into the optopus plan:
-
-    - Did user supply a value or did it come from the configured default?
-
-        - After parsing occurs, how does the user tell if an opts attribute was
-          (1) supplied in the command-line args vs (2) obtain from the default.
-
-        - This an annoying problem with no good argparse solutions.
-
-    - Merging user-preferences and opts.
-
-        - User-prefs and opts tend to have the same validation needs.
-
-        - And the merge them can be tricky.
-
-            - Maybe this isn't too bad if we could solve the argparse
-              deficiency where you don't know if the opt was supplied or was
-              the default.
-
-            - If we knew that, then the merge logic would be simpler[?].
-
-                for K, V in prefs.items():
-                    if opts.K was not set by user:
-                        opts.K = V
-
-    - How does a user request a non-default location for user-prefs?
-
-        - Environment variable?
-
-    - Negatable options:
-
-        - Whether/how to display in help text.
-        - How to represent data.
-
-    - optopus should be able to report the rank-order positions of opts on the
-      command-line. For example: the "rules" in the Perl rename script were
-      supposed to be applied in order; ditto for the Unix find command's
-      operations.
 
 --------
 road-map: Road map
@@ -346,6 +308,147 @@ specification: Specification
 --------
 new-plan-questions: New plan and questions
 --------
+
+TERMINOLOGY:
+
+    - spec
+        - Option 1:
+            - Use `specification` in user facing terminology.
+            - Use `spec` for coding/internal purposes.
+            - But function arguments are user-facing:
+                def foo(specification, ...):
+                    spec = specification        # Seems annoying.
+        - Option 2:
+            - `Help syntax` or `syntax`.
+            - I don't love these either.
+
+    - opt-help
+        - There are alternatives:
+            - opt-line
+            - opt-spec                     # Leaning this way right now.
+            - opt-definition
+            - opt-def
+        - They do not distinguish Opt definition in variant vs opt-help:
+            - Aliases.
+            - Help text.
+        - That's why having `help` in the term is clarifying.
+        - A different view is to lean into the ambuguity:
+            - In both contexts, they are opt-spec.
+            - But within a variant, not all features are supported.
+
+    - grammar-syntax and grammar-section:
+        - grammar-section:
+            - usage-section is better
+        - grammar-syntax:
+            - spec-syntax is better
+
+    - sym-dest:
+        - Very cryptic.
+        - This concept is used anywhere we have variable-input.
+        - Decision:
+            - Call it a var-input.
+            - In the syntax documentation for a var-input, use choices, not vals.
+
+        - New syntax:
+
+            <sym.dest=choices>
+            --dest <sym.subdest=choices>
+
+            Explanations and definitions:
+
+                - Definitions:
+                    - sym: symbolic name in generated help text
+                    - dest: attribute name where value stored in parsed Result.
+                    - choices: valid values
+
+                - Example:
+
+                    <task.action=chomp|grep|strip>
+
+                    - In the generated help text, the positional will be
+                      documented as <task>.
+
+                    - After parsing, the Result will have an `action` attribute
+                      containing the parsed value of the positional (chomp,
+                      grep, or strip).
+
+                - Wrinkle:
+
+                    - An analogous syntax can also appear in parameter-variants
+                      or positional-variants. These are variant definitions
+                      that hinge on specific values taken by a var-input. The
+                      classic example is a subcommand-style grammer.
+
+                        nab <task.action=chomp> ...
+                        nab <task.action=grep> ...
+                        nab <task.action=strip> ...
+
+                    - In this context, "choices" is just one choice. Optopus
+                      will configure the entire Opt(action) by collecting all
+                      of the choices specified by the variants.
+
+        - Question:
+
+            - TENTATIVE DECISION:
+                - Drop sym from the syntax for var-input.
+                - This decision includes dropping the sym! syntax.
+                - Under the plan for a simplified spec-syntax, the <sym.dest>
+                  business is the most cryptic.
+                - Many users will find it hard to remember the ordering:
+                    - Is is <sym.dest> or <dest.sym>?
+                    - Answer is clear if you understand the full system.
+                    - But not an easy thing for an ordinary user to recall.
+
+            - Would it be better to handle symbolic names (`sym` in the syntax
+              definition for var-input) via the API?
+
+            - One of the more common use cases occurs when you have an Opt
+              taking multiple positionals or parameters. In this case, you
+              typically want a plural-name for dest and a singular-name for sym
+              (the metavar in argparse)
+
+                - Handle via spec.
+
+                    p = Parser('frob <path.paths>...')
+
+                - Handle via API.
+
+                    - At the time of spec definition, the Opt will have
+                      dest=path and sym=path.
+
+                        p = Parser('frob <path>...')
+
+                    - But then an API call can modify dest values.
+
+                        p.dests = dict(path = 'paths', ...)
+
+                    - Does the user put their desired dest or sym in the spec?
+                        - They can do whatever they want.
+                        - The API will support p.dests = ... or p.sym = ...
+                        - Seems more natural for user to prefer sym in the
+                          spec, because it aligns with their vision for
+                          usage-text.
+
+            - The other purpose envisioned by sym in the spec-syntax was to
+              allow users to control how var-input is displayed in usage text.
+
+                - For example, the notes for the current <sym.dest=vals> plan
+                  has the following illustration.
+
+                    <paths>...      | <paths>... | paths
+                    <path.paths>... | <path>...  | paths
+                    <PATH!paths>... | PATH...    | paths
+
+                - The sym portion of the syntax supports the common
+                  singlular/plural issue: dest=paths and sym=path.
+
+                - And the sym! syntax supports users who want to deviate from
+                  the Optopus style of consistently using angle-brackets for
+                  var-input.
+
+                    - But a user who wants the classic uppercase-style (as used
+                      by argparse, for example) would probably prefer to
+                      configure the whole Parser via one API call.
 
 SIMPLIFYING THE SPEC:
 
@@ -631,6 +734,45 @@ SIMPLIFYING THE SPEC:
         -d --delim <s>     : Delimeter for capture groups [tab]
         -p --para          : Emit capture groups one-per-line, paragraph-style
 
+Issues encounted while working on mvs: fold into the optopus plan:
+
+    - Did user supply a value or did it come from the configured default?
+
+        - After parsing occurs, how does the user tell if an opts attribute was
+          (1) supplied in the command-line args vs (2) obtain from the default.
+
+        - This an annoying problem with no good argparse solutions.
+
+    - Merging user-preferences and opts.
+
+        - User-prefs and opts tend to have the same validation needs.
+
+        - And the merge them can be tricky.
+
+            - Maybe this isn't too bad if we could solve the argparse
+              deficiency where you don't know if the opt was supplied or was
+              the default.
+
+            - If we knew that, then the merge logic would be simpler[?].
+
+                for K, V in prefs.items():
+                    if opts.K was not set by user:
+                        opts.K = V
+
+    - How does a user request a non-default location for user-prefs?
+
+        - Environment variable?
+
+    - Negatable options:
+
+        - Whether/how to display in help text.
+        - How to represent data.
+
+    - optopus should be able to report the rank-order positions of opts on the
+      command-line. For example: the "rules" in the Perl rename script were
+      supposed to be applied in order; ditto for the Unix find command's
+      operations.
+
 --------
 grammar-syntax: Grammar syntax
 --------
@@ -734,7 +876,7 @@ Sym-dest:
         <sym.dest=vals>
         --dest <sym.subdest=vals>
 
-        Where vals can be:
+        Where vals can be:                           # Why not term this choices & choice?
 
             val|val|... | Choices
             val         | Positional or parameter alternative.
@@ -751,7 +893,7 @@ Sym-dest:
 
         And where a single <name> means the following:
 
-            ** Needs clarification?
+            ** Needs clarification: what is a `name` in this context?
 
             Positionals | <dest>       | The name is dest and sym
             Options     | --dest <sym> | The name is sym
@@ -781,19 +923,19 @@ Sym-dest:
 
 Names:
 
-    - Various grammar elements have names:
+    - Various grammar elements have names or name-like attributes:
 
-        - Variants.
-        - Partials.
-        - Destinations.
+        - Variant: name.
+        - Partial: name.
+        - Opt: dest is the "name".
 
     - Optopus allows both typical names and non-standard ones (eg, names
       starting with underscore or even digit).
 
-    - However, the dest will be normalized as follows:
+    - However, the name/dest will be normalized as follows:
 
         - Hyphens converted to underscores.
-        - Attach underscore prefix to dest starting with digit.
+        - Attach underscore prefix to name/dest starting with digit.
 
 Variant definition syntax:
 
@@ -867,8 +1009,21 @@ Sections:
             - variant-scope lines. Looks the same as as partial usage.
               Subsequent opt-help lines will be scoped to that variant.
               Applicable only when Opt.dest values are reused across variants.
-                  ** What is a variant-scope line?
-                  ** Is this concept necessary?
+
+                * Clarifications and questions:
+                - Here's how I a variant-scope line:
+
+                    Foo ::
+
+                    grep!
+
+                    [-b --bar] : Blah blah
+
+                - Is this concept necessary?
+                - Probably not. It's an unusual use case.
+                - Even if it were, I suspect that this solution is inadequate.
+                - To fully support this level of fine-tuning, you might need
+                  a sym-dest to include some kind of scoping syntax.
 
             - opt-help lines. Can fully configure an Opt or use an abbreviated
               form if merely augmenting an already-configured Opt.
@@ -1251,7 +1406,7 @@ Opt:
     choices   | None (validation deferred).
     --------------------------------------------------------------------------------
     help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
-    metavar   | Defer. But need a better name. [** Does sym cover this?]
+    metavar   | Defer. But need a better name. [** Current plan now uses `sym`].
     choices   | Defer.
     convert   | Defer. Callable.
     validate  | Defer. Callable.
@@ -2101,8 +2256,6 @@ A backtracking example:
              is for Opt(-f) with nparams of (2,3). Push that
              to the stack.
 
-__HERE__
-
 State:
 
     - Data object to hold parsing state as the various interpretations from the
@@ -2453,21 +2606,21 @@ explicit manner. Assume a list of lists, where nargs/nparams determines the
 length of the innermost lists and ntimes determines the length of the outer
 list(s).
 
-    - Singular nargs, nparams, and ntimes:
+    - Singular nargs/nparams and ntimes:
 
         a1     # Either value or bool (latter if nargs/nparams is zero).
 
-    - Add plural nargs/nparams:
+    - Plural nargs/nparams:
 
         [a1, a2, ...]
 
-    - Add plural ntimes:
+    - With plural ntimes:
 
         (<z> <z>){3}
 
         [[a1, a2], ..., ...]
 
-    - Add a layer of nested plural ntimes:
+    - With a layer of nested plural ntimes:
 
         (
             --foo <> <>
@@ -2527,14 +2680,15 @@ Option arguments can be named or unnamed:
 
                                         # opts.mode:
     frob --mode {group} {name} {n}      # - Data object with attributes.
-    frob --mode {} {} {}                # - Tuple.
+    frob --mode {} {} {}                # - List.
 
 --------
 variants-needed: Variants: why they are needed
 --------
 
 Are variants needed give that the grammar syntax already has support for
-alternatives?
+alternatives? Yes: they provide several benefits, even if one could do
+without them, strictly speaking.
 
 Partial variants are a useful device to express some grammars more
 conveniently.
@@ -2616,7 +2770,7 @@ General destination assignment:
     - Configuring such matters via the API requires the user to understand how
       the library works a bit too closely.
 
-Partials:
+Partial variants:
 
     - API usage would require the user make multiple configurations to mark a
       variant as partial and then insert it wherever needed.
@@ -2627,6 +2781,12 @@ Partials:
 
 Zones and anchoring:
 
+    - Decisions:
+        - Infrequent use case.
+        - Easy to handle via API.
+        - Drop from grammar syntax.
+        - Also see zones-not-needed
+
     - I suspect the desire for zones and anchoring is moderately low but still
       more than nothing.
 
@@ -2635,8 +2795,6 @@ Zones and anchoring:
 
     - While the zone syntax not too obtrusive, and it is a mixture of intuitive
       (zone markers) and not very intuitive (anchor markers)
-
-    - Infrequent use case, easy to handle via API: let's drop it from grammar syntax.
 
     - Another question: is the zone concept needed, or could Group do the same
       thing? I increasingly think so.
@@ -2651,7 +2809,7 @@ High precedence:
       library could interpret --help and --version options as high precedence
       by default.
 
-    - Infrequent use case, easy via the API: let's drop it.
+    - Infrequent use case, easy via the API: let's drop it from grammar syntax.
 
 --------
 optional-positional-placement: Optional positionals before required are not a problem
@@ -2662,9 +2820,9 @@ required ones. For example:
 
     [<m>] <x> <y>
 
-But this is not a problem is we just adhere consistently to greedy policy.
-If the user wants positionals attached to <x> and <y> before <m>, they
-can express the grammar differently.
+But this is not a problem if we adhere consistently to greedy policy. If the
+user wants positionals attached to <x> and <y> before <m>, they can express the
+grammar differently.
 
 --------
 parse-known-args: Parse known arguments
@@ -2725,6 +2883,8 @@ parsing modes that it supports:
             allowing the user to impose a specific parameter binding
             requirement. That will be done via a quantifier controlling nparams
             to be consumed per option.
+
+                * The name (noconf) seems cryptic. Could it be nparams?
 
                 Parser()                # Default: greedy.
                 Parser(noconf = '0')    # Flag style
@@ -2801,9 +2961,13 @@ but it is probably easy to support).
 
 The argument passing details are important. Not everyone wants opts to be
 passed everywhere. In other notes, I planned to have dispatch functions called
-with three arguments: VAL, OPT, RES (where OPT is the Opt triggering the call,
-VAL is the Result value for that Opt, and RES is the parsed Result). But I'm
-not sure that plan is very good.
+with three arguments.
+
+    # I suspect that this plan is not good.
+
+    VAL | Value for the Opt
+    OPT | Opt triggering the call
+    RES | Result from Parser.parse()
 
 Dispatch occurs after argument parsing and validation. At that point, it is not
 clear why the dispatch function needs VAL and OPT. Nor does it seem like users
@@ -2826,20 +2990,20 @@ Example API usages:
 
     - The RES.foo examples mean to pass the value of Result.foo.
 
-    - And the disp() function returns a configured object telling Optopus which
-      args/kwargs to pass to the function. Its signature is 1+ callables plus
-      kwargs.
+    - And the dispatcher() function returns a configured object telling Optopus
+      which args/kwargs to pass to the function. Its signature is 1+ callables
+      plus kwargs.
 
-        from optopus import Parser, RES, disp
+        from optopus import Parser, RES, dispatcher
 
-        # Load the library and configure the Parser.
+        # Load the Pocket library and configure the Parser.
         lib = ...
         p = Parser(...)
 
-        # Some dispatching configurations.
-        de = disp(experiment)
-        di = disp(do_interactive, lib, RES)
-        dr = disp(rebuild_library, limit = RES.lib, progress = RES.progress)
+        # Some dispatchers.
+        de = dispatcher(experiment)
+        di = dispatcher(do_interactive, lib, RES)
+        dr = dispatcher(rebuild_library, limit = RES.limit, progress = RES.progress)
 
         # Tie those dispatchers to usage variants.
         p.config('experiment', dispatch = de)
@@ -2926,8 +3090,8 @@ Inferring intent from error types is tempting but not always so powerful:
 
 The resolution is to consider how other parsers behave:
 
-    - They always try to consume as much of the input as possible. This suggests
-      that the first criterion for error-selection is S.ai.
+    - They always try to consume as much of the input as possible. This
+      suggests that the first criterion for error-selection is to maximize S.ai.
 
     - Multiple interpretations can fail with the same S.ai. To resolve ties,
       consider how errors can occur (consuming an OPT, consuming a POS, or
@@ -2967,13 +3131,16 @@ Types of errors in precedence order, by failure source:
 converters-validators: Converters and validators
 --------
 
+** Does the discussion in the dispatch section [above] cause me
+   to rethink the approach here -- specifically for validators.
+
 Function signatures:
 
-    Function  | Arity | Signature
-    -------------------------------------------------------
-    Converter | 1     | STR            => OBJ/raise
-    Validator | 3     | VAL, OPT, RES  => True/False/raise
-    Dispatch  | 3     | VAL, OPT, RES  => None
+    Function  | Signature
+    -----------------------------------------------
+    Converter | STR            => OBJ/raise
+    Validator | VAL, OPT, RES  => True/False/raise
+    Dispatch  | VAL, OPT, RES  => None                # No. See dispatch section [above].
 
 --------
 grammar-querying-api: Grammar querying API
@@ -3317,8 +3484,8 @@ Upper and lower styles: easily rejected:
 
     - They work poorly for positional variants and parameter variants.
 
-    - Usage text is ambiguous: we cannot distinguish merge/delete
-      (positional variants) from path (variable input).
+    - Usage text is ambiguous: we cannot distinguish merge/delete (literal
+      values for positional variants) from path (variable input).
 
         frob [-f] merge [-x] [-y] path
         frob [-f] delete [-z] path
@@ -3575,8 +3742,8 @@ Policy decisions:
 
 Result for the nab example:
 
-    - If the 'commands' dest is NOT in the nab spec, the Result will be
-      narrowly correct, but very difficult for the user to understand at
+    - If the 'cmd' dest were NOT in the nab spec, the Result would be
+      narrowly correct, but difficult for the user to understand at
       runtime, because every dest would be a flat list of values, some of them
       coming from different 'cmd' invocations. Nonetheless, there is nothing
       narrowly "incorrect" about this outcome; if the user does not like it,
@@ -3598,13 +3765,13 @@ Result for the nab example:
             a     = [       a1,                         a2 ],
         )
 
-    - If commands dest is used, the Result will organize things in
+    - If the cmd dest is used, the Result will organize things in
       a meaningful way.
 
         Result(
             debug = t1,
             help  = h1,
-            commands = [
+            cmd = [
                 Result(chomp),
                 Result(findall, r1, a1),
                 Result(grep, r2, i1, v1, v1),
