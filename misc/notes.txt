@@ -80,19 +80,25 @@ todos: TODOs
 --------
 
 Reorientation:
+
     x README.md
-    - notes.txt
-        
-        - Editing/reading in process.
+
+    . notes.txt
+
+        . Reread in progress: see __HERE__
+
         - Update the specification based on new plan.
+
         - Try to improve specification notes:
             - Clearer, simpler.
             - Define all terms.
-            - Build up with examples.
+            - Build up with examples -- more of them.
 
-    - code
-    - setup.py, etc
-    - misc: other materials: briefly review
+    - Reread code
+
+    - Reread setup.py, etc
+
+    - Scan through other materials in misc.
 
 Implement data-oriented exception strategy.
     - Can I just use kwexception?
@@ -547,7 +553,7 @@ SIMPLIFYING THE SPEC:
 
                             - Of course! This is consistent with the way we
                               have resolved many other ambiguous situations via
-                              a policy of greedy parsing without back-tracking.
+                              a policy of greedy parsing.
 
                             - If this is the grammar, the consistent approach
                               is to keep assuming that lines are variants until
@@ -560,8 +566,8 @@ SIMPLIFYING THE SPEC:
     - SUMMARY OF DECISIONS ABOVE:
 
         - Spec grammar, with the usual greedy parsing approach, so we assume
-          variant in the face of ambiguity about the initial lines in the first
-          "section".
+          variant in the face of variant/opt-help ambiguity about the initial
+          lines in the first section.
 
             [variant...]
             [opt-help...]
@@ -569,11 +575,13 @@ SIMPLIFYING THE SPEC:
 
         - The prog is not used in the spec. Settable via API.
 
-        - Sections other than the first must have titles.
+        - All sections require a title. But the first section's title (Usage)
+          is modifiable only via API.
 
-        - The first section might or might not be a "section". Look into this.
+        - None of the current README examples would require double-colon:
+            - Edit README if this decision is made.
 
-        - None of the current README examples would require double-colon.
+        - See questions in opt-action-not-needed
 
     - Examples from the README:
 
@@ -622,12 +630,6 @@ SIMPLIFYING THE SPEC:
         -g --group <n>     : Emit just capture group N [0 for all]
         -d --delim <s>     : Delimeter for capture groups [tab]
         -p --para          : Emit capture groups one-per-line, paragraph-style
-
-Other questions:
-    - If we adopted the new plan (above), modify README: drop double-colon.
-    - Is the first section a Section?
-        - If so, grammar-section or usage-section?
-    - See questions in opt-action-not-needed
 
 --------
 grammar-syntax: Grammar syntax
@@ -707,7 +709,7 @@ Variants:
 
         [name[!] :] definition
 
-        * Where ! denotes a partial variant.
+        - Where ! denotes a partial variant.
 
     - Continuation lines must be indented and contiguous.
 
@@ -735,7 +737,7 @@ Sym-dest:
         Where vals can be:
 
             val|val|... | Choices
-            val         | Positional or parameter variant.
+            val         | Positional or parameter alternative.
 
         Where val can be:
 
@@ -748,6 +750,8 @@ Sym-dest:
             sym! : sym
 
         And where a single <name> means the following:
+
+            ** Needs clarification?
 
             Positionals | <dest>       | The name is dest and sym
             Options     | --dest <sym> | The name is sym
@@ -824,9 +828,9 @@ Variant definition syntax:
     Quoted literals:
 
         `hello`          Can be used as positional, positional
-                         choice/variant, or parameter choice/variant.
+                         choice/alternative, or parameter choice/alternative.
 
-Variant definition syntax allowed for opt-help lines:
+Opt-help lines use a subset of the full variant syntax:
 
     - Supported:
 
@@ -863,7 +867,8 @@ Sections:
             - variant-scope lines. Looks the same as as partial usage.
               Subsequent opt-help lines will be scoped to that variant.
               Applicable only when Opt.dest values are reused across variants.
-              [Is this concept necessary? What is a variant-scope line?]
+                  ** What is a variant-scope line?
+                  ** Is this concept necessary?
 
             - opt-help lines. Can fully configure an Opt or use an abbreviated
               form if merely augmenting an already-configured Opt.
@@ -975,7 +980,6 @@ terminology: Terminology
 --------
 
 Users:
-
     - Library: the optopus code base.
     - Library user (or just user): a developer using optopus.
     - End user: a user running a program that uses optopus.
@@ -1004,18 +1008,16 @@ Command line argument types:
         - Symbolic name for a positional or parameter in usage text.
 
     - Positional or parameter variant:
-        - Mechanism to define a special grammar when a
-          positional or parameter takes a specific value.
+        - A variant that is defined and triggered by a specific
+          value for either an option parameter or a positional.
 
 Help text sections:
-
     - Help text: documents everything.
     - Usage text: documents the command-line grammar.
     - Options text: documents the options and positional arguments, perhaps in groups.
     - Custom sections.
 
 Destination assignment:
-
     - Controls how the parsed data elements are stored and named.
 
 --------
@@ -1245,19 +1247,19 @@ Opt:
     nparams   | .
     dest      | Was 'destination'.
     default   | .
-    value     | None (typical) or the variant value.
+    value     | None (typical) or the variant value.  [** Unclear]
     choices   | None (validation deferred).
     --------------------------------------------------------------------------------
     help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
-    metavar   | Defer. But need a better name.
+    metavar   | Defer. But need a better name. [** Does sym cover this?]
     choices   | Defer.
     convert   | Defer. Callable.
     validate  | Defer. Callable.
     text      | Defer.
     hide      | Defer. False (visible), True (hidden), or sequence of where/what to hide
-    sections  | Defer. Sequence of section names.
+    sections  | Defer. Sequence of section names.    [**An Opt has sections?]
     high      | Defer. Was 'tolerant'.
-    factory   | Defer. Callable to create default.
+    factory   | Defer. Callable to create default.   [**Necessary?]
     aliases   | Defer.
     dispatch  | Defer. Callable(s). Maybe 'actions'.
     required  | Defer, maybe drop. Same as ntimes=1.
@@ -1624,7 +1626,11 @@ messages.
 Easy system for validators to be combined flexibly.
 
 Should easily support different help types: (a) brief usage/synopsis, (b) full
-help or man-page, and (c) extras or examples.
+help or man-page, and (c) extras or examples. Regarding the latter, provide
+utility functions to format/wrap any text blob in the same manner that Optopus
+would format official sections in the help text: p.format(BLOB) should return
+text consistent with the look and behavior of other help text, based on Parser
+defaults and configuration.
 
 Include ability to merge options from several sources: ENV variables, config
 files, command-line options. Note that the purpose of the configuration sources
@@ -1791,7 +1797,7 @@ explicit-option-param-syntax: Why explicit syntax for option parameters is neede
 --------
 
 Imagine that the grammar did not require explicit surrouding markers for
-parameters, positionals, and literal values: {}, <>, an ''. Every type of
+parameters, positionals, and literal values: {}, <>, and ''. Every type of
 confusion would be possible.
 
     frob --type x y z   # Meaning of x, y, z unclear.
@@ -1813,15 +1819,15 @@ Some ways to address that problem:
 high-precendence-options: High precedence options
 --------
 
-Most options control the primary behaviors of a program. But some are
-special, most notably those related to user help:
+Most options control the primary behaviors of a program. But some are special,
+most notably those related to user help:
 
     --help
     --version
     --examples
     --demo
 
-Argument parsing libraries often provide an convenient mechanism for --help and
+Argument parsing libraries often provide a convenient mechanism for --help and
 sometimes --version, but rarely anything else. In addition, they tend to
 provide such features in a way that is slightly misleading (at least in a
 strict sense) and definitely not as convenient for users as it could be.
@@ -1879,7 +1885,7 @@ Text wrapping:
 
         - Rewrap to the desired width (probably using textwrap module).
 
-        - Leave indented paragraphs as-is.
+        - Leave indented paragraphs as-is. [This note is out of date.]
 
         - Provide an easy syntax for users to suppress line wrapping
           within the text (eg something borrowed from markdown)
@@ -1953,6 +1959,8 @@ Phase 4: assembly:
 --------
 convenience-parsing-algo: Parsing the convenience grammar syntax
 --------
+
+** This section might be out of date.
 
 The grammar can be built from the parts we already have:
 
@@ -2092,6 +2100,8 @@ A backtracking example:
         V2 : Don't attach to Opt(-f). Now the foregone interpretation
              is for Opt(-f) with nparams of (2,3). Push that
              to the stack.
+
+__HERE__
 
 State:
 
