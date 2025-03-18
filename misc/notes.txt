@@ -16,7 +16,7 @@ toc: Table of contents
     specification | Specification
 
         new-plan-questions     | New plan and questions
-        grammar-syntax         | Grammar syntax
+        spec-syntax            | Spec syntax
         syntax-examples        | Syntax examples
         terminology            | Terminology
         classes-and-attributes | Classes and attributes
@@ -84,22 +84,43 @@ Reorientation:
     x README.md
     x notes.txt
 
-    - Update the specification sections based on new plan.
+    - spec-syntax:
 
-        - Try to improve specification notes:
-            - Clearer, simpler.
-            - Define all terms.
-            - Build up with examples -- more of them.
+        - Editing pass.
+        - Add examples as I go.
+            - Put them in syntax-examples.
+            - Link to them via markers.
 
-        - In syntax-examples, mention misc/ scripts used to compare text-vs-API
+    - syntax-examples:
+
+        - Augment and edit.
+        - Mention misc/ scripts used to compare text-vs-API
+
+    - new-plan-questions:
+
+        - Relocate with heavy edits, consolidation.
+
+    - terminology:
+
+        - Augment significantly.
+
+    - classes-and-attributes:
+
+        - Edit to reflect new plan.
+
+    - Editing pass over notes.txt:
+
+        - Edit to conform to new specification.
+
+        - Where applicable add a 'Summary' to the top of each section to
+          provide an overview of key points or contents.
 
     - Scan through other materials in misc.
 
     - Reread setup.py, etc
 
-    - Reread: arg-parsing-algo
-
     - Reread code
+        - Also see: arg-parsing-algo
 
 Implement data-oriented exception strategy.
     - I think I can use kwexception.
@@ -309,6 +330,15 @@ specification: Specification
 new-plan-questions: New plan and questions
 --------
 
+OTHER CHANGES:
+
+    - Based on recent simplifications, I suspect we can drop two restrictions
+      on the first section.
+        - No literal text.
+        - No title-setting via the spec.
+    - If correct, the only things special about the first section is that it
+      can begin with 1+ variants.
+
 TERMINOLOGY:
 
     - spec
@@ -345,9 +375,46 @@ TERMINOLOGY:
     - sym-dest:
         - Very cryptic.
         - This concept is used anywhere we have variable-input.
-        - Decision:
+        - Decision:  ** MAYBE NOT
             - Call it a var-input.
             - In the syntax documentation for a var-input, use choices, not vals.
+        - On further reflections, the sym is pretty important.
+
+            - Although a spec is not literally usage text, it aims to act
+              like usage text.
+
+            - Implication: when a user types up a spec, they are providing a
+              sketch of the desired usage text to be assembled for the
+              end-user.
+
+            - When defining an Opt in the simplest way possible, the user is
+              typing the desired sym values (the symbolic names to appear in
+              usage text).
+
+                <sym>        | Positional (where sym == dest).
+                --dest <sym> | Option
+
+            - Wait. Remember classic Unix option-parameters.
+
+                --foo=123
+
+                - In other words, we have a dest=value convention. I think
+                  that's why my prior planning used <sym.dest=vals> No, that is
+                  incorrect. Remember that we read the spec as a sketch of
+                  usage text. In usage text, we are commicating with end-users,
+                  who think in terms of sym values, not dest values (a dest is
+                  a programmer concern).
+
+                - So my prior decison was correct generally: we don't need both
+                  sym and dest. But I erred in thinking that we were retaining
+                  the dest. Instead, we are keeping the sym in the spec. The
+                  dest values are inferred via policy.
+
+                    <foo>     | sym == foo, dest == foo
+                    --bar <b> | sym == b  , dest == bar
+
+                - Let users resort to the API if they want dest values
+                  that differ from the policy.
 
         - New syntax:
 
@@ -619,8 +686,8 @@ SIMPLIFYING THE SPEC:
                             - A narrow analysis does not produce obvious decisions:
 
                                 #1 | Unclear
-                                #2 | Assume V, since we saw V already
-                                #3 | Assume OH (similar logic)
+                                #2 | Assume V, since we saw V already?
+                                #3 | Assume OH (similar logic)?
                                 #4 | Unclear
 
                             - Alternatively, could we simply default one way or
@@ -671,6 +738,11 @@ SIMPLIFYING THE SPEC:
         - Spec grammar, with the usual greedy parsing approach, so we assume
           variant in the face of variant/opt-help ambiguity about the initial
           lines in the first section.
+
+            ** More precisely, we don't worry about ambiguity at all. If the
+            opening lines are valid variants, that's what they are. Just stick
+            with the greedy policy. User can easily fix if they want opt-spec
+            rather than variant-spec.
 
             [variant...]
             [opt-help...]
@@ -774,176 +846,37 @@ Issues encounted while working on mvs: fold into the optopus plan:
       operations.
 
 --------
-grammar-syntax: Grammar syntax
+spec-syntax: Spec syntax
 --------
 
-Spec structure:
+Spec:
 
-    grammar-section
-    [section...]
+    - A spec is 0+ sections.
 
-    - The grammar-section is required, but can be empty. If empty, presumably
-      opt-help lines are found in the sections.
+        [section...]
 
-Grammar section forms:
+Section:
 
-    - The grammar-section can contain variants, opt-helps, or neither, but not
-      both.
+    - Structure:
 
-    - Variants can reside only in the grammar-section; opt-helps can reside in
-      any section.
+        title ::                        # Optional in 1st section (default: Usage).
+        [variant...]                    # Only in 1st section.
+        [opt-spec | block-quote]...
 
-    - The grammar-section forms, by N of variants and opt-helps in the
-      grammar-section.
+Variant:
 
-        Variants | Opt-helps | Form
-        -------------------------------------
-                 |           |
-        0        | 0         | ::
-        -------------------------------------
-                 |           | [prog] ::
-        0        | 1+        | opt-help...
-        -------------------------------------
-                 |           | [prog]
-        1+       | 0         | variant...
-        -------------------------------------
-        1+       | 1+        | Not allowed.
-        -------------------------------------
+    - Structure:
 
-        * All forms can be followed by other sections containing opt-helps.
+        [name  :] variant-spec           # Regular variant.
+        [name! :] variant-spec           # Partial variant.
 
-    - Mneumonic regarding the double-colon marker:
-        - Double-colon is the section marker.
-        - Opt-help can reside in sections.
-        - So grammar section with double-colon means opt-help.
+Variant-spec:
 
-    - Prog must be a valid name.
-
-    - Must start on a fresh line:
-        - Opt-helps.
-        - Variants other than the first.
-
-    - The grammar section does not allow regular text.
-
-    - Grammar section cannot have its title (Usage) changed via the spec.
-
-    - The first form (an empty grammar section) is needed because a one-word
-      section title would be indistinguishable from a prog.
-
-Opt-help lines:
-
-    - Syntax:
-
-        <pos>            [: [help-text]]
-        [alias...] --opt [: [help-text]]
-
-    - Note that the grammar portion of each line can contain square brackets.
-
-    - Normal grammar rules apply when defining a <pos> or --opt.
-
-    - An alias is a lone option, not a full Opt configuration.
-
-    - Continuation lines must be indented and contiguous.
-
-Variants:
-
-    - Syntax:
-
-        [name[!] :] definition
-
-        - Where ! denotes a partial variant.
-
-    - Continuation lines must be indented and contiguous.
-
-    - Variants can fully configure the opts or use an abbreviated form if the
-      user has defined the Opts explicitly in opt-help lines.
-
-        - The two types of grammar configuration (variants and opt-help
-          lines) are additve.
-
-        - Subsuequent configurations never overwrite an prior settings
-          for an Opt. Each new setting is added to the prior settings.
-
-Sym-dest:
-
-    - Variable end-user inputs (positionals and parameters) are enclosed in
-      angle brackets, which can contain a sym-dest.
-
-        <sym-dest>
-
-    - Syntax:
-
-        <sym.dest=vals>
-        --dest <sym.subdest=vals>
-
-        Where vals can be:                           # Why not term this choices & choice?
-
-            val|val|... | Choices
-            val         | Positional or parameter alternative.
-
-        Where val can be:
-
-            - Simple name consisting of \w or hyphen.
-            - Quoted-literal.
-
-        Where sym translates to usage text as follows:
-
-            sym. : <sym>
-            sym! : sym
-
-        And where a single <name> means the following:
-
-            ** Needs clarification: what is a `name` in this context?
-
-            Positionals | <dest>       | The name is dest and sym
-            Options     | --dest <sym> | The name is sym
-
-    - Forms:
-
-        - Postitionals require a dest, so there are only four forms:
-
-            <   .dest     >              # Period optional.
-            <   .dest=vals>              # Period optional.
-            <sym.dest     >
-            <sym.dest=vals>
-
-        - Options do not require subdest, so there are eight forms:
-
-            --dest <                >
-            --dest <           =vals>    # Equal sign optional.
-            --dest <sym             >
-            --dest <sym        =vals>
-            --dest <   .subdest     >
-            --dest <   .subdest=vals>
-            --dest <sym.subdest     >
-            --dest <sym.subdest=vals>
-
-        - The vals in a spec must be quoted-literals or non-whitespace "words"
-          not containing right-angle-bracket or pipes.
-
-Names:
-
-    - Various grammar elements have names or name-like attributes:
-
-        - Variant: name.
-        - Partial: name.
-        - Opt: dest is the "name".
-
-    - Optopus allows both typical names and non-standard ones (eg, names
-      starting with underscore or even digit).
-
-    - However, the name/dest will be normalized as follows:
-
-        - Hyphens converted to underscores.
-        - Attach underscore prefix to name/dest starting with digit.
-
-Variant definition syntax:
-
-    Partial:
+    - Partial:
 
         foo!             Insert foo partial into the variant.
 
-    Grouping and alternatives:
+    - Grouping and alternatives:
 
         []               Grouping, optional.
         ()               Grouping.
@@ -951,60 +884,151 @@ Variant definition syntax:
         foo=()           Named grouping.
         |                Alternatives.
 
-    Quantifiers:
+    - Quantifiers:
 
         ...              1 or more
         {m,n}            Repetition: m through n, inclusive.
         ?                Non-greedy for preceding quantifier.
 
-    Options:
+    - Options:
 
         -f               Short.
         --foo            Long.
+        -abc             Bundled flags: -a -b -c.
 
-    Positionals and parameters:
+    - Positionals and parameters:
 
-        <sym-dest>       Positional.
-        -f <sym-dest>    Parameter.
+        <bar>            Positional.
+        -f <fubb>        Parameter.
 
-    Quoted literals:
+    - Quoted literals:
 
         `hello`          Can be used as positional, positional
-                         choice/alternative, or parameter choice/alternative.
+                         choice, or parameter choice.
 
-Opt-help lines use a subset of the full variant syntax:
-
-    - Supported:
-
-        <x>                  Positionals.
-        -x <>                Options.
-        <x=1>                Positional variants.
-        -x <=2>              Parameter variants.
-        <sym.dest=choices>   Sym-dest, including with choices.
-        -x <=a|b|`do it`>    Literals, in choices.
-        [] ()                Groups.
-        |                    Alternatives, for choices.
-        ...  {m,n}  ?        Quantifiers.
-
-    - Not supported:
-
-        x : defin            Variants.
-        x!                   Partials.
-        x=[]  x=()           Named groups.
-
-Sections:
+Opt-spec:
 
     - Syntax:
 
-        [Title] ::
-        section-content
+        <pos>                  [: [help-text]]
+        [opt-mention...] --opt [: [help-text]]
 
-    - Title is optional, but marker is required. The title, if supplied,
-      functions as a kind of identifier for the Section in the API.
+    - Explanation:
+
+        - A <pos> defines one positional argument (ie, positional-spec),
+          optionally with a quantifer.
+
+        - An --opt consists of an opt-mention (eg --foo), optionally
+          with a quantifer and 1+ parameter-specs.
+
+    - An opt-spec uses a subset of variant-spec grammar. The following
+      are not supported:
+
+        - Variants.
+        - Partials.
+        - Named groups.
+
+Opt-mention:
+
+    - An opt-mention is just the Opt.dest, with appropriate punctuation:
+
+        <foo> | Positional.
+        --bar | Long option.
+        -b    | Short option.
+
+Var-input:
+
+    - Variable input provided by the user.
+    - Enclosed in angle-brackets.
+    - See positional-spec and parameter-spec for details.
+
+Positional-spec:
+
+    - Syntax:
+
+        <sym>         | Positional
+        <sym=choices> | With choices
+        <sym=choice>  | Specific choice (in context of a variant-spec).
+
+Parameter-spec:
+
+    - Syntax:
+
+        --dest <sym>         | Option with sym
+        --dest <sym=choices> | Usage displays sym, not choices.
+        --dest <sym=choice>  | Specific choice (in context of a variant-spec).
+
+        --dest <choices>     | Choices function as the sym.
+        --dest <=choice>     | Specific choice.
+
+Choices:
+
+    - Consists of 1+ choice, which can be:
+
+        - Simple name consisting of \w or hyphen.
+        - Quoted-literal.
+
+Block-quotes and literals:
+
+    - A section can contain literal text intersperced among the variant-specs
+      and opt-specs.
+
+    - Quoting:
+
+        Situation            | Quote
+        ----------------------------
+        Block quote          | ```
+        Inline quote         | `
+        Literal backquote    | \`
+
+    - Notes:
+
+        - To suppress wrapping: append ! to the opening quote.
+
+        - Block quotes sit on their own line or not.
+
+Whitespace rules:
+
+    - Line and indentation requirements:
+
+        - Opt-help must start on its own line.
+
+        - Variant must start on its own line.
+
+        - Continuation line must be indented more than the first
+          line and contiguous with it.
+
+        - Section title must be on its own line, ending in marker.
+
+    - Line breaks not allowed:
+
+        - Within an {m,n} quantifier.
+
+        - Between a name and equal sign.
+
+        - Within a sym.dest element.
+
+    - Whitespace not allowed:
+
+        - Between option prefix and its dest.
+
+        - Between partial name and its marker.
+
+        - Within a triple-dot quantifier.
+
+RELOCATE:
+
+    Variant: other notes:
+
+        - Opts can be configured in a variant-spec, or the user
+          can use an abbreviated form (an opt-mention vs opt-spec).
+
+        - The two types of configuration (variants and opt-specs) are additve.
+
+        - Subsuequent configurations never overwrite a prior settings for an Opt.
+          Each new setting is added to the prior settings.
 
     - Section content:
-
-        - Sections are assumed to contain four types of lines:
 
             - variant-scope lines. Looks the same as as partial usage.
               Subsequent opt-help lines will be scoped to that variant.
@@ -1025,13 +1049,6 @@ Sections:
                 - To fully support this level of fine-tuning, you might need
                   a sym-dest to include some kind of scoping syntax.
 
-            - opt-help lines. Can fully configure an Opt or use an abbreviated
-              form if merely augmenting an already-configured Opt.
-
-            - block-quote lines. Just the markers; nothing else.
-
-            - regular-text lines. Allowed only after opening block-quote.
-
         - Indentation:
 
             - Optopus will generally try to preserve the original indentation
@@ -1041,44 +1058,21 @@ Sections:
             - If line-wrapping is suppressed, Optopus will rendered lines
               as-is, including each line's indentation.
 
-    - Quoting:
+    Names:
 
-        Situation           | Suppressed  | Open   | Close
-        --------------------------------------------------
-        Block quote         | Syntax      | ```    | ```
-        Block quote         | Syntax/wrap | ```!   | ```
-        Inline quote        | Syntax      | `      | `
-        Literal backquote   | Syntax      | \`     | na
+        - Various grammar elements have names or name-like attributes:
 
-        - Block quotes can be on their own line or not.
+            - Variant: name.
+            - Partial: name.
+            - Opt: dest is the "name".
 
-Whitespace rules:
+        - Optopus allows both typical names and non-standard ones (eg, names
+          starting with underscore or even digit).
 
-    - Line and indentation requirements:
+        - However, the name/dest will be normalized as follows:
 
-        - Opt-help must start on its own line.
-
-        - Variant, if not the first, must start on its own line.
-
-        - Continuation line must be indented more than the first.
-
-        - Section title must be on its own line, ending in marker.
-
-    - Line breaks not allowed:
-
-        - Within an {m,n} quantifier.
-
-        - Between a name and equal sign.
-
-        - Within a sym.dest element.
-
-    - Whitespace not allowed:
-
-        - Between option prefix and its dest.
-
-        - Between partial name and its marker.
-
-        - Within a triple-dot quantifier.
+            - Hyphens converted to underscores.
+            - Attach underscore prefix to name/dest starting with digit.
 
 --------
 syntax-examples: Syntax examples
@@ -1133,6 +1127,10 @@ Syntax example: nab:
 --------
 terminology: Terminology
 --------
+
+Spec:
+    - A Parser specification.
+    - The text blob used to define the Parser's grammer, Opts, help text, etc.
 
 Users:
     - Library: the optopus code base.
