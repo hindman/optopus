@@ -15,7 +15,6 @@ toc: Table of contents
 
     specification | Specification
 
-        new-plan-questions     | New plan and questions
         spec-syntax            | Spec syntax
         syntax-examples        | Syntax examples
         terminology            | Terminology
@@ -23,6 +22,7 @@ toc: Table of contents
 
     discussion | Discussion
 
+        questions-outstanding         | Questions outstanding
         api-vs-text                   | API-driven vs text-driven
         other-lib-weaknesses          | Addressing weaknesses common in other libraries
         other-goals                   | Other goals
@@ -83,41 +83,41 @@ Reorientation:
 
     x README.md
     x notes.txt
-
-    - spec-syntax:
-
-        - Editing pass.
-        - Add examples as I go.
-            - Put them in syntax-examples.
-            - Link to them via markers.
+    x spec-syntax
 
     - syntax-examples:
+        - Quick editing pass of current material.
 
-        - Augment and edit.
-        - Mention misc/ scripts used to compare text-vs-API
-
-    - new-plan-questions:
-
-        - Relocate with heavy edits, consolidation.
+    - questions-outstanding:
+        - Make decisions, taking notes as needed.
 
     - terminology:
-
-        - Augment significantly.
+        - Edit and augment.
 
     - classes-and-attributes:
-
         - Edit to reflect new plan.
 
     - Editing pass over notes.txt:
 
         - Edit to conform to new specification.
 
+        - Collect examples in the syntax-examples section.
+            - In Specification and Discussion, refer to examples
+              via a marker where possible to avoid cluttering text
+              needlessly and to build up a useful body of examples I
+              can refer to.
+
+
         - Where applicable add a 'Summary' to the top of each section to
           provide an overview of key points or contents.
 
     - Scan through other materials in misc.
 
-    - Reread setup.py, etc
+    - Road map sections:
+        todos
+        road-map
+
+    - Reread dev-notes, setup.py, etc
 
     - Reread code
         - Also see: arg-parsing-algo
@@ -327,525 +327,6 @@ specification: Specification
 --------------------------------------------------------------------------------
 
 --------
-new-plan-questions: New plan and questions
---------
-
-OTHER CHANGES:
-
-    - Based on recent simplifications, I suspect we can drop two restrictions
-      on the first section.
-        - No literal text.
-        - No title-setting via the spec.
-    - If correct, the only things special about the first section is that it
-      can begin with 1+ variants.
-
-TERMINOLOGY:
-
-    - spec
-        - Option 1:
-            - Use `specification` in user facing terminology.
-            - Use `spec` for coding/internal purposes.
-            - But function arguments are user-facing:
-                def foo(specification, ...):
-                    spec = specification        # Seems annoying.
-        - Option 2:
-            - `Help syntax` or `syntax`.
-            - I don't love these either.
-
-    - opt-help
-        - There are alternatives:
-            - opt-line
-            - opt-spec                     # Leaning this way right now.
-            - opt-definition
-            - opt-def
-        - They do not distinguish Opt definition in variant vs opt-help:
-            - Aliases.
-            - Help text.
-        - That's why having `help` in the term is clarifying.
-        - A different view is to lean into the ambuguity:
-            - In both contexts, they are opt-spec.
-            - But within a variant, not all features are supported.
-
-    - grammar-syntax and grammar-section:
-        - grammar-section:
-            - usage-section is better
-        - grammar-syntax:
-            - spec-syntax is better
-
-    - sym-dest:
-        - Very cryptic.
-        - This concept is used anywhere we have variable-input.
-        - Decision:  ** MAYBE NOT
-            - Call it a var-input.
-            - In the syntax documentation for a var-input, use choices, not vals.
-        - On further reflections, the sym is pretty important.
-
-            - Although a spec is not literally usage text, it aims to act
-              like usage text.
-
-            - Implication: when a user types up a spec, they are providing a
-              sketch of the desired usage text to be assembled for the
-              end-user.
-
-            - When defining an Opt in the simplest way possible, the user is
-              typing the desired sym values (the symbolic names to appear in
-              usage text).
-
-                <sym>        | Positional (where sym == dest).
-                --dest <sym> | Option
-
-            - Wait. Remember classic Unix option-parameters.
-
-                --foo=123
-
-                - In other words, we have a dest=value convention. I think
-                  that's why my prior planning used <sym.dest=vals> No, that is
-                  incorrect. Remember that we read the spec as a sketch of
-                  usage text. In usage text, we are commicating with end-users,
-                  who think in terms of sym values, not dest values (a dest is
-                  a programmer concern).
-
-                - So my prior decison was correct generally: we don't need both
-                  sym and dest. But I erred in thinking that we were retaining
-                  the dest. Instead, we are keeping the sym in the spec. The
-                  dest values are inferred via policy.
-
-                    <foo>     | sym == foo, dest == foo
-                    --bar <b> | sym == b  , dest == bar
-
-                - Let users resort to the API if they want dest values
-                  that differ from the policy.
-
-        - New syntax:
-
-            <sym.dest=choices>
-            --dest <sym.subdest=choices>
-
-            Explanations and definitions:
-
-                - Definitions:
-                    - sym: symbolic name in generated help text
-                    - dest: attribute name where value stored in parsed Result.
-                    - choices: valid values
-
-                - Example:
-
-                    <task.action=chomp|grep|strip>
-
-                    - In the generated help text, the positional will be
-                      documented as <task>.
-
-                    - After parsing, the Result will have an `action` attribute
-                      containing the parsed value of the positional (chomp,
-                      grep, or strip).
-
-                - Wrinkle:
-
-                    - An analogous syntax can also appear in parameter-variants
-                      or positional-variants. These are variant definitions
-                      that hinge on specific values taken by a var-input. The
-                      classic example is a subcommand-style grammer.
-
-                        nab <task.action=chomp> ...
-                        nab <task.action=grep> ...
-                        nab <task.action=strip> ...
-
-                    - In this context, "choices" is just one choice. Optopus
-                      will configure the entire Opt(action) by collecting all
-                      of the choices specified by the variants.
-
-        - Question:
-
-            - TENTATIVE DECISION:
-                - Drop sym from the syntax for var-input.
-                - This decision includes dropping the sym! syntax.
-                - Under the plan for a simplified spec-syntax, the <sym.dest>
-                  business is the most cryptic.
-                - Many users will find it hard to remember the ordering:
-                    - Is is <sym.dest> or <dest.sym>?
-                    - Answer is clear if you understand the full system.
-                    - But not an easy thing for an ordinary user to recall.
-
-            - Would it be better to handle symbolic names (`sym` in the syntax
-              definition for var-input) via the API?
-
-            - One of the more common use cases occurs when you have an Opt
-              taking multiple positionals or parameters. In this case, you
-              typically want a plural-name for dest and a singular-name for sym
-              (the metavar in argparse)
-
-                - Handle via spec.
-
-                    p = Parser('frob <path.paths>...')
-
-                - Handle via API.
-
-                    - At the time of spec definition, the Opt will have
-                      dest=path and sym=path.
-
-                        p = Parser('frob <path>...')
-
-                    - But then an API call can modify dest values.
-
-                        p.dests = dict(path = 'paths', ...)
-
-                    - Does the user put their desired dest or sym in the spec?
-                        - They can do whatever they want.
-                        - The API will support p.dests = ... or p.sym = ...
-                        - Seems more natural for user to prefer sym in the
-                          spec, because it aligns with their vision for
-                          usage-text.
-
-            - The other purpose envisioned by sym in the spec-syntax was to
-              allow users to control how var-input is displayed in usage text.
-
-                - For example, the notes for the current <sym.dest=vals> plan
-                  has the following illustration.
-
-                    <paths>...      | <paths>... | paths
-                    <path.paths>... | <path>...  | paths
-                    <PATH!paths>... | PATH...    | paths
-
-                - The sym portion of the syntax supports the common
-                  singlular/plural issue: dest=paths and sym=path.
-
-                - And the sym! syntax supports users who want to deviate from
-                  the Optopus style of consistently using angle-brackets for
-                  var-input.
-
-                    - But a user who wants the classic uppercase-style (as used
-                      by argparse, for example) would probably prefer to
-                      configure the whole Parser via one API call.
-
-SIMPLIFYING THE SPEC:
-
-    - Setting prog via the spec:
-        - Typically not needed or wanted.
-        - Optopus can compute it from the caller's file name.
-        - POSSIBLE DECISION:
-            - Drop prog from the spec.
-            - Make prog settable only via API.
-
-    - Purpose of section without title:
-        - The first section can be title-free.
-        - Optopus would use 'Positionals' and 'Options' in help text.
-        - What if subsequent sections lack title?
-        - Optopus could default to something generic. But that's unhelpful.
-        - For user, what's the point of a subsequent-section having no title?
-        - If new title is unwanted, don't declare a subsequent-section at all.
-        - POSSIBLE DECISION:
-            - First section can be title-free.
-            - Other sections require a title.
-
-    - Those decisions would reduce the spec grammar to the following:
-
-        [variant...]
-        [opt-help...]
-        [section...]
-
-    - That is easier to parse and document than the current plan below.
-
-    - Is there a way to ditch the need for double-colon in the simple and
-      common case of the user who just wants to configure via opt-help lines in
-      one untitled section?
-
-        - For example, can we eliminate the need for double-colon in README ex2
-          and ex3?
-
-        - As detailed in discussion.txt, opt-help lines can be confused with
-          unnamed variants.
-
-            # Is this (a) 3 variants or (b) 3 bare-bones opt-help lines?
-            <rgx>
-            [-i --ignore-case]
-            [-v --invert-match]
-
-        - The second interpretation would be more commonly observed in
-          real-world scripts, so I would like to make that use case supportable
-          without any special syntax like (a) the double-colon section marker
-          or (b) forcing opt-help lines to require either help-text (very bad)
-          or a trailing colon (bad).
-
-        - The core issue:
-
-            - If the spec starts without a titled section (by far the most
-              common usage pattern), the spec-parser does not know for sure how
-              to interpret the first section -- at least in certain bare-bones
-              scenarios.
-
-            - More precisely, the status of the initial lines in the first
-              sections are potentially ambiguous. Some variations on the
-              example cited above:
-
-                - Since <rgx> line is opt-help, all of them are.
-
-                    <rgx> : Pattern to search for
-                    [-i --ignore-case]
-                    [-v --invert-match]
-                    [--foo]
-
-                - The --foo line is opt-help. First 3 lines ambiguous:
-
-                    <rgx>
-                    [-i --ignore-case]
-                    [-v --invert-match]
-                    [--foo] : Enable foo blah-blah-blah
-
-                - The <rgx> line is variant. Others ambiguous.
-
-                    <rgx> [--algo <X|Y|Z>]
-                    [-i --ignore-case]
-                    [-v --invert-match]
-                    [--foo]
-
-                - Since --foo line must be variant, all must be.
-
-                    <rgx>
-                    [-i --ignore-case]
-                    [-v --invert-match]
-                    [--foo] [--blort <X|Y|Z>]
-
-            - The plan so far is running into complexities caused by the desire
-              to support syntax-free approaches to various use cases.
-
-                - Bare-bones configuration in opt-help style:
-
-                    <rgx>
-                    [-i --ignore-case]
-                    [-v --invert-match]
-                    [--foo]
-
-                - Bare-bones configuration in variant style:
-
-                    # Like README ex1.
-                    # But this is non-ambigous: must be a variant.
-                    [-i] [-v] <rgx> <path>
-
-                    # This example is ambigous.
-                    <rgx>
-                    <path>
-                    [--help]
-                    [--examples <A|B|C>]
-
-                    # But it is better expressed as this.
-                    (<rgx> | <path>) [--help] [--examples <A|B|C>]
-
-                    # Or even this way.
-                    # Since last line is variant, all must be.
-                    <rgx>
-                    <path>
-                    [--help] [--examples <A|B|C>]
-
-                - Conclusion from those examples:
-
-                    - The ambiguous cases involve bare-bones variant usages
-                      that are neither common nor compelling.
-
-                    - Most real-world needs for variants involve more than
-                      something that can be confused for a bare-bones opt-help.
-
-                    - More detailed analysis:
-
-                        - Lines can be one of the following:
-
-                            OH  | only an opt-help
-                            V   | only a variant
-                            AMB | ambiguous
-
-                        - Consider all of the ways that those three types of
-                          lines can first appear in the first section of a
-                          spec. [We can ignore repeats of the same type, since
-                          that does not affect the analysis.]
-
-                            - First section has only 1 type of line.
-
-                                OH  | ok
-                                V   | ok
-                                AMB | Ambiguous #1
-
-                            - First section has 2 types of lines:
-
-                                OH V     | Invalid. V cannot appear after OH.
-                                OH AMB   | ok: must be OH
-                                V OH     | ok
-                                V AMB    | Ambiguous #2
-                                AMB OH   | Ambiguous #3
-                                AMB V    | ok: must be V
-
-                            - First section has 3 types of lines:
-
-                                OH V AMB | Invalid
-                                OH AMB V | Invalid
-                                V OH AMB | ok: must be V then OH
-                                V AMB OH | Ambiguous #4
-                                AMB V OH | ok: must be V then OH
-                                AMB OH V | Invalid
-
-                        - Is there an obvious policy reponse to the ambigous cases?
-
-                            - A narrow analysis does not produce obvious decisions:
-
-                                #1 | Unclear
-                                #2 | Assume V, since we saw V already?
-                                #3 | Assume OH (similar logic)?
-                                #4 | Unclear
-
-                            - Alternatively, could we simply default one way or
-                              another in the face of ambiguity?
-
-                                - Perhaps.
-
-                                - Consider real consequences and what a user
-                                  must do to resolve an ambiguity.
-
-                                - If the argument parsing and help text don't
-                                  perform correctly, it will be quickly obvious
-                                  to the user.
-
-                                - How will they fix the situation?
-
-                                - If Optopus works from a fallback-default of
-                                  OH for ambigous cases, how does a user tell
-                                  us that they actually want V?
-                                    - Option 1: an API call.
-                                    - Option 2: name the variant.
-
-                                - If Optopus instead defaults to V but the user
-                                  wants OH, the fix is much easier.
-                                    - Just add help-text (which they probably
-                                      should do anyway) or, at a minimum, add a
-                                      trailing colon to the first ambigous OH
-                                      line.
-
-                        - POSSIBLE DECISION:
-
-                            - In the face of ambiguity, assume V.
-
-                            - Of course! This is consistent with the way we
-                              have resolved many other ambiguous situations via
-                              a policy of greedy parsing.
-
-                            - If this is the grammar, the consistent approach
-                              is to keep assuming that lines are variants until
-                              they are clearly not.
-
-                                [variant...]
-                                [opt-help...]
-                                [section...]
-
-    - SUMMARY OF DECISIONS ABOVE:
-
-        - Spec grammar, with the usual greedy parsing approach, so we assume
-          variant in the face of variant/opt-help ambiguity about the initial
-          lines in the first section.
-
-            ** More precisely, we don't worry about ambiguity at all. If the
-            opening lines are valid variants, that's what they are. Just stick
-            with the greedy policy. User can easily fix if they want opt-spec
-            rather than variant-spec.
-
-            [variant...]
-            [opt-help...]
-            [section...]
-
-        - The prog is not used in the spec. Settable via API.
-
-        - All sections require a title. But the first section's title (Usage)
-          is modifiable only via API.
-
-        - None of the current README examples would require double-colon:
-            - Edit README if this decision is made.
-
-        - See questions in opt-action-not-needed
-
-    - Examples from the README:
-
-        # README ex1.
-        [-i] [-v] <rgx> <path>
-
-        # README ex2.
-        ::
-        <rgx> : Python regular expression
-        [<path>...] : Path(s) to input
-        [-i --ignore-case] : Ignore case
-        [-v --invert-match] : Select non-matching lines
-
-        # README ex3.
-        ::
-        <rgx> : Python regular expression
-        [<path>...] : Path(s) to input
-        [-i --ignore-case] : Ignore case
-        [-v --invert-match] : Select non-matching lines
-        [-m --max-count <n>] : Stop searching after N matches
-        [-C --context <n>] : Print N lines of before/after context
-        [--color red|green|blue] : Highlight matching text
-
-        # README ex4.
-        <task=grep>   [-i] [-v] [-m] [-C]
-                      [--color <red|green|blue>]
-                      <rgx> [<path>...]
-        <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
-        <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
-
-        ::
-
-        <task>             : Task to perform
-        <task=grep>        : Emit lines matching pattern
-        <task=sub>         : Search for pattern and replace
-        <task=search>      : Emit text matching pattern
-        <rgx>              : Python regular expression
-        <path>             : Path(s) to input
-        <rep>              : Replacement text
-        -i --ignore-case   : Ignore case
-        -v --invert-match  : Select non-matching lines
-        -m --max-count <n> : Stop searching after N matches
-        -C --context <n>   : Print N lines of before/after context
-        --color <>         : Highlight matching text
-        -n --nsubs <n>     : N of substitutions
-        -g --group <n>     : Emit just capture group N [0 for all]
-        -d --delim <s>     : Delimeter for capture groups [tab]
-        -p --para          : Emit capture groups one-per-line, paragraph-style
-
-Issues encounted while working on mvs: fold into the optopus plan:
-
-    - Did user supply a value or did it come from the configured default?
-
-        - After parsing occurs, how does the user tell if an opts attribute was
-          (1) supplied in the command-line args vs (2) obtain from the default.
-
-        - This an annoying problem with no good argparse solutions.
-
-    - Merging user-preferences and opts.
-
-        - User-prefs and opts tend to have the same validation needs.
-
-        - And the merge them can be tricky.
-
-            - Maybe this isn't too bad if we could solve the argparse
-              deficiency where you don't know if the opt was supplied or was
-              the default.
-
-            - If we knew that, then the merge logic would be simpler[?].
-
-                for K, V in prefs.items():
-                    if opts.K was not set by user:
-                        opts.K = V
-
-    - How does a user request a non-default location for user-prefs?
-
-        - Environment variable?
-
-    - Negatable options:
-
-        - Whether/how to display in help text.
-        - How to represent data.
-
-    - optopus should be able to report the rank-order positions of opts on the
-      command-line. For example: the "rules" in the Perl rename script were
-      supposed to be applied in order; ditto for the Unix find command's
-      operations.
-
---------
 spec-syntax: Spec syntax
 --------
 
@@ -857,18 +338,21 @@ Spec:
 
 Section:
 
-    - Structure:
+    - The first section:
 
-        title ::                        # Optional in 1st section (default: Usage).
-        [variant...]                    # Only in 1st section.
+        [title ::]                    # Default: 'Usage'
+        [variant...]
+        [opt-spec | block-quote]...
+
+    - Other sections:
+
+        title ::                      # Required
         [opt-spec | block-quote]...
 
 Variant:
 
-    - Structure:
-
-        [name  :] variant-spec           # Regular variant.
-        [name! :] variant-spec           # Partial variant.
+    [name :] variant-spec        # Regular
+    name! : variant-spec         # Partial
 
 Variant-spec:
 
@@ -939,7 +423,6 @@ Opt-mention:
 Var-input:
 
     - Variable input provided by the user.
-    - Enclosed in angle-brackets.
     - See positional-spec and parameter-spec for details.
 
 Positional-spec:
@@ -954,12 +437,12 @@ Parameter-spec:
 
     - Syntax:
 
-        --dest <sym>         | Option with sym
-        --dest <sym=choices> | Usage displays sym, not choices.
-        --dest <sym=choice>  | Specific choice (in context of a variant-spec).
+        --dest <sym>         | Usage displays '<sym>'
+        --dest <sym=choices> | Usage displays '<sym>', not '<choices>'.
+        --dest <sym=choice>  | Specific choice (in context of variant-spec).
 
-        --dest <choices>     | Choices function as the sym.
-        --dest <=choice>     | Specific choice.
+        --dest <choices>     | Choices function as the sym in usage text.
+        --dest <=choice>     | Specific choice (in context of variant-spec).
 
 Choices:
 
@@ -983,20 +466,20 @@ Block-quotes and literals:
 
     - Notes:
 
-        - To suppress wrapping: append ! to the opening quote.
+        - To suppress wrapping: append ! to the opening triple-quote.
 
-        - Block quotes sit on their own line or not.
+        - Tripple-quotes can sit on their own line, or not.
 
 Whitespace rules:
 
     - Line and indentation requirements:
 
-        - Opt-help must start on its own line.
+        - Opt-spec must start on its own line.
 
         - Variant must start on its own line.
 
         - Continuation line must be indented more than the first
-          line and contiguous with it.
+          line and be contiguous with it.
 
         - Section title must be on its own line, ending in marker.
 
@@ -1006,77 +489,69 @@ Whitespace rules:
 
         - Between a name and equal sign.
 
-        - Within a sym.dest element.
+        - Within a var-input.
 
     - Whitespace not allowed:
 
         - Between option prefix and its dest.
 
-        - Between partial name and its marker.
+        - Between partial name and its exclamation mark.
 
         - Within a triple-dot quantifier.
-
-RELOCATE:
-
-    Variant: other notes:
-
-        - Opts can be configured in a variant-spec, or the user
-          can use an abbreviated form (an opt-mention vs opt-spec).
-
-        - The two types of configuration (variants and opt-specs) are additve.
-
-        - Subsuequent configurations never overwrite a prior settings for an Opt.
-          Each new setting is added to the prior settings.
-
-    - Section content:
-
-            - variant-scope lines. Looks the same as as partial usage.
-              Subsequent opt-help lines will be scoped to that variant.
-              Applicable only when Opt.dest values are reused across variants.
-
-                * Clarifications and questions:
-                - Here's how I a variant-scope line:
-
-                    Foo ::
-
-                    grep!
-
-                    [-b --bar] : Blah blah
-
-                - Is this concept necessary?
-                - Probably not. It's an unusual use case.
-                - Even if it were, I suspect that this solution is inadequate.
-                - To fully support this level of fine-tuning, you might need
-                  a sym-dest to include some kind of scoping syntax.
-
-        - Indentation:
-
-            - Optopus will generally try to preserve the original indentation
-              level of ordinary text -- specifically the indentation of the
-              first line of the paragraph.
-
-            - If line-wrapping is suppressed, Optopus will rendered lines
-              as-is, including each line's indentation.
-
-    Names:
-
-        - Various grammar elements have names or name-like attributes:
-
-            - Variant: name.
-            - Partial: name.
-            - Opt: dest is the "name".
-
-        - Optopus allows both typical names and non-standard ones (eg, names
-          starting with underscore or even digit).
-
-        - However, the name/dest will be normalized as follows:
-
-            - Hyphens converted to underscores.
-            - Attach underscore prefix to name/dest starting with digit.
 
 --------
 syntax-examples: Syntax examples
 --------
+
+pgrep: README example-1:
+
+    [-i] [-v] <rgx> <path>
+
+pgrep: README example-2:
+
+    <rgx> : Python regular expression
+    [<path>...] : Path(s) to input
+    [-i --ignore-case] : Ignore case
+    [-v --invert-match] : Select non-matching lines
+
+pgrep: README example-3:
+
+    <rgx> : Python regular expression
+    [<path>...] : Path(s) to input
+    [-i --ignore-case] : Ignore case
+    [-v --invert-match] : Select non-matching lines
+    [-m --max-count <n>] : Stop searching after N matches
+    [-C --context <n>] : Print N lines of before/after context
+    [--color red|green|blue] : Highlight matching text
+
+pgrep: README example-4:
+
+    <task=grep>   [-i] [-v] [-m] [-C]
+                  [--color <red|green|blue>]
+                  <rgx> [<path>...]
+    <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
+    <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
+
+    <task>             : Task to perform
+    <task=grep>        : Emit lines matching pattern
+    <task=sub>         : Search for pattern and replace
+    <task=search>      : Emit text matching pattern
+    <rgx>              : Python regular expression
+    <path>             : Path(s) to input
+    <rep>              : Replacement text
+    -i --ignore-case   : Ignore case
+    -v --invert-match  : Select non-matching lines
+    -m --max-count <n> : Stop searching after N matches
+    -C --context <n>   : Print N lines of before/after context
+    --color <>         : Highlight matching text
+    -n --nsubs <n>     : N of substitutions
+    -g --group <n>     : Emit just capture group N [0 for all]
+    -d --delim <s>     : Delimeter for capture groups [tab]
+    -p --para          : Emit capture groups one-per-line, paragraph-style
+
+Parser configuration: spec-vs-API:
+
+    See misc/examples/job-client-*
 
 blort-maker:
 
@@ -1127,6 +602,60 @@ Syntax example: nab:
 --------
 terminology: Terminology
 --------
+
+NEW NOTES: based on recent planning work:
+    * Make sure these items are covered in this section.
+
+    - spec: keep
+
+    - variant-spec:
+        - A full variant in the spec includes the optional name.
+        - The variant-spec portion is the stuff after the colon.
+
+    - opt-help => opt-spec
+
+    - grammar-syntax => spec-syntax
+
+    - grammar-section => usage-section
+
+    - sym-dest => var-input, positional-spec, and parameter-spec:
+        - var-input:
+            - stands for variable input
+            - mainly for internal use during spec-parsing
+        - user-facing terms:
+            - positional-spec
+            - parameter-spec
+
+    - sym:
+        - Symbolic name for variable-input in help text.
+        - Like an argparse metavar.
+
+    - dest:
+        - Attribute name in Result for data from one positional/option.
+        - Default behavior:
+            - options:
+                - the literal option is the dest
+                - Example: '--foo' means Opt(dest = 'foo')
+            - positionals and paremters:
+                - Via the spec, dest is set to the same value as <sym>.
+
+    - subdest:
+        - Applies to parameters.
+        - Allows user to have parameter data store in an object
+          with attribute names.
+        - Example:
+
+            --point <x> <y>
+
+            [X, Y]                   | Default for opts.point
+            Result(x = X, y = Y)     | With subdest
+            Result(foo = X, bar = Y) | With subdest, and custom keys
+
+        - Precise API details have not been nailed down yet.
+
+    - block-quote:
+        - Triple-quoted literal help text.
+        - With or without wrapping by Optopus.
 
 Spec:
     - A Parser specification.
@@ -1569,6 +1098,145 @@ discussion: Discussion
 --------------------------------------------------------------------------------
 
 --------
+questions-outstanding: Questions outstanding
+--------
+
+OTHER NOTES/DECISIONS:
+
+    - First section:
+        - Elimitated nearly all of the cryptic rules.
+        - The potential ambiguity between a bare-bones variant and a bare-bones
+          opt-spect is not worth worrying about: once again, a basic greedy
+          parsing policy works best. Let the user add a trailing colon to
+          convey their intent for an opt-spec (rather than a variant).
+        - Can contain block-quote.
+
+    - Should an Opt have a 'name'?
+        - In an opt-spec, how does one refer to just the option itself.
+            --point <x> <y>     # What is the term for '--point'?
+
+    - How will Optopus achieve store_false?
+        - See opt-action-not-needed for some notes on the subject.
+        - But those notes don't appear to resolve the issue.
+
+    - Negatable options:
+        - This might relate to the prior question about store_false.
+        - Whether/how to display in help text.
+        - How to represent data.
+
+    - Is data storage for `extend` reasonable?
+        - See opt-action-not-needed for the context.
+
+    - On sym-vs-dest in the spec:
+
+        - My prior notes on this subject had used this model:
+
+            # Incorrect.
+            <dest>       | Positional
+            --dest <sym> | Option
+
+        - But that is incorrect. A spec is written as a representation for the
+          ultimate help-text. This means the names typed by the user for
+          variable-input are better understood as sym, not dest.
+
+            # Correct.
+            <sym>        | Positional
+            --dest <sym> | Option
+
+    - Did user supply a value or did it come from the configured default?
+
+        - After parsing occurs, how does the user tell if an opts attribute was
+          (1) supplied in the command-line args vs (2) obtain from the default.
+
+        - This an annoying problem with no good argparse solutions.
+
+        - I dealt with the issue in mvs.
+
+    - Merging user-preferences and opts.
+
+        - I dealt with the issue in mvs.
+
+        - User-prefs and opts tend to have the same validation needs.
+
+        - And the merge them can be tricky.
+
+            - Maybe this isn't too bad if we could solve the argparse
+              deficiency where you don't know if the opt was supplied or was
+              the default.
+
+            - If we knew that, then the merge logic would be simpler[?].
+
+                for K, V in prefs.items():
+                    if opts.K was not set by user:
+                        opts.K = V
+
+    - How does a user request a non-default location for user-prefs?
+        - Environment variable.
+
+    - Ability to report rank-order positions of opts on command-line.
+        - Example use cases:
+            - Perl `rename`: the "rules" has to be applied in order.
+            - Unix `find`: ditto.
+
+Move to an approriate spot in the notes:
+
+    Variant: other notes:
+
+        - Opts can be configured in a variant-spec, or the user
+          can use an abbreviated form (an opt-mention vs opt-spec).
+
+        - The two types of configuration (variants and opt-specs) are additve.
+
+        - Subsuequent configurations never overwrite a prior settings for an Opt.
+          Each new setting is added to the prior settings.
+
+    - Section content:
+
+            - variant-scope lines. Looks the same as as partial usage.
+              Subsequent opt-help lines will be scoped to that variant.
+              Applicable only when Opt.dest values are reused across variants.
+
+                * Clarifications and questions:
+                - Here's how I a variant-scope line:
+
+                    Foo ::
+
+                    grep!
+
+                    [-b --bar] : Blah blah
+
+                - Is this concept necessary?
+                - Probably not. It's an unusual use case.
+                - Even if it were, I suspect that this solution is inadequate.
+                - To fully support this level of fine-tuning, you might need
+                  a sym-dest to include some kind of scoping syntax.
+
+        - Indentation:
+
+            - Optopus will generally try to preserve the original indentation
+              level of ordinary text -- specifically the indentation of the
+              first line of the paragraph.
+
+            - If line-wrapping is suppressed, Optopus will rendered lines
+              as-is, including each line's indentation.
+
+    Names:
+
+        - Various grammar elements have names or name-like attributes:
+
+            - Variant: name.
+            - Partial: name.
+            - Opt: dest is the "name".
+
+        - Optopus allows both typical names and non-standard ones (eg, names
+          starting with underscore or even digit).
+
+        - However, the name/dest will be normalized as follows:
+
+            - Hyphens converted to underscores.
+            - Attach underscore prefix to name/dest starting with digit.
+
+--------
 api-vs-text: API-driven vs text-driven
 --------
 
@@ -1940,10 +1608,6 @@ and destination assignment.
     ----------------------------------------------------------------------------------
     store_const  | 1 flag            | --frob          | X           | Not necessary
     append_const | 1+ flag           | --frob --frob   | [X x]       | Not necessary
-
-Questions during reread of this section:
-    - How will Optopus achieve store_false?
-    - Is data storage for extend reasonable?
 
 --------
 explicit-option-param-syntax: Why explicit syntax for option parameters is needed

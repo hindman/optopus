@@ -94,7 +94,7 @@ with. Schematically, we want to handle this usage:
 Here is the argparse configuration:
 
 ```python
-ap = argparse.ArgumentParser(prog = 'pgrep')
+ap = argparse.ArgumentParser()
 ap.add_argument('-i', action = 'store_true')
 ap.add_argument('-v', action = 'store_true')
 ap.add_argument('rgx')
@@ -110,7 +110,7 @@ while also providing a more powerful and flexible argument parser. The
 difference between the two configurations is striking.
 
 ```python
-p = Parser('pgrep [-i] [-v] <rgx> <path>')
+p = Parser('[-i] [-v] <rgx> <path>')
 ```
 
 #### Example 2
@@ -120,7 +120,7 @@ fleshed-out with some help text and the ability to support zero or more file
 paths.
 
 ```python
-ap = argparse.ArgumentParser(prog = 'pgrep')
+ap = argparse.ArgumentParser()
 ap.add_argument('-i', '--ignore-case', action = 'store_true', help = 'Ignore case')
 ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select non-matching lines')
 ap.add_argument('rgx', help = 'Python regular expression')
@@ -141,7 +141,7 @@ the easiest mechanism to use for non-trivial scripts that do not have any
 special grammatical needs.
 
 ```python
-p = Parser('''pgrep ::
+p = Parser('''
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
     [-i --ignore-case] : Ignore case
@@ -156,7 +156,7 @@ along with conversion and validation of the inputs. The argparse code starts to
 get a bit heavy.
 
 ```python
-ap = argparse.ArgumentParser(prog = 'pgrep')
+ap = argparse.ArgumentParser()
 ap.add_argument('rgx', metavar = '<rgx>', type = re.compile, help = 'Python regular expression')
 ap.add_argument('path', metavar = '<path>', type = pathlib.Path, nargs = '*', help = 'Path(s) to input')
 ap.add_argument('--ignore-case', '-i', action = 'store_true', help = 'Ignore case')
@@ -180,7 +180,7 @@ configuration actually does more validation (in the example, `isfile` and
 `ispositive` are assumed to be callables defined by the user).
 
 ```python
-p = Parser('''pgrep ::
+p = Parser('''
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
     [-i --ignore-case] : Ignore case
@@ -328,8 +328,6 @@ p = Parser('''wrangle
                   <rgx> [<path>...]
     <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
     <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
-
-    ::
 
     <task>             : Task to perform
     <task=grep>        : Emit lines matching pattern
@@ -859,8 +857,6 @@ elaborate for the script at hand, but the main point is just to illustrate the
 ease of organizing help text as needed.
 
 ```
-grep::
-
     ```
     The grep command emits input lines matching (or not
     matching) the regular expression.
@@ -1034,7 +1030,7 @@ config = ...
 # setting to tell Optopus where to obtain upstream default values,
 # and in which order.
 
-p = Parser('''pgrep
+p = Parser('''
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
     [-i --ignore-case] : Ignore case
