@@ -31,6 +31,7 @@ toc: Table of contents
         subparsers-not-needed         | Optopus does not need the subparser concept
         opt-action-not-needed         | Optopus does not need the action concept
         explicit-option-param-syntax  | Why explicit syntax for option parameters is needed
+        variable-input-spec           | Spec for variable input
         high-precendence-options      | High precedence options
         help-text-formatting          | Help text formatting
         grammar-parsing-algo          | Parsing the grammar syntax
@@ -59,7 +60,7 @@ toc: Table of contents
         spec-as-format-string         | Spec as a format string not needed
         variable-end-user-input       | Representing variable end-user inputs
         enhanced-quantifiers          | Enhanced quantifiers
-        opt-help-lines                | Opt help lines
+        opt-spec-lines                | Opt-spec lines
         opt-independence-vs-unity     | Opt independence vs unity when sharing same dest
         group-level-validation-needed | Why Group-level validation should be retained
         readme-next-version           | README for next version
@@ -81,41 +82,33 @@ todos: TODOs
 
 Reorientation:
 
-    x README.md
-    x notes.txt
-    x spec-syntax
-
-    - syntax-examples:
-        - Quick editing pass of current material.
-
-    - questions-outstanding:
-        - Make decisions, taking notes as needed.
-
-    - terminology:
-        - Edit and augment.
-
-    - classes-and-attributes:
+    - classes-and-attributes :
         - Edit to reflect new plan.
+
+    - todos and road-map :
+        - Read through, light edit.
 
     - Editing pass over notes.txt:
 
         - Edit to conform to new specification.
+        - Add 'Summary' at the top of section, where applicable.
+        - Collect:
+            - Questions/doubts
+            - Examples
+            - Terminology
+            - Road map items
 
-        - Collect examples in the syntax-examples section.
-            - In Specification and Discussion, refer to examples
-              via a marker where possible to avoid cluttering text
-              needlessly and to build up a useful body of examples I
-              can refer to.
+    - questions-outstanding :
+        - Make decisions.
+        - Edit, etc.
 
-
-        - Where applicable add a 'Summary' to the top of each section to
-          provide an overview of key points or contents.
+    - specification :
+        - One more read-through.
 
     - Scan through other materials in misc.
 
-    - Road map sections:
-        todos
-        road-map
+    - todos and road-map :
+        - Editing pass.
 
     - Reread dev-notes, setup.py, etc
 
@@ -603,70 +596,15 @@ Syntax example: nab:
 terminology: Terminology
 --------
 
-NEW NOTES: based on recent planning work:
-    * Make sure these items are covered in this section.
-
-    - spec: keep
-
-    - variant-spec:
-        - A full variant in the spec includes the optional name.
-        - The variant-spec portion is the stuff after the colon.
-
-    - opt-help => opt-spec
-
-    - grammar-syntax => spec-syntax
-
-    - grammar-section => usage-section
-
-    - sym-dest => var-input, positional-spec, and parameter-spec:
-        - var-input:
-            - stands for variable input
-            - mainly for internal use during spec-parsing
-        - user-facing terms:
-            - positional-spec
-            - parameter-spec
-
-    - sym:
-        - Symbolic name for variable-input in help text.
-        - Like an argparse metavar.
-
-    - dest:
-        - Attribute name in Result for data from one positional/option.
-        - Default behavior:
-            - options:
-                - the literal option is the dest
-                - Example: '--foo' means Opt(dest = 'foo')
-            - positionals and paremters:
-                - Via the spec, dest is set to the same value as <sym>.
-
-    - subdest:
-        - Applies to parameters.
-        - Allows user to have parameter data store in an object
-          with attribute names.
-        - Example:
-
-            --point <x> <y>
-
-            [X, Y]                   | Default for opts.point
-            Result(x = X, y = Y)     | With subdest
-            Result(foo = X, bar = Y) | With subdest, and custom keys
-
-        - Precise API details have not been nailed down yet.
-
-    - block-quote:
-        - Triple-quoted literal help text.
-        - With or without wrapping by Optopus.
-
-Spec:
-    - A Parser specification.
-    - The text blob used to define the Parser's grammer, Opts, help text, etc.
+Library:
+    - The optopus code base.
 
 Users:
-    - Library: the optopus code base.
-    - Library user (or just user): a developer using optopus.
-    - End user: a user running a program that uses optopus.
 
-Command line argument types:
+    user or library-user | Software developer using optopus
+    end-user             | Someone running program that uses optopus
+
+Command line arguments:
 
     - Arguments:
         - The raw strings directly from the command line.
@@ -674,33 +612,92 @@ Command line argument types:
     - Positionals:
         - The typical non-option argument.
 
-    - Options: arguments with an option prefix.
+    - Options:
+        - Arguments with an option prefix.
 
-        - Long prefix.
-        - Short prefix.
-
-        - Option (parameter option)
-        - Flag
+        --path    | Long prefix
+        -p        | Short prefix
+        ----------------------------------------
+        -c <code> | Parameter option, or just option
+        -y        | Flag
 
     - Parameters:
         - Arguments for an option.
 
-    - Sym:
-        - Like argparse metavar.
-        - Symbolic name for a positional or parameter in usage text.
+Help text:
 
-    - Positional or parameter variant:
-        - A variant that is defined and triggered by a specific
-          value for either an option parameter or a positional.
+    Text         | Description
+    ------------------------------------------------------------------
+    Help text    | Full output from --help.
+    Usage text   | Just the command-line grammar.
+    Options text | List of options and positionals, perhaps in groups.
+    Other text   | Written by user (default: wrapped by optopus).
+    ------------------------------------------------------------------
+    Opt text     | Help text for a single positional or option.
 
-Help text sections:
-    - Help text: documents everything.
-    - Usage text: documents the command-line grammar.
-    - Options text: documents the options and positional arguments, perhaps in groups.
-    - Custom sections.
+Spec:
+    - A Parser specification.
+    - Text blob defining Parser's grammer, Opts, help sections & text.
 
-Destination assignment:
-    - Controls how the parsed data elements are stored and named.
+Spec-syntax:
+    - Syntax used to define a spec.
+
+Section:
+    - Section of the spec and thus of the help text.
+    - Has a title.
+    - Can have text generated by optopus (usage text and opt text) as well as
+      text written by the user.
+
+Usage-section:
+    - The first section.
+    - Will contain the generated usage text.
+    - Default title: 'Usage'.
+
+Variant:
+    - A usage variant, as defined in a spec.
+
+        [name :] variant-spec
+
+    - Examples:
+
+        grep : <rgx> [-i] [-v]
+        split : [<rgx>] [-n <max>]
+
+Variant-spec:
+    - The grammatical portion of a variant definition.
+    - The stuff after the colon.
+
+Positional-variant and parameter-variant:
+    - Variant defined/triggered by a specific positional/parameter value.
+
+Opt-spec:
+    - A portion of a spec defining one Opt.
+
+Var-input: positional-spec and parameter-spec:
+    - Var-input:
+        - Stands for variable input.
+        - Mainly for internal use in the Optopus project.
+    - User-facing terms:
+        - positional-spec
+        - parameter-spec
+
+Sym:
+    - Symbolic name for variable-input in help text.
+    - Like an argparse metavar.
+
+Dest:
+    - Attribute name in Result for data from one positional/option.
+    - Default behavior:
+        - Options:
+            - The literal option is the dest.
+            - Example: '--foo' means Opt(dest = 'foo')
+        - Positionals:
+            - The spec uses <sym>
+            - The dest is set to the same name.
+
+Block-quote:
+    - Triple-quoted literal help text.
+    - With or without wrapping by Optopus.
 
 --------
 classes-and-attributes: Classes and attributes
@@ -1101,140 +1098,102 @@ discussion: Discussion
 questions-outstanding: Questions outstanding
 --------
 
-OTHER NOTES/DECISIONS:
+** This section has:
+    - Questions outstanding.
+    - Notes that need to be edited and put in the appropriate spot.
 
-    - First section:
-        - Elimitated nearly all of the cryptic rules.
-        - The potential ambiguity between a bare-bones variant and a bare-bones
-          opt-spect is not worth worrying about: once again, a basic greedy
-          parsing policy works best. Let the user add a trailing colon to
-          convey their intent for an opt-spec (rather than a variant).
-        - Can contain block-quote.
+Did user supply a value or did it come from the configured default?
 
-    - Should an Opt have a 'name'?
-        - In an opt-spec, how does one refer to just the option itself.
-            --point <x> <y>     # What is the term for '--point'?
+    - After parsing occurs, how does the user tell if an opts attribute was
+      (1) supplied in the command-line args vs (2) obtain from the default.
 
-    - How will Optopus achieve store_false?
-        - See opt-action-not-needed for some notes on the subject.
-        - But those notes don't appear to resolve the issue.
+    - This an annoying problem with no good argparse solutions.
 
-    - Negatable options:
-        - This might relate to the prior question about store_false.
-        - Whether/how to display in help text.
-        - How to represent data.
+    - I dealt with the issue in mvs.
 
-    - Is data storage for `extend` reasonable?
-        - See opt-action-not-needed for the context.
+Merging user-preferences and opts.
 
-    - On sym-vs-dest in the spec:
+    - I dealt with the issue in mvs.
 
-        - My prior notes on this subject had used this model:
+    - User-prefs and opts tend to have the same validation needs.
 
-            # Incorrect.
-            <dest>       | Positional
-            --dest <sym> | Option
+    - And the merge them can be tricky.
 
-        - But that is incorrect. A spec is written as a representation for the
-          ultimate help-text. This means the names typed by the user for
-          variable-input are better understood as sym, not dest.
+        - Maybe this isn't too bad if we could solve the argparse
+          deficiency where you don't know if the opt was supplied or was
+          the default.
 
-            # Correct.
-            <sym>        | Positional
-            --dest <sym> | Option
+        - If we knew that, then the merge logic would be simpler[?].
 
-    - Did user supply a value or did it come from the configured default?
+            for K, V in prefs.items():
+                if opts.K was not set by user:
+                    opts.K = V
 
-        - After parsing occurs, how does the user tell if an opts attribute was
-          (1) supplied in the command-line args vs (2) obtain from the default.
+How does a user request a non-default location for user-prefs?
+    - Environment variable.
 
-        - This an annoying problem with no good argparse solutions.
+Ability to report rank-order positions of opts on command-line.
+    - Example use cases:
+        - Perl `rename`: the "rules" has to be applied in order.
+        - Unix `find`: ditto.
 
-        - I dealt with the issue in mvs.
+Variant: other notes:
 
-    - Merging user-preferences and opts.
+    - Opts can be configured in a variant-spec, or the user
+      can use an abbreviated form (an opt-mention vs opt-spec).
 
-        - I dealt with the issue in mvs.
+    - The two types of configuration (variants and opt-specs) are additve.
 
-        - User-prefs and opts tend to have the same validation needs.
+    - Subsuequent configurations never overwrite a prior settings for an Opt.
+      Each new setting is added to the prior settings.
 
-        - And the merge them can be tricky.
+Section content:
 
-            - Maybe this isn't too bad if we could solve the argparse
-              deficiency where you don't know if the opt was supplied or was
-              the default.
+        - variant-scope lines. Looks the same as as partial usage.
+          Subsequent opt-spec lines will be scoped to that variant.
+          Applicable only when Opt.dest values are reused across variants.
 
-            - If we knew that, then the merge logic would be simpler[?].
+            * Clarifications and questions:
+            - Here's how I a variant-scope line:
 
-                for K, V in prefs.items():
-                    if opts.K was not set by user:
-                        opts.K = V
+                Foo ::
 
-    - How does a user request a non-default location for user-prefs?
-        - Environment variable.
+                grep!
 
-    - Ability to report rank-order positions of opts on command-line.
-        - Example use cases:
-            - Perl `rename`: the "rules" has to be applied in order.
-            - Unix `find`: ditto.
+                [-b --bar] : Blah blah
 
-Move to an approriate spot in the notes:
+            - Is this concept necessary?
+            - Probably not. It's an unusual use case.
+            - Even if it were, I suspect that this solution is inadequate.
+            - To fully support this level of fine-tuning, you might need
+              a sym-dest to include some kind of scoping syntax.
 
-    Variant: other notes:
+Indentation:
 
-        - Opts can be configured in a variant-spec, or the user
-          can use an abbreviated form (an opt-mention vs opt-spec).
+    - Optopus will generally try to preserve the original indentation
+      level of ordinary text -- specifically the indentation of the
+      first line of the paragraph.
 
-        - The two types of configuration (variants and opt-specs) are additve.
+    - If line-wrapping is suppressed, Optopus will rendered lines
+      as-is, including each line's indentation.
 
-        - Subsuequent configurations never overwrite a prior settings for an Opt.
-          Each new setting is added to the prior settings.
+Names:
 
-    - Section content:
+    - Various grammar elements have names or name-like attributes:
 
-            - variant-scope lines. Looks the same as as partial usage.
-              Subsequent opt-help lines will be scoped to that variant.
-              Applicable only when Opt.dest values are reused across variants.
+        - Variant: name.
+        - Partial: name.
+        - Opt:
+            - dest is the "name" for Parser and programmer.
+            - sym is the name in the help-text.
 
-                * Clarifications and questions:
-                - Here's how I a variant-scope line:
+    - Optopus allows both typical names and non-standard ones (eg, names
+      starting with underscore or even digit).
 
-                    Foo ::
+    - However, the name/dest will be normalized as follows:
 
-                    grep!
-
-                    [-b --bar] : Blah blah
-
-                - Is this concept necessary?
-                - Probably not. It's an unusual use case.
-                - Even if it were, I suspect that this solution is inadequate.
-                - To fully support this level of fine-tuning, you might need
-                  a sym-dest to include some kind of scoping syntax.
-
-        - Indentation:
-
-            - Optopus will generally try to preserve the original indentation
-              level of ordinary text -- specifically the indentation of the
-              first line of the paragraph.
-
-            - If line-wrapping is suppressed, Optopus will rendered lines
-              as-is, including each line's indentation.
-
-    Names:
-
-        - Various grammar elements have names or name-like attributes:
-
-            - Variant: name.
-            - Partial: name.
-            - Opt: dest is the "name".
-
-        - Optopus allows both typical names and non-standard ones (eg, names
-          starting with underscore or even digit).
-
-        - However, the name/dest will be normalized as follows:
-
-            - Hyphens converted to underscores.
-            - Attach underscore prefix to name/dest starting with digit.
+        - Hyphens converted to underscores.
+        - Attach underscore prefix to name/dest starting with digit.
 
 --------
 api-vs-text: API-driven vs text-driven
@@ -1609,6 +1568,16 @@ and destination assignment.
     store_const  | 1 flag            | --frob          | X           | Not necessary
     append_const | 1+ flag           | --frob --frob   | [X x]       | Not necessary
 
+Notes:
+
+    - To achieve argparse store_false:
+        - The generalized case is a flag that stores some constant.
+        - Default constant is True.
+        - But user can define a convert function to store anything else.
+
+    - Data storage to achieve argparse extend:
+        - See parsed-data-structure
+
 --------
 explicit-option-param-syntax: Why explicit syntax for option parameters is needed
 --------
@@ -1631,6 +1600,46 @@ Some ways to address that problem:
       to disambiguate when needed. Probably a bad idea: these issues can be
       tricky to think through. Also, for non-standard grammars, a small bit of
       extra typing seems easy compared to having to reason about subleties.
+
+--------
+variable-input-spec: Spec for variable input
+--------
+
+During prior thinking on the spec-syntax, I handled variable input
+like this:
+
+    # Incorrect.
+    <dest>       | Positional
+    --dest <sym> | Option with parameter
+
+But that is incorrect:
+
+    - A spec is represents the ultimate help-text.
+    - Thus, names in the spec are better understood as syms, not dests.
+
+    # Correct.
+    <sym>        | Positional
+    --dest <sym> | Option with parameter
+
+    - A positional defaults to having the same name for its sym and dest.
+
+For a while, I considered a more elaborate var-input-spec that allowed the user
+to configure sym and dest independently.
+
+    - But it's not worth it.
+    - The most common use is with plural nargs/nparams:
+        - Plural dest (eg paths).
+        - Singular sym (path).
+    - But this is more naturally configured via the API.
+
+    # Too complex.
+    <dest.sym>           | Positional
+    --dest <subdest.sym> | Option with parameter
+
+    - In addition, the subdest concept is unneeded:
+        - The purpose is to package up the positional/parameter values
+          up into a different, object-like data structure.
+        - The appropriate solution here is a user-provided convert function.
 
 --------
 high-precendence-options: High precedence options
@@ -1738,7 +1747,7 @@ Phase 2: lexing:
 
     - Nor does it try to assemble those character-based atoms into fully
       meaningful entitities, other than in cases where they must be assembled
-      to avoid ambiguitity with similar tokens.
+      to avoid ambiguity with similar tokens.
 
 Phase 3: parsing:
 
@@ -2264,9 +2273,12 @@ Is nargs needed? Why not handle it all with ntimes?
         - So the quantifier is interpreted as affecting nparams.
 
 Internally, all data assigned to destinations will be stored in a fully
-explicit manner. Assume a list of lists, where nargs/nparams determines the
-length of the innermost lists and ntimes determines the length of the outer
-list(s).
+explicit manner. Assume a list of lists, where:
+
+    Opt attribute | Determines length of
+    ------------------------------------
+    nargs/nparams | inner list
+    ntimes        | outer list
 
     - Singular nargs/nparams and ntimes:
 
@@ -3010,7 +3022,7 @@ Punctuation markers:
         -------------------------------------------------
         Grammar section | Double colon | If variant(s)
         Other sections  | Double colon | Always
-        Opt help        | Colon        | If help text
+        Opt-spec        | Colon        | If help text
         Variant         | Colon        | If named
 
     - Sections:
@@ -3030,17 +3042,17 @@ Punctuation markers:
 
             - Must use marker.
             - Can omit a title.
-            - Can define opt-help lines.
+            - Can define opt-spec lines.
             - Can include regular text.
 
-            - If a line parses as opt-help, it will be interpreted that way
+            - If a line parses as opt-spec, it will be interpreted that way
               (unless quoting is used).
 
         - What if the user does not want a trailing colon on section titles?
 
             - Let them adjust via the API.
 
-    - opt-help:
+    - opt-spec:
 
         - Supported Opt grammar subset:
 
@@ -3053,23 +3065,33 @@ Punctuation markers:
             aliases
             text
 
-        - Note that opt-help uses a grammar subset, not an alternative grammar:
+        - Note that opt-spec uses a grammar subset, not an alternative grammar:
 
             - This means, for example, that options are not assumed
               to be optional: square brackets required if intended.
 
-        - Note that opt-help lines can be confused with unnamed variants. The
+        - Note that opt-spec lines can be confused with unnamed variants. The
           issue is fundamental, not really addressable via extended peeks or
           other fancy parsing. For example, does this spec define 3 variants or
-          3 bare-bones opt-help lines?
+          3 bare-bones opt-spec lines?
 
             pgrep
             <rgx>
             --ignore-case -i
             --invert-match -v
 
-        - The most common use case is to derive grammar from 1+ opt-help
-          sections. It works well for many standard grammar needs, and opt-help
+            - Ultimately, I decided to rely on a greedy parsing policy to
+              address this potential ambiguity.
+
+                - The ambiguous examples are not compelling use cases.
+                - In first section, first look for variants.
+                - If user is unhappy with the parser, the configuration problem
+                  is easily noticed and easily fixed (add a trailing colon to
+                  the first lines that should be treated as opt-spec rather
+                  than variant).
+
+        - The most common use case is to derive grammar from 1+ opt-spec
+          sections. It works well for many standard grammar needs, and opt-spec
           is more featureful than variant (because it supports aliases and
           help text). So the no-variant use case should have the least hassle.
 
@@ -3111,7 +3133,7 @@ purpose served: the user could just call format() to create the spec in the
 first place.
 
 There might be a use case for calling format() after parsing has derived
-grammar and opt-help metadata.
+grammar and opt-spec metadata.
 
     - Presumably the purpose would be to insert material into help text that is
       more under the domain of Optopus than the user.
@@ -3211,7 +3233,7 @@ Verdict: angle style:
 
     - The approach has strong precedent, especially from Git.
 
-    - Brackets and greedy will sort out any ambiguitity:
+    - Brackets and greedy will sort out any ambiguity:
 
         [--point <x> <y>] <z>  # 2-param option, required positional.
 
@@ -3234,10 +3256,10 @@ Quantifiers could be more featureful:
         <x>{!1,2,3,5}   # 1, 2, 3, or 5
 
 --------
-opt-help-lines: Opt help lines
+opt-spec-lines: Opt-spec lines
 --------
 
-In the grammar syntax, an opt-help line allows any syntax for configuring a
+In the grammar syntax, an opt-spec line allows any syntax for configuring a
 single Opt, plus two other things: aliases and help text.
 
 I considered adding a rule to require that the aliases, if any, reside
@@ -3257,11 +3279,11 @@ the line as follows:
 Then examine expression to extract any aliases and validate that it configures
 only a single Opt.
 
-Because it would be difficult to distinguish opt-help continuation lines from
+Because it would be difficult to distinguish opt-spec continuation lines from
 lines of regular text in a section, I decided to require block-quoting for
 regular text. This keeps parsing relative sane at a modest cost in usage.
 
-Opt-helps lines can also define help text for positional/parameter
+Opt-specs lines can also define help text for positional/parameter
 variants. The default help text for such elements (ie, without
 any explicit section configuration) is as follows:
 
@@ -3289,9 +3311,11 @@ any explicit section configuration) is as follows:
 opt-independence-vs-unity: Opt independence vs unity when sharing same dest
 --------
 
-The grammar syntax is very flexible, so Optopus needs to know how to handle
-unusual situations, including the repetition or reuse of the same dest. Several
-examples:
+The spec-syntax is flexible, so Optopus needs to know how to handle unusual
+situations, including the repetition or reuse of the same sym/dest for
+positionals, options, or parameters.
+
+Several examples:
 
     - Contiguous repetition as a syntactic alternative for nargs/ntimes:
 
@@ -3299,6 +3323,7 @@ examples:
         -x [-x]                     # Same.
 
         -x -y -x                    # Noncontiguous but condensable (option ordering irrelevant).
+        <x> <yy> <x>                # Noncontiguous positionals.
 
     - Reuse across variants:
 
@@ -3359,12 +3384,16 @@ Opt independence vs unity has possible ramifications in several areas:
     - Argument parsing.
     - Result creation.
     - Usage text creation.
-    - Opt help lines creation.
+    - Opt-spec lines creation.
 
 Policy decisions:
 
     - During spec parsing, contiguous repetitions of the same dest will be
       condensed when possible. Otherwise, independent Opts will be created.
+
+        - I have doubts about this now.
+        - Condensing loses information -- namely, about how the user wants the
+          usage text to look.
 
     - A Grammar is just a list of elements, either Groups or Opts (and a Group
       has the same structure). The dest is not used as an unique identifier, so
@@ -3390,15 +3419,18 @@ Policy decisions:
       variant/group prefixes). Also see notes below for one type of complex
       Result (for nab).
 
+        - Would this really work in more complex scenarios?
+        - See parsed-data-structure
+
     - Usage text will closely mimic the naming and structure of the user's
       spec. If there is ambiguity from duplicate dests, the user either wants
       it or they can easy adjust by configuring syms/dests differently.
 
-    - For Opt help text, Section configuration can drive the process. Any
-      section containing an opt-help configuration for an Opt will display the
-      opt-help line. This allows the common use case where an Opt should be
+    - For Opt-spec text, Section configuration can drive the process. Any
+      section containing an opt-spec configuration for an Opt will display the
+      opt-spec line. This allows the common use case where an Opt should be
       listed in multiple places in the help text. If two Opts having the same
-      dest are in the same Section, Optopus will generate an opt-help line for
+      dest are in the same Section, Optopus will generate an opt-spec line for
       each Opt, but if the resulting text is the same, it will prune the
       duplicate(s).
 
