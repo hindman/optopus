@@ -82,13 +82,9 @@ todos: TODOs
 
 Reorientation:
 
-    - classes-and-attributes :
-        - Edit to reflect new plan.
-
-    - todos and road-map :
-        - Read through, light edit.
-
     - Editing pass over notes.txt:
+
+        __HERE__ 
 
         - Edit to conform to new specification.
         - Add 'Summary' at the top of section, where applicable.
@@ -134,8 +130,6 @@ Core enhancements:
 
     Conversion/validation/choices.
 
-    Look into Github Actions for CI.
-
 Help text: basic:
 
     Automatic --help.
@@ -174,18 +168,19 @@ Alternative inputs: basics:
 
     Quoting customization.
 
-    Non-option arguments having option prefix: negative numbers.
+    Non-option args having option prefix: negative numbers.
 
-    Non-option arguments having option prefix: generally via a configurable escape
-    prefix.
+    Non-option args having option prefix: configurable escape prefix.
 
 Project health:
 
-    Add validation to user-facing callables. [consider valid8; or roll simple one]
+    Add validation to user-facing callables.
 
     Documentation.
 
     Docstrings.
+
+    Github Actions for CI.
 
 Opt enhancements:
 
@@ -322,6 +317,8 @@ specification: Specification
 --------
 spec-syntax: Spec syntax
 --------
+
+__HERE__ 
 
 Spec:
 
@@ -760,6 +757,7 @@ Parser:
     --------------------------------------------------------------------------------
     spec      | Was 'simple_spec'.
     grammar   | Grammar. Was 'opts'.
+    prog      | Program name.
     mode      | Special parsing mode.
     --------------------------------------------------------------------------------
     auto      | Defer. True by default: exit with error on failed parse().
@@ -768,7 +766,6 @@ Parser:
     helpful   | Defer.
     syntax    | Defer. Data object to configure syntax parsing and usage text rules.
     --------------------------------------------------------------------------------
-    prog      | Drop. [KEEP NOW] Handled via the spec or under format.
     wildcards | Drop. Was used to support * as a match-anything device.
     --------------------------------------------------------------------------------
 
@@ -926,19 +923,18 @@ Opt:
     nparams   | .
     dest      | Was 'destination'.
     default   | .
-    value     | None (typical) or the variant value.  [** Unclear]
+    value     | None (typical) or the variant value.  [** What is this?]
     choices   | None (validation deferred).
+    sym       | Symbolic name(s) for variable-input (positional or parameter).
+    text      | Meaning help text?
     --------------------------------------------------------------------------------
     help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
-    metavar   | Defer. But need a better name. [** Current plan now uses `sym`].
-    choices   | Defer.
     convert   | Defer. Callable.
     validate  | Defer. Callable.
-    text      | Defer.
     hide      | Defer. False (visible), True (hidden), or sequence of where/what to hide
     sections  | Defer. Sequence of section names.    [**An Opt has sections?]
     high      | Defer. Was 'tolerant'.
-    factory   | Defer. Callable to create default.   [**Necessary?]
+    factory   | Defer. Callable to create default.
     aliases   | Defer.
     dispatch  | Defer. Callable(s). Maybe 'actions'.
     required  | Defer, maybe drop. Same as ntimes=1.
@@ -981,6 +977,9 @@ Result:
     - Data object returned to end-user by Parser.parse().
 
     - An iterable mapping-like object with destinations as the attributes.
+
+    - In more complex grammers the top-level Result returned by parse() might
+      contain nested Result instances (eg, a Group with a quantifier of 2+).
 
 SpecParser:
 
