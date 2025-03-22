@@ -39,6 +39,7 @@ toc: Table of contents
         arg-parsing-algo              | Parsing algorithm
         alternative-parsing-algo      | Alternative parsing algorithm won't work after all
         ambiguous-grammars            | Ambiguous grammars are not an issue
+        opt-independence              | Opt independence and duplicate names
         parsed-data-structure         | Parsed data structuring: nargs, nparams, ntimes
         eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
         grammar-syntax-named-unnamed  | Grammar syntax: named and unnamed arguments
@@ -61,7 +62,6 @@ toc: Table of contents
         variable-end-user-input       | Representing variable end-user inputs
         enhanced-quantifiers          | Enhanced quantifiers
         opt-spec-lines                | Opt-spec lines
-        opt-independence-vs-unity     | Opt independence vs unity when sharing same dest
         group-level-validation-needed | Why Group-level validation should be retained
         readme-next-version           | README for next version
 
@@ -80,11 +80,25 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Opt with differently configured var-inputs:
+
+    - Not sure that my plan for Opt is adequate.
+
+    - Current notes for Opt attributes are centered on the common use cases
+      where all var-inputs (positionals or parameters) have the same
+      configuration.
+
+    - Consider even a simple case:
+
+        --point <x> <y> [<z>]
+
+    - How will that be modeled as classes and attributes?
+
 Reorientation:
 
     - Editing pass over notes.txt:
 
-        __HERE__ 
+        __HERE__
 
         - Edit to conform to new specification.
         - Add 'Summary' at the top of section, where applicable.
@@ -318,8 +332,6 @@ specification: Specification
 spec-syntax: Spec syntax
 --------
 
-__HERE__ 
-
 Spec:
 
     - A spec is 0+ sections.
@@ -330,8 +342,8 @@ Section:
 
     - The first section:
 
-        [title ::]                    # Default: 'Usage'
-        [variant...]
+        [title ::]                    # Default title: 'Usage'
+        [variant...]                  # Allowed only in first section.
         [opt-spec | block-quote]...
 
     - Other sections:
@@ -341,44 +353,43 @@ Section:
 
 Variant:
 
-    [name :] variant-spec        # Regular
-    name! : variant-spec         # Partial
+    [name :] variant-spec             # Regular
+    name! : variant-spec              # Partial
 
 Variant-spec:
 
-    - Partial:
-
-        foo!             Insert foo partial into the variant.
-
-    - Grouping and alternatives:
-
-        []               Grouping, optional.
-        ()               Grouping.
-        foo=[]           Named grouping, optional.
-        foo=()           Named grouping.
-        |                Alternatives.
-
-    - Quantifiers:
-
-        ...              1 or more
-        {m,n}            Repetition: m through n, inclusive.
-        ?                Non-greedy for preceding quantifier.
-
     - Options:
 
-        -f               Short.
-        --foo            Long.
-        -abc             Bundled flags: -a -b -c.
+        -f             # Short.
+        --foo          # Long.
+        -abc           # Bundled flags: -a -b -c.
 
     - Positionals and parameters:
 
-        <bar>            Positional.
-        -f <fubb>        Parameter.
+        <bar>          # Positional.
+        -f <fubb>      # Parameter.
 
     - Quoted literals:
 
-        `hello`          Can be used as positional, positional
-                         choice, or parameter choice.
+        `hello`        # Can be positional, positional-choice, parameter-choice.
+
+    - Groups and alternatives:
+
+        ()             # Group.
+        []             # Group, optional.
+        foo=()         # Named group.
+        foo=[]         # Named group, optional.
+        |              # Alternatives separator.
+
+    - Quantifiers:
+
+        ...            # 1 or more
+        {m,n}          # Repetition: m through n, inclusive.
+        ?              # Non-greedy for preceding quantifier.
+
+    - Partial:
+
+        foo!           # Insert foo partial into the variant.
 
 Opt-spec:
 
@@ -404,7 +415,7 @@ Opt-spec:
 
 Opt-mention:
 
-    - An opt-mention is just the Opt.dest, with appropriate punctuation:
+    - An opt-mention is just the Opt.name, with appropriate punctuation:
 
         <foo> | Positional.
         --bar | Long option.
@@ -414,25 +425,26 @@ Var-input:
 
     - Variable input provided by the user.
     - See positional-spec and parameter-spec for details.
+    - Primarily an internal term, not user-facing.
 
 Positional-spec:
 
     - Syntax:
 
-        <sym>         | Positional
-        <sym=choices> | With choices
-        <sym=choice>  | Specific choice (in context of a variant-spec).
+        <foo>         | Positional
+        <foo=choices> | With choices
+        <foo=choice>  | Specific choice (in context of a variant-spec).
 
 Parameter-spec:
 
     - Syntax:
 
-        --dest <sym>         | Usage displays '<sym>'
-        --dest <sym=choices> | Usage displays '<sym>', not '<choices>'.
-        --dest <sym=choice>  | Specific choice (in context of variant-spec).
+        --foo <bar>         | Usage displays <bar>.
+        --foo <bar=choices> | Usage displays <bar>, not <choices>.
+        --foo <bar=choice>  | Specific choice (in context of variant-spec).
 
-        --dest <choices>     | Choices function as the sym in usage text.
-        --dest <=choice>     | Specific choice (in context of variant-spec).
+        --foo <choices>     | Usage displays choices.
+        --foo <=choice>     | Specific choice (in context of variant-spec).
 
 Choices:
 
@@ -468,8 +480,8 @@ Whitespace rules:
 
         - Variant must start on its own line.
 
-        - Continuation line must be indented more than the first
-          line and be contiguous with it.
+        - Opt-spec and variant continuation line must be indented more than the
+          first line and be contiguous with it.
 
         - Section title must be on its own line, ending in marker.
 
@@ -578,7 +590,6 @@ neck-diagram:
 Syntax example: nab:
 
     - Another separator-based grammar.
-    - Note that Opt.dest values (cmd, in this case) need to be repeated.
 
     chomp!   : / <cmd=chomp>
     findall! : / <cmd=findall> <rgx> [-a]
@@ -599,7 +610,7 @@ Library:
 Users:
 
     user or library-user | Software developer using optopus
-    end-user             | Someone running program that uses optopus
+    end-user             | Someone running a program that uses optopus
 
 Command line arguments:
 
@@ -627,14 +638,14 @@ Help text:
     ------------------------------------------------------------------
     Help text    | Full output from --help.
     Usage text   | Just the command-line grammar.
-    Options text | List of options and positionals, perhaps in groups.
+    Options text | List of options and positionals, perhaps in sections.
     Other text   | Written by user (default: wrapped by optopus).
     ------------------------------------------------------------------
     Opt text     | Help text for a single positional or option.
 
 Spec:
     - A Parser specification.
-    - Text blob defining Parser's grammer, Opts, help sections & text.
+    - Text blob defining Parser's grammer, Opts, help sections, and text.
 
 Spec-syntax:
     - Syntax used to define a spec.
@@ -657,8 +668,8 @@ Variant:
 
     - Examples:
 
-        grep : <rgx> [-i] [-v]
-        split : [<rgx>] [-n <max>]
+        grep  : <cmd=grep>  <rgx> [-i] [-v]
+        split : <cmd=split> [<rgx>] [-n <max>]
 
 Variant-spec:
     - The grammatical portion of a variant definition.
@@ -666,6 +677,7 @@ Variant-spec:
 
 Positional-variant and parameter-variant:
     - Variant defined/triggered by a specific positional/parameter value.
+    - See variant examples (above).
 
 Opt-spec:
     - A portion of a spec defining one Opt.
@@ -678,19 +690,12 @@ Var-input: positional-spec and parameter-spec:
         - positional-spec
         - parameter-spec
 
-Sym:
-    - Symbolic name for variable-input in help text.
-    - Like an argparse metavar.
+Name:
+    - Symbolic name in help-text (for positional, option, or parameter).
+    - Symbolic name in spec/API (for variant, section).
 
 Dest:
     - Attribute name in Result for data from one positional/option.
-    - Default behavior:
-        - Options:
-            - The literal option is the dest.
-            - Example: '--foo' means Opt(dest = 'foo')
-        - Positionals:
-            - The spec uses <sym>
-            - The dest is set to the same name.
 
 Block-quote:
     - Triple-quoted literal help text.
@@ -755,18 +760,18 @@ Parser:
 
     Attribute | Note
     --------------------------------------------------------------------------------
-    spec      | Was 'simple_spec'.
-    grammar   | Grammar. Was 'opts'.
+    spec      | .
+    grammar   | Grammar.
     prog      | Program name.
-    mode      | Special parsing mode.
+    mode      | Parsing mode.
     --------------------------------------------------------------------------------
     auto      | Defer. True by default: exit with error on failed parse().
     sections  | Defer.
-    format    | Defer. Data object to namepsace formatting attributes. Was 'formatter_config'.
-    helpful   | Defer.
+    format    | Defer. Data object to namepsace formatting attributes.
     syntax    | Defer. Data object to configure syntax parsing and usage text rules.
     --------------------------------------------------------------------------------
     wildcards | Drop. Was used to support * as a match-anything device.
+    helpful   | Drop. Not sure what this meant.
     --------------------------------------------------------------------------------
 
     API:
@@ -788,7 +793,7 @@ Parser:
             query(*paths, **kws) -> Grammar.query(...) -> Query
 
                 - Query paths are based on Opt.dest, Variant.name, and
-                  Group.dest or Group.index.
+                  Group.dest or Group.index. [What about Opt.name?]
 
                 - The vast majority of queries will be for Opts:
 
@@ -876,8 +881,9 @@ Grammar:
 
 Query:
 
-    Iterable tuple-like object returned by Grammar.query(). Holds the Groups/Opts
-    that satisfy the search parameters. Supports bulk configuration.
+    Iterable sequence-like object returned by Grammar.query(). Holds the
+    Groups/Opts that satisfy the search parameters. Supports bulk
+    configuration.
 
     Attribute | Note
     --------------------------------------------------------------------------------
@@ -909,6 +915,8 @@ Group:
     validate  | Defer. Callable(s).
     --------------------------------------------------------------------------------
 
+__HERE__
+
 Opt:
 
     - A configurable data object to represent one option (with parameters,
@@ -921,11 +929,11 @@ Opt:
     ntimes    | .
     nargs     | .
     nparams   | .
+    name      | Symbolic name(s) for variable-input (positional or parameter).
     dest      | Was 'destination'.
     default   | .
     value     | None (typical) or the variant value.  [** What is this?]
     choices   | None (validation deferred).
-    sym       | Symbolic name(s) for variable-input (positional or parameter).
     text      | Meaning help text?
     --------------------------------------------------------------------------------
     help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
@@ -1100,6 +1108,9 @@ questions-outstanding: Questions outstanding
 ** This section has:
     - Questions outstanding.
     - Notes that need to be edited and put in the appropriate spot.
+
+opt-independence and parsed-data-structure :
+    - edit sections to reflect new policy.
 
 Did user supply a value or did it come from the configured default?
 
@@ -1604,23 +1615,51 @@ Some ways to address that problem:
 variable-input-spec: Spec for variable input
 --------
 
-During prior thinking on the spec-syntax, I handled variable input
-like this:
+The initial spec-syntax handled variable input like this:
 
-    # Incorrect.
-    <dest>       | Positional
-    --dest <sym> | Option with parameter
+    - Approach #1: incorrect.
 
-But that is incorrect:
+        <dest>       | Positional
+        --dest <sym> | Option with parameter
+
+Then I switched to the following:
 
     - A spec is represents the ultimate help-text.
     - Thus, names in the spec are better understood as syms, not dests.
-
-    # Correct.
-    <sym>        | Positional
-    --dest <sym> | Option with parameter
-
     - A positional defaults to having the same name for its sym and dest.
+
+    - Approach #2: also incorrect.
+
+        <sym>        | Positional
+        --dest <sym> | Option with parameter
+
+But now I think the spec is symbolic names all the way down:
+
+    - An option (formerly modeled as --dest) is just a thing with a symbolic
+      name (--sym). And since everything is a syn/name, just use natural
+      language (--name).
+
+    - Approach #3:
+
+        - Abstract (unlikely to ever be documented this way).
+
+            <name>        | Positional
+            --name <name> | Option with parameter
+
+        - More intuitive description of the policy.
+
+            <foo>        | Positional, with Opt.name=foo
+            --bar <fubb> | Option, with Opt.name=bar and having Parameter.name=fubb
+
+    - How this approach works with all entities having names:
+
+        - Symbolic names in help-text:
+            - Opt
+            - Parameter
+
+        - Symbolic name in the spec/API:
+            - Section
+            - Variant
 
 For a while, I considered a more elaborate var-input-spec that allowed the user
 to configure sym and dest independently.
@@ -2228,8 +2267,199 @@ But that's not a problem, because Optopus can do what regular expression
 engines do: greedy assignment by default, non-greedy by configuration.
 
 --------
+opt-independence: Opt independence and duplicate names
+--------
+
+** Edit this section to reflect new policy:
+    - Opts will be independent.
+    - Do not condense/merge contiguous reuse of same Opt name.
+
+The spec-syntax is flexible, so Optopus needs to know how to handle unusual
+situations, including the repetition or reuse of the same sym/dest for
+positionals, options, or parameters.
+
+Several examples:
+
+    - Contiguous repetition as a syntactic alternative for nargs/ntimes:
+
+        <x> <x> [<x>]               # Contiguous; can be condensed.
+        -x [-x]                     # Same.
+
+        -x -y -x                    # Noncontiguous but condensable (option ordering irrelevant).
+        <x> <yy> <x>                # Noncontiguous positionals.
+
+    - Reuse across variants:
+
+        foo : <x> [-y]              # Same configuration.
+        bar : -z -y <x>
+
+        foo : <x> [-y]              # Different configuration.
+        bar : -z -y <x> <x>
+
+        foo : <x> [-y]              # Different type.
+        bar : -z -y [-x]
+
+    - Reuse across alternatives:
+
+        (-x -y | -a -x -z | -q)     # Same configuration.
+
+        (<x=A|B> | <x> <x> <x>)     # Different configuration.
+        (<x> | <x> <x> <x>)
+
+        (-x | <x> <x>)              # Different type.
+
+    - Reuse within an alternative:
+
+        <x> (<x> <x>)...            # Different configuration.
+        <x> <foo> <x>               # Different configuration (related to arg binding).
+
+        -x <x> <x>                  # Different type.
+
+        - Note: there are no examples here for "same configuration": contiguous
+          will be condensed; noncontiguous positionals cannot have same
+          configuration (arg binding); and noncontiguous options will be
+          condensed.
+
+    - Reuse for separator-based grammars: nab:
+
+        - The nab use case illustrates why Opt independence within the same
+          variant is sometimes needed (for a while I had considered disallowing
+          reuse within variants).
+
+        - A separator-based grammar needs a single main grammar where all of
+          the subcommands can be used in sequence (including repetitions).
+          But subcommands are often likely to need Opts with the same dest.
+
+        chomp!   : / <cmd=chomp>
+        findall! : / <cmd=findall> <rgx> [-a]
+        grep!    : / <cmd=grep> <rgx> [-i] [-v] [-s]
+        range!   : / <cmd=range> <start> <stop> [<step>] [-g]
+        run!     : / <cmd=run> <code> [-g <>] [-a] [-v] [-i]
+
+        main : [--debug] commands=(chomp! | grep! | range! | run!)...
+        help : --help
+
+Opt independence vs unity has possible ramifications in several areas:
+
+    - Spec parsing.
+    - Grammar creation.
+    - Grammar configuration.
+    - Argument parsing.
+    - Result creation.
+    - Usage text creation.
+    - Opt-spec lines creation.
+
+Policy decisions:
+
+    - During spec parsing, contiguous repetitions of the same dest will be
+      condensed when possible. Otherwise, independent Opts will be created.
+
+        - I have doubts about this now.
+        - Condensing loses information -- namely, about how the user wants the
+          usage text to look.
+
+    - A Grammar is just a list of elements, either Groups or Opts (and a Group
+      has the same structure). The dest is not used as an unique identifier, so
+      no problems are caused by repetition.
+
+    - During configuration, the user can query for Opts flexibly. If they
+      define a weird spec that makes it inconvenient to query for Opts
+      individually, they can easily adjust by defining things like Variant.name
+      or Group.dest to disambiguate. Worst case, they can query using Group/Opt
+      indexes (rather than dests) or just query for several Opts and then
+      examine their details to select the one needed for configuration.
+
+    - Argument parsing need not care about dest uniqueness. The parsing is akin
+      to seeing arguments and putting them into viable slots. No deep problems
+      are caused by multiple slots accepting the same kinds of things.
+
+    - Result creation is the place where unification by dest occurs. Consider
+      Opts with different types: -x <x> <x>. This causes no technical problem,
+      because the Result can be merged correctly: Result.x = [bool, [x1, x2]].
+      The only problem is that the data has an odd structure. The user can
+      easily fix that with a different Optopus configuration. If needed, Optous
+      can support an option to generate unique dests in the Result (eg, via
+      variant/group prefixes). Also see notes below for one type of complex
+      Result (for nab).
+
+        - Would this really work in more complex scenarios?
+        - See parsed-data-structure
+
+    - Usage text will closely mimic the naming and structure of the user's
+      spec. If there is ambiguity from duplicate dests, the user either wants
+      it or they can easy adjust by configuring syms/dests differently.
+
+    - For Opt-spec text, Section configuration can drive the process. Any
+      section containing an opt-spec configuration for an Opt will display the
+      opt-spec line. This allows the common use case where an Opt should be
+      listed in multiple places in the help text. If two Opts having the same
+      dest are in the same Section, Optopus will generate an opt-spec line for
+      each Opt, but if the resulting text is the same, it will prune the
+      duplicate(s).
+
+Result for the nab example:
+
+    - If the 'cmd' dest were NOT in the nab spec, the Result would be
+      narrowly correct, but difficult for the user to understand at
+      runtime, because every dest would be a flat list of values, some of them
+      coming from different 'cmd' invocations. Nonetheless, there is nothing
+      narrowly "incorrect" about this outcome; if the user does not like it,
+      the solution is a better configuration.
+
+        Result(
+            debug = t1,
+            help  = h1,
+            cmd   = [chomp, findall, grep, grep, range, run],
+            rgx   = [       r1,      r2,   r3              ],
+            i     = [                i1,   i2,          i3 ],
+            v     = [                v1,   v2,          v3 ],
+            s     = [                s1,   s2              ],
+            start = [                            s1        ],
+            stop  = [                            s1        ],
+            step  = [                            s1        ],
+            g     = [                            g1,    g1 ],
+            code  = [                                   c1 ],
+            a     = [       a1,                         a2 ],
+        )
+
+    - If the cmd dest is used, the Result will organize things in
+      a meaningful way.
+
+        Result(
+            debug = t1,
+            help  = h1,
+            cmd = [
+                # Each Result is a column in the tabular arrangement above.
+                Result(chomp),
+                Result(findall, r1, a1),
+                Result(grep, r2, i1, v1, v1),
+                Result(grep, r3, i2, v2, v2),
+                Result(range, s1, s1, s2),
+                Result(run, i3, v3, g2, c1, a2),
+            ],
+        )
+
+--------
 parsed-data-structure: Parsed data structuring: nargs, nparams, ntimes
 --------
+
+** Edit this section to reflect new policy:
+    - Need to handle reuse of same Opt.name.
+
+    - Example:
+
+        - Spec.
+
+            <x>... -x <x> -x <x>{2}
+
+        - Result.
+
+            opts.x = [
+                [X, ...], # <x>...
+                bool,     # -x
+                X         # <x>
+                [X, X]    # -x <x>{2}
+            ]
 
 The meaning of nparams, nargs, and ntimes:
 
@@ -3305,174 +3535,6 @@ any explicit section configuration) is as follows:
         Options: --mode:
           --mode fast        Fast blah
           --mode slow        Slow blah
-
---------
-opt-independence-vs-unity: Opt independence vs unity when sharing same dest
---------
-
-The spec-syntax is flexible, so Optopus needs to know how to handle unusual
-situations, including the repetition or reuse of the same sym/dest for
-positionals, options, or parameters.
-
-Several examples:
-
-    - Contiguous repetition as a syntactic alternative for nargs/ntimes:
-
-        <x> <x> [<x>]               # Contiguous; can be condensed.
-        -x [-x]                     # Same.
-
-        -x -y -x                    # Noncontiguous but condensable (option ordering irrelevant).
-        <x> <yy> <x>                # Noncontiguous positionals.
-
-    - Reuse across variants:
-
-        foo : <x> [-y]              # Same configuration.
-        bar : -z -y <x>
-
-        foo : <x> [-y]              # Different configuration.
-        bar : -z -y <x> <x>
-
-        foo : <x> [-y]              # Different type.
-        bar : -z -y [-x]
-
-    - Reuse across alternatives:
-
-        (-x -y | -a -x -z | -q)     # Same configuration.
-
-        (<x=A|B> | <x> <x> <x>)     # Different configuration.
-        (<x> | <x> <x> <x>)
-
-        (-x | <x> <x>)              # Different type.
-
-    - Reuse within an alternative:
-
-        <x> (<x> <x>)...            # Different configuration.
-        <x> <foo> <x>               # Different configuration (related to arg binding).
-
-        -x <x> <x>                  # Different type.
-
-        - Note: there are no examples here for "same configuration": contiguous
-          will be condensed; noncontiguous positionals cannot have same
-          configuration (arg binding); and noncontiguous options will be
-          condensed.
-
-    - Reuse for separator-based grammars: nab:
-
-        - The nab use case illustrates why Opt independence within the same
-          variant is sometimes needed (for a while I had considered disallowing
-          reuse within variants).
-
-        - A separator-based grammar needs a single main grammar where all of
-          the subcommands can be used in sequence (including repetitions).
-          But subcommands are often likely to need Opts with the same dest.
-
-        chomp!   : / <cmd=chomp>
-        findall! : / <cmd=findall> <rgx> [-a]
-        grep!    : / <cmd=grep> <rgx> [-i] [-v] [-s]
-        range!   : / <cmd=range> <start> <stop> [<step>] [-g]
-        run!     : / <cmd=run> <code> [-g <>] [-a] [-v] [-i]
-
-        main : [--debug] commands=(chomp! | grep! | range! | run!)...
-        help : --help
-
-Opt independence vs unity has possible ramifications in several areas:
-
-    - Spec parsing.
-    - Grammar creation.
-    - Grammar configuration.
-    - Argument parsing.
-    - Result creation.
-    - Usage text creation.
-    - Opt-spec lines creation.
-
-Policy decisions:
-
-    - During spec parsing, contiguous repetitions of the same dest will be
-      condensed when possible. Otherwise, independent Opts will be created.
-
-        - I have doubts about this now.
-        - Condensing loses information -- namely, about how the user wants the
-          usage text to look.
-
-    - A Grammar is just a list of elements, either Groups or Opts (and a Group
-      has the same structure). The dest is not used as an unique identifier, so
-      no problems are caused by repetition.
-
-    - During configuration, the user can query for Opts flexibly. If they
-      define a weird spec that makes it inconvenient to query for Opts
-      individually, then can easily adjust by defining things like Variant.name
-      or Group.dest to disambiguate. Worst case, they can query using Group/Opt
-      indexes (rather than dests) or just query for several Opts and then
-      examine their details to select the one needed for configuration.
-
-    - Argument parsing need not care about dest uniqueness. The parsing is akin
-      to seeing arguments and putting them into viable slots. No deep problems
-      are caused by multiple slots accepting the same kinds of things.
-
-    - Result creation is the place where unification by dest occurs. Consider
-      Opts with different types: -x <x> <x>. This causes no technical problem,
-      because the Result can be merged correctly: Result.x = [bool, [x1, x2]].
-      The only problem is that the data has an odd structure. The user can
-      easily fix that with a different Optopus configuration. If needed, Optous
-      can support an option to generate unique dests in the Result (eg, via
-      variant/group prefixes). Also see notes below for one type of complex
-      Result (for nab).
-
-        - Would this really work in more complex scenarios?
-        - See parsed-data-structure
-
-    - Usage text will closely mimic the naming and structure of the user's
-      spec. If there is ambiguity from duplicate dests, the user either wants
-      it or they can easy adjust by configuring syms/dests differently.
-
-    - For Opt-spec text, Section configuration can drive the process. Any
-      section containing an opt-spec configuration for an Opt will display the
-      opt-spec line. This allows the common use case where an Opt should be
-      listed in multiple places in the help text. If two Opts having the same
-      dest are in the same Section, Optopus will generate an opt-spec line for
-      each Opt, but if the resulting text is the same, it will prune the
-      duplicate(s).
-
-Result for the nab example:
-
-    - If the 'cmd' dest were NOT in the nab spec, the Result would be
-      narrowly correct, but difficult for the user to understand at
-      runtime, because every dest would be a flat list of values, some of them
-      coming from different 'cmd' invocations. Nonetheless, there is nothing
-      narrowly "incorrect" about this outcome; if the user does not like it,
-      the solution is a better configuration.
-
-        Result(
-            debug = t1,
-            help  = h1,
-            cmd   = [chomp, findall, grep, grep, range, run],
-            rgx   = [       r1,      r2,   r3              ],
-            i     = [                i1,   i2,          i3 ],
-            v     = [                v1,   v2,          v3 ],
-            s     = [                s1,   s2              ],
-            start = [                            s1        ],
-            stop  = [                            s1        ],
-            step  = [                            s1        ],
-            g     = [                            g1,    g1 ],
-            code  = [                                   c1 ],
-            a     = [       a1,                         a2 ],
-        )
-
-    - If the cmd dest is used, the Result will organize things in
-      a meaningful way.
-
-        Result(
-            debug = t1,
-            help  = h1,
-            cmd = [
-                Result(chomp),
-                Result(findall, r1, a1),
-                Result(grep, r2, i1, v1, v1),
-                Result(grep, r3, i2, v2, v2),
-                Result(range, s1, s1, s2),
-                Result(run, i3, v3, g2, c1, a2),
-            ],
-        )
 
 --------
 group-level-validation-needed: Why Group-level validation should be retained
