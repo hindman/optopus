@@ -80,6 +80,37 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Question:
+
+    - Should I drop nparams and just use nargs?
+        - A quick search revealed no discussion on why both are needed.
+        - Seems like a pointless thing for user to have to remember.
+
+    - If both Opt(positional) and Opt(option) used nargs, then:
+        - Opt.nargs = Quantifier
+        - Opt.vinputs = list[VarInput]  # Other names: vis vinps
+
+    - Can Opt arguments be groups?
+
+        - Positionals can clearly belong to groups:
+
+            (<x>{2} <y>)...
+
+        - What about the simplified case where the group has only a single Opt?
+          It looks like just an Opt(ntimes=2) inside a Group(ntimes=(1,None))
+
+            (<x>{2})...
+
+        - So I guess the question applies only to Opt parameters.
+
+            - Examples:
+
+                --foo (<x>{2} <y>){3}
+                --bar <x> (<y> <z>)...
+
+                Opt(foo): has one paramater, a Group(ntimes=3)
+                Opt(bar): has two paramater, <x> and a Group
+
 Opt with differently configured var-inputs:
 
     - Not sure that my plan for Opt is adequate.
@@ -705,6 +736,14 @@ Block-quote:
 classes-and-attributes: Classes and attributes
 --------
 
+__HERE__
+
+    ** Another editing pass over this:
+
+        - Convert tables to a dataclass style of documentation (more flexible)
+        - Keep this section brief and declaratory.
+            - Move discussions, examples, etc elsewhere.
+
 Overview:
 
     User-facing entities:
@@ -792,8 +831,8 @@ Parser:
 
             query(*paths, **kws) -> Grammar.query(...) -> Query
 
-                - Query paths are based on Opt.dest, Variant.name, and
-                  Group.dest or Group.index. [What about Opt.name?]
+                - Query paths are based on Opt.dest, Opt.name, Variant.name,
+                  and Group.dest or Group.index.
 
                 - The vast majority of queries will be for Opts:
 
@@ -810,6 +849,14 @@ Parser:
                     query('go foo')
 
                     - Gets Opt(foo) inside Variant(go).
+
+                - Query paths can use a glob-style wildcard:
+
+                    Example: p = Parser('<x> [-z <a> <b>]')
+
+                    query('z *')
+
+                    - Gets OptArg(a) and OptArg(b)
 
                 - Although Groups can have a dest, most won't. But they will
                   have a unique index within each variant.
@@ -831,6 +878,12 @@ Parser:
 
                 - Given Opts, set one attribute in different ways
                   for each opt.
+
+                    ** This is unclear:
+                        - "Given Opts": does that mean that the caller of
+                          config_each() is a collection of Opts?
+                        - Seems like the intent (in example below) is that the
+                          dict-keys will be the query-paths.
 
                 - The second argument is a dict mapping query paths to the
                   desired value for the attribute.
@@ -915,26 +968,178 @@ Group:
     validate  | Defer. Callable(s).
     --------------------------------------------------------------------------------
 
-__HERE__
+Notes for elsewhere:
 
-Opt:
+    - Assignment of OptArg attributes via the parent-Opt:
 
-    - A configurable data object to represent one option (with parameters,
-      quantifiers) or one positional (with quantifiers).
+        - I began with a simplistic approach:
+
+            # Create parser.
+            p = Parser('<x> [<y>] [-z <a> <b>]')
+
+            # Configure various Opts.
+            p.config('x', default = 888, convert = int)
+            p.config('y', default = 0.0, convert = float)
+
+        - Will those assignment mechanics actually work?
+
+            - I started with the simplistic idea:
+
+                - Example: same parser, but we will focus on Opt(z):
+
+                    p = Parser('<x> [<y>] [-z <a> <b>]')
+
+                - Mass-assignment: give all OptArg children the same default.
+
+                    p.config('z', default = 999)
+
+                - Specific-assignment: each OptArg child gets its own default.
+
+                    p.config('z', default = [77, 88])
+
+            - Ambiguity when the assigned value is a list.
+
+                - Here we can organize the topic into groups.
+
+                - OptArg attributes with strict types:
+                    - Relevant OptArg attributes:
+                        - str: name, text, choice
+                        - callable: convert, validate
+                        - quantifier: ntimes
+                    - If assigned value is list, user wants specific-assignment.
+
+                - OptArg attributes with strict types inside a list:
+                    - Relevant OptArg attributes:
+                        - list[str]: choices
+                    - If assigned value is:
+                        - list[str]      => mass-assignment
+                        - list[list[str] => specific-assignment
+
+                - What remains:
+
+                    - Relevant OptArg attributes:
+                        - default: can have any value
+
+                    - Policy: assume a list means specific-assignment.
+                        - If user wants mass-assignment, they can adjust things.
+
+                        # Admittedly, this is a strange default value.
+                        xs = [x1, x2]
+
+                        p.config('z', default = xs)       # Assume specific-assignment.
+                        p.config('z', default = [xs, xs]) # If user wants mass-assignment.
+
+                    - Policy alternative: use a keyword argument:
+                        - This is maybe better.
+                        - In ambiguous cases, specific-assignment is default.
+                        - When mass=True, optopus can create independent list
+                          copies when attaching each default, making the
+                          desired default less strange. [Not sure about this
+                          automatic behavior.]
+
+                        p.config('z', default = xs, mass = True)
+
+            - Ambiguity when Opt and OptArg share attribute names:
+
+                - Example: create parser:
+
+                    p = Parser('<x> [<y>] [-z <a> <b>]')
+
+                - Relevant OptArg attributes:
+                    - name: Opt.name (z) vs OptArg.name (a and b).
+                    - text: help text for Opt vs for a positional/parameter variant.
+
+                - The user can make the query paths more specific:
+
+                    p.config('z', name = 'bar')   # Applies to parent Opt.
+
+                    p.config('z a', name = 'z1')  # Applies to the child OptArgs.
+                    p.config('z b', name = 'z2')
+
+    OptArg quantifiers:
+
+        - An Opt has both nargs and ntimes.
+
+        - But an OptArg has only ntimes, since it represent a single argument,
+          at least conceptually.
+
+        - An example:
+
+            (--point <x> <y> <z>...){1,4}
+
+            Opt(point).ntimes = (1, 4)
+            Opt(point).nargs = (3, 3)
+
+            OptArg(z).ntimes = (1, None)
+
+    Configuration independence among OptArgs:
+
+        - An example:
+
+            (--point <x> <y> <z>...){1,4}
+
+        - The OptArg instances (x, y, z) can have different configurations.
+
+        - But the following are clones:
+            - The <x> <y> and <z> across the --point ntimes.
+            - The <z> across its ntimes.
+
+        - Key point:
+            - Repetition across ntimes does not create independence.
+
+Opt and OptArg:
+
+    - An Opt is a configurable object to represent a command-line argument
+      (option or positional), broadly defined to include its parameters (for
+      options) and its quantifiers.
+
+    - An OptArg is a configurable child object representing one Opt argument.
+
+        - For Opt(POS), all Opt.elems will be OptArg.
+
+        - For Opt(OPT)
+            - Opt.elems will be OptArg in the vast majority of cases.
+            - But elems can also be Group instances.
+            - Examples:
+
+                --foo (<x>{2} <y>){3}
+                --point <x> (<y> <z>)...
+
+    Opt:
+        spec: str                    |
+        grammar: Grammar             |
+        name: str                    | From spec
+        dest: str                    | Defaults to name
+        text: str                    | Help text (for the Opt)
+        kind: str                    | pos or opt
+        aliases: list[str]           |
+        nargs: Quantifier            |
+        ntimes: Quantifier           |
+        elems: list[OptArg or Group] |
+
+    OptArg:
+        name: str          | From spec
+        default: value     |
+        ntimes: Quantifier |
+        convert: callable  |
+        validate: callable |
+        choices: list[str] |
+        choice: str        | In context of parameter/positional variant
+        text: str          | Ditto. Help text
 
     Attribute | Note
     --------------------------------------------------------------------------------
-    spec      | Was 'option_spec'.
+    spec      | .
     grammar   | Grammar.
-    ntimes    | .
+    name      | Symbolic name, from the spec.
+    dest      | .
+    text      | Help text.
     nargs     | .
-    nparams   | .
-    name      | Symbolic name(s) for variable-input (positional or parameter).
-    dest      | Was 'destination'.
+    ntimes    | .
+    -----------------------------------------
+    choices   | .
     default   | .
-    value     | None (typical) or the variant value.  [** What is this?]
-    choices   | None (validation deferred).
-    text      | Meaning help text?
+    value     | None (typical) or the variant value.  [** clarify: for parameter-variant]
     --------------------------------------------------------------------------------
     help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
     convert   | Defer. Callable.
