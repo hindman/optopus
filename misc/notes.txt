@@ -40,7 +40,7 @@ toc: Table of contents
         alternative-parsing-algo      | Alternative parsing algorithm won't work after all
         ambiguous-grammars            | Ambiguous grammars are not an issue
         opt-independence              | Opt independence and duplicate names
-        parsed-data-structure         | Parsed data structuring: nargs, nparams, ntimes
+        parsed-data-structure         | Parsed data structuring: nargs, ntimes
         eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
         grammar-syntax-named-unnamed  | Grammar syntax: named and unnamed arguments
         variants-needed               | Variants: why they are needed
@@ -79,51 +79,6 @@ toc: Table of contents
 --------
 todos: TODOs
 --------
-
-Question:
-
-    - Should I drop nparams and just use nargs?
-        - A quick search revealed no discussion on why both are needed.
-        - Seems like a pointless thing for user to have to remember.
-
-    - If both Opt(positional) and Opt(option) used nargs, then:
-        - Opt.nargs = Quantifier
-        - Opt.vinputs = list[VarInput]  # Other names: vis vinps
-
-    - Can Opt arguments be groups?
-
-        - Positionals can clearly belong to groups:
-
-            (<x>{2} <y>)...
-
-        - What about the simplified case where the group has only a single Opt?
-          It looks like just an Opt(ntimes=2) inside a Group(ntimes=(1,None))
-
-            (<x>{2})...
-
-        - So I guess the question applies only to Opt parameters.
-
-            - Examples:
-
-                --foo (<x>{2} <y>){3}
-                --bar <x> (<y> <z>)...
-
-                Opt(foo): has one paramater, a Group(ntimes=3)
-                Opt(bar): has two paramater, <x> and a Group
-
-Opt with differently configured var-inputs:
-
-    - Not sure that my plan for Opt is adequate.
-
-    - Current notes for Opt attributes are centered on the common use cases
-      where all var-inputs (positionals or parameters) have the same
-      configuration.
-
-    - Consider even a simple case:
-
-        --point <x> <y> [<z>]
-
-    - How will that be modeled as classes and attributes?
 
 Reorientation:
 
@@ -736,17 +691,9 @@ Block-quote:
 classes-and-attributes: Classes and attributes
 --------
 
-__HERE__
-
-    ** Another editing pass over this:
-
-        - Convert tables to a dataclass style of documentation (more flexible)
-        - Keep this section brief and declaratory.
-            - Move discussions, examples, etc elsewhere.
-
 Overview:
 
-    User-facing entities:
+    - User-facing entities:
 
         Parser
         Section
@@ -757,20 +704,20 @@ Overview:
         Result
         Query
 
-        Relationships:
+    - Relationships among user-facing entities:
 
-            Parser
-                sections      = List[Section]      # 1+   # Usage always exists.
-                grammar       = Grammar            # 1    # Empty grammar ok.
-                    variants  = List[Variant]      # 0+
-                        elems = List[Group or Opt] # 0+
+        Parser
+            sections      = List[Section]      # 1+   # Usage exists even with spec=''
+            grammar       = Grammar            # 1    # Ditto.
+                variants  = List[Variant]      # 0+
+                    elems = List[Group or Opt] # 0+
 
-                parse(ARGS) -> Result
+            parse(ARGS) -> Result
 
-            Group:
-                elems = List[Group or Opt] # 0+
+        Group:
+            elems = List[Group or Opt]         # 0+
 
-    Objects used during grammar parsing:
+    - Objects used during spec-parsing:
 
         SpecParser | Parses a spec, returns Grammar.
         RegexLexer | Lexer used by SpecParser.
@@ -778,13 +725,13 @@ Overview:
         Token      | Emitted by lexer.
         ParseElem  | Emitted by parser functions. Later assembled into Grammar.
 
-    Objects used during argument parsing:
+    - Objects used during argument parsing:
 
         State
         ArgResult
         Target
 
-    Entities used only for notation:
+    - Entities used only for notation:
 
         PartialUsage      | Group
         Positional        | Opt
@@ -797,172 +744,200 @@ Parser:
       easy to configure specific grammar elements. Users should not have to
       manually navigate the Grammar hierarchy.
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    spec      | .
-    grammar   | Grammar.
-    prog      | Program name.
-    mode      | Parsing mode.
-    --------------------------------------------------------------------------------
-    auto      | Defer. True by default: exit with error on failed parse().
-    sections  | Defer.
-    format    | Defer. Data object to namepsace formatting attributes.
-    syntax    | Defer. Data object to configure syntax parsing and usage text rules.
-    --------------------------------------------------------------------------------
-    wildcards | Drop. Was used to support * as a match-anything device.
-    helpful   | Drop. Not sure what this meant.
-    --------------------------------------------------------------------------------
+    - Attributes:
 
-    API:
+        # The grammar.
+        spec: str
+        grammar: Grammar
+        sections: list[Section]
+
+        # Typically inferred by Optopus.
+        prog: str
+
+        # Parsing mode: regular or no-config [maybe others later].
+        mode: str
+
+        # Namespace to hold help-text formatting defaults/behavior.
+        # Deferred for now.
+        format: HelpTextFormat
+
+    - API:
+
+        - Notation:
+
+            p = Parser(SPEC)
 
         - Parsing:
 
-            Parser(spec = None, grammar = None, ...)
+            p.parse(args = None, mode = ...)
 
-                - The spec/grammar arguments are mutex and optional.
-                - Other arguments are deferred.
+            - Returns a Result or raises.
+            - The method can temporarily use a different mode than the Parser.mode.
 
-            parse(args = None, mode = ...) -> Result or raise
+        - Querying grammar elements:
 
-                - Parser can have a mode.
-                - And parse() can temporarily use a different mode.
+            p.query(*paths, kind = T) => Query
 
-        - Querying and configuring grammar elements:
+            - Delegates the call to p.grammar.query().
 
-            query(*paths, **kws) -> Grammar.query(...) -> Query
+            - Each path is a space-delimited query string of:
 
-                - Query paths are based on Opt.dest, Opt.name, Variant.name,
-                  and Group.dest or Group.index.
+                Opt      | name, dest
+                OptArg   | name
+                Variant  | name
+                Group    | name, dest, index
+                Wildcard | *
 
-                - The vast majority of queries will be for Opts:
+            - The kind parameter can restrict to specific types.
 
-                    query('foo', 'bar')
+            - The returned Query is a sequence-like collection of matching
+              grammar elements.
 
-                    - Gets Opt(foo) and Opt(bar).
+                - Under most circumstances users will query for Opts that
+                  have unique names.
 
-                    - More precisely, the query gets any grammar element having
-                      those dests/names.
+                    p.query('foo', 'bar')
 
-                - In complex cases where independent Opts have the same dest,
-                  the query path can include the variant name.
+                    - Gets Opt(foo) and Opt(bar)
 
-                    query('go foo')
+                - In more complex situations query-paths can include more names
+                  to disambiguate.
+
+                    p.query('go foo')
 
                     - Gets Opt(foo) inside Variant(go).
 
                 - Query paths can use a glob-style wildcard:
 
-                    Example: p = Parser('<x> [-z <a> <b>]')
+                    p = Parser('<x> [-z <a> <b>] | -z')
+                    p.query('z *')
 
-                    query('z *')
+                    - Gets OptArg(a) and OptArg(b), not Opt(z).
 
-                    - Gets OptArg(a) and OptArg(b)
-
-                - Although Groups can have a dest, most won't. But they will
+                - Although Groups can have a dest, most will not. But they will
                   have a unique index within each variant.
 
                     query('go 2')
 
                     - Gets the third Group in Variant(go).
 
-                - As a future enhancement, these query path elements can be
-                  interpreted as regular expressions (I doubt the need).
+        - Configuring grammar elements:
 
-            config(*paths, **kws) -> None
+            p.config(*paths, **kws)
 
-                - Given Opts, configure them all in the same way.
+            - A shortcut for p.query(*paths).config(**kws).
 
-                - Just a shortcut for query(*paths).config(**kws).
+            - For the grammar elements returned by the query(), sets their
+              attributes based on the data in kws.
 
-            config_each(attr_name, d) -> None
+        - Configuring one attribute across multiple elements:
 
-                - Given Opts, set one attribute in different ways
-                  for each opt.
+            p.query(*paths).config_each(attr_name, **kws)
 
-                    ** This is unclear:
-                        - "Given Opts": does that mean that the caller of
-                          config_each() is a collection of Opts?
-                        - Seems like the intent (in example below) is that the
-                          dict-keys will be the query-paths.
+            - Convenience method to set an attribute across multiple elements.
 
-                - The second argument is a dict mapping query paths to the
-                  desired value for the attribute.
+            - Example: set all help texts in one place:
 
-                - For example, setting a bunch of Opt.text values:
-
-                    config_each('text', dict(
-                        foo = 'Blah',
-                        bar = 'Blah blah',
-                    ))
+                p.query(kind = Opt).config_each('text',
+                    foo = 'Blah',
+                    bar = 'Blah blah',
+                    ...
+                )
 
         - Obtaining help text or text for the error from most recent parse():
 
-            help_text(section...)
-            error_text
-            exception
+            p.help_text(section...)
+            p.error_text()
+            p.exception()
 
         - Actions like printing or exiting.
 
-            warn(msg)
-            help(section...)
-            error(msg = None, code = 1)
-            exit(msg = None, code = 0)
+            p.warn(msg)
+            p.help(section...)
+            p.error(msg = None, code = 1)
+            p.exit(msg = None, code = 0)
 
-Section
+Section:
 
     - Used to create labeled groups of Opt for help text purposes.
-    - Each variant has a corresponding section with the same name. [???]
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    name      | Short symbolic name used in API.
-    label     | Used in help text.
-    opts      | Opts belonging to the section.
-    text      | Hand-crafted help text.
-    --------------------------------------------------------------------------------
+    - Attributes:
+
+        # Symbolic name used in API.
+        name: str
+
+        # Section title in help text.
+        title: str
+
+        # Section content.
+        # - Opts belonging to the section.
+        # - Hand-crafted help text (probably needs more modelling).
+        opts: list[Opt]
+        text: str
 
 Grammar:
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    variants  | List[Variant]
-    --------------------------------------------------------------------------------
+    - Attributes:
 
-    API:
+        variants: list[Variant]
+
+    - API:
 
         query(*paths, kind = KIND, negate = False) -> Query
 
 Query:
 
-    Iterable sequence-like object returned by Grammar.query(). Holds the
-    Groups/Opts that satisfy the search parameters. Supports bulk
-    configuration.
+    - Sequence object returned by Grammar.query().
+    - Holds the Grammar elements satisfying the search parameters.
+    - Supports bulk configuration.
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    elems     | List[Group or Opt]
-    --------------------------------------------------------------------------------
+    - Attributes:
 
-    API:
+        elems: list[Group or Opt or OptArg]
 
-        config(...) # Apply the config parameters to all Groups/Opts.
-        query(...)  # Subquery to filter down further.
+    - API:
+
+        - Notation:
+
+            p = Parser(...)
+            q = p.query(...)
+
+        - Apply configuration to grammar elements.
+
+            q.config(...)
+
+        - Subquery to filter down further:
+
+            q.query(...) => Query
 
 Variant:
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    name      | .
-    elems     | List[Group or Opt]
-    ntimes    | .
-    --------------------------------------------------------------------------------
+    - Attributes:
+
+        name: str .
+        elems: list[Group or Opt]
+        ntimes: Quantifier
+
+Quantifier:
+
+    - Might be a concept rather than an object.
+    - Represents any valid quantifier.
+
+        N
+        (N, M)
+        (N, None)
+
+__HERE__
 
 Group:
 
+    ** Does a Group need a name, a dest, or both?
+
     Attribute | Note
     --------------------------------------------------------------------------------
     elems     | List[Group or Opt]
     ntimes    | .
+    name      | .
     dest      | .
     mutex     | If True, only one elem can be matched.
     validate  | Defer. Callable(s).
@@ -1166,8 +1141,8 @@ Opt and OptArg:
     choices, conversion, validation, etc. However, sometimes users want those
     characteristics to vary. In that case, the following attributes also
     support a sequence of values, one per parameter/argument. In cases where
-    the nparams/nargs have no upper bound, the last value in the sequence will
-    be applied: for example, if nparams=(2,None) one could use convert=(float,
+    the nargs have no upper bound, the last value in the sequence will
+    be applied: for example, if nargs=(2,None) one could use convert=(float,
     int), which would use int to convert any parameters beyond the second.
 
         dest      # Needed only for parameters.
@@ -1870,7 +1845,7 @@ For a while, I considered a more elaborate var-input-spec that allowed the user
 to configure sym and dest independently.
 
     - But it's not worth it.
-    - The most common use is with plural nargs/nparams:
+    - The most common use is with plural nargs:
         - Plural dest (eg paths).
         - Singular sym (path).
     - But this is more naturally configured via the API.
@@ -2103,7 +2078,7 @@ Some key insights related to backtracking:
       alternative interpretations of the input arguments.
 
     - Alternative interpretations are possible only for Opt with non-static
-      nparams, Pos with non-static nargs, or Pos with non-static ntimes.
+      nargs and/or non-static ntimes.
 
     - So pushing to the stack needs to happen when your parsing decision for
       the current argument creates a foregone alternative.
@@ -2120,8 +2095,8 @@ Some key insights related to backtracking:
         - The best time to load the stack with these alternatives is before the
           while-stack loop begins. This will ensure that each alternative will
           be tried in order. Because we are using a stack, backtracking within
-          any specific alternative (due to non-static nparams/nargs) will
-          finish before the algorithm advances to a fresh alternative.
+          any specific alternative (due to non-static nargs) will finish before
+          the algorithm advances to a fresh alternative.
 
         - If you were to try to push foregone interpretations to the stack when
           an alternative fails, you interfere with the correct ordering of the
@@ -2134,7 +2109,7 @@ Some key insights related to backtracking:
 A backtracking example:
 
     Grammar:
-        Opt('-f', nparams = (1,3))
+        Opt('-f', nargs = (1,3))
         Opt('x', nargs = (3,4))
 
     Input:
@@ -2148,10 +2123,10 @@ A backtracking example:
 
         V2 : Because Opt(-f) is greedy by default, attach. But
              this attachment is not required due to non-static
-             nparams. Before pushing the new State where V2
+             nargs. Before pushing the new State where V2
              is attached to Opt(-f), we should push the foregone
              interpretation -- namely, where we restrict Opt(-f)
-             to nparams of (1,1).
+             to nargs of (1,1).
 
         V3 : Same logic: attach and push foregone interpretation.
 
@@ -2162,12 +2137,12 @@ A backtracking example:
         -  : Now we're out of arguments and have not
              satisfied Opt(x). So this interpretation fails.
              The next State in the stack will restrict
-             Opt(-f) to nparams of (2,2), which will succeed.
+             Opt(-f) to nargs of (2,2), which will succeed.
 
     Logic if Opt(-f) had been non-greedy.
 
         V2 : Don't attach to Opt(-f). Now the foregone interpretation
-             is for Opt(-f) with nparams of (2,3). Push that
+             is for Opt(-f) with nargs of (2,3). Push that
              to the stack.
 
 State:
@@ -2181,7 +2156,8 @@ State:
 
         next_pos: next available Pos [or None].
 
-        nps: nparams remaining for the active Opt [or None].
+        nps: nargs remaining for the active Opt [or None].
+            ** Rename attribute to nas
 
         avail: map of available Opt to remaining ntimes [0 for exhausted].
 
@@ -2224,8 +2200,8 @@ How to handle Groups with non-static ntimes:
           immediately adjust ntimes for -y.
 
         - After a successfull ArgResult. Before checking Opts for sufficient
-          nparams, nargs, ntimes, we would first adjust those expectations
-          based on any Groups that were activated by the presence of the Opts.
+          nargs and ntimes, we would first adjust those expectations based on
+          any Groups that were activated by the presence of the Opts.
 
     - The latter, for two reasons:
 
@@ -2340,12 +2316,12 @@ Algorithm: parsing loop:
             - First check whether any Groups have been activated by the present
               Opts. If so, adjust expected ntimes accordingly.
 
-            - Then check that all Opts have sufficient nparams, nargs, ntimes.
+            - Then check that all Opts have sufficient nargs, ntimes.
 
             if OK:
                 success = True
             else:
-                ares = ArgResult(ERR: insufficient ntimes/nparams/nargs)
+                ares = ArgResult(ERR: insufficient ntimes/nargs)
 
         # Store history, push foregone, check overall success.
 
@@ -2359,9 +2335,9 @@ Algorithm: parsing loop:
             # Check for foregone interpretation.
             # Not yet sure if we should perform these steps for ArgResult(UNKNOWN).
             if not success and (ares.PARAM or ares.POS):
-                If either of these apply:
-                    - Matched Opt has non-static nparams.
-                    - Match Pos has non-static nargs or ntimes.
+                If either of these apply to the matched Opt:
+                    - Non-static nargs.
+                    - Non-static ntimes.
                 Then:
                     S2 = new State to represent the foregone parsing route
                     stack.push(S2)
@@ -2401,7 +2377,7 @@ The algorithm:
 
     - Using the parser configuration, assemble data on the aspects of the
       grammar that are not static. The most common non-static configurations:
-      varying nargs, nparams, or ntimes; variants; and alternatives.
+      varying nargs or ntimes; variants; and alternatives.
 
     - For grammar elements that have no inherent boundaries (eg, an option
       taking 1+ params), interpret them in as bounded by using N as the upper
@@ -2416,12 +2392,12 @@ The algorithm:
 
 What causes a grammar to generate multiple possibilities?
 
-    .                     | Where expressed | Note
+    .              | Where expressed | Note
     -----------------------------------------------------
-    Varying nargs/nparams | Opt             | .
-    Varying ntimes        | Opt or Phrase   | Includes required.
-    Alternatives          | Phrase          | Includes variants.
-    Aliases               | Opt             | .
+    Varying nargs  | Opt             | .
+    Varying ntimes | Opt or Phrase   | Includes required.
+    Alternatives   | Phrase          | Includes variants.
+    Aliases        | Opt             | .
 
 Benefits of the algorithm:
 
@@ -2462,8 +2438,7 @@ ambiguous-grammars: Ambiguous grammars are not an issue
 From a strictly grammatical perspective, only one positional can have a
 non-static nargs or ntimes, because there isn't exactly one valid way to attach
 the values to the destination attributes. A similar problem occurs when an
-option has non-static nparams and a positional has non-static nargs.
-Two examples:
+option or positional has non-static nargs. Two examples:
 
     <xray>...    <y>...
     --xray {}... <y>...
@@ -2645,7 +2620,7 @@ Result for the nab example:
         )
 
 --------
-parsed-data-structure: Parsed data structuring: nargs, nparams, ntimes
+parsed-data-structure: Parsed data structuring: nargs, ntimes
 --------
 
 ** Edit this section to reflect new policy:
@@ -2666,19 +2641,18 @@ parsed-data-structure: Parsed data structuring: nargs, nparams, ntimes
                 [X, X]    # -x <x>{2}
             ]
 
-The meaning of nparams, nargs, and ntimes:
+The meaning of nargs and ntimes:
 
-    nparams : N of params (for options)
-    nargs   : N args (for positionals)
+    nargs   : N arguments (for positionals) or parameters (for options).
     ntimes  : Governs only optionality and repetition via {m,n} or its shortcuts.
 
-    Options:                    #  nparams  ntimes
+    Options:                    #  nargs   ntimes
 
         -y                      #  0        (1,1)
         [-y]                    #  0        (0,1)
         [-y {} {}]              #  2        (0,1)
         -y {} [{}]              #  (1,2)    (1,1)
-        -y {}{3}                #  3        (1,1)      # C
+        -y {}{3}                #  3        (1,1)
 
     Positionals:                #  nargs    ntimes
 
@@ -2700,25 +2674,19 @@ Is nargs needed? Why not handle it all with ntimes?
       ntimes only when required (eg, plural nargs and plural ntimes) or when
       they want Result data organized a certain way.
 
-    - Example C illustrates that {m,n} is not just for ntimes:
-
-        - Parameters do not have their own independent ntimes attribute.
-
-        - So the quantifier is interpreted as affecting nparams.
-
 Internally, all data assigned to destinations will be stored in a fully
 explicit manner. Assume a list of lists, where:
 
     Opt attribute | Determines length of
     ------------------------------------
-    nargs/nparams | inner list
+    nargs         | inner list
     ntimes        | outer list
 
-    - Singular nargs/nparams and ntimes:
+    - Singular nargs and ntimes:
 
-        a1     # Either value or bool (latter if nargs/nparams is zero).
+        a1     # Either value or bool (latter if nargs is zero).
 
-    - Plural nargs/nparams:
+    - Plural nargs:
 
         [a1, a2, ...]
 
@@ -2735,7 +2703,7 @@ explicit manner. Assume a list of lists, where:
             (<z> <z>){3}
         ){4}
 
-        foo: nparams 2, ntimes     4
+        foo: nargs   2, ntimes     4
         z  : nargs   2, ntimes 3 x 4
 
         foo = [[a1, a2], ..., ..., ...]
@@ -2755,8 +2723,8 @@ Default flattening policy:
     - User can request non-flattened data or flattened (the latted
       to flatten even the 2x2 or nested scenarios).
 
-    nargs or | ntimes    | ntimes 2+                   | ntimes 2+
-    nparams  | 0 or 1    | Flattened                   | Non-flattened
+    nargs    | ntimes    | ntimes 2+                   | ntimes 2+
+    .        | 0 or 1    | Flattened                   | Non-flattened
     ------------------------------------------------------------------
     0        | bool      | [bool, ...]                 | [[bool], ...]
     1        | a1        | [a1, ...]                   | [[a1], ...]
@@ -2989,10 +2957,10 @@ parsing modes that it supports:
 
             In addition, the library will support an almost-noconfig behavior
             allowing the user to impose a specific parameter binding
-            requirement. That will be done via a quantifier controlling nparams
+            requirement. That will be done via a quantifier controlling nargs
             to be consumed per option.
 
-                * The name (noconf) seems cryptic. Could it be nparams?
+                * The name (noconf) seems cryptic. Could it be nargs?
 
                 Parser()                # Default: greedy.
                 Parser(noconf = '0')    # Flag style
@@ -3228,8 +3196,6 @@ Types of errors in precedence order, by failure source:
     - Making final checks:
 
         - Insufficient ntimes: option.
-
-        - Insufficient nparams.
 
         - Insufficient ntimes: positional.
 
@@ -3493,7 +3459,6 @@ Punctuation markers:
             sym
             dest
             nargs
-            nparams
             ntimes
             choices
             aliases
