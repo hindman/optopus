@@ -81,108 +81,129 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Questions:
+Mock up opt-specs and help-text for a complex example:
 
-    - Have I gotten carried away with supporting reuse of Opt names in the spec?
+    - See: EX_BLORT
 
-        - See:
-            Variant scoping for opt-helps in a section:
-            parsed-data-structure
-            opt-independence
-            EX_NAB
+Opt.name reuse and the scoping of opt-specs:
 
-        - My notes have this insane example:
-    
-            <x>... [-x] <x> [-x <x>{2}]
+    - See:
+        Variant scoping for opt-helps in a section:
+        parsed-data-structure
+        opt-independence
+        EX_NAB
 
-        - Or even this simple example:
+    - My notes have this insane example:
 
-            <x> <yy> <x>
+        <x>... [-x] <x> [-x <x>{2}]
 
-        - It's one thing to reuse Opt names in a spec:
-            - Reuse same name across variants.
-            - Reuse same name across alternatives within a variant.
+    - Or even this simple example:
 
-        - But reuse itself is not the problem:
-            - My resolution to that reuse was to create independent Opts.
-            - But since the p.config(...) approach can easily configure
-              multiple Opts at once, the user does not care whether there is
-              one consolidated Opt behind the scenes or multiple clone Opts
-              behind the scenes.
+        <x> <yy> <x>
 
-        - So how to opt-specs interact with that approach:
+    - It's one thing to reuse Opt names in a spec:
+        - Reuse same name across variants.
+        - Reuse same name across alternatives within a variant.
 
-            - Consider EX_NAB, where <rgx> appears in multiple partial-variants
-              and thus is reused within the main variant.
+    - But reuse itself is not the problem:
+        - My resolution to that reuse was to create independent Opts.
+        - But since the p.config(...) approach can easily configure
+          multiple Opts at once, the user does not care whether there is
+          one consolidated Opt behind the scenes or multiple clone Opts
+          behind the scenes.
 
-            - If the user wants all of them to have the same opt-spec, then can
-              write only one opt-spec for <rgx>. Optopus will apply it to all
-              Opts matching the opt-spec.
+    - So how to opt-specs interact with that approach:
 
-            - If the user wants different configurations (eg, different aliases
-              and/or help text) they can write multiple <rgx> opt-spec lines.
+        - Consider EX_NAB, where <rgx> appears in multiple partial-variants
+          and thus is reused within the main variant.
 
-            Hmmmm ... the logic is leading me back to the need for something in
-            the opt-spec syntax.
+        - If the user wants all of them to have the same opt-spec, then can
+          write only one opt-spec for <rgx>. Optopus will apply it to all
+          Opts matching the opt-spec.
 
-                <rgx>            findall! : Blah blah blah
-                [alias...] --opt [__] [help-text]]
+        - If the user wants different configurations (eg, different aliases
+          and/or help text) they can write multiple <rgx> opt-spec lines.
 
-    - How would Optopus build usage-text for nab and neck-diagram:
+        Hmmmm ... the logic is leading me back to the need for something in
+        the opt-spec syntax.
 
-        - See:
-            EX_NAB
-            EX_NECK_DIAG
+            <rgx>                  : Blah 1
+            [-f] --files <path>... : Blah 2
 
-        - The problem:
+            I asked ChatGPT and got an impressive answer.
+                https://chatgpt.com/share/67e1c05f-f654-8003-9c07-c556cea6c368
 
-            - The default usage-text is unwieldy:
+            Decison:
+                - Use CSS-syntax for parent-child
 
-                Usages:
-                    nab [--trace] (chomp | findall <rgx> [-a] | grep <rgx> [-i] [-v]
-                        [-s] | range <start> <stop> [<step>] [-g] | run <code> [-g <>]
-                        [-a] [-v] [-i])...
-                    nab --help
+                    PARENT > CHILD
 
-            - In this case, we would like to document usage mainly via the
-              partial-variants, which are intuitive. But we also need to
-              convey the actual grammar.
+                - In my case:
 
-                Usage:
-                    nab [--trace] command...
-                    nab --help
+                    PARENT > opt-spec
 
-                    Where command:
-                        chomp
-                        findall <rgx> [-a]
-                        grep <rgx> [-i] [-v] [-s]
-                        range <start> <stop> [<step>] [-g]
-                        run <code> [-g <>] [-a] [-v] [-i]
+                - Where PARENT is a path, as used in Parser.query().
 
-            - Perhaps the resolution lies in thinking more clearly about
-              Group.name and Group.dest:
+                - Modify Parser.query() to use dot-delimited paths.
+                    - it looks a bit better
+                    - it will parse a bit cleaner (one dot as opposed to the
+                      ambituity of 1+ spaces).
 
-                - If we make Group consistent with Opt:
-                    - name is the symbolic name in the spec and the usage-text.
-                    - dest is the data storage destination.
+Why Groups need a dest and a name to generate usage-text
 
-                - If so, the nab spec should be modified to use the singular
-                  name (command) for the Group rather than the plural dest
-                  (commands). If a plural dest is wanted, use the API.
+    - Based on: EX_NAB
 
-                - With those changes, Optopus would know how to generate both
-                  flavors of usage-text shown above:
+    - The problem:
 
-                    - If the group is unnamed in the spec, you would get the
-                      correct, but unwieldy usage-text shown above in the first
-                      example.
+        - The fully-explicit usage-text is unwieldy:
 
-                        [--trace] (chomp! | findall! | grep! | range! | run!)...
+            Usages:
+                nab [--trace] (chomp | findall <rgx> [-a] | grep <rgx> [-i] [-v]
+                    [-s] | range <start> <stop> [<step>] [-g] | run <code> [-g <>]
+                    [-a] [-v] [-i])...
+                nab --help
 
-                    - But if the user gives the group a name, the usage-text will
-                      use it, producing the second example text above.
+        - In this case, we would like to document usage mainly via the
+          partial-variants, which are intuitive.
 
-                        [--trace] command=(chomp! | findall! | grep! | range! | run!)...
+            Usage:
+                nab [--trace] command...
+                nab --help
+
+                Where command:
+                    chomp
+                    findall <rgx> [-a]
+                    grep <rgx> [-i] [-v] [-s]
+                    range <start> <stop> [<step>] [-g]
+                    run <code> [-g <>] [-a] [-v] [-i]
+
+        - This means that Groups need symbolic names too:
+
+            - Groups would be consistent with Opts:
+                - name: symbolic name in spec and usage-text.
+                - dest: the data storage destination in Result.
+
+            - Thus, the nab spec should be modified:
+                - Group.name (via spec): singular (command).
+                - Group.dest (via API): plural (commands).
+
+            - With that approach, Optopus users could achieve various
+              usage-text styles:
+
+                - Compact, readable, symbolic style:
+                    - Use a named group.
+                    - That tells Optopus to use the name in the usage-text.
+
+                - Fully-explicit style (no inner-Results):
+                    - Use an unnamed Group in the main variant-spec.
+
+                - Fully-explicit-style (with inner-Results):
+                    - Use a named group in the spec.
+                    - Plural name in this case (commands), because user
+                      mainly cares about the dest.
+                    - Then unset the Group.name via API.
+
+                        p.config('commands', name = None)
 
 Reorientation:
 
@@ -648,21 +669,119 @@ Parser configuration: spec-vs-API: EX_JOB_CLIENT
 
     See misc/examples/job-client-*
 
-blort-maker: EX_BLORT_MAKER
+blort: EX_BLORT
 
-    - This is a subcommand-style script, plus various bells and whistles to
-      exercise most of the full grammar syntax.
+    - A subcommand-style script.
+    - Plus bells and whistles to exercise most of the spec-syntax.
 
-    help!     : [--help] [--syntax]
-    general!  : [--verbose] [--log-file <>] help!
-    other!    : [--hi] [--bye]
+    - Notes on the spec:
 
-    configure : help! general! <task=configure> --env <> --user <>
-    submit    : help! general! <task=submit> -c <> -r <> [--start-job] [--person <name> <age>]
-    get       : help! general! <task=get> -j <> [--json [--indent <>] | --b64 | --yaml]
-    drop      : help! general! <task=drop> <what=first|last|random> [--print] <n>
-    fubb      : help! other! [-a] [-b] <fubb>... (--fast | --slow)
-    zzz       : help! other! [-x] [-y] items=(<a> <b> <c> [-z]){2,7}
+        - Partial-variants used in various ways:
+            - Used in other partial-variants (help!).
+            - Used in variants (general!, chat!).
+            - Used only to make argument-variants more readable.
+        - Argument-variants:
+            - Based on <task>: configure, submit, get, drop.
+        - Other variants:
+            - With different grammars.
+
+    - The spec:
+
+        help! : [--help] [--syntax]
+
+        general! : general-options=([--verbose] [--log-file <path>] help!)
+        chat!    : chat-options=([--hi] [--bye] help!)
+
+        configure! : --env <host> --user <id> [--indent <n>] [--person <name>]
+        submit!    : -c <> -r <> [--start-job] [--person <name> <age>]
+        get!       : -j <> [--json [--indent <n>] | --b64 | --yaml]
+        drop!      : <method=first|last|random> <n> [--print]
+
+        configure : <task=configure> configure! general!
+        submit    : <task=submit> submit! general!
+        get       : <task=get> get! general!
+        drop      : <task=drop> drop! general!
+
+        fubb : <fubb>... (--fast | --slow) [-a] [-b] chat!
+        wizz : triples=(<a> <b> <c> [-z]){2,7} [-x] [-y] chat!
+
+        Arguments: configure task ::
+
+        --user <id>
+        --indent <n>
+        --person <name>
+        -c <>
+        -r <>
+        --start-job
+        --person <name> <age>
+        -j <>
+        --json
+        --indent <n>
+        --b64
+        --yaml
+        <method=first|last|random>
+        <n>
+        --print
+        <fubb>...
+        --fast
+        --slow
+        -a
+        -b
+        <a>
+        <b>
+        <c>
+        -z
+        -x
+        -y
+
+        --help
+        --syntax
+        --verbose
+        --log-file <path>
+        --hi
+        --bye
+
+    - Notes on the usage text:
+        - In an argument-variant, the choice operates as a literal:
+            - In usage-text a literal is prioritized over the name.
+            - Hence the usage text uses 'configure', 'submit', and so forth,
+              rather than '<task>', which is too generic.
+        - The user declared the names 'method' and 'triples' in the
+          spec because they wanted the underlying dests.
+            - The usage-text below assumes the user made API calls
+              to unset the names to suppress them from usage-text.
+
+    - Usage-text (omitting the section title):
+
+        blort configure --env <host> --user <id> [--indent <n>] [--person <name>] [general-options]
+        blort submit -c <> -r <> [--start-job] [--person <name> <age>] [general-options]
+        blort get -j <> [--json [--indent <n>] | --b64 | --yaml] [general-options]
+        blort drop <first|last|random> <n> [--print] [general-options]
+        blort <fubb>... (--fast | --slow) [-a] [-b] [chat-options]
+        blort (<a> <b> <c> [-z]){2,7} [-x] [-y] [chat-options]
+
+        Where general-options:
+            [--verbose] [--log-file <path>] [--help] [--syntax]
+
+        Where chat-options:
+            [--hi] [--bye] [--help] [--syntax]
+
+    Questions:
+
+        - When an OptArg has choices or choice, does the usage-text
+          use the choices/choice as the name or the name itself?
+
+            - For argument-variants, use the choice.
+                - This appears to deviate from the normal policy of using a
+                  name in the usage-text if it is defined in the spec.
+                - But that appearance is deceptinve in the case of
+                  argument-variants.
+                - In that context, the choice itself is no longer a var-input;
+                  it is a literal.
+
+            - For an OptArg with choices:
+                - Use the name, if defined.
+                - Otherwise, use choices.
 
 neck-diagram: EX_NECK_DIAG
 
