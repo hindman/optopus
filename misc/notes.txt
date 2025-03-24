@@ -32,6 +32,7 @@ toc: Table of contents
         opt-action-not-needed         | Optopus does not need the action concept
         explicit-option-param-syntax  | Why explicit syntax for option parameters is needed
         variable-input-spec           | Spec for variable input
+        opt-and-optarg-configuration  | Configuration of Opt and OptArg
         high-precendence-options      | High precedence options
         help-text-formatting          | Help text formatting
         grammar-parsing-algo          | Parsing the grammar syntax
@@ -79,6 +80,109 @@ toc: Table of contents
 --------
 todos: TODOs
 --------
+
+Questions:
+
+    - Have I gotten carried away with supporting reuse of Opt names in the spec?
+
+        - See:
+            Variant scoping for opt-helps in a section:
+            parsed-data-structure
+            opt-independence
+            EX_NAB
+
+        - My notes have this insane example:
+    
+            <x>... [-x] <x> [-x <x>{2}]
+
+        - Or even this simple example:
+
+            <x> <yy> <x>
+
+        - It's one thing to reuse Opt names in a spec:
+            - Reuse same name across variants.
+            - Reuse same name across alternatives within a variant.
+
+        - But reuse itself is not the problem:
+            - My resolution to that reuse was to create independent Opts.
+            - But since the p.config(...) approach can easily configure
+              multiple Opts at once, the user does not care whether there is
+              one consolidated Opt behind the scenes or multiple clone Opts
+              behind the scenes.
+
+        - So how to opt-specs interact with that approach:
+
+            - Consider EX_NAB, where <rgx> appears in multiple partial-variants
+              and thus is reused within the main variant.
+
+            - If the user wants all of them to have the same opt-spec, then can
+              write only one opt-spec for <rgx>. Optopus will apply it to all
+              Opts matching the opt-spec.
+
+            - If the user wants different configurations (eg, different aliases
+              and/or help text) they can write multiple <rgx> opt-spec lines.
+
+            Hmmmm ... the logic is leading me back to the need for something in
+            the opt-spec syntax.
+
+                <rgx>            findall! : Blah blah blah
+                [alias...] --opt [__] [help-text]]
+
+    - How would Optopus build usage-text for nab and neck-diagram:
+
+        - See:
+            EX_NAB
+            EX_NECK_DIAG
+
+        - The problem:
+
+            - The default usage-text is unwieldy:
+
+                Usages:
+                    nab [--trace] (chomp | findall <rgx> [-a] | grep <rgx> [-i] [-v]
+                        [-s] | range <start> <stop> [<step>] [-g] | run <code> [-g <>]
+                        [-a] [-v] [-i])...
+                    nab --help
+
+            - In this case, we would like to document usage mainly via the
+              partial-variants, which are intuitive. But we also need to
+              convey the actual grammar.
+
+                Usage:
+                    nab [--trace] command...
+                    nab --help
+
+                    Where command:
+                        chomp
+                        findall <rgx> [-a]
+                        grep <rgx> [-i] [-v] [-s]
+                        range <start> <stop> [<step>] [-g]
+                        run <code> [-g <>] [-a] [-v] [-i]
+
+            - Perhaps the resolution lies in thinking more clearly about
+              Group.name and Group.dest:
+
+                - If we make Group consistent with Opt:
+                    - name is the symbolic name in the spec and the usage-text.
+                    - dest is the data storage destination.
+
+                - If so, the nab spec should be modified to use the singular
+                  name (command) for the Group rather than the plural dest
+                  (commands). If a plural dest is wanted, use the API.
+
+                - With those changes, Optopus would know how to generate both
+                  flavors of usage-text shown above:
+
+                    - If the group is unnamed in the spec, you would get the
+                      correct, but unwieldy usage-text shown above in the first
+                      example.
+
+                        [--trace] (chomp! | findall! | grep! | range! | run!)...
+
+                    - But if the user gives the group a name, the usage-text will
+                      use it, producing the second example text above.
+
+                        [--trace] command=(chomp! | findall! | grep! | range! | run!)...
 
 Reorientation:
 
@@ -381,8 +485,8 @@ Opt-spec:
 
     - Syntax:
 
-        <pos>                  [: [help-text]]
-        [opt-mention...] --opt [: [help-text]]
+        <pos>            [: [help-text]]
+        [alias...] --opt [: [help-text]]
 
     - Explanation:
 
@@ -391,6 +495,9 @@ Opt-spec:
 
         - An --opt consists of an opt-mention (eg --foo), optionally
           with a quantifer and 1+ parameter-specs.
+
+        - An alias is an opt-mention (eg -f) that functions as a synonym in the
+          usage for the --opt.
 
     - An opt-spec uses a subset of variant-spec grammar. The following
       are not supported:
@@ -491,18 +598,18 @@ Whitespace rules:
 syntax-examples: Syntax examples
 --------
 
-pgrep: README example-1:
+pgrep: README example-1: EX_README_1
 
     [-i] [-v] <rgx> <path>
 
-pgrep: README example-2:
+pgrep: README example-2: EX_README_2
 
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
     [-i --ignore-case] : Ignore case
     [-v --invert-match] : Select non-matching lines
 
-pgrep: README example-3:
+pgrep: README example-3: EX_README_3
 
     <rgx> : Python regular expression
     [<path>...] : Path(s) to input
@@ -512,7 +619,7 @@ pgrep: README example-3:
     [-C --context <n>] : Print N lines of before/after context
     [--color red|green|blue] : Highlight matching text
 
-pgrep: README example-4:
+pgrep: README example-4: EX_README_4
 
     <task=grep>   [-i] [-v] [-m] [-C]
                   [--color <red|green|blue>]
@@ -537,11 +644,11 @@ pgrep: README example-4:
     -d --delim <s>     : Delimeter for capture groups [tab]
     -p --para          : Emit capture groups one-per-line, paragraph-style
 
-Parser configuration: spec-vs-API:
+Parser configuration: spec-vs-API: EX_JOB_CLIENT
 
     See misc/examples/job-client-*
 
-blort-maker:
+blort-maker: EX_BLORT_MAKER
 
     - This is a subcommand-style script, plus various bells and whistles to
       exercise most of the full grammar syntax.
@@ -557,7 +664,7 @@ blort-maker:
     fubb      : help! other! [-a] [-b] <fubb>... (--fast | --slow)
     zzz       : help! other! [-x] [-y] items=(<a> <b> <c> [-z]){2,7}
 
-neck-diagram:
+neck-diagram: EX_NECK_DIAG
 
     - This is a non-standard command line program: its grammar consists of one
       or more subcommands with a literal separator between them.
@@ -573,7 +680,7 @@ neck-diagram:
 
     main : cmd! [ `/` cmd! ]...
 
-Syntax example: nab:
+Syntax example: nab: EX_NAB
 
     - Another separator-based grammar.
 
@@ -910,6 +1017,15 @@ Query:
 
             q.query(...) => Query
 
+Quantifier:
+
+    - Might be a concept rather than an object.
+    - Represents any valid input value for nargs or ntimes.
+
+        N
+        (N, M)
+        (N, None)
+
 Variant:
 
     - Attributes:
@@ -918,247 +1034,91 @@ Variant:
         elems: list[Group or Opt]
         ntimes: Quantifier
 
-Quantifier:
-
-    - Might be a concept rather than an object.
-    - Represents any valid quantifier.
-
-        N
-        (N, M)
-        (N, None)
-
-__HERE__
-
 Group:
 
-    ** Does a Group need a name, a dest, or both?
+    - Represents spec-syntax enclosed by brackets.
+    - Primary purposes:
+        - Ability to quantify groups of grammar elements.
+        - Mutual exclusion for such groups.
+        - Using the dest to organize nested Result data.
+        - Ability to apply validation to groups of Opts.
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    elems     | List[Group or Opt]
-    ntimes    | .
-    name      | .
-    dest      | .
-    mutex     | If True, only one elem can be matched.
-    validate  | Defer. Callable(s).
-    --------------------------------------------------------------------------------
+    - Attributes:
 
-Notes for elsewhere:
-
-    - Assignment of OptArg attributes via the parent-Opt:
-
-        - I began with a simplistic approach:
-
-            # Create parser.
-            p = Parser('<x> [<y>] [-z <a> <b>]')
-
-            # Configure various Opts.
-            p.config('x', default = 888, convert = int)
-            p.config('y', default = 0.0, convert = float)
-
-        - Will those assignment mechanics actually work?
-
-            - I started with the simplistic idea:
-
-                - Example: same parser, but we will focus on Opt(z):
-
-                    p = Parser('<x> [<y>] [-z <a> <b>]')
-
-                - Mass-assignment: give all OptArg children the same default.
-
-                    p.config('z', default = 999)
-
-                - Specific-assignment: each OptArg child gets its own default.
-
-                    p.config('z', default = [77, 88])
-
-            - Ambiguity when the assigned value is a list.
-
-                - Here we can organize the topic into groups.
-
-                - OptArg attributes with strict types:
-                    - Relevant OptArg attributes:
-                        - str: name, text, choice
-                        - callable: convert, validate
-                        - quantifier: ntimes
-                    - If assigned value is list, user wants specific-assignment.
-
-                - OptArg attributes with strict types inside a list:
-                    - Relevant OptArg attributes:
-                        - list[str]: choices
-                    - If assigned value is:
-                        - list[str]      => mass-assignment
-                        - list[list[str] => specific-assignment
-
-                - What remains:
-
-                    - Relevant OptArg attributes:
-                        - default: can have any value
-
-                    - Policy: assume a list means specific-assignment.
-                        - If user wants mass-assignment, they can adjust things.
-
-                        # Admittedly, this is a strange default value.
-                        xs = [x1, x2]
-
-                        p.config('z', default = xs)       # Assume specific-assignment.
-                        p.config('z', default = [xs, xs]) # If user wants mass-assignment.
-
-                    - Policy alternative: use a keyword argument:
-                        - This is maybe better.
-                        - In ambiguous cases, specific-assignment is default.
-                        - When mass=True, optopus can create independent list
-                          copies when attaching each default, making the
-                          desired default less strange. [Not sure about this
-                          automatic behavior.]
-
-                        p.config('z', default = xs, mass = True)
-
-            - Ambiguity when Opt and OptArg share attribute names:
-
-                - Example: create parser:
-
-                    p = Parser('<x> [<y>] [-z <a> <b>]')
-
-                - Relevant OptArg attributes:
-                    - name: Opt.name (z) vs OptArg.name (a and b).
-                    - text: help text for Opt vs for a positional/parameter variant.
-
-                - The user can make the query paths more specific:
-
-                    p.config('z', name = 'bar')   # Applies to parent Opt.
-
-                    p.config('z a', name = 'z1')  # Applies to the child OptArgs.
-                    p.config('z b', name = 'z2')
-
-    OptArg quantifiers:
-
-        - An Opt has both nargs and ntimes.
-
-        - But an OptArg has only ntimes, since it represent a single argument,
-          at least conceptually.
-
-        - An example:
-
-            (--point <x> <y> <z>...){1,4}
-
-            Opt(point).ntimes = (1, 4)
-            Opt(point).nargs = (3, 3)
-
-            OptArg(z).ntimes = (1, None)
-
-    Configuration independence among OptArgs:
-
-        - An example:
-
-            (--point <x> <y> <z>...){1,4}
-
-        - The OptArg instances (x, y, z) can have different configurations.
-
-        - But the following are clones:
-            - The <x> <y> and <z> across the --point ntimes.
-            - The <z> across its ntimes.
-
-        - Key point:
-            - Repetition across ntimes does not create independence.
+        name: str                 # From spec
+        dest: str                 # Defaults to name
+        elems: list[Group or Opt]
+        ntimes: Quantifier
+        mutex: bool               # If True, only one elem can be matched.
+        validate: callable        # Defer.
 
 Opt and OptArg:
 
-    - An Opt is a configurable object to represent a command-line argument
-      (option or positional), broadly defined to include its parameters (for
-      options) and its quantifiers.
+    - Opt:
+        - Represents one command-line argument as a configurable unit.
+        - Broadly defined to include its arguments and quantifiers.
 
-    - An OptArg is a configurable child object representing one Opt argument.
+    - OptArg:
+        - Child object representing one Opt argument as a configurable unit.
 
-        - For Opt(POS), all Opt.elems will be OptArg.
+    - Additional discussion:
 
-        - For Opt(OPT)
-            - Opt.elems will be OptArg in the vast majority of cases.
-            - But elems can also be Group instances.
-            - Examples:
+        opt-and-optarg-configuration
 
-                --foo (<x>{2} <y>){3}
-                --point <x> (<y> <z>)...
+    - Attributes:
 
-    Opt:
-        spec: str                    |
-        grammar: Grammar             |
-        name: str                    | From spec
-        dest: str                    | Defaults to name
-        text: str                    | Help text (for the Opt)
-        kind: str                    | pos or opt
-        aliases: list[str]           |
-        nargs: Quantifier            |
-        ntimes: Quantifier           |
-        elems: list[OptArg or Group] |
+        Opt:
+            # Definition, identity, and kind.
+            spec: str
+            name: str
+            dest: str
+            kind: str   # pos or opt
 
-    OptArg:
-        name: str          | From spec
-        default: value     |
-        ntimes: Quantifier |
-        convert: callable  |
-        validate: callable |
-        choices: list[str] |
-        choice: str        | In context of parameter/positional variant
-        text: str          | Ditto. Help text
+            # Aliases and help text.
+            aliases: list[str]
+            text: str
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    spec      | .
-    grammar   | Grammar.
-    name      | Symbolic name, from the spec.
-    dest      | .
-    text      | Help text.
-    nargs     | .
-    ntimes    | .
-    -----------------------------------------
-    choices   | .
-    default   | .
-    value     | None (typical) or the variant value.  [** clarify: for parameter-variant]
-    --------------------------------------------------------------------------------
-    help      | Defer. For help dispatching. Maybe handle via dispatch attribute.
-    convert   | Defer. Callable.
-    validate  | Defer. Callable.
-    hide      | Defer. False (visible), True (hidden), or sequence of where/what to hide
-    sections  | Defer. Sequence of section names.    [**An Opt has sections?]
-    high      | Defer. Was 'tolerant'.
-    factory   | Defer. Callable to create default.
-    aliases   | Defer.
-    dispatch  | Defer. Callable(s). Maybe 'actions'.
-    required  | Defer, maybe drop. Same as ntimes=1.
-    negaters  | Defer. For flag negatives (to overrule True default)
-    case      | Defer. Case-sensitive if True.
-    anchor    | Defer. bool
-    --------------------------------------------------------------------------------
-    option    | Internal. Not sure of purpose.
-    _opt_type | Internal. Holds an OptType.
-    arg_names | Internal. Seems related to simple spec parsing.
-    --------------------------------------------------------------------------------
+            # Quantifiers.
+            nargs: Quantifier
+            ntimes: Quantifier
 
-    For options taking multiple parameters or positionals having multiple
-    arguments, the most common use case treats the parameters/arguments as
-    values of the same kind -- meaning that that have the same type, defaults,
-    choices, conversion, validation, etc. However, sometimes users want those
-    characteristics to vary. In that case, the following attributes also
-    support a sequence of values, one per parameter/argument. In cases where
-    the nargs have no upper bound, the last value in the sequence will
-    be applied: for example, if nargs=(2,None) one could use convert=(float,
-    int), which would use int to convert any parameters beyond the second.
+            # Children.
+            elems: list[OptArg or Group]
 
-        dest      # Needed only for parameters.
-        metavar
-        ----
-        default
-        factory
-        value
-        ----
-        choices
-        convert
-        validate
+            # Deferred stuff (might need more design work).
+            # - High precedence Opt.
+            # - Anchored Opt.
+            # - Hidden Opt.
+            # - Opts to negate other flag Opts.
+            # - Case-sensitive options (eg --foo vs --FOO)
+            # - Dispatch based on state of Opt.
+            high_precedence: bool
+            anchor: bool
+            hide: bool
+            negaters: list[Opt]
+            case_sensitive: bool
+            dispatch: callable(s)
 
-    API:
+        OptArg:
+            # Definition and help text.
+            spec: str
+            name: str
+            text: str
 
-        config(...)
+            # Conversion and validation.
+            convert: callable
+            validate: callable
+
+            # Choices:
+            # - For validation purposes.
+            # - For grammatical purposes (context: arg-variant).
+            choices: list[str]
+            choice: str
+
+            # Default value and quantifier.
+            default: object
+            factory: callable
+            ntimes: Quantifier
 
 Result:
 
@@ -1171,13 +1131,12 @@ Result:
 
 SpecParser:
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    lexer     | Lexer.
-    handlers  | Sequence of token-stream handlers. Was 'parser_functions'.
-    curr      | Was 'current_token'. Managed by the mixin.
-    prevpeek  | .
-    --------------------------------------------------------------------------------
+    - Attributes:
+
+        lexer     | Lexer.
+        handlers  | Sequence of token-stream handlers.
+        curr      | Managed by the mixin.
+        prevpeek  | .
 
     API:
 
@@ -1189,16 +1148,15 @@ RegexLexer:
 
     - General-purpose regex-based lexer.
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    text      | The text to be lexed.
-    toktypes  | Sequence of TokType.
-    pos       | Current index of the lexer.
-    mxpos     | Last index of the text.
-    iseof     | Becomes True when text exhausted.
-    --------------------------------------------------------------------------------
+    - Attributes:
 
-    API:
+        text      | The text to be lexed.
+        toktypes  | Sequence of TokType.
+        pos       | Current index of the lexer.
+        mxpos     | Last index of the text.
+        iseof     | Becomes True when text exhausted.
+
+    - API:
 
         See old.py implementation and modifications in draft.py.
 
@@ -1206,14 +1164,13 @@ TokType:
 
     - Internal data object given to a lexer.
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    name      | Name of token.
-    regex     | Regex to match the token.
-    emit      | Whether to emit back to parser [default: True].
-    --------------------------------------------------------------------------------
+    - Attributes:
 
-    Kinds:
+        name  | Name of token.
+        regex | Regex to match the token.
+        emit  | Whether to emit back to parser [default: True].
+
+    - Kinds:
 
         See grammar-parsing-algo notes.
 
@@ -1221,14 +1178,13 @@ Token:
 
     - Simple internal data object emitted by a lexer.
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    toktype   | TokType of the token.
-    value     | Corresponding token text.
-    pos       | Position (where matched)
-    line      | Line number.
-    col       | Column number.
-    --------------------------------------------------------------------------------
+    - Attributes:
+
+        toktype | TokType of the token.
+        value   | Corresponding token text.
+        pos     | Position (where matched)
+        line    | Line number.
+        col     | Column number.
 
     Kinds:
 
@@ -1270,16 +1226,17 @@ Target:
     - For the applicable parsing interpretation, a Target contains information
       about all relevant Opt/Pos and values parsed so far.
 
-    Attribute | Note
-    --------------------------------------------------------------------------------
-    poss      | List[Pos]
-    opts      | Dict[Opt]
-    vals      | Dict[DEST -> VAL]
-    --------------------------------------------------------------------------------
+    - Attributes:
+
+        poss | List[Pos]
+        opts | Dict[Opt]
+        vals | Dict[DEST -> VAL]
 
 --------------------------------------------------------------------------------
 discussion: Discussion
 --------------------------------------------------------------------------------
+
+__HERE__
 
 --------
 questions-outstanding: Questions outstanding
@@ -1288,9 +1245,6 @@ questions-outstanding: Questions outstanding
 ** This section has:
     - Questions outstanding.
     - Notes that need to be edited and put in the appropriate spot.
-
-opt-independence and parsed-data-structure :
-    - edit sections to reflect new policy.
 
 Did user supply a value or did it come from the configured default?
 
@@ -1327,36 +1281,68 @@ Ability to report rank-order positions of opts on command-line.
         - Perl `rename`: the "rules" has to be applied in order.
         - Unix `find`: ditto.
 
-Variant: other notes:
+Opt configuration in variant-spec vs opt-specs:
 
-    - Opts can be configured in a variant-spec, or the user
-      can use an abbreviated form (an opt-mention vs opt-spec).
+    - Opts can be configured in a variant-spec, or the user can use an
+      abbreviated form (an opt-mention vs opt-spec).
 
     - The two types of configuration (variants and opt-specs) are additve.
 
-    - Subsuequent configurations never overwrite a prior settings for an Opt.
-      Each new setting is added to the prior settings.
+Variant scoping for opt-helps in a section:
 
-Section content:
+    - Example: user wants different configuration for Opt(bar):
 
-        - variant-scope lines. Looks the same as as partial usage.
-          Subsequent opt-spec lines will be scoped to that variant.
-          Applicable only when Opt.dest values are reused across variants.
+        <cmd=grep> [-i] [--bar <val>]
+        <cmd=blort> [--bar <val>]
 
-            * Clarifications and questions:
-            - Here's how I a variant-scope line:
+        Searching ::
 
-                Foo ::
+        [-i] : Ignore case
+        [-b --bar <val>] : Bar parameter
 
-                grep!
+        Blorting ::
 
-                [-b --bar] : Blah blah
+        [--bar <val>] : Bar value to use in calculation
 
-            - Is this concept necessary?
-            - Probably not. It's an unusual use case.
-            - Even if it were, I suspect that this solution is inadequate.
-            - To fully support this level of fine-tuning, you might need
-              a sym-dest to include some kind of scoping syntax.
+    - How would Optopus know to connect the opt-specs to the Opts in the
+      correct variants?
+        - For many Opt attributes, the answer is simple: use the API.
+        - But the natural home for Opt help-text is the spec.
+
+    - My plan was some kind of variant-scope marker at the top of a section
+      declaring that all opt-specs in the section should be applied to the Opts
+      in the indicated variant.
+
+        - That would require giving the variants names.
+
+            grep : <cmd=grep> ...
+            blort : <cmd=blort> ...
+
+        - And inventing a syntax (could be the same as invoking a partial)
+
+            Searching :: grep!
+
+            ...
+
+            Blorting :: blort!
+
+            ...
+
+        - And the approach would require the user to follow a fairly rigid
+          alignment between variants and sections.
+
+    - Decision for now:
+
+        - Defer this.
+
+        - If we need this later, a better approach is probably to augment
+          the opt-spec syntax.
+
+            <pos>            [__] [: [help-text]]
+            [alias...] --opt [__] [help-text]]
+
+            Where the __ would be some kind of query syntax
+            to scope the opt-spec appropriately.
 
 Indentation:
 
@@ -1858,6 +1844,139 @@ to configure sym and dest independently.
         - The purpose is to package up the positional/parameter values
           up into a different, object-like data structure.
         - The appropriate solution here is a user-provided convert function.
+
+--------
+opt-and-optarg-configuration: Configuration of Opt and OptArg
+--------
+
+The child elements of Opt:
+
+    - Opt(POS):
+        - All elems must be OptArg.
+
+        - Example:
+
+            <x> (<y> <z>)...
+
+            - This is just three separate Opts, two inside a Group.
+
+            <x> (<x> <x>)...
+
+            - Same here, since we decided not to condense adjacent repetitions
+              of the same Opt.
+
+    - Opt(OPT):
+        - In vast majority of cases, all children will be OptArgs.
+        - But elems can also be Groups:
+
+            --foo (<x>{2} <y>){3}
+            --point <x> (<y> <z>)...
+
+Quantifiers for Opt and OptArg:
+
+    - An Opt has both nargs and ntimes.
+
+    - But an OptArg has only ntimes, since it represent a single argument,
+      at least conceptually.
+
+    - An example:
+
+        (--point <x> <y> <z>...){1,4}
+
+        Opt(point):
+            ntimes = (1, 4)
+            nargs = (3, 3)
+
+        OptArg.ntimes:
+            x: (1, 1)
+            y: (1, 1)
+            z: (1, None)
+
+Configuration independence among OptArgs:
+
+    - An example:
+
+        (--point <x> <y> <z>...){1,4}
+
+    - The OptArg instances (x, y, z) can have different configurations.
+
+    - But the following are clones:
+        - The <x> <y> and <z> across the --point ntimes.
+        - The <z> across its ntimes.
+
+    - Key point:
+        - Repetition across ntimes does not create independence.
+
+Assignment of OptArg attributes via the parent-Opt:
+
+    - In the vast majority of cases, users want to configure the OptArgs of an
+      Opt in a consistent way.
+
+        # Example: both X and Y should be positive integers.
+        --point <x> <y>
+
+    - But sometimes you want argument independence.
+
+    - An example for the discussion:
+
+        p = Parser('<x> [<y>] [-z <a> <b>]')
+
+    - Configuration of regular OptArgs works like this:
+
+        p.config('x', default = 888, convert = int)
+        p.config('y', default = 0.0, convert = float)
+
+    - Consider Opt(z) and its two OptArgs:
+
+        - Mass-assignment: give all OptArg the same default.
+
+            p.config('z', default = 9)
+
+        - Specific-assignment: each OptArg gets its own default.
+
+            p.config('z', default = [77, 88])
+
+        - But what if the user wants to mass-assign a list?
+
+            - For many OptArg attributes, Optopus can use data types to
+              eliminate ambiguity.
+
+                - Some attributes have a simple, strict type (str, callable).
+                - Others have a compound, but strict type (list[str]).
+
+            - Policy in the face of ambiguity:
+
+                - Optopus will assume a list means specific-assignment.
+
+                - Two ways to resolve:
+
+                    - User can package the data differently so that
+                      specific-assignment will work as desired:
+
+                        # The desired default.
+                        xs = [x1, x2]
+
+                        # Achieves the effect of mass-assignment.
+                        p.config('z', default = [xs, xs])
+
+                    - Or the API a keyword to request mass-assignment.
+
+                        - I currently lean in this direction.
+
+                        p.config('z', default = xs, mass = True)
+
+    - Ambiguity when Opt and OptArg have common attribute names:
+
+        - Relevant OptArg attributes:
+            - name: Opt.name (z) vs OptArg.name (a and b).
+            - text: help text for Opt vs for a positional/parameter variant.
+
+        - The user can make the query paths more specific:
+
+            p.config('z', name = 'bar')   # Applies to parent Opt.
+
+            p.config('z a', name = 'z1')  # Applies to the child OptArgs.
+            p.config('z b', name = 'z2')
 
 --------
 high-precendence-options: High precedence options
@@ -2630,7 +2749,7 @@ parsed-data-structure: Parsed data structuring: nargs, ntimes
 
         - Spec.
 
-            <x>... -x <x> -x <x>{2}
+            <x>... [-x] <x> [-x <x>{2}]
 
         - Result.
 
@@ -2794,19 +2913,18 @@ Optopus does need generalized destination assignment. At a minimum, it needs
 that feature not just for Opt, but also for partial variants. And once you go
 that far, you might as well generalize it.
 
-Consider examples like neck-diagram (nab is similar). With destination
-assignment, the specific Opt destinations (cmd, snum, syms, etc) will be nested
-underneath the 'commands' namespace (the outer destination assignment). The returned
-data would have this structure:
+Consider examples like neck-diagram (EX_NECK_DIAG; also EX_NAB). With
+destination assignment for the outer group, the specific Opt destinations (cmd,
+snum, syms, etc) will be nested underneath the 'commands' namespace:
 
-    opts.commands : (
-        Namespace(cmd = 'snum', snum = 6),
-        Namespace(cmd = 'tuning', notes = ('E', 'A', ...)),
-        Namespace(cmd = 'fret', syms = ('1', '3', '5')),
+    opts.commands = [
+        Result(cmd = 'snum', snum = 6),
+        Result(cmd = 'tuning', notes = ('E', 'A', ...)),
+        Result(cmd = 'fret', syms = ('1', '3', '5')),
         ...
-    )
+    ]
 
-Without the outer assignment, the returned data would be grouped by the Opt
+Without that outer assignment, the returned data would be grouped by the Opt
 destination names -- which badly jumbles everything up:
 
     opts = Namespace(
