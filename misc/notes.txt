@@ -81,9 +81,23 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Mock up opt-specs and help-text for a complex example:
+Usage-text and OptArgs with choices/choice:
 
-    - See: EX_BLORT
+    - When an OptArg has choices or choice, does the usage-text use the
+      choices/choice as the name or the Opt.name itself?
+
+        - OptArg with choices:
+            - Use the name, if defined.
+            - Otherwise, use choices.
+
+        - OptArg with a choice:
+            - This occurs in arg-variants.
+            - Here we use the choice, even if a name is defined.
+            - This appears to deviate from the normal policy of treating the
+              name as symbolic names in the usage-text and API.
+            - But that appearance is deceptive in the case of arg-variants.
+            - In that context, the choice itself is no longer a var-input; it
+              is a literal.
 
 Opt.name reuse and the scoping of opt-specs:
 
@@ -134,15 +148,12 @@ Opt.name reuse and the scoping of opt-specs:
                 https://chatgpt.com/share/67e1c05f-f654-8003-9c07-c556cea6c368
 
             Decison:
-                - Use CSS-syntax for parent-child
+                - Syntax for parent-child (a doubled variant of CSS syntax).
 
-                    PARENT > CHILD
+                    PARENT >> CHILD
 
-                - In my case:
-
-                    PARENT > opt-spec
-
-                - Where PARENT is a path, as used in Parser.query().
+                    PARENT: Path, as used in Parser.query().
+                    CHILD: opt-spec or section-title.
 
                 - Modify Parser.query() to use dot-delimited paths.
                     - it looks a bit better
@@ -208,6 +219,9 @@ Why Groups need a dest and a name to generate usage-text
 Reorientation:
 
     - Editing pass over notes.txt:
+
+        * Put notes above into proper sections and edit them.
+        * Then proceed.
 
         __HERE__
 
@@ -672,18 +686,27 @@ Parser configuration: spec-vs-API: EX_JOB_CLIENT
 blort: EX_BLORT
 
     - A subcommand-style script.
+    - Includes a full spec (with opt-specs) and the resulting usage-text.
     - Plus bells and whistles to exercise most of the spec-syntax.
+    - Includes Opts with same-name and different-config.
 
     - Notes on the spec:
 
-        - Partial-variants used in various ways:
-            - Used in other partial-variants (help!).
-            - Used in variants (general!, chat!).
-            - Used only to make argument-variants more readable.
-        - Argument-variants:
-            - Based on <task>: configure, submit, get, drop.
-        - Other variants:
-            - With different grammars.
+        - Variants:
+            - Partial (help!) used in other partials.
+            - Partials (general!, chat!) used in variants.
+            - Arg-variants, based on <task>.
+            - Partials to aid readability of the <task> variants.
+            - Variants with different grammars (fubb, wizz), thus illustrating
+              a subcommand-style program without the usual rigidity.
+
+        - Sections and opt-specs:
+            - Some Opt names appear in multiple variants, sometimes
+              with different Opt configuration needs.
+            - The opt-spec lines for such Opts are disabiguated
+              via opt-spec-scopes, in two ways:
+                - For an entire section (eg, 'configure >>').
+                - For specific Opts (see -x).
 
     - The spec:
 
@@ -702,54 +725,79 @@ blort: EX_BLORT
         get       : <task=get> get! general!
         drop      : <task=drop> drop! general!
 
-        fubb : <fubb>... (--fast | --slow) [-a] [-b] chat!
+        fubb : <fubb>... (--fast | --slow) [-a] [-b] [-x] chat!
         wizz : triples=(<a> <b> <c> [-z]){2,7} [-x] [-y] chat!
 
-        Arguments: configure task ::
+        configure >> Arguments: configure task ::
 
-        --user <id>
-        --indent <n>
-        --person <name>
-        -c <>
-        -r <>
-        --start-job
-        --person <name> <age>
-        -j <>
-        --json
-        --indent <n>
-        --b64
-        --yaml
-        <method=first|last|random>
-        <n>
-        --print
-        <fubb>...
-        --fast
-        --slow
-        -a
-        -b
-        <a>
-        <b>
-        <c>
-        -z
-        -x
-        -y
+        --env <host>      : Blah blah
+        --user <id>       : Blah blah
+        [--indent <n>]    : Blah blah
+        [--person <name>] : Blah blah
 
-        --help
-        --syntax
-        --verbose
-        --log-file <path>
-        --hi
-        --bye
+        submit >> Arguments: submit task ::
+
+        -c <>                   : Blah blah
+        -r <>                   : Blah blah
+        [--start-job]           : Blah blah
+        [--person <name> <age>] : Blah blah
+
+        get >> Arguments: get task ::
+
+        -j <>          : Blah blah
+        [--json]       : Blah blah
+        [--indent <n>] : Blah blah
+        [--b64]        : Blah blah
+        [--yaml]       : Blah blah
+
+        drop >> Arguments: drop task ::
+
+        <method=first|last|random> : Blah blah
+        <n>                        : Blah blah
+        [--print]                  : Blah blah
+
+        Arguments: other ::
+
+        <fubb>...           : Blah blah
+        --fast              : Blah blah
+        --slow              : Blah blah
+        [-a]                : Blah blah
+        [-b]                : Blah blah
+        fubb >> [-x]        : Blah blah fubbity
+
+        <a>                 : Blah blah
+        <b>                 : Blah blah
+        <c>                 : Blah blah
+        [-z]                : Blah blah
+        wizz >> [-x]        : Blah blah wizzity
+        [-y]                : Blah blah
+
+        [--help]            : Blah blah
+        [--syntax]          : Blah blah
+        [--verbose]         : Blah blah
+        [--log-file <path>] : Blah blah
+        [--hi]              : Blah blah
+        [--bye]             : Blah blah
 
     - Notes on the usage text:
         - In an argument-variant, the choice operates as a literal:
             - In usage-text a literal is prioritized over the name.
             - Hence the usage text uses 'configure', 'submit', and so forth,
-              rather than '<task>', which is too generic.
-        - The user declared the names 'method' and 'triples' in the
-          spec because they wanted the underlying dests.
-            - The usage-text below assumes the user made API calls
-              to unset the names to suppress them from usage-text.
+              rather than '<task>'.
+        - The user declared the names 'method' and 'triples' in the spec
+          because they wanted the underlying dests.
+            - The usage-text below assumes the user made API calls to unset the
+              names to suppress them from usage-text.
+
+            - If the user had not unset the Opt(method).name, the relevant
+              usage-text snippets would have looked like this:
+
+                blort drop <method> ...
+
+                ...
+
+                Where method:
+                    first|last|random
 
     - Usage-text (omitting the section title):
 
@@ -757,7 +805,7 @@ blort: EX_BLORT
         blort submit -c <> -r <> [--start-job] [--person <name> <age>] [general-options]
         blort get -j <> [--json [--indent <n>] | --b64 | --yaml] [general-options]
         blort drop <first|last|random> <n> [--print] [general-options]
-        blort <fubb>... (--fast | --slow) [-a] [-b] [chat-options]
+        blort <fubb>... (--fast | --slow) [-a] [-b] [-x] [chat-options]
         blort (<a> <b> <c> [-z]){2,7} [-x] [-y] [chat-options]
 
         Where general-options:
@@ -765,23 +813,6 @@ blort: EX_BLORT
 
         Where chat-options:
             [--hi] [--bye] [--help] [--syntax]
-
-    Questions:
-
-        - When an OptArg has choices or choice, does the usage-text
-          use the choices/choice as the name or the name itself?
-
-            - For argument-variants, use the choice.
-                - This appears to deviate from the normal policy of using a
-                  name in the usage-text if it is defined in the spec.
-                - But that appearance is deceptinve in the case of
-                  argument-variants.
-                - In that context, the choice itself is no longer a var-input;
-                  it is a literal.
-
-            - For an OptArg with choices:
-                - Use the name, if defined.
-                - Otherwise, use choices.
 
 neck-diagram: EX_NECK_DIAG
 
@@ -887,7 +918,8 @@ Variant-spec:
     - The grammatical portion of a variant definition.
     - The stuff after the colon.
 
-Positional-variant and parameter-variant:
+Argument-variant: positional-variant and parameter-variant:
+    - Also: arg-variant.
     - Variant defined/triggered by a specific positional/parameter value.
     - See variant examples (above).
 
@@ -1160,16 +1192,29 @@ Group:
         - Ability to quantify groups of grammar elements.
         - Mutual exclusion for such groups.
         - Using the dest to organize nested Result data.
+        - Using the name to represent groups of Opts symbolically
+          in usage-text.
         - Ability to apply validation to groups of Opts.
 
     - Attributes:
 
-        name: str                 # From spec
-        dest: str                 # Defaults to name
-        elems: list[Group or Opt]
+        # Name and dest:
+        # - name comes from the spec.
+        # - dest defaults to name.
+        # - If name is set, it is used to represent the
+        #   group in usage-text.
+        name: str
+        dest: str
+
+        # Quantifier and group-level validation.
         ntimes: Quantifier
-        mutex: bool               # If True, only one elem can be matched.
-        validate: callable        # Defer.
+        validate: callable
+
+        # Mutual exclusion: true for groups defining alternatives.
+        mutex: bool
+
+        # Child elements.
+        elems: list[Group or Opt]
 
 Opt and OptArg:
 
