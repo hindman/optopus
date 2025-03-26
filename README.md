@@ -981,69 +981,56 @@ situations with minimal hassle.
 #### Good cooperation with configuration files and environment variables
 
 Some command-line programs are substantial enough that developers want to allow
-users to declare some preferences in configuration files or environment
-variables. The typical relationship of those mechanisms to argument parsing is
-in the area of default setting, usually in this order:
+users to declare some preferences in configuration files. The typical
+relationship between preferences and argument parsing is in the area of default
+setting:
 
-- Persistent settings in a configuration file.
+- Persistent settings in a configuration file (possibly adjusted based on
+  environment variables).
 
-- Somewhat less persistent settings in environment variables. A setting here
-  can override the value from a configuration file.
+- Just-in-time settings from the command-line arguments. These override
+  preferences.
 
-- Just-in-time settings from the command-line arguments. These setting override
-  everything else.
-
-That order of operations implies that the data from configuration files and
-environment variables is mainly used to dynamically influence the default
-values for Opts. Additionally, when an Opt acquires a default value from an
-upstream source, its status can change from being required on the command line
-to optional. In the abstract, `--foo` might be a required option, but it should
-not be required if its value is already defined elsewhere.
+That order of operations implies that the data from preferences are mainly used
+to dynamically influence the default values for Opts. Additionally, when an Opt
+acquires an alternative default value from an upstream source, its status can
+change from being required on the command line to optional.
 
 Optopus will not try to support direct integration with configuration parsing
 libraries: the universe of config files types and config parsing libraries is
 too large for that.
 
-Instead, Optopus will allow users to combine configuration data, environment
-variables, and command-line arguments with minimal hassle via a general policy
-and a few convenience utilities.
+Instead, Optopus will allow users to combine configuration data and
+command-line arguments with minimal hassle. There are two key issues here:
 
-The policy is to ensure that all parser configurations are exportable and
-importable as an ordinary data structure. If needed, users can partially
-configure a parser, export its data, apply any modifications to that data based
-on information from config files or environment variables, and then use the new
-data to create the desired parser. That is the worst-case scenario for unusual
-or complex situations.
+- A convenient mechanism to take preferences into account during argument
+  parsing and when assembling the ultimate `Result` containing the parsed data.
 
-More commonly, users will simply leverage some convenience utilities to augment
-Opt configurations. The API details for this behavior are still under
-consideration, but this example illustrates one possible approach.
+- For more complex scenarios, the ability to report back to the user where all
+  of the parsed data values came from (command-line arguments supplied by the
+  end-user, preferences settings from the end-user, or defaults configured into
+  the Parser).
+
+The API details for this behavior are still under consideration, but this
+example illustrates one approach.
 
 ```python
 from optopus import Parser, defkeys
 import os
 
-# Read a config file into a data structure.
-config = ...
+# User loads their own prefs.
+prefs = load_prefs(...)
 
-# Setup the parser from Example 2, but this time with a defaults
-# setting to tell Optopus where to obtain upstream default values,
-# and in which order.
+# User configures an Optopus Parser in the usual way.
+p = Parser(...)
 
-p = Parser('''
-    <rgx> : Python regular expression
-    [<path>...] : Path(s) to input
-    [-i --ignore-case] : Ignore case
-    [-v --invert-match] : Select non-matching lines
-    ''',
-    defaults = [config, os.environ],
-)
+# User applies the prefs to the configured Parser.
+p.apply_defaults(prefs)
 
-# Configure defaults for Opts by telling Optopus which key(s)
-# to use to obtain needed values from those upstream sources.
-
-p.config('i', default = defkeys('ignore_case', 'pgrep_ignore_case'))
-p.config('v', default = defkeys('invert_match', 'pgrep_invert_match'))
+# User parses arguments and gets:
+# (1) A Result of the parsed data (as usual).
+# (2) A data structure that can report data provenance (for complex cases).
+opts, sources = p.parse(ARGUMENTS, with_sources = True)
 ```
 
 --------
