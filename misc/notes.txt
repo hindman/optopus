@@ -31,11 +31,11 @@ toc: Table of contents
         opt-action-not-needed         | Optopus does not need the action concept
         explicit-var-input-syntax     | Why explicit syntax is needed for variable inputs
         variable-input-spec           | Spec for variable input
+        groups-can-be-parameters      | Options can have Groups as parameters
         opt-and-optarg-configuration  | Configuration of Opt and OptArg
-        high-precendence-options      | High precedence options
+        help-related-options          | High-related options, and high precedence
         help-text-formatting          | Help text formatting
-        grammar-parsing-algo          | Parsing the grammar syntax
-        convenience-parsing-algo      | Parsing the convenience grammar syntax
+        spec-parsing-general-approach | Spec parsing: general approach
         arg-parsing-algo              | Parsing algorithm
         alternative-parsing-algo      | Alternative parsing algorithm won't work after all
         ambiguous-grammars            | Ambiguous grammars are not an issue
@@ -65,7 +65,9 @@ toc: Table of contents
         group-level-validation-needed | Why Group-level validation should be retained
         optarg-choices-in-usage-text  | OptArg.choices in usage-text
         groups-need-names             | Why Group needs both dest and name
+        degenerate-groups             | Degenerate groups with only one element
         opts-should-know-provenance   | Opts should know their data provenance
+        parser-serialization          | Parser serialization
         readme-next-version           | README for next version
 
     reference | Reference
@@ -82,58 +84,6 @@ toc: Table of contents
 --------
 todos: TODOs
 --------
-
-In there current section being edited (see the here-marker), there is the
-discussion that led me to to the idea that Opt(OPT) can take arguments that are
-either OptArg or Group.
-
-    - But I'm started to doubt myself.
-        - Include some of the notes below to provide reassurance.
-
-    - Consider one of the examples given:
-
-        --point <x> (<y> <z>)...
-
-        - Two interpretations seem plausible:
-
-            (1) A flag, followed by a repeating Group.
-            (2) An option with two arguments: OptArg and then a repeating Group.
-
-        - That confusion is a fancier version of a basic ambiguity:
-
-            --point <x> <y>
-
-            - Is that a flag and two positionals.
-            - Or an option with two parameters?
-
-        - I answered the second question definitively via the greedy parsing
-          policy, and I guess the same logic applies to the groups-as-parameters
-          discussion.
-
-            Spec                       | Interpretation
-            ----------------------------------------------------------------
-            --point <x> (<y> <z>)...   | Option with both OptArg & Group
-            (--point <x>) (<y> <z>)... | Option with OptArg; then a Group
-            (--point) <x> (<y> <z>)... | Flag; then positional; then a Group
-
-During spec-parsing:
-
-    - A Group is sometimes needed to wrap a single Grammar element in order to
-      clarify the interpretation.
-
-        --point <x> <y>   | Option with 2 parameters
-        (--point <x>) <y> | Option with 1 parameter; then positional
-        (--point) <x> <y> | Flat then two positionals
-
-    - During spec-parsing, if a Group holds just one element, drop the Group
-      from the ultimate Grammar (other that the quantifer implications).
-
-
-The discussion mentions the ability to represent a configured Parser as a data
-structure (yes), but also imply that it will be serializable:
-    - That's tough to do for values that are callables.
-    - It also takes some work to do well for dataclass instances.
-    - Write some brief notes on this topic.
 
 Editing pass over the rest of notes.txt:
 
@@ -520,9 +470,6 @@ Block-quotes and literals:
         - Tripple-quotes can sit on their own line, or not.
 
         - To suppress wrapping: append ! to the opening triple-quote.
-
-        - During wrapping, Optopus will preserve original paragraph indentation
-          (based on indent of first line of paragraph).
 
 Names:
 
@@ -1308,10 +1255,6 @@ TokType:
         regex | Regex to match the token.
         emit  | Whether to emit back to parser [default: True].
 
-    - Kinds:
-
-        See grammar-parsing-algo notes.
-
 Token:
 
     - Simple internal data object emitted by a lexer.
@@ -1880,10 +1823,43 @@ to configure name and dest independently.
         - The appropriate solution here is a user-provided convert function.
 
 --------
-opt-and-optarg-configuration: Configuration of Opt and OptArg
+groups-can-be-parameters: Options can have Groups as parameters
 --------
 
-__HERE__
+The idea that options can have groups as parameters is a bit surpising:
+
+    - Example:
+
+        --point <x> (<y> <z>)...
+
+        (1) A flag, a positional, and then a Group.
+        (2) Or an option with two parameters: OptArg then Group.
+
+        - The first intpretation is tempting, but incorrect.
+
+    - That ambiguity is just a fancy version of a fundamental ambiguity that I
+      have already worked out:
+
+        - This is an option with two parameters:
+
+            --point <x> <y>
+
+        - A flag and two positionals looks like this:
+
+            (--point) <x> <y>
+
+        - Or like this:
+
+            <x> <y> --point
+
+    - Why? The usual greedy parsing logic.
+        
+        - Without a greedy policy, many ambiguities/complications arise.
+        - Groups as parameters is just a logical extension of the core idea.
+
+--------
+opt-and-optarg-configuration: Configuration of Opt and OptArg
+--------
 
 The child elements of Opt:
 
@@ -1903,7 +1879,7 @@ The child elements of Opt:
 
     - Opt(OPT):
         - In vast majority of cases, all children will be OptArgs.
-        - But elems can also be Groups:
+        - But elems can also be Groups (due to greedy parsing policy):
 
             --foo (<x>{2} <y>){3}
             --point <x> (<y> <z>)...
@@ -1921,12 +1897,12 @@ Quantifiers for Opt and OptArg:
 
         Opt(point):
             ntimes = (1, 4)
-            nargs = (3, 3)
+            nargs = (3, 3)    # '<z>....' counts as 1 arg, not 1+.
 
         OptArg.ntimes:
             x: (1, 1)
             y: (1, 1)
-            z: (1, None)
+            z: (1, None)      # <z> 1+ quantifier resides here.
 
 Configuration independence among OptArgs:
 
@@ -1941,7 +1917,7 @@ Configuration independence among OptArgs:
         - The <z> across its ntimes.
 
     - Key point:
-        - Repetition across ntimes does not create independence.
+        - Repetition across ntimes does not create configuration-independence.
 
 Assignment of OptArg attributes via the parent-Opt:
 
@@ -2011,11 +1987,11 @@ Assignment of OptArg attributes via the parent-Opt:
 
             p.config('z', name = 'bar')   # Applies to parent Opt.
 
-            p.config('z a', name = 'z1')  # Applies to the child OptArgs.
-            p.config('z b', name = 'z2')
+            p.config('z.a', name = 'z1')  # Applies to the child OptArgs.
+            p.config('z.b', name = 'z2')
 
 --------
-high-precendence-options: High precedence options
+help-related-options: High-related options, and high precedence
 --------
 
 Most options control the primary behaviors of a program. But some are special,
@@ -2068,7 +2044,7 @@ interpretted an invalid subcommand.
 help-text-formatting: Help text formatting
 --------
 
-Text wrapping:
+Text wrapping and indentation:
 
     - Respect terminal widths, if known and within boundaries:
 
@@ -2084,25 +2060,14 @@ Text wrapping:
 
         - Rewrap to the desired width (probably using textwrap module).
 
-        - Leave indented paragraphs as-is. [This note is out of date.]
+        - During wrapping, preserve the paragraphs original level of
+          indentation (based on the first line).
 
         - Provide an easy syntax for users to suppress line wrapping
           within the text (eg something borrowed from markdown)
 
-Option parameters:
-
-    - Avoid the typical verbosity of API-based help text. By default,
-      use a compact notation for parameters:
-
-        [--foo {}] [--bar {}] [--bazz {} {} {}]
-
-    - Let users set their own defaults too:
-
-        p = Parser()
-        p.defaults(metavar = 'X')
-
 --------
-grammar-parsing-algo: Parsing the grammar syntax
+spec-parsing-general-approach: Spec parsing: general approach
 --------
 
 Phase 1: input normalization:
@@ -2127,18 +2092,8 @@ Phase 3: parsing:
     - A parser's job is to eat a stream of tokens, organizing them into
       meaningful and valid units, and emitting those units to the caller.
 
-        - Previously, I tried to write the lexer code with a parsing mindset.
-          That was too hard.
-
-        - Now we just have to figure out how to organize the consumption of the
-          tokens listed above.
-
-    - Focus now on the full grammar. Convenience syntax can be handle later via
-      a different subclass, different tokens, different handlers, or
-      some combo.
-
-    - Handlers should be substantive from the perspective of the
-      language, not low level.
+    - Handlers should be substantive from the perspective of the language, not
+      low level.
 
     - Because the tokens and handlers differs somewhat between the grammar
       section and other sections, the parsing needs to be stateful -- advancing
@@ -2154,40 +2109,6 @@ Phase 4: assembly:
       objects.
 
     - The last phase converts the AST to true grammar elements.
-
---------
-convenience-parsing-algo: Parsing the convenience grammar syntax
---------
-
-** This section might be out of date.
-
-The grammar can be built from the parts we already have:
-
-    P1         = positional | positional_definition
-    P2         = [ P1 ]
-
-    O1         = short_option | long_option
-    O2         = parameter | parameter_definition
-    O3         = [ O2 ]
-
-    single_pos = P1+ P2*
-    single_opt = O1 O2+ O3*
-
-Apply extra validation at the end to disallow:
-
-    Only a single Opt (if P1 repeats, they must have same dest).
-    Group
-    PositionalVariant
-    ParameterVariant
-
-To orchestrate things we can adjust the SpecParser initializer:
-
-    def __init__(self, text, single = False):
-        self.lexer = RegexLexer(text, GRAMMAR_TOKENS)
-        if single:
-            self.parser_functions = (self.single_pos, self.single_opt)
-        else:
-            self.parser_functions = (self.variant,)
 
 --------
 arg-parsing-algo: Parsing algorithm
@@ -2590,10 +2511,10 @@ Three concerns:
 ambiguous-grammars: Ambiguous grammars are not an issue
 --------
 
-From a strictly grammatical perspective, only one positional can have a
-non-static nargs or ntimes, because there isn't exactly one valid way to attach
-the values to the destination attributes. A similar problem occurs when an
-option or positional has non-static nargs. Two examples:
+From a very strict perspective, only one positional can have a non-static nargs
+or ntimes, because there isn't exactly one valid way to attach the values to
+the destination attributes. A similar problem occurs when an option or
+positional has non-static nargs. Two examples:
 
     <xray>...    <y>...
     --xray {}... <y>...
@@ -2604,6 +2525,8 @@ engines do: greedy assignment by default, non-greedy by configuration.
 --------
 opt-independence: Opt independence, duplicate names/dest, and opt-spec scope
 --------
+
+__HERE__
 
 How should Optopus handle repetitions of a name/dest within a spec?
 
@@ -4085,6 +4008,30 @@ Optopus users can achieve various usage-text styles for Groups:
             p.config('commands', name = None)
 
 --------
+degenerate-groups: Degenerate groups with only one element
+--------
+
+Groups with one element will occur often:
+
+    - One optional thing in square brackets:
+
+        [--foo]
+        [<z>]
+
+    - One required thing in parentheses for disambiguation:
+
+        --point <x>     | Option with one parameter
+        (--point) <x>   | Flat and one positional
+
+In the spec-syntax, single-element groups exist for good reason:
+
+    - But when the parsed spec is converted into the actual
+      Grammar instance, degenerate groups will be dropped.
+
+    - And the group's quantifier will be applied directly to the single
+      element.
+
+--------
 opts-should-know-provenance: Opts should know their data provenance
 --------
 
@@ -4189,6 +4136,33 @@ A related topic: preferences and opts tend to have similar validation needs:
             - Would generate consistent error messages.
         - This topic needs more thinking and details, but it seems amenable to
           the rest of the project's design.
+
+--------
+parser-serialization: Parser serialization
+--------
+
+In some of my planning notes, I suggested that a configured Parser should be
+able to be represented as a regular data structure.
+
+    p1 = Parser(...)
+    d1 = p.as_dict
+
+    p2 = Parser(from_dict = d1)
+
+Those notes also implied that the data structure should be serializable:
+
+    - That raises two challenges.
+
+    - Parser data includes callables:
+        - Not readily serialized.
+
+    - Parser data has many dataclass instances:
+        - Doable.
+        - Would need a mechanism to support de-serialization.
+        - Maybe a special key holding the dataclass name.
+
+    - Not sure how important serialization really is.
+    - Defer this for now.
 
 --------
 readme-next-version: README for next version
