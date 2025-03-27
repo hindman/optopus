@@ -29,7 +29,7 @@ toc: Table of contents
         cli-grammar-vs-regex          | Command-line grammar vs. regex
         subparsers-not-needed         | Optopus does not need the subparser concept
         opt-action-not-needed         | Optopus does not need the action concept
-        explicit-option-param-syntax  | Why explicit syntax for option parameters is needed
+        explicit-var-input-syntax     | Why explicit syntax is needed for variable inputs
         variable-input-spec           | Spec for variable input
         opt-and-optarg-configuration  | Configuration of Opt and OptArg
         high-precendence-options      | High precedence options
@@ -82,6 +82,58 @@ toc: Table of contents
 --------
 todos: TODOs
 --------
+
+In there current section being edited (see the here-marker), there is the
+discussion that led me to to the idea that Opt(OPT) can take arguments that are
+either OptArg or Group.
+
+    - But I'm started to doubt myself.
+        - Include some of the notes below to provide reassurance.
+
+    - Consider one of the examples given:
+
+        --point <x> (<y> <z>)...
+
+        - Two interpretations seem plausible:
+
+            (1) A flag, followed by a repeating Group.
+            (2) An option with two arguments: OptArg and then a repeating Group.
+
+        - That confusion is a fancier version of a basic ambiguity:
+
+            --point <x> <y>
+
+            - Is that a flag and two positionals.
+            - Or an option with two parameters?
+
+        - I answered the second question definitively via the greedy parsing
+          policy, and I guess the same logic applies to the groups-as-parameters
+          discussion.
+
+            Spec                       | Interpretation
+            ----------------------------------------------------------------
+            --point <x> (<y> <z>)...   | Option with both OptArg & Group
+            (--point <x>) (<y> <z>)... | Option with OptArg; then a Group
+            (--point) <x> (<y> <z>)... | Flag; then positional; then a Group
+
+During spec-parsing:
+
+    - A Group is sometimes needed to wrap a single Grammar element in order to
+      clarify the interpretation.
+
+        --point <x> <y>   | Option with 2 parameters
+        (--point <x>) <y> | Option with 1 parameter; then positional
+        (--point) <x> <y> | Flat then two positionals
+
+    - During spec-parsing, if a Group holds just one element, drop the Group
+      from the ultimate Grammar (other that the quantifer implications).
+
+
+The discussion mentions the ability to represent a configured Parser as a data
+structure (yes), but also imply that it will be serializable:
+    - That's tough to do for values that are callables.
+    - It also takes some work to do well for dataclass instances.
+    - Write some brief notes on this topic.
 
 Editing pass over the rest of notes.txt:
 
@@ -1322,8 +1374,6 @@ Target:
 discussion: Discussion
 --------------------------------------------------------------------------------
 
-__HERE__
-
 --------
 api-vs-text: API-driven vs text-driven
 --------
@@ -1348,7 +1398,8 @@ The optopus library combines the best of both approaches:
 
     - API-driven.
 
-        - Tends to require less typing.
+        - Tends to require less typing for a variety of configuration tasks
+          (but not all; see below).
 
         - Generated usage text is mostly fine, especially for simpler projects.
 
@@ -1359,52 +1410,66 @@ The optopus library combines the best of both approaches:
           command-line programs -- conventions that few developers have studied
           in depth and would rather not worry about.
 
+        - API-generated help text can be wrapped to the current terminal width.
+
     - Text-driven for grammar and naming:
 
         - Even though my experiments configuring argument parsers of varying
           complexity via usage text convinced me of the benefits of an
-          API-driven approach, text-driven option parsers have notable
-          advantages. Those advantages are focused on command-line grammar and
-          the associated naming for parsed data returned to the caller.
+          API-driven approach, text-driven argument parsers have notable
+          advantages. Those advantages are focused on these core areas:
 
-        - The text-driven approach emphasizes the idea of usage variants, a
+            - The command-line grammar.
+            - The associated naming for entities in that grammer and, thus, for
+              the parsed data returned to the caller.
+            - The configuration elements that are inherently textual:
+                - Help text for each positional or option.
+                - Other help text.
+
+        - The text-driven approach (and the related focus on command-line
+          grammar) leads one to emphasize the idea of usage variants, a
           technique that can greatly enhance usage-text readability --
           especially for complex programs but also for small ones.
 
-                git diff [<commit>] [--] [<path>...]
-                git diff --cached [<commit>] [--] [<path>...]
-                git diff <commit> <commit> [--] [<path>...]
+            git diff [<commit>] [--] [<path>...]
+            git diff --cached [<commit>] [--] [<path>...]
+            git diff <commit> <commit> [--] [<path>...]
 
-                frob [--debug] [--foo <f>] <path>...
-                frob --help
-                frob --version
+            frob [--debug] [--foo <f>] <path>...
+            frob --help
+            frob --version
 
         - Usage variants open up a range of possibilities in the kinds of
-          command-line grammars that can be supported. API-driven parsers
-          struggle with command-lines that need any grammar falling beyond the
-          most typical cases. On stackoverflow and bugs.python.org, for
-          example, one can find many command-line use cases (some of them quite
-          simple) that are not supported easily by argparse but that are
-          straightforward in docopt.
+          command-line grammars that can be supported.
 
-        - Finally, usage syntax is both efficient and intuitive. When internet
-          users discuss command-line grammar scenarios, they invariably use a
-          usage syntax to specify the desired grammar. In my own research, I
-          experimented with defining the needed grammars via an API, but I
-          consistently found the text-based approach simpler to express and
-          read. [For a good example, see this argparse discussion where a user
-          describes a problem in general terms and suggests how the argparse
-          API could be augmented to handle such cases -- and the discussion
-          both are somewhat difficult to understand without very careful
-          reading and thinking. Then the user provides a short one-line usage
-          syntax, and the issue is immediately clear.
-          https://bugs.python.org/issue11588]
+            - API-driven parsers struggle with command-lines that need any
+              grammar falling beyond the most typical cases.
+            - On stackoverflow and bugs.python.org, for example, one can find
+              many command-line use cases (some of them quite simple) that are
+              not supported easily by argparse but that are straightforward in
+              docopt.
+
+        - Finally, usage syntax is both efficient and intuitive.
+
+            - When internet users discuss command-line grammar scenarios, they
+              invariably use a usage syntax to specify the desired grammar.
+            - In my own research, I experimented with defining the needed
+              grammars via an API, but I consistently found the text-based
+              approach simpler to express and read.
+            - For a good example, see this argparse discussion where a user
+              describes a problem in general terms and suggests how the
+              argparse API could be augmented to handle such cases.
+                - The discussion is somewhat difficult to understand without
+                  very careful reading and thinking.
+                - Then the user provides a short one-line usage syntax, and the
+                  issue is immediately clear.
+                - See https://bugs.python.org/issue11588
 
 Configuration via usage syntax is focused on grammar:
 
     - Optopus keeps that syntax fairly clean, readable, and intutive by
       focusing it solely on the grammar and naming -- the area where it excels.
-      Other details, if any are neeeded, are handled via the API.
+      Almost all other details, if any are neeeded, are handled via the API.
 
     - The syntax is also intuitive because it relies heavily on common
       conventions for documenting command-line programs.
@@ -1413,19 +1478,26 @@ Configuration via usage syntax is focused on grammar:
       number of additional syntax elements focused on supporting flexible
       command-line grammar.
 
-          - Usage variants. Discussed above.
+        - Usage variants. Discussed above.
 
-          - Partial variants, which use the variant concept to define a named
-            group of options and/or arguments that can then be inserted into
-            one or more usage variants -- avoiding repetition in the definition
-            of complex grammars (argparse does this via parents).
+        - Partial variants, which use the variant concept to define a named
+          group of options and/or arguments that can then be inserted into one
+          or more usage variants -- avoiding repetition in the definition of
+          complex grammars (argparse does something analogous via parents).
 
-          - Named destinations for any group of elements in the grammar.
+        - The ability to attach names to any elements in the grammar.
+            - Those names become symbolic handles to represent the entity in
+              the generate usage-text.
+            - Indirectly, the also indicate the ultimate stored destination for
+              the parsed data from the named entity.
 
     - The syntax opens up a wide range of possibilities for complex programs or
-      unusual grammars
+      unusual grammars.
 
-    - But it also helps at the micro scale, simplifying the configuration of
+    - But it also simplifies configuration of argument parsing for the simplest
+      cases.
+
+    - And it also helps at the micro scale: simplifying the configuration of
       individual options.
 
 --------
@@ -1433,7 +1505,7 @@ other-lib-weaknesses: Addressing weaknesses common in other libraries
 --------
 
 Providing users with simple ways to handle command-line grammars and usage
-variants (just noted).
+variants (noted in a previous section).
 
 Supporting everything from quick-and-dirty scripts to complex, highly
 customized command-line programs:
@@ -1443,9 +1515,6 @@ customized command-line programs:
       won't enforce any rules, but it will tell you what the end-user entered
       -- which is good enough for many types of quick-and-dirty scripts,
       debugging sessions, experiments, and even early prototypes.
-
-            import optopus
-            opts = optopus.parse_args()
 
     - At the other extreme, you could build the next Git or a variety of
       programs with idiosyncratic grammars, heavily customized help text, and
@@ -1487,14 +1556,14 @@ groups of options and to omit either short or long options.
 
     - Especially as the number of options grows, readability can be improved
       greatly by referring to sets of options by symbolic names rather than by
-      enumerating every possibility.
+      enumerating every possibility (see `git help diff` for an illustration of
+      this technique).
 
     - Similarly, readability can be enhanced by focusing the usage text on just
       the long-options (or just the short-options) and then providing a mapping
       between short and long options latter in the help text.
 
-Allowing users to define their arguments and options in ways that encourage
-modularity.
+Allowing users to define arguments/options in ways that encourage modularity.
 
     - In optopus a user defines/configures options and arguments as atomic
       units, separate from the issues of command-line grammar, usage variants,
@@ -1508,29 +1577,28 @@ modularity.
       organizing the options text into sections.
 
 Providing users with full access to the parser configuration, both via the API
-and in the form of standard, serializable data structures.
+and in the form of standard data structures.
 
-Providing users more conventient mechanisms to reduce repetition in
-the configuration of the parser.
+Providing users more conventient mechanisms to reduce repetition in the
+configuration of the parser.
 
 --------
 other-goals: Other goals
 --------
 
 Prioritize the simple use cases. Yes, add features and customization
-capability. But do that without sacrificing super super usage patterns.
+capability. But do that without sacrificing simplicity for the easy cases.
 
 Usage should be intuitive and declarative, especially for the simplest and most
-common use cases. It should not depend on bizarre syntax or on user-created
-complex data structures.
+common use cases. It should not depend on bizarre syntax or on complex
+user-created data structures.
 
-The parser's configuration should be expressible as a data structure -- and
-creatable from one. This is important for testing, debugging, easy integration
-with config files, and using other libraries for data validation.
+The parser's configuration should be expressible as a data structure. This is
+important for testing, debugging, easy integration with other libraries.
 
 For complex programs or special needs, users should have full control over
-documentation. This includes both usage/help text and the styling of error
-messages.
+documentation. This includes both usage-text and help-text, as well as the
+styling of error messages.
 
 Easy system for validators to be combined flexibly.
 
@@ -1541,12 +1609,10 @@ would format official sections in the help text: p.format(BLOB) should return
 text consistent with the look and behavior of other help text, based on Parser
 defaults and configuration.
 
-Include ability to merge options from several sources: ENV variables, config
-files, command-line options. Note that the purpose of the configuration sources
-(ENV vars and config files) is to set the default values used by the
-command-line option parser. When defaults are supplied, it should also cause a
-required option to become non-required (in other words, whenever default is set
-for an option, it causes required to become False.
+Include ability to merge options with user preferences. Note that the purpose
+of config files is typically to set the default values used by the command-line
+option parser. When defaults are supplied, it should also cause a required
+option to become non-required.
 
 Make it easy to test the option parser.
 
@@ -1583,7 +1649,7 @@ Support file and dir types as arguments, with checks for existence or non-existe
 
 For file path arguments, support the ability to treat `-` as stdin or stdout.
 
-Support an easy way to get bash completion.
+Support an easy way to get bash tab-completion.
 
 Support @somefile.txt: user supplies command-line args via a file.
 
@@ -1639,6 +1705,14 @@ Typical rules of command-line grammar, as commonly understood in Unix tradition:
         -x -y -z
         -xyz
 
+    - Options can take their own arguments (or parameters). As this behavior
+      becomes more flexible it deviates more from the traditional Unix-based
+      approach.
+
+        -x X1
+        -y Y1 Y2
+        -z Z1 Z2 ...
+
 --------
 cli-grammar-vs-regex: Command-line grammar vs. regex
 --------
@@ -1658,21 +1732,25 @@ is context-sensitive.
 subparsers-not-needed: Optopus does not need the subparser concept
 --------
 
-The subparser concept is much less powerful and flexible than the key concept
-of a command-line grammar, along with the related ideas of usage variants and
-flexible destination assignment. It's also less intuitive.
+The subparser concept is much less powerful and less intuitive than the key
+concept of a command-line grammar, along with the related ideas of (1) usage
+variants, (2) groups of options, and (3) flexible destination assignment.
 
 The universe of command-line programs could be broken down into a sizable
 majority and two small minorities:
 
-    - A sizable majority that needs neither subparsers nor a complex grammar.
+    - A sizable majority:
+        - Does not need subparsers
+        - Has a simple grammar (in the classic Unix tradition).
 
-    - A small minority that align conceptually with the subparser concept. But
-      command-line grammar supports this use case even better.
+    - A small minority:
+        - Aligns conceptually with the subparser concept.
+        - But a command-line grammar supports this use case even better.
 
-    - A small minority that are forced by the limitations of current argument
-      parsing libraries to resort to subparsers even though the concept does
-      not align very well with their needs.
+    - A small minority:
+        - Does not align well with the subparser concept.
+        - But forced by the limitations of current argument parsing libraries
+          to use subparsers as a last resort.
 
 --------
 opt-action-not-needed: Optopus does not need the action concept
@@ -1685,9 +1763,9 @@ and destination assignment.
 
     Action       | Option type       | Example         | Stored      | Notes
     ----------------------------------------------------------------------------------
-    store_true   | 1 flag            | --frob          | True (N=1)  | .
-    store_false  | 1 flag            | --frob          | False       | To override a True default
-    count        | 1+ flags          | -v -v           | N           | .
+    store_true   | One flag          | --frob          | True (N=1)  | .
+    store_false  | One flag          | --frob          | False       | To override a True default
+    count        | Repeatable flag   | -v -v           | N           | .
     store        | Single            | --foo F         | F           | .
     append       | Repeatable single | -x A -x B       | [A, B]      | Overwrite on repeat
     extend       | Repeatable multi  | -x A B -x C D E | [A B C D E] | .
@@ -1708,7 +1786,7 @@ Notes:
         - See parsed-data-structure
 
 --------
-explicit-option-param-syntax: Why explicit syntax for option parameters is needed
+explicit-var-input-syntax: Why explicit syntax is needed for variable inputs
 --------
 
 Imagine that the grammar did not require explicit surrouding markers for
@@ -1743,7 +1821,7 @@ The initial spec-syntax handled variable input like this:
 
 Then I switched to the following:
 
-    - A spec is represents the ultimate help-text.
+    - A sym represents the ultimate help-text.
     - Thus, names in the spec are better understood as syms, not dests.
     - A positional defaults to having the same name for its sym and dest.
 
@@ -1775,23 +1853,26 @@ But now I think the spec is symbolic names all the way down:
         - Symbolic names in help-text:
             - Opt
             - Parameter
+            - Group
 
         - Symbolic name in the spec/API:
             - Section
             - Variant
 
 For a while, I considered a more elaborate var-input-spec that allowed the user
-to configure sym and dest independently.
+to configure name and dest independently.
 
-    - But it's not worth it.
+    - But it seems not worth it.
+
+        # Too complex.
+        <dest.name>           | Positional
+        --name <subdest.name> | Option with parameter
+
     - The most common use is with plural nargs:
         - Plural dest (eg paths).
-        - Singular sym (path).
-    - But this is more naturally configured via the API.
+        - Singular name (path).
 
-    # Too complex.
-    <dest.sym>           | Positional
-    --dest <subdest.sym> | Option with parameter
+    - But this is more naturally configured via the API.
 
     - In addition, the subdest concept is unneeded:
         - The purpose is to package up the positional/parameter values
@@ -1801,6 +1882,8 @@ to configure sym and dest independently.
 --------
 opt-and-optarg-configuration: Configuration of Opt and OptArg
 --------
+
+__HERE__
 
 The child elements of Opt:
 
