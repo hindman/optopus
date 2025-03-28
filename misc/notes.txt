@@ -47,7 +47,7 @@ toc: Table of contents
         general-name-assignment       | General name assignment: needed after all
         spec-syntax-complexity        | Spec-syntax: is it too complex?
         optional-positional-placement | Optional positionals before required are not a problem
-        parse-known-args              | Parse known arguments
+        parsing-modes                 | Parsing modes
         zones-not-needed              | Zones not needed
         help-distpatching             | Help distpatching
         dispatch                      | Dispatch
@@ -3075,113 +3075,83 @@ user wants positionals attached to <x> and <y> before <m>, they can express the
 grammar differently.
 
 --------
-parse-known-args: Parse known arguments
+parsing-modes: Parsing modes
 --------
 
-__HERE__
+Argparse background:
 
-ISSUES:
+    - The argparse library has these modes:
 
-    - The implied API is conceptually inconsistent:
+        Allow unknown | Default-style      | Intermixed-style
+        ------------------------------------------------------------------
+        No            | parse_args()       | parse_intermixed_args()
+        Yes           | parse_known_args() | parse_known_intermixed_args()
 
-        - Seems like a mode concept:
-            - no-config
-            - regular
+    - The methods allowing unknown arguments return a 2-tuple rather than
+      a single Result, which is a bit inconvenient.
 
-        - Seems like flags to relax regular requirements:
-            - unknown-ok
-            - unconverted-ok
-            - invalid-ok
+    - The default argparse style is overly restrictive.
+    - Greedy parsing already support intermixed-style.
 
-        - Seems like a default fallback:
-            - If no spec, then use no-config parsing.
+Optopus approach:
 
-        - Seems like a global nargs specification:
-            - The Quantifier for parameter binding.
-            - But it only applies (or is allowed) if no spec was given.
+    - Regular-parsing vs noconfig-parsing:
+        - Determined by whether the user supplies a spec/grammar.
+        - Parser():
+            - spec: regular parsing
+            - grammar: same, via API
+            - nargs: noconfig-parsing with global nargs
 
-    - Reporting plan is only half-baked:
+    - Allow unknown arguments:
+        - Done during the parse() call.
+        - User tells where to store the unknown arguments.
 
-        - The discussion covers how to report unknown arg.
-        - What about unconverted or invalid args?
+        opts = p.parse(ARGS, unknown = DEST)
 
-How argparse handles it:
+Additional notes on noconfig-parsing:
 
-    - Instead of returning a single Namespace it returns a tuple:
+    - As elsewhere, Optopus will use a greedy policy.
 
-        (Namespace, List[unknown args])
+    - Positionals are not very relevant for no-config use cases:
+        - They will be stored in one generic bucket.
+        - The end-user can put them after the double-hyphen.
+        - Other input will be options and parameters.
 
-    - It does still apply all validations to any supplied arguments.
+    - As a result, no ambiguous boundary questions arise and the end-user can
+      control how parameters bind to options via their arrangement of
+      arguments.
 
-I have found that approach mildly annoying:
+    - Optionally, the user can restrict such parameter binding by declaring a
+      specific Quantifier as a global nargs.
 
-    - It requires a change to the calling code to call a different
-      method and to unpack the 2-tuple.
+Rejected features:
 
-    - That makes it a bit less convenient to drive via typical configuration
-      mechanisms.
+    - I consider supporting other ways to relax parsing
+      beyond allowing unknown arguments.
 
-I think it makes more sense for Optopus to treat parse-known-args as one of the
-parsing modes that it supports:
+    - For example, the user could allow invalid arguments (those that fail
+      validation) or unconverted arguments (those that fail to convert).
 
-    - Configured modes:
-
-        - These modes can be combined.
-        - They relax the rules to allow deviations from usual requirements.
-
-        # Come up with better naming?
-        unknown-ok
-        unconverted-ok
-        invalid-ok
-
-    - No or limited configuration modes:
-
-        - As elsewhere, Optopus will use a greedy policy.
-
-        - Positionals are not very relevant for no-config use cases:
-            - They will be stored in one generic bucket.
-            - The end-user can put them after the double-hyphen.
-            - Other input will be options and parameters.
-            - Thus, no ambiguous boundary questions.
-
-        - As a result, end-user can control how parameters bind to options
-          via their arrangement of arguments.
-
-        - Optionally, the user can restrict such binding by declaring
-          a specific Quantifier as a global nargs:
-
-            Parser(nargs = None)      # Default (controlled by end-user)
-            Parser(nargs = 0)         # Flag style
-            Parser(nargs = 1)         # Key-val style
-            Parser(nargs = (2, None)) # 2+
-
-Optopus:
-
-    - By default:
-
-        - Continue to return a single Result object.
-
-        - Put the unknown arguments in an attribute with an uncommon name, such
-          as 'others' or 'unknowns'.
-
-    - Let the user configure this:
-
-        - Name of the unknowns attribute.
-
-        - Whether to return (Result, List[unknowns]) tuple, like argparse.
+    - These use cases do not seem compelling (and they might be a bit fraught).
 
 --------
 zones-not-needed: Zones not needed
 --------
 
-In my planning I think the concept of Zones was not useful. A zone has no
-purpose on its own; rather, it existed purely to support anchoring. And the
-anchoring configuration was applied to Opts, not Zones. Just use Groups and
-allow Opts to be anchored within them.
+Problems with zones:
+    - Concept was not useful in planning work.
+    - A zone has no independent purpose: purely to support anchors.
+
+Simpler approach:
+    - Just use Groups.
+    - Allow Opts to be anchored within them.
+    - Handle that via API.
 
 --------
 help-distpatching: Help distpatching
 --------
+
+__HERE__
 
 Optopus aims to support behavior like this:
 
