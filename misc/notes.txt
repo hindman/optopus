@@ -42,10 +42,10 @@ toc: Table of contents
         opt-independence              | Opt independence, duplicate names/dest, and opt-spec scope
         parsed-data-structure         | Parsed data structuring: nargs, ntimes
         eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
-        grammar-syntax-named-unnamed  | Grammar syntax: named and unnamed arguments
+        spec-syntax-named-unnamed     | Spec-syntax: named and unnamed arguments
         variants-needed               | Variants: why they are needed
-        destination-assignment        | General destination assignment: needed after all
-        grammar-syntax-complexity     | Grammar syntax: is it too complex?
+        general-name-assignment       | General name assignment: needed after all
+        spec-syntax-complexity        | Spec-syntax: is it too complex?
         optional-positional-placement | Optional positionals before required are not a problem
         parse-known-args              | Parse known arguments
         zones-not-needed              | Zones not needed
@@ -57,7 +57,7 @@ toc: Table of contents
         grammar-querying-api          | Grammar querying API
         validation-notes              | Validation notes
         strategy-reassessment         | Reassess the strategy
-        grammar-syntax-revisited      | Grammar syntax revisited
+        spec-syntax-revisited         | Spec-syntax revisited
         spec-as-format-string         | Spec as a format string not needed
         var-input-representation      | Representing var-inputs in spec-syntax
         enhanced-quantifiers          | Enhanced quantifiers
@@ -112,9 +112,9 @@ Reread:
     - code
     - arg-parsing-algo
 
-Grammar syntax parsing.
+Spec-syntax parsing.
 
-Convert grammar-syntax AST into a Grammar.
+Convert spec-syntax AST into a Grammar.
 
 Argument parsing.
 
@@ -191,7 +191,7 @@ Opt enhancements:
 
 Alternative inputs: handy:
 
-    Case-sensitive grammar syntax and usage text.
+    Case-sensitive spec-syntax and usage text.
 
     Abbrevations for long-options.
 
@@ -856,6 +856,7 @@ Overview:
         Variant
         Group
         Opt
+        OptArg
         Result
         Query
 
@@ -931,7 +932,7 @@ Parser:
 
         - Querying grammar elements:
 
-            p.query(*paths, kind = T) => Query
+            p.query(*paths, kind = types, want = callable) => Query
 
             - Delegates the call to p.grammar.query().
 
@@ -946,6 +947,7 @@ Parser:
             - The path elements operate in a loose data-dive way:
 
                 - Example: bar.fubb.foo
+                - Example: x.2
 
                 - Get the grammar elements with name/dest of 'foo'
                   that are hierachically nested as follows:
@@ -960,13 +962,32 @@ Parser:
                   grandparent to child).
 
                 - Typically, the path elements are name-like (dest or name).
-                  But they can also be integers (indexes into elems).
+                  But they can also be integers (indexes).
 
-                    - Example: foo.2
+                    - But integers behave differently: not as an any-nesting
+                      query, but as a direct get-via-index operation. Why:
 
-                    - Would get any elems[2] that is nested under a 'foo'.
+                        - Under the usual query logic, a path like 'foo.2'
+                          would get any elems[2] nested anywhere under a 'foo'.
+                        - Seems fraught type for a user to reason through.
+                        - More intuitive is to interpret the integers as direct
+                          indexes into elements the user can see directly in a
+                          visual inspection of the spec.
 
-            - The kind parameter can restrict to specific types.
+                    - Example: the grammar has three -x flags that need
+                      different help-texts. The user can see how those Opts are
+                      ordered in the spec. Their opt-spec-scopes can simply
+                      index into that ordering.
+
+                        --foo [-x] | --bar [-f] [-x] | --blort [-x]
+
+                        x.2 >> [-x] : blah x-for-blort
+                        x.0 >> [-x] : blah x-for-foo
+                        x.1 >> [-x] : blah x-for-bar
+
+            - Keyword arguments:
+                - kind: declares wanted types (single class or sequence of them).
+                - wanted: callable that takes an entity and returns bool.
 
             - The returned Query is a sequence-like collection of matching
               grammar elements.
@@ -1853,7 +1874,7 @@ The idea that options can have groups as parameters is a bit surpising:
             <x> <y> --point
 
     - Why? The usual greedy parsing logic.
-        
+
         - Without a greedy policy, many ambiguities/complications arise.
         - Groups as parameters is just a logical extension of the core idea.
 
@@ -2526,21 +2547,21 @@ engines do: greedy assignment by default, non-greedy by configuration.
 opt-independence: Opt independence, duplicate names/dest, and opt-spec scope
 --------
 
-__HERE__
-
 How should Optopus handle repetitions of a name/dest within a spec?
 
     - The spec-syntax is very general/flexible.
     - Nothing in the syntax prevents a user from using the same name or dest
       across positionals, options, parameters, or even groups.
 
-    - The rest of this discussion will use name to represent name or dest.
+    - Notation:
+        - Discussion will use "name" to represent name or dest.
 
 Start with some theoretical examples:
+
     - They are not meant to be realistic.
     - Not easy to envision a good use case for many of them.
     - But they do sketch a broad range of possibilities.
-    - They do not include name repetitions across groups.
+    - They do not include name repetitions among group names.
 
     - Contiguous repetition;
 
@@ -2577,17 +2598,17 @@ Start with some theoretical examples:
 Key issues:
 
     - One question is policy:
+
         - Should Optopus disallow name repetitions, either
           entirely or for specific situation?
 
-    - Another concerns the Parser configuration:
+    - Another question deals with Parser configuration:
 
-        - Should Optopus consolidate Opts having the same
-          name (and configuration)?
+        - Should Optopus consolidate Opts having the same name/config?
         - A limited form of Opt uniqueness.
 
-        - Or should each opt implied by the spec be a unique
-          Opt, regarless of name repetition?
+        - Or should each Opt implied by the spec be a unique Opt, regarless of
+          name repetition?
         - A form of Opt independence.
 
 A small and plausible example:
@@ -2625,7 +2646,7 @@ A small and plausible example:
             - The grammar within the Opt's arguments (as shown above).
 
             - So forcing users to rely on the API entirely for ambiguous
-              situation seems inferior.
+              situations seems inferior.
 
         - Optopus could make the connections via a default policy:
             - It could infer the --bar connections correctly,
@@ -2636,7 +2657,7 @@ A small and plausible example:
 
             - But forcing user to check/fix the connections via API seems awkward.
 
-Another plausible example:
+Other plausible examples:
 
     - Separator-based grammars like nab and neck-diagram:
         - EX_NAB
@@ -2666,6 +2687,25 @@ Policy decisions:
         - An opt-spec will be connected to all Opts in the grammar having
           compatible configurations.
 
+        - Because Opts declared in the grammar can be opt-mentions, the
+          compatibility requirements are basic:
+
+            - The intuitive parts:
+                - Same name.
+                - Same kind: positional or option.
+                - Agreement with the opt-spec-scope (if any).
+
+            - The deeper principle:
+                - The configuration from the opt-spec must be additive.
+                - It cannot replace or contradict any configuration information
+                  from the opt declared in the grammar.
+
+            - Any opts from the grammar that "match" the configuration from an
+              opt-spec (in the ways just described) will receive the additional
+              configuration from the opt-spec.
+
+            - If no opts match, Optopus will raise.
+
     - Opt-spec-scopes to disambiguate, via this syntax:
 
         PARENT >> CHILD
@@ -2689,7 +2729,7 @@ Discussion of the policy across various domains:
             - After full spec is parsed.
             - After all API configuration is done.
 
-        - Consolidate also loses information:
+        - Consolidation also loses information:
             - How the user wants the usage text to look.
 
     - Why name uniqueness is not needed in the Grammar:
@@ -2821,14 +2861,14 @@ explicit manner. Assume a list of lists, where:
             [a1, a2],                # One group of data.
             ...,
             ...,
-            ...
+            ...,
         ]
 
         z = [
             [[a1, a2], ..., ...],    # Ditto.
-            ...
-            ...
-            ...
+            ...,
+            ...,
+            ...,
         ]
 
         - Each line for foo and z (above) hold data from one Group repetition.
@@ -2844,12 +2884,11 @@ Flattening policy:
     - User can request non-flattened data or flattened data to reverse the
       usual defaults (marked with ** in the two columns for 2+ ntimes).
 
-    nargs | ntimes    | ntimes 2+           | ntimes 2+
-    .     | 0 or 1    | Flattened           | Non-flattened
-    -------------------------------------------------------------
-    0     | bool      | [bool, ...] **      | [[bool], ...]
-    1     | a1        | [a1, ...] **        | [[a1], ...]
-    2+    | [a1, ...] | [a1, ..., ..., ...] | [[a1, ...], ...] **
+    nargs | ntimes 0,1 | ntimes 2+ (flat)    | ntimes 2+ (non-flat)
+    ---------------------------------------------------------------
+    0     | bool       | [bool, ...] **      | [[bool], ...]
+    1     | a1         | [a1, ...] **        | [[a1], ...]
+    2+    | [a1, ...]  | [a1, ..., ..., ...] | [[a1, ...], ...] **
 
 Duplicate dests within a Result:
 
@@ -2874,15 +2913,14 @@ eager-attachment-at-bounary: Eager option attachment at repetition boundaries
 In the following example, the -z option will bind eagerly to the repeated
 triplets of positionals.
 
-    Grammar:                  cmds=(<a> <b> <c> [-z]){2,7}
-    Example input:            A1 B1 C1 -z A2 B2 C2
-    Returned data for cmds:   opts.cmds[1] = Namespace(a=A1, b=B1, c=C1, z=False)
+    Grammar       : cmds=(<a> <b> <c> [-z]){2,7}
+    Example input : A1 B1 C1 -z A2 B2 C2
+    Result        : opts.cmds[0] = Result(a=A1, b=B1, c=C1, z=True)
 
-That policy is consistent with greedy parsing elsewhere. Configuration for this
-issue will have to be done via the API.
+That policy is consistent with greedy parsing elsewhere.
 
 --------
-grammar-syntax-named-unnamed: Grammar syntax: named and unnamed arguments
+spec-syntax-named-unnamed: Spec-syntax: named and unnamed arguments
 --------
 
 Positionals must be named:
@@ -2899,9 +2937,9 @@ Option arguments can be named or unnamed:
 variants-needed: Variants: why they are needed
 --------
 
-Are variants needed give that the grammar syntax already has support for
-alternatives? Yes: they provide several benefits, even if one could do
-without them, strictly speaking.
+Are variants needed give that the spec-syntax already has support for
+alternatives? Yes: they provide several benefits, even if one could do without
+them, strictly speaking.
 
 Partial variants are a useful device to express some grammars more
 conveniently.
@@ -2924,12 +2962,12 @@ to most specific:
     Variant         # An alternative that strongly affects usage text.
 
 --------
-destination-assignment: General destination assignment: needed after all
+general-name-assignment: General name assignment: needed after all
 --------
 
-Optopus does need generalized destination assignment. At a minimum, it needs
-that feature not just for Opt, but also for partial variants. And once you go
-that far, you might as well generalize it.
+Optopus does need general destination assignment. At a minimum, it needs that
+feature not just for Opt, but also for partial variants. And once you go that
+far, you might as well generalize it.
 
 Consider examples like neck-diagram (EX_NECK_DIAG; also EX_NAB). With
 destination assignment for the outer group, the specific Opt destinations (cmd,
@@ -2954,7 +2992,7 @@ destination names -- which badly jumbles everything up:
     )
 
 --------
-grammar-syntax-complexity: Grammar syntax: is it too complex?
+spec-syntax-complexity: Spec-syntax: is it too complex?
 --------
 
 To evaluate the question, I focused on the least intuitive aspect of the syntax
@@ -2965,7 +3003,7 @@ Alternatives:
     - This is an easy call: syntax is intuitive and API usage for this
       situation is annoying.
 
-    - This is a strong example of the superiority of text syntax for grammar
+    - This is a strong example of the superiority of spec-syntax for grammar
       configuration relative to API.
 
 Quantifiers:
@@ -2974,7 +3012,7 @@ Quantifiers:
 
     - The {m,n} syntax directly mimics regex and is also quite intutive.
 
-General destination assignment:
+General name assignment:
 
     - This feature is powerful: it allows grammar variation when
       a positional or parameter takes a specific value.
@@ -2988,7 +3026,7 @@ Partial variants:
       variant as partial and then insert it wherever needed.
 
     - The partial syntax isn't heavy; in fact, it's moderately intuitve and
-      without it, the grammar syntax might even be a bit less immediately
+      without it, the spec-syntax might even be a bit less immediately
       understandable.
 
 Zones and anchoring:
@@ -2996,7 +3034,7 @@ Zones and anchoring:
     - Decisions:
         - Infrequent use case.
         - Easy to handle via API.
-        - Drop from grammar syntax.
+        - Drop from spec-syntax.
         - Also see zones-not-needed
 
     - I suspect the desire for zones and anchoring is moderately low but still
@@ -3009,7 +3047,7 @@ Zones and anchoring:
       (zone markers) and not very intuitive (anchor markers)
 
     - Another question: is the zone concept needed, or could Group do the same
-      thing? I increasingly think so.
+      thing? I increasingly think the latter.
 
 High precedence:
 
@@ -3021,7 +3059,7 @@ High precedence:
       library could interpret --help and --version options as high precedence
       by default.
 
-    - Infrequent use case, easy via the API: let's drop it from grammar syntax.
+    - Infrequent use case, easy via the API: let's drop it from spec-syntax.
 
 --------
 optional-positional-placement: Optional positionals before required are not a problem
@@ -3039,6 +3077,33 @@ grammar differently.
 --------
 parse-known-args: Parse known arguments
 --------
+
+__HERE__
+
+ISSUES:
+
+    - The implied API is conceptually inconsistent:
+
+        - Seems like a mode concept:
+            - no-config
+            - regular
+
+        - Seems like flags to relax regular requirements:
+            - unknown-ok
+            - unconverted-ok
+            - invalid-ok
+
+        - Seems like a default fallback:
+            - If no spec, then use no-config parsing.
+
+        - Seems like a global nargs specification:
+            - The Quantifier for parameter binding.
+            - But it only applies (or is allowed) if no spec was given.
+
+    - Reporting plan is only half-baked:
+
+        - The discussion covers how to report unknown arg.
+        - What about unconverted or invalid args?
 
 How argparse handles it:
 
@@ -3059,49 +3124,36 @@ I have found that approach mildly annoying:
 I think it makes more sense for Optopus to treat parse-known-args as one of the
 parsing modes that it supports:
 
-    Parsing modes:
+    - Configured modes:
 
-        Configured: these modes can be combined. They relax the rules to allow
-        deviations. [I am not sold on this naming idea. Think it over.]
+        - These modes can be combined.
+        - They relax the rules to allow deviations from usual requirements.
 
-            unknown-ok
-            unconverted-ok
-            invalid-ok
+        # Come up with better naming?
+        unknown-ok
+        unconverted-ok
+        invalid-ok
 
-        No configuration:
+    - No or limited configuration modes:
 
-            Like the rest of the library, Optopus will handle no-config parsing
-            with a greedy default. Consider:
+        - As elsewhere, Optopus will use a greedy policy.
 
-            No-config parsing is only helpful for the options: positionals
-            will be dumped into a single generic bucket, so the options are
-            what matter here.
+        - Positionals are not very relevant for no-config use cases:
+            - They will be stored in one generic bucket.
+            - The end-user can put them after the double-hyphen.
+            - Other input will be options and parameters.
+            - Thus, no ambiguous boundary questions.
 
-            The positionals can be segregated to follow the double-hyphen
-            marker.
+        - As a result, end-user can control how parameters bind to options
+          via their arrangement of arguments.
 
-            The rest of the input will be options and parameters, which
-            raise no ambiguous boundary questions.
+        - Optionally, the user can restrict such binding by declaring
+          a specific Quantifier as a global nargs:
 
-            This means the end user can control the result via their
-            arrangement of arguments. That seems consistent with the spirit of
-            no-config: no-configuration means imposing no requirements on the
-            end-user. Through their argument placement, the end-user determines
-            how parameters bind to options, which means they can achieve
-            different flavors of parameter binding (flag, key-val, or any N of
-            vals).
-
-            In addition, the library will support an almost-noconfig behavior
-            allowing the user to impose a specific parameter binding
-            requirement. That will be done via a quantifier controlling nargs
-            to be consumed per option.
-
-                * The name (noconf) seems cryptic. Could it be nargs?
-
-                Parser()                # Default: greedy.
-                Parser(noconf = '0')    # Flag style
-                Parser(noconf = '1')    # Key-val style
-                Parser(noconf = '2,')   # 2+
+            Parser(nargs = None)      # Default (controlled by end-user)
+            Parser(nargs = 0)         # Flag style
+            Parser(nargs = 1)         # Key-val style
+            Parser(nargs = (2, None)) # 2+
 
 Optopus:
 
@@ -3519,7 +3571,7 @@ the writeup place greater emphasis on some practical examples illustrating the
 superiority of the text-based approach over argparse.
 
 --------
-grammar-syntax-revisited: Grammar syntax revisited
+spec-syntax-revisited: Spec-syntax revisited
 --------
 
 Enhance spec syntax increase its power, reducing user hassle:
@@ -3729,7 +3781,7 @@ Angle style: robust due to greed:
     - In order to produce robust usage text for variants, literal inputs need
       top precedence.
 
-    - More generally, treating text (whether in grammar syntax or usage text)
+    - More generally, treating text (whether in spec-syntax or usage text)
       as literal by default, it an good baseline (eg, that is how regex works).
 
     - The conclusion is that variable inputs must be enclosed, making
@@ -3794,7 +3846,7 @@ Quantifiers could be more featureful:
 opt-spec-lines: Opt-spec lines
 --------
 
-In the grammar syntax, an opt-spec line allows any syntax for configuring a
+In the spec-syntax, an opt-spec line allows any syntax for configuring a
 single Opt, plus two other things: aliases and help text.
 
 I considered adding a rule to require that the aliases, if any, reside
