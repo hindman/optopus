@@ -85,6 +85,64 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Switch to 'eager' rather than 'high-precendence'.
+    - Seems more natural:
+
+    p.config('example', is_eager = True)
+
+Support smart-types for convert/validate:
+    - Yes the user can write their own convert/validate.
+    - But supporting the common use cases might be good.
+    - How Click does it:
+        - The library provides various data-objects.
+        - The object hold configuration details to perform the needed
+          conversions and checks.
+    - Examples:
+          click.File(...)       | How to open the file
+          click.Path(...)       | Requirements to impose on the path
+          click.IntRange(...)   | Min, max, etc
+          click.FloatRange(...) | Min, max, etc
+          click.DateTime(...)   | Allowed formats
+          click.ParamType       | Parent class for user to implement their own
+
+    - Note:
+        - Optopus support convert and validate.
+        - But it does not require both steps.
+        - A user can, for example, do everything under validate.
+        - That is most likely where a smart-type would be used.
+
+Prompting for OptArgs:
+    - Click supports this.
+    - Not a bad idea (eg for passwords).
+    - Maybe this can be achieved via dispatch mechanisms.
+
+Assess environment variables again:
+    - Click supports getting OptArg defaults from environment variables.
+    - Can be done in an automatic way (variable naming agrees in both contexts)
+      or via a common prefix for all environment variables.
+    - Or can be done more specifically: option('--fubb', envvar = 'FUBB_VAL')
+    - Will this fit well with my approach for applied_defaults?
+
+How will convert/validate functions raise errors:
+    - Click has exception classes (eg click.BadParameter).
+    - Used to support each raising and nice error message to end-users:
+
+        # In validate function for Opt(--bar) in the blort program.
+        raise click.BadParameter('blah-blah')
+
+        # Error message to end-user.
+        blort: invalid value for '--bar': blah-blah
+
+Examples:
+    - Add to examples section:
+        - see misc/examples/click
+        - ex3-setuptools.py
+        - maybe others?
+
+Optopus vs the competitors:
+    - Maybe augment the current README
+    - Include Click in a future write-up.
+
 Editing pass over the rest of notes.txt:
 
     __HERE__
@@ -189,13 +247,13 @@ Opt enhancements:
     File-type arguments. Let user decide behaviors: (1) validate path exists, (2)
     opening (with encoding, mode, etc). Also support `-` for stdin/stdout.
 
-Alternative inputs: handy:
-
-    Case-sensitive spec-syntax and usage text.
+Alternative/fuzzy inputs: handy:
 
     Abbrevations for long-options.
 
-    Abbrevations for choices values.
+    Abbrevations for choices.
+
+    Case-insensitivity for options and choices.
 
 Dispatching:
 
@@ -1196,13 +1254,11 @@ Opt and OptArg:
             # - Anchored Opt.
             # - Hidden Opt.
             # - Opts to negate other flag Opts.
-            # - Case-sensitive options (eg --foo vs --FOO)
             # - Dispatch based on state of Opt.
             high_precedence: bool
             anchor: bool
             hide: bool
             negaters: list[Opt]
-            case_sensitive: bool
             dispatch: callable(s)
 
         OptArg:
@@ -4636,28 +4692,158 @@ Python's docopt:
 
 Python: Click
 
-    - Interesting but opinionated
+    - Summary:
 
-    - Explicitly rejects customizability of help output
+        - Interesting but opinionated and therefore rigid in various ways.
 
-    - Option parsing configuration ends up spread widely across your code base,
-      next to the actual functions that do the work, rather than centralized
+        - Strong subcommand support but very weak grammar support:
+            - Built around a subcommand model (with nesting).
+            - With a heavy focus on dispatching.
+            - No grammar support other than:
+                - Basic.
+                - Commands and nested subcommands.
+            - Missing:
+                - More than one positional with non-static nargs.
+                - Alternatives and mutual exclusion.
+                - Groups as first-class grammatical entities.
+                - Rich quantifiers.
 
-    - Is lazily composable
+        - Highly constrained help text:
+            - Very little customization of help text.
+            - Usage text lists options generically (absent subclassing).
 
-    - Follows the Unix command line conventions
+        - Code readability is poor:
+            - Configuration ends up scattered across decorators.
+            - Not easy to understand script usage at a glance.
 
-    - Supports loading values from environment variables
+        - Reasonably good support for:
+            - Using configuration files as defaults.
+            - Ditto for environment variables.
+            - Smart-types for conversion/validation.
+            - Various utilities adjacent to command-line scripts.
+            - But the project seems to be comingling concerns too much.
 
-    - Supports for prompting of custom values
+    - Click views command-line programs through the lens of subcommands:
+        - Subcommands can be nested under other subcommands.
+        - Other than than, grammatical support is weak (worse than argparse).
 
-    - Nestable and composable
+    - Click thinks dispatching is a primary concern:
+        - I have never felt that way about writing scripts.
+        - Dispatching is typically one of the easiest things to do.
+        - The dispatching model seems rigid:
+            - Always passes 3 arguments to the receiving functions.
+            - Function signatures have to align with the arguments
+              that will be passed to them.
 
-    - Supports file handling
+    - Click explicitly rejects customizability of help output:
+        - You can control metavars (like argparse).
+        - Usage-text uses a general metavar (OPTIONS) for all options.
+        - Overriding that can be done (maybe) with awkward subclassing.
 
-    - Useful helpers: getting terminal dimensions; ANSI colors; fetching direct
-      keyboard input; screen clearing; finding config paths; launching apps and
-      editors.
+    - Configuration is not very readable:
+        - It ends up spread across various decorators.
+        - Not easy to understand script usage at a glance of the code.
+        - A good example of this is the docopt naval-fate example.
+        - In docopt, you can understand usage immediately in the source code.
+        - The same example in the Click documentation is much less intuitive.
+
+    - Heavy API burden:
+        - If your program fits the Click model well, you can get things working
+          rapidly enough.
+        - Anything outside that path leads to:
+            - Large API footprint.
+            - Conceptual and API complexity.
+            - Some quite strange API features.
+        - In spite of good/extensive documentation, my eyes often glazed over.
+        - Examples:
+            - Multi Commands.
+            - Complex Applications (a git clone).
+
+    - Click explicitly rejects fuzzy option/choice matching:
+        - Example: accepting --fu for --fubb if former yields 1 match.
+        - The rationale is that accepting fuzzy matches can break future usages
+          if end-users get accustomed to the abbreviated options.
+        - But the library does support case-insensitivity for situations
+          involving Opt.choices, seemingly contrtacting that rationale.
+
+    - Options:
+        - Must take a fixed N of parameters (seems restrictive).
+        - One exception to that:
+            - An option taking 1 parameter can be configured also take zero.
+            - Strange.
+        - An option's parameters can have different types and (maybe)
+          validation.
+
+    - Positionals:
+        - A positional can have a fixed nargs.
+        - Or it can have nargs of -1, which means 1+ (odd).
+        - But only one Opt can be "variadic".
+
+    - Help text details:
+        - Help text for commands/subcommands:
+            - Set in function docstring.
+            - Each command can be given a short_help.
+            - If so, Click will document the commands in style similar to
+              documentation for options.
+        - Help text for an options:
+            - Set when defining the Opt via the decorator.
+        - Help text for a positionals:
+            - Mostly not supported.
+            - You have to document them in your command docstring.
+            - The small exception here is short_help for commands (see above).
+        - Epilog help text:
+            - Similar to argparse.
+            - Fairly limited in functionality.
+        - Metavars in help text:
+            - Click supports them, similar to argparse.
+            - Also can be applied to all options for a command.
+            - Metavar defaults:
+                - Parameters: UPPERCASE.
+                - All options for a command: OPTIONS.
+        - Wrapping:
+            - Syntax to suppress default wrapping is quite opaque.
+            - Syntax to include non-help-text in a function docstring is also weird.
+
+    - Support for configuration files and environment variables:
+        - Click has a reasonable and flexible approach.
+        - At least within the larger limits of the system.
+        - But the API footprint is moderately large.
+
+    - Supports eager options (like high-precendence Opts).
+
+    - Supports file handling and various other smart types:
+        - Meaning types that carry additional requirements for
+          convert/validate.
+
+    - Testing support:
+        - Has some support for running your Click commands in testing
+          scenarios.
+            - Capturing stdout/stderr.
+            - Using an isolated file system.
+        - I did not read carefully and am skeptical that it can do very much.
+
+    - Shell completion:
+        - Refer to Click documentation when setting up completion for Optopus.
+        - I did not read closely.
+        - Completion seems to be supported only for scripts executed via an
+          entry point in setuptools.
+
+    - Other utilities:
+        - Provides an echo() function.
+            - More robust in the face of Unicode issues.
+            - Works across various terminal environments.
+        - Also support for:
+            - ANSI coloring.
+            - Pagination.
+            - Screen clearing.
+            - Getting single character inputs from end-user.
+            - Waiting for key press.
+            - Launching editors.
+            - Launching other applications.
+            - Showing progress bars.
+        - All of that is cool/useful in some sense.
+            - But why combine it with a command-line argument parser?
+            - Seems like too much comingling of concerns.
 
 Python invoke:
 
