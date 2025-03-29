@@ -80,10 +80,15 @@ toc: Table of contents
         other-tools                        | Other tools
         problems-scenarios-from-argparse   | Problems scenarios from argparse
         example-grammars                   | Example grammars
+        vim-modelines                      | Vim modelines
 
 --------
 todos: TODOs
 --------
+
+Dispatch:
+    - see the section
+    - I have questions...
 
 Switch to 'eager' rather than 'high-precendence'.
     - Seems more natural:
@@ -3245,6 +3250,77 @@ some usage examples for the end-user.
 dispatch: Dispatch
 --------
 
+ISSUES:
+
+    - Under what conditions does a dispatch function get called?
+
+        - Dispatch always.
+            - Is this even helpful?
+            - The user could easily call the function themselves.
+
+        - Dispatch if Opt is supplied.
+            - I think this is the right approach.
+
+        - Dispatch if Opt is supplied and non-required.
+            - Seems a bit subtle.
+
+    - Can I come up with a dispatching plan that seems simpler that
+      roll-your-own?
+
+        - I have *never* found dispatching to be a difficult or annoying part
+          of writing scripts.
+
+        - Several easy approach are readily at hand, and I usually pick the one
+          that fits the script's grammar best.
+
+            - Ordinary script with some special flags:
+                - Basic conditional logic for the special flags.
+                - Quite often the flags lead to early program exits.
+                - Then just get down to business.
+
+            - Situations where dispatch is driven by the value given for a
+              primary Opt (eg, subcommand-style script).
+                - Use a dispatch dict.
+                - Use code to get the right callable via its name:
+                    - gettattr() if functions are in a class or module.
+                    - globals() if they are at the top-level in a script.
+
+            - Situations where multiple functions are called (eg, steps).
+                - Very similar the to previous situation.
+                - But you are just calling a function for each of an Opt's
+                  plural nargs.
+
+            - I have rarely needed anything fancier than that.
+
+        - Relative to those basic approaches, can I design an API that is
+          simpler?
+
+            - Any plan requiring heavy API knowledge is bad.
+            - Users do not write scripts frequently enough to master the API.
+            - They end up having to look it up every time.
+
+        - Remember that it does not make sense to compare the Optopus
+          ease-of-dispatch to that of Click.
+
+            - Click makes dispatch easier/semiautomatic because it forces you
+              to configure your parser at the functions themselves.
+
+            - But that approach comes with costs and drawbacks I find
+              unacceptable.
+
+            - For Optopus the relevant comparison is between a proposed API for
+              dispatch and the roll-your-own alternatives.
+
+    - How does the user control dispatching order?
+
+        - Under a very simple model where you just link callables to Opts,
+          how does the user convey calling order?
+
+        - In most scripts I have written the order is critical.
+
+        - That suggests that Opt-level configuration is either a poor fit or
+          insufficient on its own.
+
 Dispatching is probably can be pretty simple: tie one or more callables to
 Variants, Opts, or even Groups (hard to think of many use cases for the latter,
 but it is probably easy to support).
@@ -5094,4 +5170,10 @@ Example 4:
 Example 5:
 
     (-a -x | -b... | [-a] -c -d) [-e | -f] [-g] <h> [<i>...] ([-j -k]... | -m -n)
+
+--------
+vim-modelines: Vim modelines
+--------
+
+vim: iskeyword=@,48-57,_,192-255,-
 
