@@ -86,8 +86,15 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Dispatch:
-    - see the section
+Dispatch :
+    - take notes on
+        misc/examples/click/ex4-repo.py
+        it is quite awkward
+    - Mock up the Optopus equivalent.
+    - Also mock up how dispatching would work.
+
+    - see the section, where I lay out some concerns/questions.
+
     - I have questions...
 
 Switch to 'eager' rather than 'high-precendence'.
@@ -3270,7 +3277,7 @@ ISSUES:
         - I have *never* found dispatching to be a difficult or annoying part
           of writing scripts.
 
-        - Several easy approach are readily at hand, and I usually pick the one
+        - Several easy approaches are readily at hand, and I usually pick the one
           that fits the script's grammar best.
 
             - Ordinary script with some special flags:
