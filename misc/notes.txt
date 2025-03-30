@@ -86,6 +86,65 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Opto:
+
+    - NEXT:
+        - keep working on the blort.py mock-up
+        - this exercise has been useful
+        - do something similar for the Click repo example.
+        - for blort.py try to write code for:
+            - general help (just Usage)
+            - help for specific section, based on <task>
+
+    - Do not try to document the parts of usage-text that have symolic names.
+        - Let the user write headings and opt-specs in usage-section if they
+          want to document symbolic-names in the usage, options, positionals,
+          arg-variants, etc.
+
+    - Does spec-syntax need "headings"?
+        - Something between a section and ordinary text?
+        - Maybe akin to subheadings.
+        - Verdict: no:
+            - If users want things that look like headings, subheadings, etc,
+              they can achieve it with triple-quoting, indentation, etc.
+
+    - How will Optopus approach the topic of man-pages?
+        - Man-page syntax is not relevant:
+            - Optopus will not generate source-syntax for man-pages.
+            - The spec-syntax could never achieve the level of control used
+              in that realm (troff).
+        - Some users might want help-text mimicking the man-page design.
+            - The key is the make sure they can achieve that (approximately).
+
+    - query() paths and spec-scopes:
+        - Example:
+            - In a grammar we have named entities that nest
+                - x > x > x > x
+            - Consider:
+                - path = x.x.x
+                - would match last two xs
+                - because paths are not anchored to top of hierarchy
+            - How does user write a path to get just one non-last x?
+                - Query paths are not achored at either end.
+                - And they descend by default.
+        - Example:
+            - Simpler and realisic:
+                - Variant and opt with same name.
+                - Or Opt and OptArg with same name.
+                - foo > foo
+            - How does the user get only the top element?
+
+        - Solutions:
+            - Augment syntax: trailing period means don't go deeper:
+                - 'foo.' : gets only 1st
+                - 'foo.foo' : get only 2nd
+                - 'foo' : gets all
+            - Make paths like CSS:
+                - direct parent-child
+                - plus double-dot for recursive
+                - this requires too much user knowledge
+                  of hierarchy details.
+
 Usage and help text: concerns:
 
     - Opt-specs for arg-variants:
@@ -453,7 +512,7 @@ Section:
 
     - Other sections:
 
-        [opt-spec-scope >>] title ::      # Title required
+        [spec-scope >>] title ::      # Title required
         [opt-spec | block-quote]...
 
 Variant:
@@ -500,12 +559,12 @@ Opt-spec:
 
     - Syntax:
 
-        [opt-spec-scope >>] <pos>            [: [help-text]]
-        [opt-spec-scope >>] [alias...] --opt [: [help-text]]
+        [spec-scope >>] <pos>            [: [help-text]]
+        [spec-scope >>] [alias...] --opt [: [help-text]]
 
     - Explanation:
 
-        - An opt-spec-scope is a Parser.query() path declaring the Opt (from
+        - An spec-scope is a Parser.query() path declaring the Opt (from
           the grammar) to which the opt-spec should be connected.
 
         - A <pos> defines one positional argument (ie, positional-spec),
@@ -580,17 +639,20 @@ Block-quotes and literals:
 
     - Quoting:
 
-        Situation            | Quote
+        Quote | Situation
         ----------------------------
-        Block quote          | ```
-        Inline quote         | `
-        Literal backquote    | \`
+        ```   | Block quote
+        ```!  | Block quote, no wrap
+        ```#  | Block quote, spec-comment
+        `     | Inline quote
+        \`    | Literal backquote
 
     - Notes:
 
         - Tripple-quotes can sit on their own line, or not.
 
-        - To suppress wrapping: append ! to the opening triple-quote.
+        - For no-wrap and spec-comment, the additional markers (exclamation or
+          pound-sign) are applied only to the opening quote.
 
 Names:
 
@@ -688,133 +750,12 @@ Parser configuration: spec-vs-API: EX_JOB_CLIENT
 blort: EX_BLORT
 
     - A subcommand-style script.
-    - Includes a full spec (with opt-specs) and the resulting usage-text.
+    - Includes a full spec and the resulting usage-text.
     - Plus bells and whistles to exercise most of the spec-syntax.
     - Includes Opts with same-name and different-config.
+    - Several notes to document the spec syntax and behaviors.
 
-    - Notes on the spec:
-
-        - Variants:
-            - Partial (help!) used in other partials.
-            - Partials (general!, chat!) used in variants.
-            - Arg-variants, based on <task>.
-            - Partials to aid readability of the <task> variants.
-            - Variants with different grammars (fubb, wizz), thus illustrating
-              a subcommand-style program without the usual rigidity.
-
-        - Sections and opt-specs:
-            - Some Opt names appear in multiple variants, sometimes
-              with different Opt configuration needs.
-            - The opt-spec lines for such Opts are disabiguated
-              via opt-spec-scopes, in two ways:
-                - For an entire section (eg, 'configure >>').
-                - For specific Opts (see -x).
-
-    - The spec:
-
-        help! : [--help] [--syntax]
-
-        general! : general-options=([--verbose] [--log-file <path>] help!)
-        chat!    : chat-options=([--hi] [--bye] help!)
-
-        configure! : --env <host> --user <id> [--indent <n>] [--person <name>]
-        submit!    : -c <> -r <> [--start-job] [--person <name> <age>]
-        get!       : -j <> [--json [--indent <n>] | --b64 | --yaml]
-        drop!      : <method=first|last|random> <n> [--print]
-
-        configure : <task=configure> configure! general!
-        submit    : <task=submit> submit! general!
-        get       : <task=get> get! general!
-        drop      : <task=drop> drop! general!
-
-        fubb : <fubb>... (--fast | --slow) [-a] [-b] [-x] chat!
-        wizz : triples=(<a> <b> <c> [-z]){2,7} [-x] [-y] chat!
-
-        configure >> Arguments: configure task ::
-
-        --env <host>      : Blah blah
-        --user <id>       : Blah blah
-        [--indent <n>]    : Blah blah
-        [--person <name>] : Blah blah
-
-        submit >> Arguments: submit task ::
-
-        -c <>                   : Blah blah
-        -r <>                   : Blah blah
-        [--start-job]           : Blah blah
-        [--person <name> <age>] : Blah blah
-
-        get >> Arguments: get task ::
-
-        -j <>          : Blah blah
-        [--json]       : Blah blah
-        [--indent <n>] : Blah blah
-        [--b64]        : Blah blah
-        [--yaml]       : Blah blah
-
-        drop >> Arguments: drop task ::
-
-        <method=first|last|random> : Blah blah
-        <n>                        : Blah blah
-        [--print]                  : Blah blah
-
-        Arguments: other ::
-
-        <fubb>...           : Blah blah
-        --fast              : Blah blah
-        --slow              : Blah blah
-        [-a]                : Blah blah
-        [-b]                : Blah blah
-        fubb >> [-x]        : Blah blah fubbity
-
-        <a>                 : Blah blah
-        <b>                 : Blah blah
-        <c>                 : Blah blah
-        [-z]                : Blah blah
-        wizz >> [-x]        : Blah blah wizzity
-        [-y]                : Blah blah
-
-        [--help]            : Blah blah
-        [--syntax]          : Blah blah
-        [--verbose]         : Blah blah
-        [--log-file <path>] : Blah blah
-        [--hi]              : Blah blah
-        [--bye]             : Blah blah
-
-    - Notes on the usage text:
-        - In an argument-variant, the choice operates as a literal:
-            - In usage-text a literal is prioritized over the name.
-            - Hence the usage text uses 'configure', 'submit', and so forth,
-              rather than '<task>'.
-        - The user declared the names 'method' and 'triples' in the spec
-          because they wanted the underlying dests.
-            - The usage-text below assumes the user made API calls to unset the
-              names to suppress them from usage-text.
-
-            - If the user had not unset the Opt(method).name, the relevant
-              usage-text snippets would have looked like this:
-
-                blort drop <method> ...
-
-                ...
-
-                Where method:
-                    first|last|random
-
-    - Usage-text (omitting the section title): EX_BLORT_USAGE
-
-        blort configure --env <host> --user <id> [--indent <n>] [--person <name>] [general-options]
-        blort submit -c <> -r <> [--start-job] [--person <name> <age>] [general-options]
-        blort get -j <> [--json [--indent <n>] | --b64 | --yaml] [general-options]
-        blort drop <first|last|random> <n> [--print] [general-options]
-        blort <fubb>... (--fast | --slow) [-a] [-b] [-x] [chat-options]
-        blort (<a> <b> <c> [-z]){2,7} [-x] [-y] [chat-options]
-
-        Where general-options:
-            [--verbose] [--log-file <path>] [--help] [--syntax]
-
-        Where chat-options:
-            [--hi] [--bye] [--help] [--syntax]
+    - See misc/examples/optopus-mock-ups/blort.py
 
 neck-diagram: EX_NECK_DIAG
 
@@ -889,6 +830,7 @@ Help text:
     Opt text     | Help text for a single positional or option.
 
 Spec:
+    - More formally: parser-spec.
     - A Parser specification.
     - Text blob defining Parser's grammer, Opts, help sections, and text.
 
@@ -1097,7 +1039,7 @@ Parser:
 
                     - Example: the grammar has three -x flags that need
                       different help-texts. The user can see how those Opts are
-                      ordered in the spec. Their opt-spec-scopes can simply
+                      ordered in the spec. Their spec-scopes can simply
                       index into that ordering.
 
                         --foo [-x] | --bar [-f] [-x] | --blort [-x]
@@ -2812,7 +2754,7 @@ Policy decisions:
             - The intuitive parts:
                 - Same name.
                 - Same kind: positional or option.
-                - Agreement with the opt-spec-scope (if any).
+                - Agreement with the spec-scope (if any).
 
             - The deeper principle:
                 - The configuration from the opt-spec must be additive.
@@ -2825,7 +2767,7 @@ Policy decisions:
 
             - If no opts match, Optopus will raise.
 
-    - Opt-spec-scopes to disambiguate, via this syntax:
+    - Spec-scopes to disambiguate, via this syntax:
 
         PARENT >> CHILD
 
@@ -2896,7 +2838,7 @@ Discussion of the policy across various domains:
         - That data is narrowly correct (and awkward).
         - User can configure more sensibly if they do not like it.
 
-Background for the opt-spec-scope syntax:
+Background for the spec-scope syntax:
 
     - It borrows from CSS syntax for parent-child.
 
@@ -4085,7 +4027,7 @@ Policy under most circumstances:
     - An entity is represented by its name in usage-text and spec.
     - Under most circumstances, that is true for OptArgs.
 
-But when and OptArg has either choices or choice, things change:
+But when an OptArg has either choices or choice, things change:
 
     - OptArg with choices:
         - Use the name, if defined.
