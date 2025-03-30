@@ -86,6 +86,57 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Usage and help text: concerns:
+
+    - Opt-specs for arg-variants:
+
+        - Scenario:
+            - User wants to document the values for positional.
+            - Common use case: subcommands.
+
+        - Examples:
+            - EX_BLORT
+            - EX_BLORT_USAGE
+                - Revisit this:
+                    - I'm concerned about the where-documentation.
+                    - It's non-standard.
+                    - A similar use case is documenting the subcommand
+                      values. But I don't see a clear mechanism to
+                      handle them in the same way as the where-docs.
+
+            - Click: repo (Optopus rewrite)
+
+        - User can write opt-specs for the values:
+
+            <task=configure> : Configure the blort
+            <task=submit>    : Submit the blort
+            <task=get>       : Get the blort
+            <task=drop>      : Drop the blort
+
+        - How do the following occur:
+            - Document the subcommands as part of the Usage section?
+                - Put the opt-specs in that section.
+            - The user might hope for a heading analogous to the "Where"
+              headings in EX_BLORT_USAGE.
+                - Optopus knew to add that where-documentation because names
+                  were declared for the groups of Opts.
+                - Could the default behavior be the following:
+                    - If arg-variant opt-specs with help text are defined,
+                      put them under a where-heading.
+
+            - A related blank line issue:
+
+                - How would a user achieve an outcome like the following
+                  where we have a heading (but its not a section) and
+                  then some indented stuff, with no blank line between.
+
+                    Steps:
+                        (1) First
+                        (2) Middle
+                        (3) Last
+
+                - I guess with a block-quote (nowrap).
+
 Dispatch :
     - take notes on
         misc/examples/click/ex4-repo.py
@@ -4798,6 +4849,10 @@ Python: Click
         - Code readability is poor:
             - Configuration ends up scattered across decorators.
             - Not easy to understand script usage at a glance.
+
+        - Heavy API burden:
+            - A lot of API to learn just for the documentation's main examples.
+            - A API is even more sprawling as you read through the details.
 
         - Reasonably good support for:
             - Using configuration files as defaults.
