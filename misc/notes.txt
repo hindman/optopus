@@ -88,13 +88,28 @@ todos: TODOs
 
 Opto:
 
-    - NEXT:
-        - keep working on the blort.py mock-up
-        - this exercise has been useful
-        - do something similar for the Click repo example.
-        - for blort.py try to write code for:
-            - general help (just Usage)
-            - help for specific section, based on <task>
+    - Mock-ups:
+
+        - naval-fate
+        - Click repo.
+        - Other?
+
+    - Bundling Context with Result:
+        - Make Result callable!
+        - Not sure:
+            - When I typed the code in blort.py, it was jarring.
+            - The theory is sound.
+            - But the resulting code does not read in an intuitive way.
+
+        - New plan:
+            - Store the Context instance under attribute 'ctx'.
+            - The user can change attribute name to avoid name collision.
+            - Raise if the user neglects a needed change.
+
+            p = Parser(SPEC, ctx = NEW_NAME)
+            opts = p.parse(ARGS)
+            c = opts.ctx           # Context
+            p = c.parser           # Parser
 
     - Do not try to document the parts of usage-text that have symolic names.
         - Let the user write headings and opt-specs in usage-section if they
@@ -749,13 +764,13 @@ Parser configuration: spec-vs-API: EX_JOB_CLIENT
 
 blort: EX_BLORT
 
+    - See misc/examples/optopus-mock-ups/blort.py
+
     - A subcommand-style script.
     - Includes a full spec and the resulting usage-text.
     - Plus bells and whistles to exercise most of the spec-syntax.
     - Includes Opts with same-name and different-config.
     - Several notes to document the spec syntax and behaviors.
-
-    - See misc/examples/optopus-mock-ups/blort.py
 
 neck-diagram: EX_NECK_DIAG
 

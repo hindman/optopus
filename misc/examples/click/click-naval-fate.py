@@ -1,3 +1,11 @@
+
+'''
+
+TODO: collect the help text
+    - very tedious
+
+'''
+
 import click
 
 

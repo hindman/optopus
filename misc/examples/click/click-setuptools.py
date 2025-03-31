@@ -2,9 +2,12 @@ import click
 
 '''
 
+From Click documentation:
+    - An example when discussing Multi Command Chaining
+
 The generated help text:
 
-    Usage: blort [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
+    Usage: ex3-setuptools.py [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...
 
     Options:
       --help  Show this message and exit.
@@ -12,19 +15,6 @@ The generated help text:
     Commands:
       bdist_wheel
       sdist
-
-The Optopus configuration is simultaneously:
-    - Simpler configuration.
-    - Simpler, and less generic, help text.
-
-    - The spec:
-
-        (sdist | bdist_wheel)...
-
-    - The help text:
-
-        Usage:
-          blort (sdist | bdist_wheel)...
 
 '''
 
