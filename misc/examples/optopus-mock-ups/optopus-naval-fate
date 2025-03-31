@@ -1,0 +1,43 @@
+#! /usr/bin/env python
+
+# The docopt naval_fate example
+#
+# The docopt syntax has the benefit of being shorter, but this
+# brevity comes at a high cost: an awkward returned opts dict,
+# where literal-positional args that look like subcommands
+# end up being stored as discrete boolean flags.
+
+
+ORIGINAL = '''
+Naval Fate.
+
+Usage:
+  naval_fate ship new <name>...
+  naval_fate ship <name> move <x> <y> [--speed=<kn>]
+  naval_fate ship shoot <x> <y>
+  naval_fate mine (set|remove) <x> <y> [--moored|--drifting]
+  naval_fate -h | --help
+  naval_fate --version
+
+Options:
+  -h --help     Show this screen.
+  --version     Show version.
+  --speed=<kn>  Speed in knots [default: 10].
+  --moored      Moored (anchored) mine.
+  --drifting    Drifting mine.
+
+'''
+
+OLD_NOTES = '''
+
+grammar = [
+    'ship_new   : what=ship        action=new          <name>...',
+    'ship_move  : what=ship <name> action=move         <x> <y> [--speed <kn>]',
+    'ship_shoot : what=ship        action=shoot        <x> <y>',
+    'mine       : what=mine        action=(set|remove) <x> <y> [--moored | --drifting]',
+    'help       : * (-h | --help)',
+    'version    : * --version',
+]
+
+'''
+
