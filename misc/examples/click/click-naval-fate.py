@@ -24,7 +24,6 @@ def cli():
 def ship():
     """Manages ships."""
 
-
 @ship.command("new")
 @click.argument("name")
 def ship_new(name):
