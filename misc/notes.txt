@@ -88,6 +88,10 @@ todos: TODOs
 
 Opt-independence and arg-variants:
 
+    - Tentative decision:
+        - Independence for each Opt implied by the spec.
+        - With an exception for Opts having choice(s).
+
     - Will Optopus unify the action Opts in naval-fate?
     - Does it matter?
     - If each is independent, the grammar would still work.
@@ -149,7 +153,65 @@ Opt-independence and arg-variants:
                   at the time of error can be a subset of the unified-Opt's
                   choices.
 
+        - These error-message examples are unusual edge cases.
+            - Keep arg-parsing simpler: get choices from the Opt.
+            - In these strange use cases:
+                - Yes, the error message will list too many choices.
+                - But the alternative is worse:
+                    - Don't unify the opts.
+                    - Such error messages would list only one choice.
+                - Real solution a more sensible spec from the user.
+
+Arg-variant vs Opt with choices:
+
+    - Tentative decision:
+        - Drop Opt.choice.
+        - An Opt with choices functions 1+ arg-variant(s).
+
+    - Previously I assume arg-variants had exactly 1 choice.
+
+        <step=run>
+        <step=sleep>
+
+    - But that is not quite correct. An Opt with choices can also express
+      multiple arg-variants at once.
+
+        <step=go|wait|stop>
+
+    - Is this ambiguity a problem?
+
+        - Conceptually, I guess it is alright.
+
+            - Express grammar via Opts with 1 choice:
+
+                other! : [--foo] [--bar]
+
+                <step=start> other!
+                <step=stop> other!
+
+            - Same grammar via Opt with 1+ choices:
+
+                <step=start|stop> other!
+
+    - Do Opts need both attributes: choice and choices?
+
+        - I added choice to distinguish:
+            - Opt-with-choices (a validation concern).
+            - Opt-with-choice (a grammatical concern).
+
+        - But the distinction is perhaps unhelpful.
+        - Choices are both:
+            - A mechanism to check for valid input.
+            - A compact way to define alternatives.
+
 Rethinking OptArg:
+
+    - Tentative decisions:
+        - Retain OptArgs.
+        - Positional OptArgs are anonymous.
+
+    - The rest of this discussion goes back and forth:
+        - Edit to reflect decisions.
 
     - Why do positionals have OptArgs?
 
@@ -161,14 +223,51 @@ Rethinking OptArg:
 
     - Is there ever a situation where a positional needs an independent OptArg?
 
+        - For a while I thought no.
+        - But that is incorrect.
+
+        - What is the difference between these?
+
+            - Positional with plural nargs/OptArgs.
+            - Option with the same.
+
+                <path>{2}
+                --point <x> <y>
+                --point <p>{2}
+                --point <p> <p>
+
+            - If you can configure the parameters independently, why not the
+              positional arguments?
+
+            - How Opts can attach names to their OptArgs:
+                - Options:
+                    - Distinct names: <x> <y>
+                    - Common name: <p>{2}
+                    - No name: <> <>
+                - Positionals:
+                    - Common name (copied directly from parent Opt).
+                    - No name.
+
+                    - But for querying reasons, I think the policy should force
+                      them to be anonymous.
+                    - And that would solve the ambiguity the started this whole
+                      line of concern.
+                    - Queries for positionals would not inadvertently snag
+                      their children.
+
         - Positionals cannot have groups as children.
         - For example, this is just three different positionals:
 
             <x> (<y> <z>)...
-        
+
         - Adjacent positionals with same name are distinct Opts:
 
             <x> <x>
+
+        - Noneth
+
+        - At first I thought that even with child-OptArgs, a positional
+          would not end up with independently configurable elements.
 
         - And even if positionals retain the concept of having OptArgs as
           childen, none of these examples would produce independently
@@ -201,43 +300,81 @@ Rethinking OptArg:
 
         - I think the answer is NO.
 
-Rethinking Opt: positionals vs options:
+Rethinking Opt: positionals, options, and literals:
+
+    - Tentative decision:
+        - Separate child classes of Opt.
+        - Literals will implement divider-behavior via groups and anchors.
 
     - The current plan has an Opt to represent both positionals and options.
 
-    - A different model:
-        - class Opt
-        - class Positional(Opt)
-        - class Option(Opt)
+    - A more structured OO approach might be better:
+        - Opt (base class)
+        - Positional
+        - Option
+        - Literal
 
-        - Common attributes:
+    - Putting everything in Opt would involve more conditional logic:
 
-            spec: str
-            name: str
-            dest: str
-            text: str
-            nargs: Quantifier
-            ntimes: Quantifier
-            anchor: bool
-            hide: bool
-            dispatch: callable(s)
-            kind: str                      # Unnecessary.
+        - That consideration is not decisive.
+        - A simpler object-graph can outweigh some conditional logic.
 
-        - Option attributes:
+        - But the child classes really are different:
+            - Positionals are ordered, Options are not.
+            - Literals impose dividers on the grammar (see below).
+            - Options can have aliases, negaters, and be high-precedence.
+            - The subclasses have different policies for name and dest.
 
-            aliases: list[str]
-            elems: list[OptArg or Group]
-            negaters: list[Opt]
-            high_precedence: bool          # Maybe for flags only?
+        - And this project is complex:
+            - A more robust OO approach might pay off over time.
+            - Might help keep the code easier to manage.
 
-Headings and opt-spec listings:
+    - Querying is a bit cleaner:
 
-    - Usage-section in blort.py has headings for the opt-spec listings.
-    - Is that required?
-    - Or will Optopus add a default headings to opt-spec listings?
-    - If so, how would Optopus know to add a heading or not?
+        - Comparison if user goes by the book:
+
+            from optopus import Positional, OptKinds
+            p.query(PATH, kind = Positional)
+            p.query(PATH, kind = OptKinds.positional)
+
+        - Optopus will also support kind='positional'.
+
+    - Literal:
+        - Maybe a subtype of Positional.
+        - No name or dest by default.
+        - Functions as a grammatical divider:
+            - A strict boundary between stuff to its left and right.
+            - A Positional is similar, but less strict:
+                - A divider only among other positionals.
+
+        - Implement this behavior using existing concepts:
+            - When a literal is found:
+
+                - Can the literal be anchored directly?
+                - If yes, do it.
+                - If no, split neighboring elements into left and right halves.
+                - Wrap those halves in anonymous groups.
+                - Anchor the Literal to the end of the left Group.
+
+            - Example:
+
+                # Spec.
+                <x> [--foo] `/` <y> [--bar]
+
+                # Grammar.
+                Group():
+                    Positional(x)
+                    Option(foo)
+                    Literal()
+                Group():
+                    Positional(y)
+                    Option(bar)
 
 Querying for specific things:
+
+    - Decision:
+        - Keep these notes.
+        - API details can be deferred for now.
 
     - Just one element:
 
@@ -252,6 +389,10 @@ Querying for specific things:
         etc
 
 Queries, opt-independence, and arg-variants:
+
+    - Decision:
+        - Do not augment the query() syntax for PATH.
+        - Other decisions make this problem less pressing.
 
     - Questions occurred when working on naval-fate.
 
@@ -287,6 +428,11 @@ Queries, opt-independence, and arg-variants:
 
 Should a literal in the grammar also be an Opt:
 
+    - Decision:
+        - Add Literal class.
+        - Other details are in a prior section.
+        - Write up any useful notes on the subject.
+
     - Opt(LIT)
 
     - What would the dest for the literal(s) be?
@@ -312,153 +458,238 @@ Should a literal in the grammar also be an Opt:
         - If a literal has a quantifier, it is a de facto var-input.
         - If the user cares about the data, they should make it a proper Opt.
 
-    - Tentative decision:
-        - Still NO: literals are not first-class Opts.
+    - My second thought: still NO:
+        - Literals are not first-class Opts.
         - Maybe the Context could report basic info on literals present to
           support oddball use cases.
 
+    - But the current data-modeling plan does not have a home for literals:
+
+        - Parser.grammar.elems : list[Opt or Group]
+        - Seems like a problem.
+
+        - Possible decisions: combine this issue with a class-rethink:
+            - Opt: base class.
+            - Child classes:
+                - Positional
+                - Option:
+                    - Has more attributes than Positional.
+                - Literal:
+                    - Anonymous and empty-dest by default.
+                    - User can set a dest.
+                    - Otherwise, the data is discarded.
+
 Bundling Context with Result:
 
-    - Make Result callable!
-
-    - Ater further reflection:
-        - When I typed the code in blort.py, it was jarring.
-        - The theory is sound.
-        - But the resulting code does not read in an intuitive way.
-
-    - New plan:
-
-        - Store the Context instance under attribute 'ctx'.
+    - Decision:
+        - Store the Context instance under a named attribute.
+        - Leading candidate for now: 'ctx' (see below).
         - The user can change attribute name to avoid name collision.
         - Raise if the user neglects a needed change.
 
-        p = Parser(SPEC, ctx = NEW_NAME)
-        opts = p.parse(ARGS)
-        c = opts.ctx           # Context
-        p = c.parser           # Parser
+    - Possible attribute names:
+        - ctx
+        - context
+        - opto
+        - optopus
+        - info
 
-        - Naming:
-            - Is ctx too opaque?
-            - Or that virtue: less likely to collide?
-            - Other options:
-                - context
-                - opto
-                - optopus
-                - info
+    - How a user works around a name collision:
 
-Do not try to document the parts of usage-text that have symolic names.
-    - Let the user write headings and opt-specs in usage-section if they
-      want to document symbolic-names in the usage, options, positionals,
-      arg-variants, etc.
+        p = Parser(SPEC, context_attr = NEW_NAME)
 
-Does spec-syntax need "headings"?
-    - Something between a section and ordinary text?
-    - Maybe akin to subheadings.
-    - Verdict: no:
-        - If users want things that look like headings, subheadings, etc,
-          they can achieve it with triple-quoting, indentation, etc.
+    - Alternative rejected: making Result callable:
+        - When I typed mock-up code in blort.py, it was jarring.
+        - The theory is sound.
+        - But the resulting code does not read in an intuitive way.
 
-How will Optopus approach the topic of man-pages?
-    - Man-page syntax is not relevant:
-        - Optopus will not generate source-syntax for man-pages.
-        - The spec-syntax could never achieve the level of control used
-          in that realm (troff).
-    - Some users might want help-text mimicking the man-page design.
-        - The key is the make sure they can achieve that (approximately).
+Documenting symbolically named collections in usage-text:
 
-query() paths and spec-scopes:
-
-    - Example:
-        - In a grammar we have named entities that nest
-            - x > x > x > x
-        - Consider:
-            - path = x.x.x
-            - would match last two xs
-            - because paths are not anchored to top of hierarchy
-        - How does user write a path to get just one non-last x?
-            - Query paths are not achored at either end.
-            - And they descend by default.
-    - Example:
-        - Simpler and realisic:
-            - Variant and opt with same name.
-            - Or Opt and OptArg with same name.
-            - foo > foo
-        - How does the user get only the top element?
-
-    - Solutions:
-        - Augment syntax: trailing period means don't go deeper:
-            - 'foo.' : gets only 1st
-            - 'foo.foo' : get only 2nd
-            - 'foo' : gets all
-        - Make paths like CSS:
-            - direct parent-child
-            - plus double-dot for recursive
-            - this requires too much user knowledge
-              of hierarchy details.
-
-Usage-text and help text with arg-variants:
-
-    ** I might have worked this all out already: CHECK.
-
-    - Scenario:
-        - User wants to document the values for positional.
-        - Common use case: subcommands.
+    - Decision:
+        - Do not generate documentation for symbolically named collections.
+        - Let the user organize and label this stuff.
 
     - Examples:
-        - EX_BLORT
-        - EX_BLORT_USAGE
-            - Revisit this:
 
-                - I'm concerned about the where-documentation.
-                - It's non-standard.
-                - A similar use case is documenting the subcommand
-                  values. But I don't see a clear mechanism to
-                  handle them in the same way as the where-docs.
+        - Named Group of Opts.
 
-        - Click: repo (Optopus rewrite)
+            other-options=([--foo] [--bar] [--fubb] <path>)
 
-    - User can write opt-specs for the values:
+        - Choice values: arg-variants.
 
-        <task=configure> : Configure the blort
-        <task=submit>    : Submit the blort
-        <task=get>       : Get the blort
-        <task=drop>      : Drop the blort
+            <action=walk|run|freeze>
 
-    - How do the following occur:
-        - Document the subcommands as part of the Usage section?
-            - Put the opt-specs in that section.
-        - The user might hope for a heading analogous to the "Where"
-          headings in EX_BLORT_USAGE.
-            - Optopus knew to add that where-documentation because names
-              were declared for the groups of Opts.
-            - Could the default behavior be the following:
-                - If arg-variant opt-specs with help text are defined,
-                  put them under a where-heading.
+    - Early mockups tried to document such things automatically:
 
-        - A related blank line issue:
+    - Problems:
+        - Raises too many detailed questions.
+        - Layout, ordering, labelling via headings, etc.
 
-            - How would a user achieve an outcome like the following
-              where we have a heading (but its not a section) and
-              then some indented stuff, with no blank line between.
+        - To document such things, opt-specs are required.
+        - Let the user organize those opt-specs as desired.
+        - And surround the opt-spec listings with the desired text, headings,
+          or sections.
 
-                Steps:
-                    (1) First
-                    (2) Middle
-                    (3) Last
+Automatically generated headings for opt-spec listings:
 
-            - I guess with a block-quote (nowrap).
+    - Decision:
+        - Generated default headings for opt-spec listings.
+        - User can override behavior in two ways:
+            - Put their own heading in front of the listing.
+            - API call to suppress auto-heading (details TBD).
 
-High-precendence: naming and rethinking:
+    - Common scenarios in a usage-section:
+        - Just variants and opt-specs (no blocks-quotes).
+        - Optopus should generate default headings for such scenarios.
+
+    - Similar logic in other sections:
+        - Will be common for a section to have nothing more than a section
+          title, maybe some block-quoted text, and then an opt-spec listing.
+        - Optopus should attach standard headings to those listings.
+
+Optopus and man-pages:
+
+    - Decision:
+        - Optopus will not generate source-syntax for man-pages.
+
+    - Rationale:
+        - Spec-syntax could never achieve what troff can do.
+        - Some users might want help-text mimicking man-page design.
+        - The key: make sure they can achieve that (generally).
+
+Repeated names and querying for distinct elements:
+
+    - Decision:
+        - Do not augment the query syntax.
+        - User can fallback to indexes where needed.
+        - In simple/realistic situations, that will not be a burden.
+
+    - Example: simpler and realistic:
+        - Variant and opt with same name: foo > foo.
+        - How does the user get only the top element?
+
+    - Example: pathalogical edge-case:
+        - Several nests elements with same name: x > x > x > x.
+
+    - Rejected alternatives:
+
+        - Trailing period to mean "don't go deeper".
+            - Insufficient by itself.
+            - query('foo.') would still get both elements.
+            - Why: because the path is not anchored to the start.
+            
+        - Also add syntax to anchord to the start.
+            - query('.foo.') would get only the 1st element.
+            - But consider: query('.x.x.').
+                - Would it get only 2nd element?
+                - No: would get 2nd, 3rd, 4th.
+            - Problem: middle dot does not require direct parent-child.
+
+        - Make paths like CSS:
+            - Support both kinds of parentage:
+                - Single-dot: parent-child.
+                - Double-dot: any-descendant.
+            - Problem: insufficient.
+                - query('x.x.x'): gets 3rd and 4th
+                - You also need ability to achor to the start.
+
+        - Double-dot plus start-anchor:
+            - Would work.
+            - query('^x.x.x'): gets only 3rd.
+            - Syntax reasonably intuitive.
+            - But the solution addresses only strange use cases.
+            - Defer this until known need arises.
+
+Headings in the spec-syntax:
+
+    - Decision:
+        - Add headings to the syntax, via triple-colon.
+
+    - Rationale:
+        - Planning notes (above) use the heading concept a lot.
+        - Optopus will generate headings for opt-spec listings in
+          the usage-section.
+        - The syntax is simple enough and reasonably intuitive.
+        - Opens up ability to support consistent styling for headings.
+        - Opens up an automatic-heading policy:
+            - If a group of opt-specs has no heading immediately before it,
+              Optopus will generate one.
+        - Eliminates need to block-quote heading text.
+
+    - Triple vs double colons:
+        - Why not triple-colon for sections, since they have higher status?
+        - Better to having N colons convey depth in hierarchy.
+        - Leaves open possiblity of supporting subheadings.
+
+Support smart-types for convert/validate:
+
+    - Decision:
+        - Add to roadmap and preserve these notes.
+        - Defer API details.
+
+    - Supporting common use cases makes some sense.
+        - Yes the user can write their own convert/validate.
+        - But doing the common things well is handy.
+        - Opens up support for more informative errors.
+        - Similar in spirit to other Optopus utilities:
+            - Exiting with proper codes.
+            - Printing errors in a consistent style.
+
+    - Click:
+
+        - The library provides various data-objects.
+        - They hold configuration to perform convert/validate.
+
+        - Examples:
+              click.Path(...)       | Requirements to impose on a path
+              click.File(...)       | Ditto, plus how to open the file
+              click.IntRange(...)   | Min, max, etc
+              click.FloatRange(...) | Min, max, etc
+              click.DateTime(...)   | Allowed formats
+
+    - Note on convert vs validate:
+        - Optopus supports but does not require both.
+        - User can do both in convert.
+
+Prompting for OptArgs:
+
+    - Decision:
+        - Add to roadmap.
+        - API details deferred.
+
+    - Click supports this.
+    - Example use case: credentials.
+
+Raising errors in convert/validate:
+
+    - Decision:
+        - If exception, get its MSG.
+        - Then build the full Optopus error message, with MSG at end.
+
+    - Other libraries require users to raise specific exceptions:
+        - argparse.ArgumentError
+        - click.BadParameter
+
+    - Seems like a needless hassle:
+        - Just get the msg from any Exception instance.
+
+__HERE2__
+
+High-precedence: naming and rethinking:
+
+    - Alternative names:
+        - eager
+        - priority (priorty-flags)   # Leaning in this direction.
 
     - Naming ideas from the Click project:
-        - Eager rather than high-precendence.
+        - Eager rather than high-precedence.
         - Resilient-parsing:
             - Mainly as an internal concept.
             - Relevant contexts:
-                - High-precendence Opts.
+                - High-precedence Opts.
                 - When supporting command-line completion.
 
-        - Click eagerness and Opts high-precendence differ:
+        - Click eagerness and Opts high-precedence differ:
 
             - Not clear that Click can dispatch to eager Opts even in the face
               of end-user mistakes.
@@ -471,46 +702,19 @@ High-precendence: naming and rethinking:
 
         - If end-user gives bad inputs.
         - Then the Result will be empty or, at best, incomplete.
-        - My notes to recognize that problem.
+        - My notes do recognize that problem.
         - The speak of a "best effort" parsing.
 
         - Consider how parsing would work:
             - Parsing of all ARGS fails.
             - Select variant that did the best (eg, max N ARGS consumed).
             - Best-effort populates a Result up to the ARG that failed.
-            - But imagine that the high-precendence Opt is the last ARG.
+            - But imagine that the high-precedence Opt is the last ARG.
             - How do we know that --help, for example, was supplied without
               doing the actual parsing?
 
             - If the hp-Opt is a simple flag, it is pretty easy.
             - But supporting other grammatical entities seems fraught.
-
-Support smart-types for convert/validate:
-    - Yes the user can write their own convert/validate.
-    - But supporting the common use cases might be good.
-    - How Click does it:
-        - The library provides various data-objects.
-        - The object hold configuration details to perform the needed
-          conversions and checks.
-    - Examples:
-          click.File(...)       | How to open the file
-          click.Path(...)       | Requirements to impose on the path
-          click.IntRange(...)   | Min, max, etc
-          click.FloatRange(...) | Min, max, etc
-          click.DateTime(...)   | Allowed formats
-          click.ParamType       | Parent class for user to implement their own
-
-    - Note:
-        - Optopus support convert and validate.
-        - But it does not require both steps.
-        - A user can, for example, do everything under convert.
-        - That is most likely where a smart-type would be used.
-            - Similar to type=int in argparse, for example.
-
-Prompting for OptArgs:
-    - Click supports this.
-    - Not a bad idea (eg for passwords).
-    - Maybe this can be achieved via dispatch mechanisms.
 
 Assess environment variables again:
     - Click supports getting OptArg defaults from environment variables.
@@ -519,30 +723,26 @@ Assess environment variables again:
     - Or can be done more specifically: option('--fubb', envvar = 'FUBB_VAL')
     - Will this fit well with my approach for applied_defaults?
 
-How will convert/validate functions raise errors:
-    - Click has exception classes (eg click.BadParameter).
-    - Used to support each raising and nice error message to end-users:
-
-        # In validate function for Opt(--bar) in the blort program.
-        raise click.BadParameter('blah-blah')
-
-        # Error message to end-user.
-        blort: invalid value for '--bar': blah-blah
-
 *******************************
 **** TODO items begin here ****
 *******************************
 
-Address questions/thoughts collected above:
-    - Decide.
-    - Edit.
-    - Etc.
+New questions and notes (above):
+
+    - Make decisions.
+        __HERE2__
+
+    - Implement those decisions:
+        - Move notes to proper homes in notes.txt.
+        - Edit as needed.
+        - Edit the rest of the document to align with new policies.
 
 Mock-ups: create several more:
     * This has been very useful to expose questions/issues.
     * Add references to the examples section, where relevant.
 
     - naval-fate
+    - EX_BLORT: revisit.
     - Click repo.
         - Click's approach is quite awkward.
         - Also mock up how dispatching would work.
@@ -554,7 +754,7 @@ Mock-ups: create several more:
 
 Editing pass over the rest of notes.txt:
 
-    __HERE__
+    __HERE1__
 
     - Edit to conform to new specification.
     - Add 'Summary' at the top of section, where applicable.
@@ -678,7 +878,7 @@ Dispatching:
 
 Grammar enhancements:
 
-    High-precendence options.
+    High-precedence options.
 
     Anchored Opts.
 
@@ -2395,11 +2595,11 @@ other command-line arguments. Some examples of desired behavior:
 Most argument parsers fail on #3 (they gripe instead of helping) and they do
 not easily support #2.
 
-Optopus addresses those problems with two mechanisms: high-precendence options
-and flexible dispatching. If an option is configured to be high-precendence,
+Optopus addresses those problems with two mechanisms: high-precedence options
+and flexible dispatching. If an option is configured to be high-precedence,
 its presence among the command-line arguments will trigger whatever action it
 has been configured to perform, and that dispatching configuration will take
-precendence over error reporting. When high-precendence options are used, the
+precendence over error reporting. When high-precedence options are used, the
 parser performs a best-effort parsing to collect as much contextual information
 as it can before calling the code responsible taking action.
 
@@ -3500,7 +3700,7 @@ Simpler approach:
 help-distpatching: Help distpatching
 --------
 
-__HERE__
+__HERE1__
 
 Optopus aims to support behavior like this:
 
@@ -5183,7 +5383,7 @@ Python: Click
         - At least within the larger limits of the system.
         - But the API footprint is moderately large.
 
-    - Supports eager options (like high-precendence Opts).
+    - Supports eager options (like high-precedence Opts).
 
     - Supports file handling and various other smart types:
         - Meaning types that carry additional requirements for
