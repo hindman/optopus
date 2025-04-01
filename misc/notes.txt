@@ -40,6 +40,7 @@ toc: Table of contents
         arg-parsing-algo              | Parsing algorithm
         alternative-parsing-algo      | Alternative parsing algorithm won't work after all
         ambiguous-grammars            | Ambiguous grammars are not an issue
+        opt-choices-vs-choice         | Opt.choices vs Opt.choice
         opt-independence              | Opt independence, duplicate names/dest, and opt-spec scope
         parsed-data-structure         | Parsed data structuring: nargs, ntimes
         eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
@@ -88,6 +89,11 @@ todos: TODOs
 --------
 
 new-notes : implement decisions:
+
+    - Implementation TODOs:
+
+        - Drop Opt.choice.
+        - Clarify arg-variant defintion.
 
     - Move notes to proper homes in notes.txt.
     - Edit as needed.
@@ -148,124 +154,6 @@ Argument parsing.
 --------
 new-notes: New notes
 --------
-
-Opt-independence and arg-variants:
-
-    - Tentative decision:
-        - Independence for each Opt implied by the spec.
-        - With an exception for Opts having choice(s).
-
-    - Will Optopus unify the action Opts in naval-fate?
-    - Does it matter?
-    - If each is independent, the grammar would still work.
-    - If unified (because they include arg-variants), what
-      is the governing policy?
-
-    - One problem with not unifying:
-        - Optopus won't know the valid choices.
-        - Thus, error message won't be able to list the choices.
-
-    - Perhaps the governing policy is:
-
-        - Regular Opts are not unified.
-
-        - But Opts implied by arg-variants (via choice and/or choices) are
-          unified.
-
-    - Also notice:
-
-        - In my planning, arg-variants are framed as one choice per variant.
-        - But naval-fate deviates from that model:
-            - <weapon=ship> appears in multiple variants
-            - <action> is declared in two ways:
-                <action=CHOICE>
-                <action=CHOICE|CHOICE|...>
-
-    - Oddball question:
-
-        - Can the same arg-variant be used more than once in a variant?
-
-            <action=pitch> <action=balk|stop> [--foo]
-            <action=catch> [--bar] [--foo]
-
-        - I think the spec-parsing and argument-parsing could handle it.
-
-        - Error messages raise questions:
-
-            - Example usage:
-
-                bball pitch whack --foo
-
-                bball: error: invalid <action>: choices: 'balk', 'stop'
-
-                - Optopus could achieve that error message, provided that at
-                  arg-parsing time is reported the choices based on the current
-                  OptArg, not the choices for a fully-unified Opt(action).
-
-            - Example usage:
-
-                bball cat --bar
-
-                bball: error: invalid <action>: choices: 'pitch', 'catch'
-
-                - How does Optopus achieve that?
-                - I suspect that my current arg-parsing strategy relies on the
-                  Opt being unified and reasonable. In those situations, you
-                  just get choices from the Opt.
-                - But examples like these illustrate that the relevant choices
-                  at the time of error can be a subset of the unified-Opt's
-                  choices.
-
-        - These error-message examples are unusual edge cases.
-            - Keep arg-parsing simpler: get choices from the Opt.
-            - In these strange use cases:
-                - Yes, the error message will list too many choices.
-                - But the alternative is worse:
-                    - Don't unify the opts.
-                    - Such error messages would list only one choice.
-                - Real solution a more sensible spec from the user.
-
-Arg-variant vs Opt with choices:
-
-    - Tentative decision:
-        - Drop Opt.choice.
-        - An Opt with choices functions 1+ arg-variant(s).
-
-    - Previously I assume arg-variants had exactly 1 choice.
-
-        <step=run>
-        <step=sleep>
-
-    - But that is not quite correct. An Opt with choices can also express
-      multiple arg-variants at once.
-
-        <step=go|wait|stop>
-
-    - Is this ambiguity a problem?
-
-        - Conceptually, I guess it is alright.
-
-            - Express grammar via Opts with 1 choice:
-
-                other! : [--foo] [--bar]
-
-                <step=start> other!
-                <step=stop> other!
-
-            - Same grammar via Opt with 1+ choices:
-
-                <step=start|stop> other!
-
-    - Do Opts need both attributes: choice and choices?
-
-        - I added choice to distinguish:
-            - Opt-with-choices (a validation concern).
-            - Opt-with-choice (a grammatical concern).
-
-        - But the distinction is perhaps unhelpful.
-        - Choices are both:
-            - A mechanism to check for valid input.
-            - A compact way to define alternatives.
 
 Rethinking OptArg:
 
@@ -3119,6 +3007,39 @@ But that's not a problem, because Optopus can do what regular expression
 engines do: greedy assignment by default, non-greedy by configuration.
 
 --------
+opt-choices-vs-choice: Opt.choices vs Opt.choice
+--------
+
+Early planning made a distinction:
+
+    - Regular Opt: with choices:
+    - Assumed to be purely a validation concern.
+
+        <step=run|walk|fly>
+
+    - Arg-variant: Opt with 1 choice.
+    - A grammatical concern.
+
+        <step=eat>
+
+But that dichotomy is flawed:
+
+    - Grammar via Opts with 1 choice:
+
+        other! : [--foo] [--bar]
+
+        <step=start> other!
+        <step=stop> other!
+
+    - Same grammar via Opt with 1+ choices:
+
+        <step=start|stop> other!
+
+    - Choices are both:
+        - A mechanism to check for valid input.
+        - A compact way to define alternatives.
+
+--------
 opt-independence: Opt independence, duplicate names/dest, and opt-spec scope
 --------
 
@@ -3131,9 +3052,11 @@ How should Optopus handle repetitions of a name/dest within a spec?
     - Notation:
         - Discussion will use "name" to represent name or dest.
 
-Start with some theoretical examples:
+    - Begin with several examples:
 
-    - They are not meant to be realistic.
+Examples: some theoretical edge cases:
+
+    - These are not meant to be realistic.
     - Not easy to envision a good use case for many of them.
     - But they do sketch a broad range of possibilities.
     - They do not include name repetitions among group names.
@@ -3170,25 +3093,8 @@ Start with some theoretical examples:
         <x> (<x>{2})...             # Different configuration.
         -x <x> <x>                  # Different kinds.
 
-Key issues:
+Example: a small and plausible sub-command program:
 
-    - One question is policy:
-
-        - Should Optopus disallow name repetitions, either
-          entirely or for specific situation?
-
-    - Another question deals with Parser configuration:
-
-        - Should Optopus consolidate Opts having the same name/config?
-        - A limited form of Opt uniqueness.
-
-        - Or should each Opt implied by the spec be a unique Opt, regarless of
-          name repetition?
-        - A form of Opt independence.
-
-A small and plausible example:
-
-    - A subcommand-style program
     - The --bar option needs different:
         - N of parameters.
         - Help-texts.
@@ -3215,7 +3121,7 @@ A small and plausible example:
     - How would Optopus know to connect the opt-specs to the correct Opts in
       the usage grammar?
 
-        - The natural home for likely configuration differences is the spec:
+        - Natural home for some likely configuration differences is the spec:
             - Help text.
             - Aliases.
             - The grammar within the Opt's arguments (as shown above).
@@ -3232,14 +3138,13 @@ A small and plausible example:
 
             - But forcing user to check/fix the connections via API seems awkward.
 
-Other plausible examples:
+Examples: plausible separator-based grammars:
 
-    - Separator-based grammars like nab and neck-diagram:
-        - EX_NAB
-        - EX_NECK_DIAG
+    - EX_NAB
+    - EX_NECK_DIAG
 
-    - These examples illustrate why Opt independence within the same
-      variant is sometimes needed:
+    - These illustrate why Opt independence within the same variant is
+      sometimes needed:
 
         - I considered disallowing name reuse within variants.
 
@@ -3247,10 +3152,49 @@ Other plausible examples:
             - Where the subcommands can be used in sequence.
             - The sequence can even include repetitions of the same subcommand.
 
-        - Subcommand are likely to need Opts having the same name:
+        - Subcommands are likely to need Opts having the same name:
             - Often with same configuration across Opts sharing a name.
             - But not always.
             - Especially in help-text and aliases.
+
+Example: arg-variants:
+
+    - This type of example was overlooked in prior planning.
+    - Similar example: Optopus naval-fate.
+
+    <action=pitch> <action=balk|stop> [--foo]
+    <action=catch> [--bar] [--foo]
+
+    - Two key points:
+
+        - Unifying the <action> Opts is compelling:
+            - So Parser knows choices and can provide helpful error messages.
+
+        - An arg-variant can be repeated within one variant.
+            - When that occurs the Opt.choices are trickier.
+                - pitch|catch
+                - balk|stop
+
+Key issues:
+
+    - Validity of name repetition:
+
+        - Should Optopus disallow repetitions? If so, how widely:
+
+        - Across entire spec.
+        - Within a variant.
+        - Within a the innnermost enclosing-entity:
+            - Alternative
+            - Group
+            - Variant.
+
+    - Opt unification/consolidation:
+
+        - Should each Opt implied by spec be distinct?
+        - Strict Opt independence.
+
+        - Should Optopus consolidate Opts having the same name/config?
+        - Limited Opt independence.
 
 Policy decisions:
 
@@ -3258,7 +3202,12 @@ Policy decisions:
         - This is the governing approach.
         - Create a distinct Opt for each entity implied by the spec.
 
-    - Eager connection:
+    - But with an important exception:
+        - Opts having choice(s).
+        - These will be unified under the shared name.
+
+    - Connection opt-spec configurations to Opts from the variants:
+
         - An opt-spec will be connected to all Opts in the grammar having
           compatible configurations.
 
@@ -3335,6 +3284,25 @@ Discussion of the policy across various domains:
         - Parsing involves putting arguments in viable slots.
         - No deep problems are caused by slots having same name.
         - Or by slots accepting the same kinds of things.
+
+    - Arg-variants and error messages:
+
+        - Opts with choices will be unified if they share a name.
+        - For some edge-case usages, Opt.choices will be too broad.
+
+        - That is an acceptable cost in those situations:
+            - Yes, the error message will list too many choices.
+            - But the alternative is worse:
+                - Do not unify the Opts.
+                - Such error messages would list only one choice!
+            - Real solution a more sensible spec from the user.
+
+        - Better to keep arg-parsing simpler.
+            - At the moment of invalid input, get the valid choices from the
+              unified Opt.
+            - Implemented a correct listing of choices would require also
+              storing a subset of choices in the OptArg.
+            - Which might be too awkward.
 
     - Consolidation necessarily occurs during Result creation:
 
