@@ -10,6 +10,7 @@ toc: Table of contents
 
         toc       | Table of contents
         todos     | TODOs
+        new-notes | New notes
         road-map  | Road map
         dev-notes | Dev notes
 
@@ -84,6 +85,68 @@ toc: Table of contents
 
 --------
 todos: TODOs
+--------
+
+new-notes : implement decisions:
+
+    - Move notes to proper homes in notes.txt.
+    - Edit as needed.
+    - Edit the rest of the document to align with new policies.
+
+Mock-ups: create several more:
+    * This has been very useful to expose questions/issues.
+    * Add references to the examples section, where relevant.
+
+    - naval-fate
+    - EX_BLORT: revisit.
+    - Click repo.
+        - Click's approach is quite awkward.
+        - Also mock up how dispatching would work.
+    - Click other examples.
+
+    - Check my current examples and mock them up where interesting.
+    - Other project examples:
+        - Argparse docs for anything prominent.
+
+Editing pass over the rest of notes.txt:
+
+    __HERE1__
+
+    - Edit to conform to new specification.
+    - Add 'Summary' at the top of section, where applicable.
+    - Collect:
+        - Questions/doubts
+        - Examples
+        - Terminology
+        - Road map items
+
+    - Optopus vs the competitors:
+        - Maybe augment the current README
+        - Include Click in a future write-up.
+
+Scan: other materials in misc
+
+Read-through: specification
+    - One more time.
+
+Editing pass.
+    - todos
+    - road-map
+
+Reread:
+    - dev-notes
+    - setup.py etc
+    - code
+    - arg-parsing-algo
+
+Spec-syntax parsing.
+
+Convert spec-syntax AST into a Grammar.
+
+Argument parsing.
+
+--------
+new-notes: New notes
 --------
 
 Opt-independence and arg-variants:
@@ -673,121 +736,84 @@ Raising errors in convert/validate:
     - Seems like a needless hassle:
         - Just get the msg from any Exception instance.
 
-__HERE2__
-
 High-precedence: naming and rethinking:
 
-    - Alternative names:
-        - eager
-        - priority (priorty-flags)   # Leaning in this direction.
+    - Decisions:
+        - Naming:
+            - Drop 'high-precedence'.
+            - Use 'priority' in API.
+            - Also use 'priority-flags' in some docs/notes.
+        - Restrict priority-opts to flags.
 
-    - Naming ideas from the Click project:
-        - Eager rather than high-precedence.
-        - Resilient-parsing:
-            - Mainly as an internal concept.
-            - Relevant contexts:
-                - High-precedence Opts.
-                - When supporting command-line completion.
+    - Why priority-opts should be restricted to flags:
 
-        - Click eagerness and Opts high-precedence differ:
+        - Context:
+            - If an opt has priority.
+            - Its dispatching should occur no matter what.
+            - Even in the face of otherwise invalid ARGS.
+            - Example: --help.
 
-            - Not clear that Click can dispatch to eager Opts even in the face
-              of end-user mistakes.
+        - But consider how parsing would under those conditions:
 
-            - I experiented with the Click naval-fate.
-            - Seems as inflexible as argparse
-            - Adding --help to the end of a failing input never worked.
-
-    - Should hp-Opts be restricted to just flags or just options?
-
-        - If end-user gives bad inputs.
-        - Then the Result will be empty or, at best, incomplete.
-        - My notes do recognize that problem.
-        - The speak of a "best effort" parsing.
-
-        - Consider how parsing would work:
             - Parsing of all ARGS fails.
             - Select variant that did the best (eg, max N ARGS consumed).
-            - Best-effort populates a Result up to the ARG that failed.
-            - But imagine that the high-precedence Opt is the last ARG.
-            - How do we know that --help, for example, was supplied without
-              doing the actual parsing?
+            - Optopus populates a Result up to the ARG that failed.
+            - What happens next?
 
-            - If the hp-Opt is a simple flag, it is pretty easy.
-            - But supporting other grammatical entities seems fraught.
+            - If a priority-opt is a flag:
+                - Parser is able to see that the flag is present.
+                - The test is easy: '--help' in ARGS
 
-Assess environment variables again:
+            - But if a priority-opt were allowed to be more complex:
+                - With OptArgs having grammatical/validation requirements.
+                - How would Optopus successfully parse the entity?
+                - Parsing has already failed.
+                - Seems fraught.
+
+    - Other naming ideas:
+        - Click uses 'eager'.
+        - But their concept deals mainly with dispatch ordering.
+        - Click does not appear to support the concept of a priority-flag.
+
+Support for obtaining applied-defaults from environment variables:
+
+    - Add my plans to opts-should-know-provenance
+
+    - Parser.apply_defaults(pref_defaults, env_defaults = None)
+
+        - pref_defaults are alredy covered in notes.
+
+        - env_defaults: a possible approach:
+
+            - None:
+                - Do nothing.
+
+            - True:
+                - Env vars naming agrees with Opt naming.
+                - With env vars in uppercase.
+
+            - 'PREFIX'
+                - Same, after attaching the PREFIX to env var names.
+
+            - dict:
+                - Mapping: Opt PATH => env var name
+
+            - callable:
+                - Take an Opt.
+                - Return env var name.
+
+        - Precise details/decisions TBD.
+        - Based on the sketch, the plan (or some variant of it) seems plausible.
+
     - Click supports getting OptArg defaults from environment variables.
-    - Can be done in an automatic way (variable naming agrees in both contexts)
-      or via a common prefix for all environment variables.
-    - Or can be done more specifically: option('--fubb', envvar = 'FUBB_VAL')
-    - Will this fit well with my approach for applied_defaults?
 
-*******************************
-**** TODO items begin here ****
-*******************************
+        - Automatically in one of two ways:
+            - Opt-names and env-vars agree.
+            - They agree, with a common env-var prefix.
 
-New questions and notes (above):
+        - Opt-specific configuration:
 
-    - Make decisions.
-        __HERE2__
-
-    - Implement those decisions:
-        - Move notes to proper homes in notes.txt.
-        - Edit as needed.
-        - Edit the rest of the document to align with new policies.
-
-Mock-ups: create several more:
-    * This has been very useful to expose questions/issues.
-    * Add references to the examples section, where relevant.
-
-    - naval-fate
-    - EX_BLORT: revisit.
-    - Click repo.
-        - Click's approach is quite awkward.
-        - Also mock up how dispatching would work.
-    - Click other examples.
-
-    - Check my current examples and mock them up where interesting.
-    - Other project examples:
-        - Argparse docs for anything prominent.
-
-Editing pass over the rest of notes.txt:
-
-    __HERE1__
-
-    - Edit to conform to new specification.
-    - Add 'Summary' at the top of section, where applicable.
-    - Collect:
-        - Questions/doubts
-        - Examples
-        - Terminology
-        - Road map items
-
-    - Optopus vs the competitors:
-        - Maybe augment the current README
-        - Include Click in a future write-up.
-
-Scan: other materials in misc
-
-Read-through: specification
-    - One more time.
-
-Editing pass.
-    - todos
-    - road-map
-
-Reread:
-    - dev-notes
-    - setup.py etc
-    - code
-    - arg-parsing-algo
-
-Spec-syntax parsing.
-
-Convert spec-syntax AST into a Grammar.
-
-Argument parsing.
+            @click.option('--fubb', envvar = 'FUBB_VAL')
 
 --------
 road-map: Road map
@@ -4714,7 +4740,7 @@ How will Optopus support users needs to merge preferences and opts?
     prefs = load_prefs(...)
 
     # If needed, user creates an adjusted variant of those prefs.
-    pref_defaults = prefs | adjusted-variant
+    pref_defaults = ...
 
     # User configures Optopus in the usual way.
     p = Parser(...)
@@ -4725,11 +4751,11 @@ How will Optopus support users needs to merge preferences and opts?
     - What happens:
 
         - prefs is a dict:
-            - key: query-path to identify Opt(s)
-            - value: desired value for Opt.applied_default
+            - key: query-path to identify 1+ Opts
+            - value: desired value for their Opt.applied_default
 
         - Optopus sets every Opt.applied_default with the applicable value.
-            - The resular Opt.default values are not altered.
+            - The regular Opt.default values are not altered.
 
         - During arg-parsing, the presence of an applied-default can help
           satisfy quantifer requirements.
