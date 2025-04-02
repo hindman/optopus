@@ -95,6 +95,8 @@ new-notes : implement decisions:
         - Drop Opt.choice.
         - Clarify arg-variant defintion.
 
+        - Positional-spec can support two quantifiers directly: <x>{4}{0,2}
+
     - Move notes to proper homes in notes.txt.
     - Edit as needed.
     - Edit the rest of the document to align with new policies.
@@ -155,280 +157,148 @@ Argument parsing.
 new-notes: New notes
 --------
 
-Rethinking OptArg:
+Switch to a more structured OO approach:
 
-    - Tentative decisions:
-        - Retain OptArgs.
-        - Positional OptArgs are anonymous.
+    - OO model:
 
-    - The rest of this discussion goes back and forth:
-        - Edit to reflect decisions.
+        Opt subclasses | Arg subclasses
+        ---------------------------------
+        Positional     | Argument
+        Option         | Parameter
+        Literal        | .
 
-    - Why do positionals have OptArgs?
+    - Reason for the subclasses: different behaviors and policies:
 
-    - For options, OptArgs make sense:
+        - Ordering rules:
+            - Positionals are ordered among themselves.
+            - Options are not.
+            - Literals impose left-right dividers.
 
-        - Parameters might need independent configuration.
-        - And some of the OptArgs might be Groups.
-        - Example: --point <x> (<y> <z>)...
+        - Different policies regarding name and dest:
+            - Argument: anonymous (and maybe no help text).
+            - Literal: by default, dest=None and data discarded.
 
-    - Is there ever a situation where a positional needs an independent OptArg?
+        - Options have more features:
+            - Aliases, negaters, and priority.
 
-        - For a while I thought no.
-        - But that is incorrect.
+        - Different support for quantifiers:
+            - Argument: no ntimes (lives on the Positional).
+            - Literals: no quantifiers.
 
-        - What is the difference between these?
+        - A simpler object-graph is always good, but those differences feel
+          significant enough to warrant a more robust OO approach.
 
-            - Positional with plural nargs/OptArgs.
-            - Option with the same.
+    - Reason for the subclasses: documentation:
+        - Useful to have separate terms.
 
-                <path>{2}
-                --point <x> <y>
-                --point <p>{2}
-                --point <p> <p>
+    - Reason for the subclasses: querying:
 
-            - If you can configure the parameters independently, why not the
-              positional arguments?
+        - Querying by kind is a bit cleaner (at least for users want to avoid
+          all magic strings).
 
-            - How Opts can attach names to their OptArgs:
-                - Options:
-                    - Distinct names: <x> <y>
-                    - Common name: <p>{2}
-                    - No name: <> <>
-                - Positionals:
-                    - Common name (copied directly from parent Opt).
-                    - No name.
+        p.query(PATH, kind = Positional)
+        p.query(PATH, kind = OptKinds.positional)
 
-                    - But for querying reasons, I think the policy should force
-                      them to be anonymous.
-                    - And that would solve the ambiguity the started this whole
-                      line of concern.
-                    - Queries for positionals would not inadvertently snag
-                      their children.
+    - Why change OptArg to Arg:
+        - Simpler.
+        - Parallels Opt.
+        - Aligns well with nargs.
 
-        - Positionals cannot have groups as children.
-        - For example, this is just three different positionals:
+    - But do not add nparams:
+        - Use Option.nargs, not Option.nparams.
+        - More familiar (argparse, Click).
+        - Aligns with Arg.
+        - Option.nparam too specific: Option can have Groups as children.
 
-            <x> (<y> <z>)...
+    - Why Literals cannot have a name:
+        - A name would be used in the usage-text.
+        - Which defeats the purpose of a Literal.
 
-        - Adjacent positionals with same name are distinct Opts:
+    - Why Literals do not support quantifiers:
 
-            <x> <x>
+        - Makes very little sense.
 
-        - Noneth
+            `fast`... <x> <y>
+            [`down`] <x> <y>
 
-        - At first I thought that even with child-OptArgs, a positional
-          would not end up with independently configurable elements.
+        - User has a good (and better) workaround:
+            - Define a Positional with one choice.
+            - The choice will appear in the usage text (as desired).
+            - Positionals support quantifiers.
+            - Data would be stored in a dest.
 
-        - And even if positionals retain the concept of having OptArgs as
-          childen, none of these examples would produce independently
-          configurable entities.
+            <speed=fast>... <x> <y>
+            [<direction=down>] <x> <y>
 
-            - A basic positional with nargs:
+    - Literals function as a grammatical divider:
 
-                <x>{2}
+        - A strict boundary between stuff to its left and right.
+        - A Positional is similar, but less strict:
+            - A divider only among other positionals.
 
-                - Opt(name = x, nargs = 2, ntimes = 1)
+        - Implement divider-behavior using existing concepts:
 
-            - Related question: can spec-syntax create a positional with ntimes
-              (other than 1) without the aid of an enclosing group?
+            - Do it as a post-processing step.
+            - Traverse Grammar elements.
+            - If Literal:
+                - Get innermost enclosure (Alternative, Group, Variant).
+                - If Literal can be anchored directly, just do it.
+                - Otherwise, divide the enclosure's elements into left-right.
+                - Put the sides into anonymous Groups.
+                - Anchor Literal to end of the left Group.
 
-                - In current planning notes, the answer is NO.
-                - See parsed-data-structure for example:
-
-                    # A positional with ntimes via a degenerate-group.
-                    (<x>{4}){0,2}
-
-                - The spec could support this syntax:
-                    - The logic is that a positional's first quantifier
-                      defaults to being nargs.
-                    - The second becomes ntimes.
-                    - So the example above could be simplified:
-
-                        <x>{4}{0,2}
-
-    - A more fundamental question: can a positional ever have 2+ OptArgs?
-
-        - I think the answer is NO.
-
-Rethinking Opt: positionals, options, and literals:
-
-    - Tentative decision:
-        - Separate child classes of Opt.
-        - Literals will implement divider-behavior via groups and anchors.
-
-    - The current plan has an Opt to represent both positionals and options.
-
-    - A more structured OO approach might be better:
-        - Opt (base class)
-        - Positional
-        - Option
-        - Literal
-
-    - Putting everything in Opt would involve more conditional logic:
-
-        - That consideration is not decisive.
-        - A simpler object-graph can outweigh some conditional logic.
-
-        - But the child classes really are different:
-            - Positionals are ordered, Options are not.
-            - Literals impose dividers on the grammar (see below).
-            - Options can have aliases, negaters, and be high-precedence.
-            - The subclasses have different policies for name and dest.
-
-        - And this project is complex:
-            - A more robust OO approach might pay off over time.
-            - Might help keep the code easier to manage.
-
-    - Querying is a bit cleaner:
-
-        - Comparison if user goes by the book:
-
-            from optopus import Positional, OptKinds
-            p.query(PATH, kind = Positional)
-            p.query(PATH, kind = OptKinds.positional)
-
-        - Optopus will also support kind='positional'.
-
-    - Literal:
-        - Maybe a subtype of Positional.
-        - No name or dest by default.
-        - Functions as a grammatical divider:
-            - A strict boundary between stuff to its left and right.
-            - A Positional is similar, but less strict:
-                - A divider only among other positionals.
-
-        - Implement this behavior using existing concepts:
-            - When a literal is found:
-
-                - Can the literal be anchored directly?
-                - If yes, do it.
-                - If no, split neighboring elements into left and right halves.
-                - Wrap those halves in anonymous groups.
-                - Anchor the Literal to the end of the left Group.
-
-            - Example:
-
-                # Spec.
-                <x> [--foo] `/` <y> [--bar]
-
-                # Grammar.
-                Group():
-                    Positional(x)
-                    Option(foo)
-                    Literal()
-                Group():
-                    Positional(y)
-                    Option(bar)
-
-Querying for specific things:
+Querying in the face of repeated names:
 
     - Decision:
-        - Keep these notes.
-        - API details can be deferred for now.
+        - Do not augment the query syntax.
+        - User can fallback to indexes where needed.
+        - In simple/realistic situations, that will not be a burden.
 
-    - Just one element:
+    - Example: simpler and realistic:
+        - Variant and opt with same name: foo > foo.
+        - How does the user get only the top element?
 
-        query_one(PATH)
-        query(PATH, one = True)
-        query(PATH, nexp = 1)
+    - Example: pathalogical edge-case:
+        - Several nests elements with same name: x > x > x > x.
 
-    - For specific types:
+    - Rejected alternatives:
 
-        query_section()
-        query_variant()
-        etc
+        - Trailing period to mean "don't go deeper".
+            - Insufficient by itself.
+            - query('foo.') would still get both elements.
+            - Why: because the path is not anchored to the start.
+            
+        - Also add syntax to anchord to the start.
+            - query('.foo.') would get only the 1st element.
+            - But consider: query('.x.x.').
+                - Would it get only 2nd element?
+                - No: would get 2nd, 3rd, 4th.
+            - Problem: middle dot does not require direct parent-child.
 
-Queries, opt-independence, and arg-variants:
+        - Make paths like CSS:
+            - Support both kinds of parentage:
+                - Single-dot: parent-child.
+                - Double-dot: any-descendant.
+            - Problem: insufficient.
+                - query('x.x.x'): gets 3rd and 4th
+                - You also need ability to achor to the start.
 
-    - Decision:
-        - Do not augment the query() syntax for PATH.
-        - Other decisions make this problem less pressing.
+        - Double-dot plus start-anchor:
+            - Would work.
+            - query('^x.x.x'): gets only 3rd.
+            - Syntax reasonably intuitive.
+            - But the solution addresses only strange use cases.
+            - Defer this until known need arises.
 
-    - Questions occurred when working on naval-fate.
+Query helpers:
 
-    - If the <action> Opts are distinct (as considered above), how
-      would a user query uniquely for a specific one:
+    query_one(PATH)
+    query(PATH, one = True)
+    query(PATH, nexp = 1)
 
-        query('weapon.action')  # Gets them all.
-
-    - Same question, how would one query for a distinct <x> or <y>?
-
-    - Option 1: support arg-variants in the PATH syntax:
-
-        'weapon.action=move'
-
-        - Which OptArg logic is implied by that PATH?
-            - #1 choice=move
-            - #2 either choice=move or move in choices
-
-        - Tentative decision: #2.
-
-    - Option 2: user can name the variants.
-
-        'move.weapon.action'
-
-    - Option 3: user can fallback to indexes:
-
-        'weapon.1.action
-
-    - Tentative decision:
-        - The user does have workarounds (Options 2 & 3).
-        - But supporting Option 1 is not difficult.
-        - In the context of spec-syntax, it seems consistent.
-
-Should a literal in the grammar also be an Opt:
-
-    - Decision:
-        - Add Literal class.
-        - Other details are in a prior section.
-        - Write up any useful notes on the subject.
-
-    - Opt(LIT)
-
-    - What would the dest for the literal(s) be?
-
-        - User could name a literal:
-
-            action=`new`
-
-        - But where would Optopus store anonymous literals?
-
-    - My first thought: NO:
-
-        - Many literals just import grammatical requirments.
-        - The user does not care about their data value (just a bool).
-        - If user wants a dest, they can use an Opt/OptArg with 1 choice.
-
-    - What about literals with quantifiers?
-
-        `go` `fast`... <x> <y>
-        `go` [`down`] <x> <y>
-
-        - Such examples seem like a misuse of literals.
-        - If a literal has a quantifier, it is a de facto var-input.
-        - If the user cares about the data, they should make it a proper Opt.
-
-    - My second thought: still NO:
-        - Literals are not first-class Opts.
-        - Maybe the Context could report basic info on literals present to
-          support oddball use cases.
-
-    - But the current data-modeling plan does not have a home for literals:
-
-        - Parser.grammar.elems : list[Opt or Group]
-        - Seems like a problem.
-
-        - Possible decisions: combine this issue with a class-rethink:
-            - Opt: base class.
-            - Child classes:
-                - Positional
-                - Option:
-                    - Has more attributes than Positional.
-                - Literal:
-                    - Anonymous and empty-dest by default.
-                    - User can set a dest.
-                    - Otherwise, the data is discarded.
+    query_section()
+    query_variant()
+    etc
 
 Bundling Context with Result:
 
@@ -507,49 +377,6 @@ Optopus and man-pages:
         - Spec-syntax could never achieve what troff can do.
         - Some users might want help-text mimicking man-page design.
         - The key: make sure they can achieve that (generally).
-
-Repeated names and querying for distinct elements:
-
-    - Decision:
-        - Do not augment the query syntax.
-        - User can fallback to indexes where needed.
-        - In simple/realistic situations, that will not be a burden.
-
-    - Example: simpler and realistic:
-        - Variant and opt with same name: foo > foo.
-        - How does the user get only the top element?
-
-    - Example: pathalogical edge-case:
-        - Several nests elements with same name: x > x > x > x.
-
-    - Rejected alternatives:
-
-        - Trailing period to mean "don't go deeper".
-            - Insufficient by itself.
-            - query('foo.') would still get both elements.
-            - Why: because the path is not anchored to the start.
-            
-        - Also add syntax to anchord to the start.
-            - query('.foo.') would get only the 1st element.
-            - But consider: query('.x.x.').
-                - Would it get only 2nd element?
-                - No: would get 2nd, 3rd, 4th.
-            - Problem: middle dot does not require direct parent-child.
-
-        - Make paths like CSS:
-            - Support both kinds of parentage:
-                - Single-dot: parent-child.
-                - Double-dot: any-descendant.
-            - Problem: insufficient.
-                - query('x.x.x'): gets 3rd and 4th
-                - You also need ability to achor to the start.
-
-        - Double-dot plus start-anchor:
-            - Would work.
-            - query('^x.x.x'): gets only 3rd.
-            - Syntax reasonably intuitive.
-            - But the solution addresses only strange use cases.
-            - Defer this until known need arises.
 
 Headings in the spec-syntax:
 
@@ -702,6 +529,16 @@ Support for obtaining applied-defaults from environment variables:
         - Opt-specific configuration:
 
             @click.option('--fubb', envvar = 'FUBB_VAL')
+
+A repr implementation to mimic dataclasses:
+
+    def nicerepr(obj):
+        cls_name = obj.__class__.__qualname__
+        params = ', '.join(
+            f'{k}={v!r}'
+            for k, v in obj.__dict__.items()
+        )
+        return f'{cls_name}({params})'
 
 --------
 road-map: Road map
@@ -2345,134 +2182,126 @@ The idea that options can have groups as parameters is a bit surpising:
 opt-and-optarg-configuration: Configuration of Opt and OptArg
 --------
 
-The child elements of Opt:
+Opt child elements: Positionals vs Options:
 
-    - Opt(POS):
-        - All elems must be OptArg.
+    - Options:
 
-        - Example:
-
-            <x> (<y> <z>)...
-
-            - This is just three separate Opts, two inside a Group.
-
-            <x> (<x> <x>)...
-
-            - Same here, since we decided not to condense adjacent repetitions
-              of the same Opt.
-
-    - Opt(OPT):
         - In vast majority of cases, all children will be OptArgs.
         - But elems can also be Groups (due to greedy parsing policy):
 
             --foo (<x>{2} <y>){3}
             --point <x> (<y> <z>)...
 
-Quantifiers for Opt and OptArg:
+    - Positionals:
 
-    - An Opt has both nargs and ntimes.
+        - Child elems must be OptArg.
+        - Under spec-parsing policies you cannot create a Positional having
+          Groups as children.
 
-    - But an OptArg has only ntimes, since it represent a single argument,
-      at least conceptually.
+Quantifiers and configuration independence among OptArgs:
 
-    - An example:
-
-        (--point <x> <y> <z>...){1,4}
-
-        Opt(point):
-            ntimes = (1, 4)
-            nargs = (3, 3)    # '<z>....' counts as 1 arg, not 1+.
-
-        OptArg.ntimes:
-            x: (1, 1)
-            y: (1, 1)
-            z: (1, None)      # <z> 1+ quantifier resides here.
-
-Configuration independence among OptArgs:
-
-    - An example:
+    - Examples:
 
         (--point <x> <y> <z>...){1,4}
 
-    - The OptArg instances (x, y, z) can have different configurations.
+        Option(name=point, nargs=(3,None), ntimes=(1,4))
+            OptArg(name=x, ntimes=1)
+            OptArg(name=y, ntimes=1)
+            OptArg(name=z, ntimes=(1,None))
 
-    - But the following are clones:
-        - The <x> <y> and <z> across the --point ntimes.
-        - The <z> across its ntimes.
+        <val>{2}{3}
 
-    - Key point:
-        - Repetition across ntimes does not create configuration-independence.
+        Positional(name=val, nargs=2, ntimes=3)
+            OptArg(name=None, ntimes=1)
+            OptArg(name=None, ntimes=1)
+
+    - Key points:
+
+        - N of OptArgs is based on nargs.
+
+        - Each OptArg represents 1 independently configurable entity.
+        - Repetition across ntimes does create independent units.
+
+        - Quantifiers available:
+            - Opt: nargs and ntimes.
+            - OptArg: ntimes.
+                - Represents one configurable entity.
+                - Which aligns with nargs restricted to 1.
+
+Names of OptArgs:
+
+    - Options have flexibility in naming:
+
+        - The Option has a name.
+        - The OptArg names can take various forms.
+
+        --point <x> <y>  # Distinct names.
+        --point <p> <p>  # Shared name.
+        --point <p>{2}   # Ditto.
+        --point <> <>    # Anonymous.
+
+    - Positionals are much more restricted:
+
+        - Two approaches were considered:
+            - Shared name (copied from parent Positional).
+            - Anonymous.
+
+            - Optopus policy: anonymous.
+
+        - That policy addresses a querying problem with shared-names:
+
+            - Queries by name would return Positional and children.
+            - Most common use case is to query just for the Positional.
+            - Query-via-index can address the less common use cases.
 
 Assignment of OptArg attributes via the parent-Opt:
 
-    - In the vast majority of cases, users want to configure the OptArgs of an
-      Opt in a consistent way.
-
-        # Example: both X and Y should be positive integers.
-        --point <x> <y>
-
-    - But sometimes you want argument independence.
-
     - An example for the discussion:
 
-        p = Parser('<x> [<y>] [-z <a> <b>]')
+        p = Parser('<x>{2} [<y>] [-z <a> <b>]')
 
-    - Configuration of regular OptArgs works like this:
+    - Configuration of Opts and OptArgs:
 
-        p.config('x', default = 888, convert = int)
-        p.config('y', default = 0.0, convert = float)
+        - The most common and intuitive use cases:
+            - User wants child OptArgs to have identical configuration.
+            - They want to apply that configuration via the Opt.name.
 
-    - Consider Opt(z) and its two OptArgs:
+            # Should adhere to the DWIM policy.
+            p.config('x', default = 888, convert = int)
+            p.config('y', default = 0.0, convert = float)
 
-        - Mass-assignment: give all OptArg the same default.
+        - Sometimes users want separate configurations for the children.
 
-            p.config('z', default = 9)
+    - The complication:
 
-        - Specific-assignment: each OptArg gets its own default.
+        - Strict interpretion of query(PATH) would be bad:
 
-            p.config('z', default = [77, 88])
+            - A query by Opt.name will get the Opt, not the OptArgs.
+            - Forcing users query explicitly would be annoying.
+                
+            # Tedious.
+            query('z.a', 'z.b')
+            query('x.0', 'x.1')
 
-        - But what if the user wants to mass-assign a list?
+        - Opt and OptArg share some attribute names.
 
-            - For many OptArg attributes, Optopus can use data types to
-              eliminate ambiguity.
+    - The policy:
 
-                - Some attributes have a simple, strict type (str, callable).
-                - Others have a compound, but strict type (list[str]).
+        - If the query() PATH gets an Opt.
+        - Apply each setting, based on its kwarg, to the appropriate object(s).
 
-            - Policy in the face of ambiguity:
+        - If kwarg is shared by Opt/OptArg, apply setting to the Opt.
+            - The shared attributes (spec, name, text, ntimes) are not natural
+              fits for configuration via query().
+            - Users who need to can use explicit paths.
 
-                - Optopus will assume a list means specific-assignment.
+            p.config('z', name = 'bar')   # Applies to parent.
+            p.config('z.a', name = 'z1')  # Applies to the child.
 
-                - Two ways to resolve:
+        - To configure children differently, use a list.
 
-                    - User can package the data differently so that
-                      specific-assignment will work as desired:
-
-                        # The desired default.
-                        xs = [x1, x2]
-
-                        # Achieves the effect of mass-assignment.
-                        p.config('z', default = [xs, xs])
-
-                    - Or the API a keyword to request mass-assignment.
-
-                        - I currently lean in this direction.
-
-                        p.config('z', default = xs, mass = True)
-
-    - Ambiguity when Opt and OptArg have common attribute names:
-
-        - Relevant OptArg attributes:
-            - name: Opt.name (z) vs OptArg.name (a and b).
-            - text: help text for Opt vs for a positional/parameter variant.
-
-        - The user can make the query paths more specific:
-
-            p.config('z', name = 'bar')   # Applies to parent Opt.
-
-            p.config('z.a', name = 'z1')  # Applies to the child OptArgs.
-            p.config('z.b', name = 'z2')
+            p.config('z', default = 9)        # Same defaults for <a> and <b>.
+            p.config('z', default = [77, 88]) # Different.
 
 --------
 help-related-options: High-related options, and high precedence
