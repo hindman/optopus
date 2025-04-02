@@ -32,6 +32,7 @@ toc: Table of contents
         opt-action-not-needed         | Optopus does not need the action concept
         explicit-var-input-syntax     | Why explicit syntax is needed for variable inputs
         variable-input-spec           | Spec for variable input
+        opts-revised-OO-plan          | Revised OO plan for Opts and child elements
         groups-can-be-parameters      | Options can have Groups as parameters
         opt-and-optarg-configuration  | Configuration of Opt and OptArg
         help-related-options          | High-related options, and high precedence
@@ -97,6 +98,9 @@ new-notes : implement decisions:
 
         - Positional-spec can support two quantifiers directly: <x>{4}{0,2}
 
+        - New OO model.
+        - OptArg => Arg.
+
     - Move notes to proper homes in notes.txt.
     - Edit as needed.
     - Edit the rest of the document to align with new policies.
@@ -156,149 +160,6 @@ Argument parsing.
 --------
 new-notes: New notes
 --------
-
-Switch to a more structured OO approach:
-
-    - OO model:
-
-        Opt subclasses | Arg subclasses
-        ---------------------------------
-        Positional     | Argument
-        Option         | Parameter
-        Literal        | .
-
-    - Reason for the subclasses: different behaviors and policies:
-
-        - Ordering rules:
-            - Positionals are ordered among themselves.
-            - Options are not.
-            - Literals impose left-right dividers.
-
-        - Different policies regarding name and dest:
-            - Argument: anonymous (and maybe no help text).
-            - Literal: by default, dest=None and data discarded.
-
-        - Options have more features:
-            - Aliases, negaters, and priority.
-
-        - Different support for quantifiers:
-            - Argument: no ntimes (lives on the Positional).
-            - Literals: no quantifiers.
-
-        - A simpler object-graph is always good, but those differences feel
-          significant enough to warrant a more robust OO approach.
-
-    - Reason for the subclasses: documentation:
-        - Useful to have separate terms.
-
-    - Reason for the subclasses: querying:
-
-        - Querying by kind is a bit cleaner (at least for users want to avoid
-          all magic strings).
-
-        p.query(PATH, kind = Positional)
-        p.query(PATH, kind = OptKinds.positional)
-
-    - Why change OptArg to Arg:
-        - Simpler.
-        - Parallels Opt.
-        - Aligns well with nargs.
-
-    - But do not add nparams:
-        - Use Option.nargs, not Option.nparams.
-        - More familiar (argparse, Click).
-        - Aligns with Arg.
-        - Option.nparam too specific: Option can have Groups as children.
-
-    - Why Literals cannot have a name:
-        - A name would be used in the usage-text.
-        - Which defeats the purpose of a Literal.
-
-    - Why Literals do not support quantifiers:
-
-        - Makes very little sense.
-
-            `fast`... <x> <y>
-            [`down`] <x> <y>
-
-        - User has a good (and better) workaround:
-            - Define a Positional with one choice.
-            - The choice will appear in the usage text (as desired).
-            - Positionals support quantifiers.
-            - Data would be stored in a dest.
-
-            <speed=fast>... <x> <y>
-            [<direction=down>] <x> <y>
-
-    - Literals function as a grammatical divider:
-
-        - A strict boundary between stuff to its left and right.
-        - A Positional is similar, but less strict:
-            - A divider only among other positionals.
-
-        - Implement divider-behavior using existing concepts:
-
-            - Do it as a post-processing step.
-            - Traverse Grammar elements.
-            - If Literal:
-                - Get innermost enclosure (Alternative, Group, Variant).
-                - If Literal can be anchored directly, just do it.
-                - Otherwise, divide the enclosure's elements into left-right.
-                - Put the sides into anonymous Groups.
-                - Anchor Literal to end of the left Group.
-
-Querying in the face of repeated names:
-
-    - Decision:
-        - Do not augment the query syntax.
-        - User can fallback to indexes where needed.
-        - In simple/realistic situations, that will not be a burden.
-
-    - Example: simpler and realistic:
-        - Variant and opt with same name: foo > foo.
-        - How does the user get only the top element?
-
-    - Example: pathalogical edge-case:
-        - Several nests elements with same name: x > x > x > x.
-
-    - Rejected alternatives:
-
-        - Trailing period to mean "don't go deeper".
-            - Insufficient by itself.
-            - query('foo.') would still get both elements.
-            - Why: because the path is not anchored to the start.
-            
-        - Also add syntax to anchord to the start.
-            - query('.foo.') would get only the 1st element.
-            - But consider: query('.x.x.').
-                - Would it get only 2nd element?
-                - No: would get 2nd, 3rd, 4th.
-            - Problem: middle dot does not require direct parent-child.
-
-        - Make paths like CSS:
-            - Support both kinds of parentage:
-                - Single-dot: parent-child.
-                - Double-dot: any-descendant.
-            - Problem: insufficient.
-                - query('x.x.x'): gets 3rd and 4th
-                - You also need ability to achor to the start.
-
-        - Double-dot plus start-anchor:
-            - Would work.
-            - query('^x.x.x'): gets only 3rd.
-            - Syntax reasonably intuitive.
-            - But the solution addresses only strange use cases.
-            - Defer this until known need arises.
-
-Query helpers:
-
-    query_one(PATH)
-    query(PATH, one = True)
-    query(PATH, nexp = 1)
-
-    query_section()
-    query_variant()
-    etc
 
 Bundling Context with Result:
 
@@ -529,16 +390,6 @@ Support for obtaining applied-defaults from environment variables:
         - Opt-specific configuration:
 
             @click.option('--fubb', envvar = 'FUBB_VAL')
-
-A repr implementation to mimic dataclasses:
-
-    def nicerepr(obj):
-        cls_name = obj.__class__.__qualname__
-        params = ', '.join(
-            f'{k}={v!r}'
-            for k, v in obj.__dict__.items()
-        )
-        return f'{cls_name}({params})'
 
 --------
 road-map: Road map
@@ -1237,95 +1088,9 @@ Parser:
 
         - Querying grammar elements:
 
+            - See grammar-querying-api
+
             p.query(*paths, kind = types, want = callable) => Query
-
-            - Delegates the call to p.grammar.query().
-
-            - Each path is a period-delimited query string of:
-
-                Opt      | name, dest
-                OptArg   | name
-                Variant  | name
-                Group    | name, dest, index
-                Wildcard | *
-
-            - The path elements operate in a loose data-dive way:
-
-                - Example: bar.fubb.foo
-                - Example: x.2
-
-                - Get the grammar elements with name/dest of 'foo'
-                  that are hierachically nested as follows:
-
-                    bar
-                        ...
-                            fubb
-                                ...
-                                    foo
-
-                - The nesting can be direct (parent to child) or extended (any
-                  grandparent to child).
-
-                - Typically, the path elements are name-like (dest or name).
-                  But they can also be integers (indexes).
-
-                    - But integers behave differently: not as an any-nesting
-                      query, but as a direct get-via-index operation. Why:
-
-                        - Under the usual query logic, a path like 'foo.2'
-                          would get any elems[2] nested anywhere under a 'foo'.
-                        - Seems fraught type for a user to reason through.
-                        - More intuitive is to interpret the integers as direct
-                          indexes into elements the user can see directly in a
-                          visual inspection of the spec.
-                        - The integer need not be last path-element: 'foo.2.bar'
-
-                    - Example: the grammar has three -x flags that need
-                      different help-texts. The user can see how those Opts are
-                      ordered in the spec. Their spec-scopes can simply
-                      index into that ordering.
-
-                        --foo [-x] | --bar [-f] [-x] | --blort [-x]
-
-                        x.2 >> [-x] : blah x-for-blort
-                        x.0 >> [-x] : blah x-for-foo
-                        x.1 >> [-x] : blah x-for-bar
-
-            - Keyword arguments:
-                - kind: declares wanted types (single class or sequence of them).
-                - wanted: callable that takes an entity and returns bool.
-
-            - The returned Query is a sequence-like collection of matching
-              grammar elements.
-
-                - Under most circumstances users will query for Opts that
-                  have unique names.
-
-                    p.query('foo', 'bar')
-
-                    - Gets Opt(foo) and Opt(bar)
-
-                - In more complex situations query-paths can include more names
-                  to disambiguate.
-
-                    p.query('go.foo')
-
-                    - Would get Opt(foo) inside Variant(go).
-
-                - Query paths can use a glob-style wildcard:
-
-                    p = Parser('<x> [-z <a> <b>] | -z')
-                    p.query('z.*')
-
-                    - Gets OptArg(a) and OptArg(b), not Opt(z).
-
-                - Although many grammar elements will have a name/dest, some
-                  will not. But they will have a unique index within their
-                  parent's elements.
-
-                    query('go.2')
-
-                    - Would get third element in Variant(go).
 
         - Configuring grammar elements:
 
@@ -2142,6 +1907,113 @@ to configure name and dest independently.
         - The purpose is to package up the positional/parameter values
           up into a different, object-like data structure.
         - The appropriate solution here is a user-provided convert function.
+
+--------
+opts-revised-OO-plan: Revised OO plan for Opts and child elements
+--------
+
+In prior planing, Opt and OptArg were multi-purpose:
+
+    - A kind attribute would distinguish positional vs option.
+
+    - The thought was that the degree of overlap was large and that a little
+      bit of conditional logic in some methods was better than a more complex
+      OO model.
+
+    - But I have decided to switch to a more structured OO approach.
+
+New OO model:
+
+    Opt subclasses | Arg subclasses
+    ---------------------------------
+    Positional     | Argument
+    Option         | Parameter
+    Literal        | .
+
+    - What is new:
+        - Explicit subclasses.
+        - Name change: OptArg => Arg.
+
+Reasons for using explicit subclasses:
+
+    - Different behaviors and policies:
+
+        - Ordering rules:
+            - Positionals are ordered among themselves.
+            - Options are not.
+            - Literals impose left-right dividers.
+
+        - Different policies regarding name and dest:
+            - Argument: anonymous (and maybe no help text).
+            - Literal: by default, dest=None and data discarded.
+
+        - Options have more features:
+            - Aliases, negaters, and priority.
+
+        - Different support for quantifiers:
+            - Argument: no ntimes (lives on the Positional).
+            - Literals: no quantifiers.
+
+        - A simpler object-graph is always good, but those differences feel
+          significant enough to warrant a more robust OO approach.
+
+    - Documentation and project notes can be simpler and more direct:
+        - Useful to have separate terms.
+
+    - Querying is a bit simpler:
+
+        - At least for users intent on using no magic values in their code.
+
+        p.query(PATH, kind = Positional)
+        p.query(PATH, kind = OptKinds.positional)
+
+Reasons for the name change: OptArg to Arg:
+    - Simpler.
+    - Parallels Opt: both base class have compact names.
+    - Aligns well with nargs.
+
+Why is decided against Option.nparams:
+    - The paralleism of Option.nparams is somewhat appealing.
+    - But nargs is more familiar (argparse, Click).
+    - It aligns with Arg (just noted above).
+    - Option.nparams too specific: nargs means "N of Parameters and Groups".
+
+Why Literals cannot have a name:
+    - A name would be used in the usage-text.
+    - Which defeats the purpose of a Literal.
+
+Why Literals do not support quantifiers:
+
+    - Difficult to imagine plausible use cases:
+
+        `fast`... <x> <y>
+        [`down`] <x> <y>
+
+    - User has a good (and better) workaround:
+        - Define a Positional with one choice.
+        - The choice will appear in the usage text (as desired).
+        - Positionals support quantifiers.
+        - Data would be stored in a dest.
+
+        <speed=fast>... <x> <y>
+        [<direction=down>] <x> <y>
+
+Literals as a grammatical dividers:
+
+    - A Literal creates a strict boundary between stuff to its left/right.
+    - A Positional is similar, but less strict:
+        - A divider only among other positionals.
+
+    - Implement divider-behavior using existing concepts:
+
+        - Do it as a post-processing step.
+        - Traverse Grammar elements.
+        - If Literal:
+            - Get innermost enclosure (Alternative, Group, Variant).
+            - If Literal can be anchored directly, just do it.
+            - Otherwise, divide the enclosure's elements into left-right.
+            - Put the sides into anonymous Groups.
+            - Anchor Literal to end of the left Group.
 
 --------
 groups-can-be-parameters: Options can have Groups as parameters
@@ -3149,6 +3021,51 @@ Discussion of the policy across various domains:
         - That data is narrowly correct (and awkward).
         - User can configure more sensibly if they do not like it.
 
+Querying in the face of repeated names:
+
+    - Start with some examples.
+
+    - Example: simpler and realistic:
+        - Variant and opt with same name: foo > foo.
+        - How does the user get only the top element?
+
+    - Example: pathalogical edge-case:
+        - Several nests elements with same name: x > x > x > x.
+
+    - I considered augmenting the PATH syntax for query().
+        - But decided against that.
+        - User can fallback to indexes where needed.
+        - In simple/realistic situations, that will not be a burden.
+
+    - Rejected alternatives:
+
+        - Trailing period to mean "don't go deeper".
+            - Insufficient by itself.
+            - query('foo.') would still get both elements.
+            - Why: because the path is not anchored to the start.
+            
+        - Also add syntax to anchor to the start.
+            - query('.foo.') would get only the 1st element.
+            - But consider: query('.x.x.').
+                - Would it get only 2nd element?
+                - No: would get 2nd, 3rd, 4th.
+            - Problem: middle dot does not require direct parent-child.
+
+        - Make paths like CSS:
+            - Support both kinds of parentage:
+                - Single-dot: parent-child.
+                - Double-dot: any-descendant.
+            - Problem: insufficient.
+                - query('x.x.x'): gets 3rd and 4th
+                - You also need ability to achor to the start.
+
+        - Double-dot plus start-anchor:
+            - Would work.
+            - query('^x.x.x'): gets only 3rd.
+            - Syntax reasonably intuitive.
+            - But the solution addresses only strange use cases.
+            - Defer this until known and compelling need arises.
+
 Background for the spec-scope syntax:
 
     - It borrows from CSS syntax for parent-child.
@@ -3821,16 +3738,130 @@ Function signatures:
 grammar-querying-api: Grammar querying API
 --------
 
-Grammary querying API
+Why Optopus needs flexible querying:
 
-    - Because the Grammar can be a tree structure, the API needs good syntax to
-      query for grammar elements, both for configuration needs (including the
-      ability to perform bulk configurations) and for complex validations.
+    - A Grammar can be a deep tree structure.
+    - Users need to be able to retrieve element(s) of interest:
+        - With minimal hassle.
+        - Without having to have a deep understanding of the tree structure.
 
-    - Possible approach:
+    - Element names are generally not unique IDs within a Grammar:
 
-        g.get(NAME, NAME, ...)          # Get one, dive-style.
-        g.get(NAME, [NAME, ...], ...)   # Get multiple.
+        - There are strong reasons behind that policy.
+
+        - But in most use cases, users will want things with the same name to
+          behave as if they were the same entity -- specifcally that they have
+          identical configuration.
+
+        - For that reason, bulk-configuration is a compelling need.
+
+    - Bulk-configuration is a handy thing even without shared names:
+
+        - It is a good way to less API burden on users.
+
+Querying grammar elements in a Parser:
+
+    p.query(*paths, kind = types, want = callable) => Query
+
+    - Delegates the call to p.grammar.query().
+
+    - The returned Query:
+
+        - A collection of matching grammar elements.
+        - Can be a target of further subqueries.
+        - Supports a config() method to apply configurations to the elements.
+
+    - Each path is a period-delimited query string of:
+
+        Opt      | name, dest
+        OptArg   | name
+        Variant  | name
+        Group    | name, dest
+        Wildcard | *
+
+    - The path elements operate in a loose data-dive way:
+
+        - The nesting can be direct (parent to child) or extended (any
+          grandparent to child).
+
+        - Example:
+            
+            bar.fubb.foo
+
+            - Get the grammar elements with name/dest of 'foo'
+              that are hierachically nested as follows:
+
+            bar
+                ...
+                    fubb
+                        ...
+                            foo
+
+    - Integer path elements operate differently:
+
+        - Performs a get-via-index operation (details below).
+
+        - Example:
+
+            p = Parser('<x> [-x]')
+            p.query('x.1')
+
+            - Gets the 2nd Opt.
+
+    - Query paths can use a glob-style wildcard:
+
+        p = Parser('<x> [-z <a> <b>] | -z')
+        p.query('z.*')
+
+        - Gets OptArg(a) and OptArg(b), not Opt(z).
+
+    - Multiple query paths are combined in an OR-wise fashion:
+
+        p.query('foo', 'bar')
+
+        - Gets Opt(foo) and Opt(bar)
+
+    - Keyword arguments:
+        - kind: declares wanted types (single class or sequence of them).
+        - wanted: callable that takes an entity and returns bool.
+
+Why integer PATH elements behave differently:
+
+    - Name-like PATH elements (dest or name) perform an
+      any-nesting subquery.
+
+    - Integers perform a direct get-via-index operation.
+
+        - If they behaved in the regular fashion it would be bad:
+            - A PATH of 'foo.2' would get any elems[2] nested underneath.
+            - Seems fraught for a user to reason through.
+
+        - More intuitive is to interpret the integers as direct indexes into
+          elements the user can see in a visual inspection of the spec.
+
+    - The integer need not be last path-element: 'foo.2.bar'
+
+    - Example:
+
+        - The grammar has three -x flags that need different help-texts.
+        - The user can see how those Opts are ordered in the spec.
+        - Their spec-scopes can simply index into that ordering.
+
+        --foo [-x] | --bar [-f] [-x] | --blort [-x]
+
+        x.2 >> [-x] : blah x-for-blort
+        x.0 >> [-x] : blah x-for-foo
+        x.1 >> [-x] : blah x-for-bar
+
+Possible query helpers:
+
+    query_one(PATH)
+    query(PATH, one = True)
+    query(PATH, nexp = 1)
+
+    query_section()
+    query_variant()
+    etc
 
 --------
 validation-notes: Validation notes
