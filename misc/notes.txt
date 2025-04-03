@@ -165,18 +165,6 @@ Argument parsing.
 new-notes: New notes
 --------
 
-Figure out function signatures:
-
-    convert
-    validate
-    dispatch
-    help
-
-    See:
-        converters-validators
-        help-distpatching
-        dispatch
-
 Prompting for OptArgs:
 
     - Decision:
@@ -277,6 +265,59 @@ Support for obtaining applied-defaults from environment variables:
         - Opt-specific configuration:
 
             @click.option('--fubb', envvar = 'FUBB_VAL')
+
+Function signatures for callable Opt attributes:
+
+    * Remaining issues:
+        - Whether dispatch is helpful/needed.
+        - Defer this decision until after more mock-ups are done:
+            - Try to configure their dispatch.
+            - See how it looks.
+            - Write the equivalent roll-your-own code.
+
+    * Relevant sections:
+        converters-validators
+        help-distpatching
+        dispatch
+
+    - convert:
+        - this one is clear.
+        - convert(STR) => VAL or raise
+
+    - validate:
+        - I had some uncertainty about input-signature.
+
+            Simple        | VAL
+            Context-aware | VAL, OPT, PARSER, OTHER
+
+        - Tentative decision.
+
+            - Add a third concept: check.
+            - Convert/validate do basic value handling.
+            - Check can handle situations needing contextual information.
+            - Note that check can reside on Arg or Opt.
+
+            convert  | STR
+            validate | VAL
+            check    | VAL, CONTEXT
+
+    - help:
+        - The current notes seem generally plausible.
+        - Help is where dispatch is most compelling.
+
+        - A help callable should return:
+            - bool
+            - help text
+            - Section(s)
+
+    - version:
+        - Typically set via a version-str.
+        - If a callable: RESULT => STR
+        - Another useful kind dispatch.
+
+    - dispatch:
+        - Worth it at all?
+        - If so, what signature?
 
 --------
 road-map: Road map
@@ -3533,6 +3574,15 @@ Example API usages:
         p.config('experiment', dispatch = de)
         p.config('interactive', dispatch = di)
         p.config('rebuild', dispatch = dr)
+
+    - But is that better than a user would do on their own?
+
+        if opts.experiment:
+            experiment(...)
+        elif opts.interactive:
+            do_interactive(...)
+        elif opts.rebuild:
+            rebuild_library(...)
 
 That example illustrates one way to achieve a fairly generalized support for
 dispatching. A simpler usage form might also be nice -- namely, either a single
