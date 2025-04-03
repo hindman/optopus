@@ -44,6 +44,7 @@ toc: Table of contents
         opt-choices-vs-choice         | Opt.choices vs Opt.choice
         opt-independence              | Opt independence, duplicate names/dest, and opt-spec scope
         parsed-data-structure         | Parsed data structuring: nargs, ntimes
+        parsed-data-with-context      | Including Context with the Result
         eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
         spec-syntax-named-unnamed     | Spec-syntax: named and unnamed arguments
         variants-needed               | Variants: why they are needed
@@ -66,11 +67,14 @@ toc: Table of contents
         enhanced-quantifiers          | Enhanced quantifiers
         opt-spec-lines                | Opt-spec lines
         group-level-validation-needed | Why Group-level validation should be retained
+        usage-text-and-named-groups   | Usage-text and named groups or choices
+        headings-in-spec-syntax       | Spec-syntax support for headings
         optarg-choices-in-usage-text  | OptArg.choices in usage-text
         groups-need-names             | Why Group needs both dest and name
         degenerate-groups             | Degenerate groups with only one element
         opts-should-know-provenance   | Opts should know their data provenance
         parser-serialization          | Parser serialization
+        man-pages-and-optopus         | Optopus and man-pages
         readme-next-version           | README for next version
 
     reference | Reference
@@ -161,134 +165,17 @@ Argument parsing.
 new-notes: New notes
 --------
 
-Bundling Context with Result:
+Figure out function signatures:
 
-    - Decision:
-        - Store the Context instance under a named attribute.
-        - Leading candidate for now: 'ctx' (see below).
-        - The user can change attribute name to avoid name collision.
-        - Raise if the user neglects a needed change.
+    convert
+    validate
+    dispatch
+    help
 
-    - Possible attribute names:
-        - ctx
-        - context
-        - opto
-        - optopus
-        - info
-
-    - How a user works around a name collision:
-
-        p = Parser(SPEC, context_attr = NEW_NAME)
-
-    - Alternative rejected: making Result callable:
-        - When I typed mock-up code in blort.py, it was jarring.
-        - The theory is sound.
-        - But the resulting code does not read in an intuitive way.
-
-Documenting symbolically named collections in usage-text:
-
-    - Decision:
-        - Do not generate documentation for symbolically named collections.
-        - Let the user organize and label this stuff.
-
-    - Examples:
-
-        - Named Group of Opts.
-
-            other-options=([--foo] [--bar] [--fubb] <path>)
-
-        - Choice values: arg-variants.
-
-            <action=walk|run|freeze>
-
-    - Early mockups tried to document such things automatically:
-
-    - Problems:
-        - Raises too many detailed questions.
-        - Layout, ordering, labelling via headings, etc.
-
-        - To document such things, opt-specs are required.
-        - Let the user organize those opt-specs as desired.
-        - And surround the opt-spec listings with the desired text, headings,
-          or sections.
-
-Automatically generated headings for opt-spec listings:
-
-    - Decision:
-        - Generated default headings for opt-spec listings.
-        - User can override behavior in two ways:
-            - Put their own heading in front of the listing.
-            - API call to suppress auto-heading (details TBD).
-
-    - Common scenarios in a usage-section:
-        - Just variants and opt-specs (no blocks-quotes).
-        - Optopus should generate default headings for such scenarios.
-
-    - Similar logic in other sections:
-        - Will be common for a section to have nothing more than a section
-          title, maybe some block-quoted text, and then an opt-spec listing.
-        - Optopus should attach standard headings to those listings.
-
-Optopus and man-pages:
-
-    - Decision:
-        - Optopus will not generate source-syntax for man-pages.
-
-    - Rationale:
-        - Spec-syntax could never achieve what troff can do.
-        - Some users might want help-text mimicking man-page design.
-        - The key: make sure they can achieve that (generally).
-
-Headings in the spec-syntax:
-
-    - Decision:
-        - Add headings to the syntax, via triple-colon.
-
-    - Rationale:
-        - Planning notes (above) use the heading concept a lot.
-        - Optopus will generate headings for opt-spec listings in
-          the usage-section.
-        - The syntax is simple enough and reasonably intuitive.
-        - Opens up ability to support consistent styling for headings.
-        - Opens up an automatic-heading policy:
-            - If a group of opt-specs has no heading immediately before it,
-              Optopus will generate one.
-        - Eliminates need to block-quote heading text.
-
-    - Triple vs double colons:
-        - Why not triple-colon for sections, since they have higher status?
-        - Better to having N colons convey depth in hierarchy.
-        - Leaves open possiblity of supporting subheadings.
-
-Support smart-types for convert/validate:
-
-    - Decision:
-        - Add to roadmap and preserve these notes.
-        - Defer API details.
-
-    - Supporting common use cases makes some sense.
-        - Yes the user can write their own convert/validate.
-        - But doing the common things well is handy.
-        - Opens up support for more informative errors.
-        - Similar in spirit to other Optopus utilities:
-            - Exiting with proper codes.
-            - Printing errors in a consistent style.
-
-    - Click:
-
-        - The library provides various data-objects.
-        - They hold configuration to perform convert/validate.
-
-        - Examples:
-              click.Path(...)       | Requirements to impose on a path
-              click.File(...)       | Ditto, plus how to open the file
-              click.IntRange(...)   | Min, max, etc
-              click.FloatRange(...) | Min, max, etc
-              click.DateTime(...)   | Allowed formats
-
-    - Note on convert vs validate:
-        - Optopus supports but does not require both.
-        - User can do both in convert.
+    See:
+        converters-validators
+        help-distpatching
+        dispatch
 
 Prompting for OptArgs:
 
@@ -2150,7 +2037,7 @@ Assignment of OptArg attributes via the parent-Opt:
 
             - A query by Opt.name will get the Opt, not the OptArgs.
             - Forcing users query explicitly would be annoying.
-                
+
             # Tedious.
             query('z.a', 'z.b')
             query('x.0', 'x.1')
@@ -3043,7 +2930,7 @@ Querying in the face of repeated names:
             - Insufficient by itself.
             - query('foo.') would still get both elements.
             - Why: because the path is not anchored to the start.
-            
+
         - Also add syntax to anchor to the start.
             - query('.foo.') would get only the 1st element.
             - But consider: query('.x.x.').
@@ -3194,6 +3081,49 @@ Duplicate dests within a Result:
             X         # <x>
             [X, X]    # -x <x>{2}
         ]
+
+--------
+parsed-data-with-context: Including Context with the Result
+--------
+
+Providing Context with Result:
+
+    - In prior planning work:
+
+        - The Result (aka opts) contained only the parsed data.
+
+        - That imposed annoying requirements on some callables:
+            - Example: dispatch functions.
+            - How many argument would they be passed?
+                - Result
+                - Parser
+                - Current Opt
+                - etc.
+
+        - Analagous annoyances would affect user code:
+            - They might want to pass just opts.
+            - But sometimes they need the Parser too.
+
+    - A better approach:
+
+        - Context class:
+            - A place to holds lots of contextual information.
+            - Parser, current Opt, original ARGS, etc.
+
+        - Assign that instance to Result.context.
+
+        - If the user needs to use a dest='context', they can change the
+          attribute for the Context some something else.
+
+            p = Parser(SPEC, context_attr = 'info')
+
+        - Optopus will raise if they don't (avoid silent name collisions).
+
+    - Alternative rejected: making Result callable:
+
+        - When I typed mock-up code in blort.py, it was jarring.
+        - The theory is sound.
+        - But the resulting code does not read in an intuitive way.
 
 --------
 eager-attachment-at-bounary: Eager option attachment at repetition boundaries
@@ -3723,8 +3653,16 @@ Types of errors in precedence order, by failure source:
 converters-validators: Converters and validators
 --------
 
-** Does the discussion in the dispatch section [above] cause me
-   to rethink the approach here -- specifically for validators.
+** Edit to reflect new policy: Result.context
+    - Dispatch: just a Result might be sufficient
+    - Validator: not sure about this one
+
+    - If a user wants to do ordinary convert/validate:
+        - Value-in and value-out (or raise).
+        - They can do all of it in the convert function.
+
+    - If a user has wider validation needs, they can use validate. But this
+      function will take more arguments.
 
 Function signatures:
 
@@ -3733,6 +3671,32 @@ Function signatures:
     Converter | STR            => OBJ/raise
     Validator | VAL, OPT, RES  => True/False/raise
     Dispatch  | VAL, OPT, RES  => None                # No. See dispatch section [above].
+
+Users need not use both convert and validate:
+    - Optopus supports but does not require both.
+    - Users can do both tasks in convert.
+
+Support smart-types for convert/validate:
+
+    - Supporting common use cases makes some sense.
+        - Yes the user can write their own convert/validate.
+        - But doing the common things well is handy.
+        - Opens up support for more informative errors.
+        - Similar in spirit to other Optopus utilities:
+            - Exiting with proper codes.
+            - Printing errors in a consistent style.
+
+    - Click:
+
+        - The library provides various data-objects.
+        - They hold configuration to perform convert/validate.
+
+        - Examples:
+              click.Path(...)       | Requirements to impose on a path
+              click.File(...)       | Ditto, plus how to open the file
+              click.IntRange(...)   | Min, max, etc
+              click.FloatRange(...) | Min, max, etc
+              click.DateTime(...)   | Allowed formats
 
 --------
 grammar-querying-api: Grammar querying API
@@ -3785,7 +3749,7 @@ Querying grammar elements in a Parser:
           grandparent to child).
 
         - Example:
-            
+
             bar.fubb.foo
 
             - Get the grammar elements with name/dest of 'foo'
@@ -4362,6 +4326,119 @@ level. Finally, because Groups can nest, storing their requirements at the Opt
 level is not immediately straightforward.
 
 --------
+usage-text-and-named-groups: Usage-text and named groups or choices
+--------
+
+Usage text can contain named collections of elements:
+
+    - Named Group of Opts.
+
+        other-options=([--foo] [--bar] [--fubb] <path>)
+
+    - Choice values: arg-variants.
+
+        <action=walk|run|freeze>
+
+Previous plans envisioned Optopus documenting such things in usage-text:
+
+    - Automatically documenting the named collections of opts or choices.
+
+    - Example:
+
+        - Spec:
+
+            runner <action=run|walk|rest> [-n]
+
+        - Usage-text:
+
+            Usage:
+              runner <action> [-n] [help-options]
+
+              Where <step>:
+                run
+                walk
+                rest
+
+              Where help-options:
+                --help
+                --examples
+                --details
+
+But that raises too many detailed questions:
+
+    - Layout, ordering, labelling via headings, etc.
+    - Too many details and possible scenarios.
+
+    - Let the user handle it:
+        - Ordering of opt-specs.
+        - Headings for opt-spec listings.
+        - Additional text before/after/among the opt-specs.
+
+--------
+headings-in-spec-syntax: Spec-syntax support for headings
+--------
+
+Spec-syntax needs headings in addition to sections:
+
+    - Sections organize the help text and provide a mechanism for more
+      context-sensitive help text.
+
+    - Headings are a way to provide an organization device within
+      a section (loosely akin to sub-sections).
+
+    - Syntax:
+
+        Section-foo ::
+
+        Heading-bar :::
+
+Rationale:
+    - Planning notes use the heading concept a lot.
+    - I needed them multiple times when doing mock-ups.
+
+    - Opens up ability to support consistent styling for headings.
+
+    - Opens up an automatic-heading policy:
+        - See below.
+
+    - Eliminates need to block-quote heading text.
+    - The new heading syntax is simple enough and reasonably intuitive.
+
+Automatically generated headings for opt-spec listings:
+
+    - Policy:
+
+        - If an opt-spec listing has no heading immediately before it.
+        - Then Optopus will generate one.
+
+        - User can override in two ways:
+            - Put their own heading in front of the listing.
+            - API call to suppress auto-heading (details TBD).
+
+    - Common scenarios in a usage-section:
+
+        - Just variants and opt-specs (no blocks-quotes).
+        - Optopus should generate default headings for such scenarios.
+
+            Arguments:
+              <foo> : Blah-foo
+              ...
+
+            Options:
+              [--level <n>] : Blah-level
+              ...
+
+    - Similar logic in other sections:
+        - Will be common for a section to have nothing more than a section
+          title, maybe some block-quoted text, and then an opt-spec listing.
+        - Optopus should attach standard headings to those listings.
+
+Triple vs double colons for headings:
+    - Why not triple-colon for sections, since they have higher status?
+    - Better to having N colons convey depth in hierarchy.
+    - Leaves open possiblity of supporting subheadings.
+
+--------
 optarg-choices-in-usage-text: OptArg.choices in usage-text
 --------
 
@@ -4659,6 +4736,22 @@ Those notes also implied that the data structure should be serializable:
 
     - Not sure how important serialization really is.
     - Defer this for now.
+
+--------
+man-pages-and-optopus: Optopus and man-pages
+--------
+
+Optopus will not generate source-syntax for man-pages.
+
+Rationale:
+
+    - Spec-syntax could never achieve what troff can do.
+
+    - Some users might want help-text mimicking man-page design.
+    - Optopus will aim for approximate mimickry.
+        - Documentation that can look generally like a man-page.
+        - Achieve this via sections, headings, indentation policy, formatting
+          configuration, and so forth.
 
 --------
 readme-next-version: README for next version
