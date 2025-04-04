@@ -72,7 +72,7 @@ toc: Table of contents
         optarg-choices-in-usage-text  | OptArg.choices in usage-text
         groups-need-names             | Why Group needs both dest and name
         degenerate-groups             | Degenerate groups with only one element
-        opts-should-know-provenance   | Opts should know their data provenance
+        settings-and-opts             | Opts and settings (preferences and environment variables)
         parser-serialization          | Parser serialization
         man-pages-and-optopus         | Optopus and man-pages
         readme-next-version           | README for next version
@@ -93,6 +93,10 @@ toc: Table of contents
 todos: TODOs
 --------
 
+settings-and-opts
+    - edit is in progress
+    - more to do
+
 new-notes : implement decisions:
 
     - Implementation TODOs:
@@ -104,6 +108,16 @@ new-notes : implement decisions:
 
         - New OO model.
         - OptArg => Arg.
+
+        - Add to roadmap: prompting for Args.
+
+        - Priority:
+            - API renaming: 'high-precedence' => 'priority'.
+            - Also use 'priority-flags' in some docs/notes.
+            - Restrict priority-opts to flags.
+
+        - Terminology:
+            - opts : conventional variable name for parsed Result.
 
     - Move notes to proper homes in notes.txt.
     - Edit as needed.
@@ -165,115 +179,13 @@ Argument parsing.
 new-notes: New notes
 --------
 
-Prompting for OptArgs:
-
-    - Decision:
-        - Add to roadmap.
-        - API details deferred.
-
-    - Click supports this.
-    - Example use case: credentials.
-
-Raising errors in convert/validate:
-
-    - Decision:
-        - If exception, get its MSG.
-        - Then build the full Optopus error message, with MSG at end.
-
-    - Other libraries require users to raise specific exceptions:
-        - argparse.ArgumentError
-        - click.BadParameter
-
-    - Seems like a needless hassle:
-        - Just get the msg from any Exception instance.
-
-High-precedence: naming and rethinking:
-
-    - Decisions:
-        - Naming:
-            - Drop 'high-precedence'.
-            - Use 'priority' in API.
-            - Also use 'priority-flags' in some docs/notes.
-        - Restrict priority-opts to flags.
-
-    - Why priority-opts should be restricted to flags:
-
-        - Context:
-            - If an opt has priority.
-            - Its dispatching should occur no matter what.
-            - Even in the face of otherwise invalid ARGS.
-            - Example: --help.
-
-        - But consider how parsing would under those conditions:
-
-            - Parsing of all ARGS fails.
-            - Select variant that did the best (eg, max N ARGS consumed).
-            - Optopus populates a Result up to the ARG that failed.
-            - What happens next?
-
-            - If a priority-opt is a flag:
-                - Parser is able to see that the flag is present.
-                - The test is easy: '--help' in ARGS
-
-            - But if a priority-opt were allowed to be more complex:
-                - With OptArgs having grammatical/validation requirements.
-                - How would Optopus successfully parse the entity?
-                - Parsing has already failed.
-                - Seems fraught.
-
-    - Other naming ideas:
-        - Click uses 'eager'.
-        - But their concept deals mainly with dispatch ordering.
-        - Click does not appear to support the concept of a priority-flag.
-
-Support for obtaining applied-defaults from environment variables:
-
-    - Add my plans to opts-should-know-provenance
-
-    - Parser.apply_defaults(pref_defaults, env_defaults = None)
-
-        - pref_defaults are alredy covered in notes.
-
-        - env_defaults: a possible approach:
-
-            - None:
-                - Do nothing.
-
-            - True:
-                - Env vars naming agrees with Opt naming.
-                - With env vars in uppercase.
-
-            - 'PREFIX'
-                - Same, after attaching the PREFIX to env var names.
-
-            - dict:
-                - Mapping: Opt PATH => env var name
-
-            - callable:
-                - Take an Opt.
-                - Return env var name.
-
-        - Precise details/decisions TBD.
-        - Based on the sketch, the plan (or some variant of it) seems plausible.
-
-    - Click supports getting OptArg defaults from environment variables.
-
-        - Automatically in one of two ways:
-            - Opt-names and env-vars agree.
-            - They agree, with a common env-var prefix.
-
-        - Opt-specific configuration:
-
-            @click.option('--fubb', envvar = 'FUBB_VAL')
-
 Function signatures for callable Opt attributes:
 
-    * Remaining issues:
-        - Whether dispatch is helpful/needed.
-        - Defer this decision until after more mock-ups are done:
-            - Try to configure their dispatch.
-            - See how it looks.
-            - Write the equivalent roll-your-own code.
+    * Remaining issue: whether dispatch is helpful/needed.
+    * Defer this decision until after more mock-ups are done:
+        - Try to configure their dispatch.
+        - See how it looks.
+        - Write the equivalent roll-your-own code.
 
     * Relevant sections:
         converters-validators
@@ -2153,6 +2065,37 @@ interpretted an invalid subcommand.
 
     demo --help -Q HI delete   # General help rather than delete help.
 
+Why priority-opts should be restricted to flags:
+
+    - Context:
+        - If an opt has priority.
+        - Its dispatching should occur no matter what.
+        - Even in the face of otherwise invalid ARGS.
+        - Example: --help.
+
+    - But consider how parsing would work under those conditions:
+
+        - Parsing of all ARGS fails.
+        - Select variant that did the best (eg, max N ARGS consumed).
+        - Optopus populates a Result up to the ARG that failed.
+        - What happens next?
+
+        - If a priority-opt is a flag:
+            - Parser is able to see that the flag is present.
+            - The test is easy: '--help' in ARGS
+
+        - But if a priority-opt were allowed to be more complex:
+            - With Args having grammatical/validation requirements.
+            - How would Optopus successfully parse the entity?
+            - Parsing has already failed.
+            - Seems fraught.
+
+Other naming ideas considered:
+    - My early planning used 'high-precedence': verbose; unnatural.
+    - Click uses 'eager'.
+    - But their concept deals mainly with dispatch ordering.
+    - Click does not appear to support the concept of a priority-flag.
+
 --------
 help-text-formatting: Help text formatting
 --------
@@ -3726,6 +3669,18 @@ Users need not use both convert and validate:
     - Optopus supports but does not require both.
     - Users can do both tasks in convert.
 
+Errors raised during convert/validate:
+
+    - Optopus policy:
+        - Get MSG from the exception.
+        - Build the end-user-facing error message, with MSG at end.
+
+    - Other libraries require users to raise specific exceptions:
+        - Examples:
+            - argparse.ArgumentError
+            - click.BadParameter
+        - Seems like a needless hassle.
+
 Support smart-types for convert/validate:
 
     - Supporting common use cases makes some sense.
@@ -3892,6 +3847,10 @@ Consider using a library:
     - valid8 is interesting but seems a bit over-engineered.
 
     - Its docs point to other tools that could have interesting ideas.
+        - I briefly check them.
+        - Common patterns I dislike:
+            - Specifying validation via decorators, docstrings, annotations.
+            - Elaborate DSL syntaxes.
 
 If not a library, consider implementing a simple validation module for the
 project:
@@ -4655,98 +4614,145 @@ In the spec-syntax, single-element groups exist for good reason:
       element.
 
 --------
-opts-should-know-provenance: Opts should know their data provenance
+settings-and-opts: Opts and settings (preferences and environment variables)
 --------
 
-Data values in a parsed Result can come from three sources:
-    - Command-line arguments supplied by end-user.
-    - Settings/preferences in a config file managed by the user's program.
-    - Defaults set in the configured Parser.
+** ISSUES TO BE CLARIFIED:
 
-A Parser should know the data provenance for each dest in the Result:
-    - Users sometimes need this information to facilitate easy
-      merging of preferences and opts.
+    - All input sources need convert/validate:
 
-The Parser should be able to report on data provenance:
+        - ARGS and environment variables obviously do.
 
-    p = Parser(...)
-    opts, sources = p.parse(ARGS, with_sources = True)
+        - Preferences might seems to need only validate:
 
-    Where sources:
-        - Is a dict where:
+            - Yes, a prefs file can contain already-converted types (eg int).
+            - But most config files support only basic types (int, float, bool).
+            - Running such a value through the convert function causes no harm.
+
+            - And some convert functions will need to return non-basic types.
+
+    - Unlike preferences (which can vary a lot in format), environment variables
+      come from a standarized source.
+
+        - So Optopus should support it better.
+
+        - It seems bad to store prefs and envs under the same general-purpose
+          upstreams attribute.
+
+            - How will Optopus report on provenance cleanly?
+
+            - Seems better to keep prefs and envs distinct.
+
+            Opt('foo', pref = VAL, env = VAL, default = VAL)
+
+            Source('foo') = pref|env|default|arg|None
+
+Data values in a parsed Result can come from various sources:
+
+    - Settings:
+        - Preferences: a config file.
+        - Environment variables.
+
+    - Parser configuration:
+        - Regular default values.
+
+    - End-user inputs:
+        - Command-line arguments.
+
+Settings are upstream inputs:
+
+    - Settings give the appearance of being a kind of default:
+        - User sets a default in a preference file.
+        - User replaces it with a default in an environment variable.
+        - That default might or might not be replaced via CLI arguments.
+
+    - Settings are more correctly viewed an alternative form of input.
+
+        - A value from settings does not replace a configured default.
+        - Rather, it simply supplies the value.
+        - So the Parser to never needs to use the configured default.
+
+    - Settings, in effect, are upstream inputs.
+
+Two goals for Optopus related to settings:
+
+    - Adjusting parsing requirements based on settings:
+
+        - Example:
+            - A required Opt.
+            - Provided via settings.
+            - Parsing should understand that the requirement is met.
+
+        - Example:
+            - An Opt with nargs=2.
+            - User sets one Arg in settings.
+            - Parsing now needs only one more Arg.
+
+    - Merging settings and the parsed Result.
+        - Can be a hassle with argparse (eg mvs).
+        - It does not report a value's provenance: default or ARGS.
+
+        - Provide contextual information to make the merging easy.
+        - Maybe perform the merging for straightforward scenarios.
+
+Applying settings to the Parser:
+
+    - Code sketch:
+
+        # User loads their own settings.
+        # If needed, user adjusts them to align with Parser names/dests.
+        prefs = ...
+        envs = ...
+
+        # User configures Optopus in the usual way.
+        p = Parser(SPEC, upstreams = [prefs, envs])
+
+    - Mechanics:
+
+        - Upstream settings are dicts:
+            - key: query-path to identify 1+ Opts
+            - value: desired value(s) for their Opt.upstreams
+
+        - During arg-parsing, the presence of an upstream inputs can help
+          satisfy quantifer requirements.
+
+        - After parsing, values from upstreams or defaults are attached to the
+          Result, as needed.
+
+        - The Parser will keep track of provenance for each dest.
+
+Merging settings and opts:
+
+    - In most situations the user will not have to do anything.
+    - The merging will have already occurred during post-parsing work.
+
+    - But for complex situations the user can perform further merging checking,
+      and so forth with access to data-provenance information.
+
+Reporting on data provenance:
+
+    - Data-provenance will be available via the Context.
+
+        opts = p.parse(ARGS)
+        sources = opts.context.sources
+
+    - Where sources:
+
+        - Is a dict with:
             - key: dest
             - value: Source or dict  # The latter for inner-Results.
-        - And a Source has attributes:
-            - source: str
-                - 'arguments'
-                - 'applied_defaults'     # Preferences (more below).
-                - 'defaults'
-            - indexes: TBD
-                - Maybe slice into the command-line arguments.
-                - Might need to be more complex for situations involving
-                  complex grammars.
-                - Some use cases require knowing the argument ordering:
+
+        - A Source knows:
+
+            - Did dest's value(s) come from defaults, upstreams, arguments?
+            - Which ARGS supplied the value(s).
+            - The positions (indexes) of those ARGS.
+                - Some use cases require knowing the argument ordering.
+                - Examples:
                     - Perl `rename`: the "rules" has to be applied in order.
                     - Unix `find`: ditto.
 
-How will Optopus support users needs to merge preferences and opts?
-
-    # User loads their own prefs.
-    prefs = load_prefs(...)
-
-    # If needed, user creates an adjusted variant of those prefs.
-    pref_defaults = ...
-
-    # User configures Optopus in the usual way.
-    p = Parser(...)
-
-    # User applies the prefs to the configured Parser.
-    p.apply_defaults(pref_defaults)
-
-    - What happens:
-
-        - prefs is a dict:
-            - key: query-path to identify 1+ Opts
-            - value: desired value for their Opt.applied_default
-
-        - Optopus sets every Opt.applied_default with the applicable value.
-            - The regular Opt.default values are not altered.
-
-        - During arg-parsing, the presence of an applied-default can help
-          satisfy quantifer requirements.
-
-        - After parsing, defaults and applied-defaults are attached to the
-          Result, as needed.
-
-    - This approach involves less complexity for Optopus that some of my
-      earlier plans.
-
-        - Optopus does not need to know about key mappings from prefs-to-opts:
-            - An earlier plan involved the user telling Optopus how to
-              translate prefs keys to corresponding Opt dests (for cases when
-              they did not align exactly).
-
-        - Optopus still generals the regular usage-text and help-text.
-            - That is driven by the spec and grammar.
-            - The presence of a setting/preference can help to satisfy
-              requirements at the moment of typing command line arguments.
-            - But they do not fundamentally change the spec/grammar.
-
-        - No information is overwritten or lost:
-            - Optopus does not set a new default on the Opts.
-            - It does not modify the configured quantifiers.
-            - Instead, the presences of an applied_default is taken into
-              account during arg-parsing.
-
-Merging preferences and opts:
-
-    - This task can be fraught with argparse (eg, neon-client, mvs, etc).
-
-    - With the plan above, the user typically does not need
-      to do anything. The merge happens during arg-parsing.
-
-    - But even in complicated situations, the user can sort out remaining
-      details because they know data provenance.
+    - Details TBD.
 
 A related topic: preferences and opts tend to have similar validation needs:
 
@@ -4759,6 +4765,64 @@ A related topic: preferences and opts tend to have similar validation needs:
             - Would generate consistent error messages.
         - This topic needs more thinking and details, but it seems amenable to
           the rest of the project's design.
+
+Environment variables:
+
+    - Parser.apply_defaults(pref_defaults, env_defaults = None)
+
+        - pref_defaults are alredy covered in notes.
+
+        - env_defaults: a possible approach:
+
+            - None:
+                - Do nothing.
+
+            - True:
+                - Env vars naming agrees with Opt naming.
+                - With env vars in uppercase.
+
+            - 'PREFIX'
+                - Same, after attaching the PREFIX to env var names.
+
+            - dict:
+                - Mapping: Opt PATH => env var name
+
+            - callable:
+                - Take an Opt.
+                - Return env var name.
+
+        - Precise details/decisions TBD.
+        - Based on the sketch, the plan (or some variant of it) seems plausible.
+
+    - Click supports getting OptArg defaults from environment variables.
+
+        - Automatically in one of two ways:
+            - Opt-names and env-vars agree.
+            - They agree, with a common env-var prefix.
+
+        - Opt-specific configuration:
+
+            @click.option('--fubb', envvar = 'FUBB_VAL')
+
+This approach involves less complexity for Optopus that some of my earlier
+plans.
+
+    - Optopus does not need to know about key mappings from prefs-to-opts:
+        - An earlier plan involved the user telling Optopus how to
+          translate prefs keys to corresponding Opt dests (for cases when
+          they did not align exactly).
+
+    - Optopus still generals the regular usage-text and help-text.
+        - That is driven by the spec and grammar.
+        - The presence of a setting/preference can help to satisfy
+          requirements at the moment of typing command line arguments.
+        - But they do not fundamentally change the spec/grammar.
+
+    - No information is overwritten or lost:
+        - Optopus does not set a new default on the Opts.
+        - It does not modify the configured quantifiers.
+        - Instead, the presences of an applied_default is taken into
+          account during arg-parsing.
 
 --------
 parser-serialization: Parser serialization
