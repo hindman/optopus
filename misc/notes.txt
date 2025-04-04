@@ -93,35 +93,28 @@ toc: Table of contents
 todos: TODOs
 --------
 
-settings-and-opts
-    - edit is in progress
-    - more to do
+Implement recent changes in notes.txt:
 
-new-notes : implement decisions:
+    - Drop Opt.choice.
+    - Clarify arg-variant defintion.
 
-    - Implementation TODOs:
+    - Positional-spec can support two quantifiers directly: <x>{4}{0,2}
 
-        - Drop Opt.choice.
-        - Clarify arg-variant defintion.
+    - New OO model.
+    - OptArg => Arg.
 
-        - Positional-spec can support two quantifiers directly: <x>{4}{0,2}
+    - Add to roadmap:
+        - prompting for Args.
+        - support for envvars
+        - support for prefs [probably there already]
 
-        - New OO model.
-        - OptArg => Arg.
+    - Priority:
+        - API renaming: 'high-precedence' => 'priority'.
+        - Also use 'priority-flags' in some docs/notes.
+        - Restrict priority-opts to flags.
 
-        - Add to roadmap: prompting for Args.
-
-        - Priority:
-            - API renaming: 'high-precedence' => 'priority'.
-            - Also use 'priority-flags' in some docs/notes.
-            - Restrict priority-opts to flags.
-
-        - Terminology:
-            - opts : conventional variable name for parsed Result.
-
-    - Move notes to proper homes in notes.txt.
-    - Edit as needed.
-    - Edit the rest of the document to align with new policies.
+    - Terminology:
+        - opts : conventional variable name for parsed Result.
 
 Mock-ups: create several more:
     * This has been very useful to expose questions/issues.
@@ -138,9 +131,14 @@ Mock-ups: create several more:
     - Other project examples:
         - Argparse docs for anything prominent.
 
+new-notes : handle remaining or deferered issues:
+    
+    - dispaching: is it worth it? [after doing more mockups]
+
 Editing pass over the rest of notes.txt:
 
-    __HERE1__
+    __HERE2__ : start from beginning
+    __HERE1__ : where I left off during prior editing pass
 
     - Edit to conform to new specification.
     - Add 'Summary' at the top of section, where applicable.
@@ -3546,8 +3544,10 @@ positional and parameter variants. For example:
 argparse-and-greed: argparse and greediness
 --------
 
-The argparse library does attach arguments greedily, but it makes no attempt
-to backtrack. An example:
+How argparse operates:
+
+    - Attach arguments greedily.
+    - Does NOT backtrack.
 
     Grammar:
 
@@ -4617,36 +4617,6 @@ In the spec-syntax, single-element groups exist for good reason:
 settings-and-opts: Opts and settings (preferences and environment variables)
 --------
 
-** ISSUES TO BE CLARIFIED:
-
-    - All input sources need convert/validate:
-
-        - ARGS and environment variables obviously do.
-
-        - Preferences might seems to need only validate:
-
-            - Yes, a prefs file can contain already-converted types (eg int).
-            - But most config files support only basic types (int, float, bool).
-            - Running such a value through the convert function causes no harm.
-
-            - And some convert functions will need to return non-basic types.
-
-    - Unlike preferences (which can vary a lot in format), environment variables
-      come from a standarized source.
-
-        - So Optopus should support it better.
-
-        - It seems bad to store prefs and envs under the same general-purpose
-          upstreams attribute.
-
-            - How will Optopus report on provenance cleanly?
-
-            - Seems better to keep prefs and envs distinct.
-
-            Opt('foo', pref = VAL, env = VAL, default = VAL)
-
-            Source('foo') = pref|env|default|arg|None
-
 Data values in a parsed Result can come from various sources:
 
     - Settings:
@@ -4662,6 +4632,7 @@ Data values in a parsed Result can come from various sources:
 Settings are upstream inputs:
 
     - Settings give the appearance of being a kind of default:
+
         - User sets a default in a preference file.
         - User replaces it with a default in an environment variable.
         - That default might or might not be replaced via CLI arguments.
@@ -4670,7 +4641,7 @@ Settings are upstream inputs:
 
         - A value from settings does not replace a configured default.
         - Rather, it simply supplies the value.
-        - So the Parser to never needs to use the configured default.
+        - So the Parser ignores the configured default.
 
     - Settings, in effect, are upstream inputs.
 
@@ -4683,17 +4654,18 @@ Two goals for Optopus related to settings:
             - Provided via settings.
             - Parsing should understand that the requirement is met.
 
-        - Example:
-            - An Opt with nargs=2.
-            - User sets one Arg in settings.
-            - Parsing now needs only one more Arg.
+        - Such considerations can be applied during arg-parsing.
+        - But do not apply them when generating usage and help text.
 
     - Merging settings and the parsed Result.
-        - Can be a hassle with argparse (eg mvs).
-        - It does not report a value's provenance: default or ARGS.
 
-        - Provide contextual information to make the merging easy.
-        - Maybe perform the merging for straightforward scenarios.
+        - Can be a hassle with argparse (eg mvs).
+        - Argparse does not report a value's provenance: default or ARGS.
+
+        - Optopus will:
+            - Make the merging unnecessary for most use cases.
+            - And provide provenance info to support complex merging that a
+              user might need to perform.
 
 Applying settings to the Parser:
 
@@ -4701,33 +4673,58 @@ Applying settings to the Parser:
 
         # User loads their own settings.
         # If needed, user adjusts them to align with Parser names/dests.
-        prefs = ...
-        envs = ...
+        PREFS = ...
 
-        # User configures Optopus in the usual way.
-        p = Parser(SPEC, upstreams = [prefs, envs])
+        # User configures Parser, telling Optopus about upstream inputs.
+        p = Parser(SPEC, prefs = PREFS, envs = ENVS)
 
-    - Mechanics:
+    - Where PREFS:
 
-        - Upstream settings are dicts:
-            - key: query-path to identify 1+ Opts
-            - value: desired value(s) for their Opt.upstreams
+        - Dict:
+            - key: query-path to identify 1+ Opts.
+            - value: to be set.
 
-        - During arg-parsing, the presence of an upstream inputs can help
-          satisfy quantifer requirements.
+        - For each Opt, set Opt.pref.
 
-        - After parsing, values from upstreams or defaults are attached to the
-          Result, as needed.
+    - Where ENVS can be:
 
-        - The Parser will keep track of provenance for each dest.
+        - None (the default):
+            - Optopus will do nothing regarding envvars.
+
+        - True:
+            - Envvar names must agree with Opt dests.
+            - With env vars in uppercase (of course).
+
+        - FMT:
+            - Format string for the envvar name.
+            - It should take one parameter (ie the Opt.dest).
+
+        - dict:
+            - Mapping: Opt PATH => envvar name
+
+        - For each Opt, Optopus will look for the envvar and, if found, set
+          Opt.envvar accordingly.
+
+    - How arg-parsing will operate:
+
+        - The presence of an upstream input (Opt.pref and Opt.envvar) can help
+          satisfy input requirements.
+
+        - The upstream values will go through the usual convert/validate
+          process to determine their suitability.
+
+        - The Parser will keep track of data provenance.
+
+        - For each Opt, Optopus will use only one source: pref, envar, or ARGS.
+          It will not merge/add their inputs together to satisfy quantifiers.
 
 Merging settings and opts:
 
     - In most situations the user will not have to do anything.
-    - The merging will have already occurred during post-parsing work.
+    - The merging will have already occurred during arg-parsing.
 
-    - But for complex situations the user can perform further merging checking,
-      and so forth with access to data-provenance information.
+    - But for complex situations the user can perform further merging,
+      checking, and so forth with access to data-provenance information.
 
 Reporting on data provenance:
 
@@ -4742,87 +4739,34 @@ Reporting on data provenance:
             - key: dest
             - value: Source or dict  # The latter for inner-Results.
 
-        - A Source knows:
+        - Each Source will have:
 
-            - Did dest's value(s) come from defaults, upstreams, arguments?
-            - Which ARGS supplied the value(s).
-            - The positions (indexes) of those ARGS.
+            - source: pref|envvar|default|arg
+            - args: the actual ARGS supplying the values.
+            - indexes: indexes of those ARGS.
+
+            - Why indexes:
                 - Some use cases require knowing the argument ordering.
                 - Examples:
-                    - Perl `rename`: the "rules" has to be applied in order.
+                    - Perl `rename`: the "rules" were applied in order.
                     - Unix `find`: ditto.
 
-    - Details TBD.
+Why all input sources will go through convert/validate:
 
-A related topic: preferences and opts tend to have similar validation needs:
+    - ARGS and envvars are always simple strings, so they need convert and
+      validate.
 
-    - User-prefs are not an Optopus responsibility.
-    - But an Opt knows how to validate its own incoming values.
-    - User might want to take advantage of that:
-        - Define validation once, in the Opt.
-        - Use the Opt to validate a value coming from preferences.
-            - Provides a convenient setup for preferences validation.
-            - Would generate consistent error messages.
-        - This topic needs more thinking and details, but it seems amenable to
-          the rest of the project's design.
+    - Preferences might seems to need only validate:
 
-Environment variables:
+        - Yes, a prefs file can contain already-converted types (eg int).
+        - But most configs support only basic types (int, float, bool).
+        - Basic convert functions can be re-applied without harm.
 
-    - Parser.apply_defaults(pref_defaults, env_defaults = None)
+            int('42') == int(42)
 
-        - pref_defaults are alredy covered in notes.
+        - And some convert functions will need to return non-basic types.
 
-        - env_defaults: a possible approach:
-
-            - None:
-                - Do nothing.
-
-            - True:
-                - Env vars naming agrees with Opt naming.
-                - With env vars in uppercase.
-
-            - 'PREFIX'
-                - Same, after attaching the PREFIX to env var names.
-
-            - dict:
-                - Mapping: Opt PATH => env var name
-
-            - callable:
-                - Take an Opt.
-                - Return env var name.
-
-        - Precise details/decisions TBD.
-        - Based on the sketch, the plan (or some variant of it) seems plausible.
-
-    - Click supports getting OptArg defaults from environment variables.
-
-        - Automatically in one of two ways:
-            - Opt-names and env-vars agree.
-            - They agree, with a common env-var prefix.
-
-        - Opt-specific configuration:
-
-            @click.option('--fubb', envvar = 'FUBB_VAL')
-
-This approach involves less complexity for Optopus that some of my earlier
-plans.
-
-    - Optopus does not need to know about key mappings from prefs-to-opts:
-        - An earlier plan involved the user telling Optopus how to
-          translate prefs keys to corresponding Opt dests (for cases when
-          they did not align exactly).
-
-    - Optopus still generals the regular usage-text and help-text.
-        - That is driven by the spec and grammar.
-        - The presence of a setting/preference can help to satisfy
-          requirements at the moment of typing command line arguments.
-        - But they do not fundamentally change the spec/grammar.
-
-    - No information is overwritten or lost:
-        - Optopus does not set a new default on the Opts.
-        - It does not modify the configured quantifiers.
-        - Instead, the presences of an applied_default is taken into
-          account during arg-parsing.
+        - Bottom line: even prefs need convert.
 
 --------
 parser-serialization: Parser serialization
