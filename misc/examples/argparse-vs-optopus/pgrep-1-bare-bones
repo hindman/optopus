@@ -1,0 +1,34 @@
+
+'''
+
+Example 1: minimal command-line script.
+
+Bare-bones grep-clone so you can use Python regexes.
+
+Compared to Argparse, Optopus is:
+
+    - Shorter, more efficient.
+    - More directly readable and intuitive.
+    - Less API to remember.
+    - An API familiar in other contexts (usage text).
+
+Size: 22%.
+
+'''
+
+####
+# Argparse.
+####
+
+ap = argparse.ArgumentParser()
+ap.add_argument('-i', action = 'store_true')
+ap.add_argument('-v', action = 'store_true')
+ap.add_argument('rgx')
+ap.add_argument('path')
+
+####
+# Optopus.
+####
+
+p = Parser('[-i] [-v] <rgx> <path>')
+

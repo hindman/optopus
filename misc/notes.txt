@@ -93,6 +93,31 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Mock-ups: create several more:
+
+    - argparse-vs-optopus/
+        - in progress
+        - working on pgrep-3
+
+        - Ideas:
+            p.usage_style('clean')
+            p.group_up(kind = Option, name = 'FOO')
+
+    - naval-fate
+    - EX_BLORT: revisit.
+    - Click repo.
+        - Click's approach is quite awkward.
+        - Also mock up how dispatching would work.
+    - Click other examples.
+
+    - Check my current examples and mock them up where interesting.
+    - Other project examples:
+        - Argparse docs for anything prominent.
+
+new-notes : handle remaining or deferered issues:
+    
+    - dispaching: is it worth it? [after doing more mockups]
+
 Implement recent changes in notes.txt:
 
     - Drop Opt.choice.
@@ -115,25 +140,6 @@ Implement recent changes in notes.txt:
 
     - Terminology:
         - opts : conventional variable name for parsed Result.
-
-Mock-ups: create several more:
-    * This has been very useful to expose questions/issues.
-    * Add references to the examples section, where relevant.
-
-    - naval-fate
-    - EX_BLORT: revisit.
-    - Click repo.
-        - Click's approach is quite awkward.
-        - Also mock up how dispatching would work.
-    - Click other examples.
-
-    - Check my current examples and mock them up where interesting.
-    - Other project examples:
-        - Argparse docs for anything prominent.
-
-new-notes : handle remaining or deferered issues:
-    
-    - dispaching: is it worth it? [after doing more mockups]
 
 Editing pass over the rest of notes.txt:
 
@@ -676,7 +682,7 @@ pgrep: README example-4: EX_README_4
 
 Parser configuration: spec-vs-API: EX_JOB_CLIENT
 
-    See misc/examples/job-client-*
+    See misc/examples/spec-vs-api/job-client-*
 
 blort: EX_BLORT
 
@@ -3935,9 +3941,9 @@ Where should validation logic reside?
 strategy-reassessment: Reassess the strategy
 --------
 
-After further reflection and looking again at the various job-client* example
-scripts, I realize I underestimated the power of the text-based configuration
-syntax.
+After further reflection and looking again at the various job-client example
+scripts (EX_JOB_CLIENT), I realize I underestimated the power of the text-based
+configuration syntax.
 
     - It's true that I did find writing the literal help text tedious. I also
       dislike the idea that it will lack dynamic formatting behavior.
@@ -5064,15 +5070,14 @@ Chomsky Hierarchy:
 api-driven-vs-text-driven-examples: API-driven vs text-driven examples
 --------
 
-# Simple programs.
-examples/get-pocket-items
-examples/daily-reading
+misc/examples/spec-vs-api/
 
-# More complex examples: contrast the API vs the text examples.
-misc/examples/job-client-via-api
-misc/examples/job-client-via-api-thematic
-misc/examples/job-client-via-text
-misc/examples/job-client-via-text-subparsers
+    # Simple programs.
+    get-pocket-items
+    daily-reading
+
+    # More complex examples.
+    job-client-*
 
 --------
 other-tools: Other tools

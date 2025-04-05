@@ -1,0 +1,30 @@
+'''
+
+Example 2: basic script.
+
+Simple pgrep, now with help text and optional positionals.
+
+Size: 54%.
+
+'''
+
+####
+# Argparse.
+####
+
+ap = argparse.ArgumentParser()
+ap.add_argument('rgx', help = 'Python regular expression')
+ap.add_argument('path', nargs = '*', help = 'Path(s) to input')
+ap.add_argument('-i', '--ignore-case', action = 'store_true', help = 'Ignore case')
+ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select non-matching lines')
+
+####
+# Optopus.
+####
+
+p = Parser('''
+    <rgx> : Python regular expression
+    [<path>...] : Path(s) to input
+    [-i --ignore-case] : Ignore case
+    [-v --invert-match] : Select non-matching lines
+''')

@@ -1,0 +1,58 @@
+#! /usr/bin/env python
+
+####
+# Setup and wrapup code to allow argparse examples to be runnable.
+####
+
+####
+# Setup.
+####
+
+import sys
+import argparse
+import re
+import os
+from pathlib import Path
+from textwrap import dedent
+
+class Parser:
+
+    def __init__(self, *xs, **kws):
+        pass
+
+    def config(self, *xs, **kws):
+        pass
+
+    def query(self, *xs, **kws):
+        return Query()
+
+class Query:
+
+    def __init__(self, *xs, **kws):
+        pass
+
+    def usage_group(self, *xs, **kws):
+        pass
+
+def isfile(path):
+    return True
+
+def ispositive(n):
+    return True
+
+def nonnegative(n):
+    return True
+
+####
+# Program.
+####
+
+...
+
+####
+# Setup.
+####
+
+opts = ap.parse_args()
+print(opts)
+

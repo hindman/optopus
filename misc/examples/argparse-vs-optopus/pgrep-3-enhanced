@@ -1,0 +1,108 @@
+
+'''
+
+Example 3a: enhanced script.
+
+A pgrep with more options, plus some conversion, validation, and choices.
+
+Argparse configuration:
+    - Notably heavier and harder to read and scan.
+    - Provides less flexible conversion/validation
+
+Optopus help text:
+    - Cleaner
+    - Easier to read.
+    - More aesthetic.
+
+Notes:
+    - Optopus will also support a more traditional approach: listing aliases
+      immediately with options.
+
+
+Size: 72%.
+
+'''
+
+####
+# Argparse.
+####
+
+ap = argparse.ArgumentParser()
+ap.add_argument('rgx', metavar = '<rgx>', type = re.compile, help = 'Python regular expression')
+ap.add_argument('path', metavar = '<path>', type = Path, nargs = '*', help = 'Path(s) to input')
+ap.add_argument('--ignore-case', '-i', action = 'store_true', help = 'Ignore case')
+ap.add_argument('--invert-match', '-v', action = 'store_true', help = 'Select non-matching lines')
+ap.add_argument('--max-count', '-m', metavar = '<n>', type = int, help = 'Stop searching after N matches')
+ap.add_argument('--context', '-C', metavar = '<n>', type = int, help = 'Print N lines of before/after context')
+ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue'), help = 'Highlight matching text: red, green, blue')
+
+####
+# Optopus.
+####
+
+p = Parser('''
+    <rgx> : Python regular expression
+    [<path>...] : Path(s) to input
+    [-i --ignore-case] : Ignore case
+    [-v --invert-match] : Select non-matching lines
+    [-m --max-count <n>] : Stop searching after N matches
+    [-C --context <n>] : Print N lines of before/after context
+    [--color red|green|blue] : Highlight matching text
+''')
+
+p.config('rgx', convert = re.compile)
+p.config('path', convert = Path, validate = isfile)
+p.config('m C', convert = int, validate = ispositive)
+p.group_up(kind = Option, name = 'options')
+
+####
+# Optopus help text.
+####
+
+'''
+Usage:
+  pgrep [options] <rgx> [<path>...]
+
+Arguments:
+  <rgx>                  Python regular expression
+  <path>                 Path(s) to input
+
+Options:
+  --help                 Print help text and exit
+  --ignore-case          Ignore case
+  --invert-match         Select non-matching lines
+  --max-count <n>        Stop searching after N matches
+  --context <n>          Print N lines of before/after context
+  --color <col>          Highlight matching text: red, green, blue
+
+Aliases:
+  --help                 -h
+  --ignore-case          -i
+  --invert-match         -v
+  --max-count            -m
+  --context              -C
+'''
+
+####
+# Argparse help text.
+####
+
+'''
+usage: pgrep [-h] [--ignore-case] [--invert-match] [--max-count <n>]
+             [--context <n>] [--color <col>] <rgx> [<path> ...]
+
+positional arguments:
+  <rgx>                 Python regular expression
+  <path>                Path(s) to input
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --ignore-case, -i     Ignore case
+  --invert-match, -v    Select non-matching lines
+  --max-count <n>, -m <n>
+                        Stop searching after N matches
+  --context <n>, -C <n>
+                        Print N lines of before/after context
+  --color <col>         Highlight matching text: red, green, blue
+'''
+
