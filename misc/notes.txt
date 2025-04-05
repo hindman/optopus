@@ -183,6 +183,69 @@ Argument parsing.
 new-notes: New notes
 --------
 
+Naming: Result.context:
+    - One of my demo scripts in the README uses --context.
+    - Maybe switch to Result.ctx.
+    - Or just modify the README demo.
+
+Help text style attributes:
+
+    - API and notes:
+
+        p.config_help_text(
+            options_summary = '<options>',
+            opt_listing_heading = 'unified',
+            alias_listing = 'compact',
+        )
+
+        - options_summary:
+            - Set a different placeholder (angle-brackets optional).
+            - Set to empty/false to disable.
+
+        - opt_listing_heading:
+            - Not relevant if a listing has a user-supplied heading.
+
+    - Summarized options in usage text:
+        - All options summarized via a placeholder.
+        - Options/parameters listed explicitly (argparse).
+
+    - Opt-listing headings:
+        - unified: "Arguments".
+        - by_kind: "Positionals" and "Options".
+        - minimal: no heading.
+
+    - Aliases in opt-listings:
+        - explicit: classic style (argparse).
+        - compact: same, but drop parameters.
+        - column: compact in a column.
+        - separate: aliases under a separate heading ("Aliases").
+
+        - Mockups:
+
+            # Explicit.
+
+            --ignore-case, -i      Ignore case
+            --group <n>, -g <n>    Emit just capture group N [0 for all]
+            --delim <s>, -d <s>    Delimeter for capture groups [tab]
+
+            # Compact.
+
+            --ignore-case, -i      Ignore case
+            --group <n>, -g        Emit just capture group N [0 for all]
+            --delim <s>, -d        Delimeter for capture groups [tab]
+
+            # Column.
+
+            --ignore-case      -i  Ignore case
+            --group <n>        -g  Emit just capture group N [0 for all]
+            --delim <s>        -d  Delimeter for capture groups [tab]
+
+            # Separate.
+
+            --ignore-case      -i
+            --group            -g <n>
+            --delim            -d <s>
+
 Function signatures for callable Opt attributes:
 
     * Remaining issue: whether dispatch is helpful/needed.
