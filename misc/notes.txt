@@ -189,6 +189,35 @@ Argument parsing.
 new-notes: New notes
 --------
 
+Parser.config():
+
+    - We can use one method to achieve both varieties of bulk-configuration.
+
+    - Notation:
+        - Opt is used here, but it could be any element that matches.
+        - QP = query-path.
+        - Attributes: foo, bar, fubb, blort, etc.
+        - Integers: values assigned to such attributes.
+
+    - Set 1+ attributes for 1+ Opts, on a per-Opt basis:
+        - For a given attribute, Opts can get different configuration.
+        - No QPs as args.
+
+        p.config(
+            foo = {'QP1':111, 'QP2':222},
+            bar = {'QP1':77, 'QP2':88},
+        )
+
+    - Set 1+ attributes consistenty across 1+ Opts.
+        - For a given attribute, Opts get the same configuration.
+        - QPs as args.
+
+        p.config_B(
+            'QP1', 'QP2',
+            fubb = 3,
+            blort = 4
+        )
+
 Naming: Result.context:
 
     - Decision:
