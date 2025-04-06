@@ -93,6 +93,45 @@ toc: Table of contents
 todos: TODOs
 --------
 
+new-notes:
+
+    - See two most recent discussions.
+    - Seems like a mess...
+    - Maybe drop spec-support for documenting individual child entities?
+        - parameters (of Option)
+        - choices (of Argument)
+        - choices (of Parameter)
+
+        - support those configurations only via API?
+        - also make sure the help-text mockups are plausible for such scenarios.
+
+            --point <x=a|b> <y=c|d>      Blah point
+              <x>                        - Blah x
+                a                          - Blah x=a
+                b                          - Blah x=b
+              <y>                        - Blah y
+                ...
+
+    - Maybe related:
+
+        - Can a grammar include arg-variants based on parameter choice combos?
+
+            - Spec:
+
+                --point <x=a> <y=c> [--ac]
+                --point <x=a> <y=d> [--ad]
+                --point <x=b> <y=c> [--bc]
+                --point <x=b> <y=d> [--bc]
+
+            - Usage:
+
+                --point a c [--ac]
+                --point a d [--ad]
+                --point b c [--bc]
+                --point b d [--bc]
+                
+            - It's absurd ... but I think the current plan could handle it.
+
 Mock-ups:
 
     - blort.py
@@ -186,6 +225,106 @@ Argument parsing.
 --------
 new-notes: New notes
 --------
+
+Why an opt-listing excludes ntimes?
+
+    - Decision:
+        - Opt-listings do not in
+
+    - One might be tempted to include ntimes for simple items
+      where ntimes=(0,1).
+
+        [<x>]           Blah blah
+        [--foo]         Blah blah
+
+    - The benefit of including ntimes is that the default policy of using the
+      placehold [<options>] in the usage-text remains viable.
+
+        - The usage grammar is still clear.
+        - Because in simple cases, all of the options represented by
+          the placehold are indeed optional, with ntimes=(0,1).
+
+    - But expressing ntimes generally in opt-listings would be bad becuase it
+      requires the end-user to understand the spec-syntax too well.
+
+        (--point <x> <y>){2}    Points used in calculation
+
+        ** This point is incorrect: the usage-section will necessarily need to
+        express the grammar, with quantifiers. So the user will need to
+        understand complex quantifiers like <x>{2,5}
+
+    - And it fails to convey the actual grammar when Opts are coupled
+      via a group ntimes.
+
+        # The spec.
+        [<a> <b>]...
+
+        # This attempt to include ntimes does not express the true grammar.
+        [<a>]...         Blah blah
+        [<b>]...         Blah blah
+
+    - What about quantifiers on the parameters?
+
+        - With quantifiers:
+
+            --blort [<b>]               Blah blah
+            --nums <x> [<y>]            Blah blah
+            --vals <a> <b>{1,3}         Blah blah
+            --point <x> (<y> <z>)...    Blah blah
+
+        - Without quantifiers:
+
+            --blort <b>                 Blah blah
+            --nums <x> <y>              Blah blah
+            --vals <a> <b>              Blah blah
+            --point <x> <y> <z>         Blah blah
+
+Can an opt-listing document an option's parameters?
+
+    - Mockup:
+
+        --point <x> <y> <z>         Blah blah
+          <x>                       - Blah blah-x
+          <y>                       - Blah blah-y
+          <z>                       - Blah blah-z
+
+    - What would the spec-syntax be to declare those opt-listings?
+
+        - Syntax for a positional with choices:
+
+            <action=go|stop|rest>  : Blah blah actions
+            <action=go>            : Blah blah go
+            <action=stop>          : Blah blah stop
+            <action=rest>          : Blah blah rest
+
+            * Question:
+                - Where do those help-texts live in the OO model?
+                - The first lives on Positional(action).
+                - Which has one Arg with 3 choices.
+                - Do we need a Choice class to hold the help-text?
+
+        - An analogous syntax for parameter opt-specs:
+
+            --point <x> <y> <z>    : Blah blah point
+            --point=<x>            : Blah blah x
+            --point=<y>            : Blah blah y
+            --point=<z>            : Blah blah z
+
+            - OO model:
+                - Option(point).
+                - Has 3 Parameter.
+                - Each can hold a help-text.
+
+        - An Option with Parameters with choices:
+
+            --step <first=add|mult> <second=sub|div>
+
+            --step=<first=add>   : Blah blah first-add
+            --step=<first=mult>  : Blah blah first-mult
+
+        ****
+        ** Starting to seems convoluted.
+        ****
 
 Parser.config():
 
@@ -1963,7 +2102,7 @@ Reasons for the name change: OptArg to Arg:
     - Parallels Opt: both base class have compact names.
     - Aligns well with nargs.
 
-Why is decided against Option.nparams:
+Why I decided against Option.nparams:
     - The paralleism of Option.nparams is somewhat appealing.
     - But nargs is more familiar (argparse, Click).
     - It aligns with Arg (just noted above).

@@ -1,31 +1,35 @@
 
 ####
 #
-# The blort script is designed to exercise many features of the spec-syntax.
+# This demo is designed to exercise most features of the spec-syntax.
+#
 # The example is not intended to a realistic or sane.
 #
 # Start at the end: the generated help-text.
 #
+# Both the help-text and the SPEC contain footnotes detailing
+# aspects of the system.
+#
+####
+
+####
+# Help text.
 ####
 
 '''
-####
-# HELP-TEXT
-####
-
 Usage:
-    blort configure --env <host> --user <id> [--indent <n>] [--person <name>] [other-options]
-    blort submit -c <> -r <> [--start-job] [--person <name> <age>] [other-options]
-    blort get -j <> [--json [--indent <n>] | --b64 | --yaml] [other-options]
-    blort drop <method> <n> [--print] [other-options]                          ## NOTE_800
+    blort configure --env <host> --user <id> [--indent <n>] [--person <name>] [<general-options>]
+    blort submit -c <> -r <> [--start-job] [--person <name> <age>] [<general-options>]
+    blort get -j <> [--json [--indent <n>] | --b64 | --yaml] [<general-options>]
+    blort drop <method> <n> [--print] [<general-options>]                      ## NOTE_800
     blort <fubb>... (--fast | --slow) [-a] [-b] [-x] [chat-options]
     blort <triple>{2,7} [-x] [-y] [chat-options]
 
-    Other options:
+    General options:
         [--verbose]         : Blah blah
         [--log-file <path>] : Blah blah                                        ## NOTE_150
-        [--help]            : Blah blah
         [--examples]        : Blah blah
+        [--help]            : Blah blah
 
 Configure task:
 
@@ -106,23 +110,23 @@ Other usages:                                                                  #
 ####
 
 SPEC = '''
+
                                                                                ## NOTE_50
 
-    general! : general-options=([--verbose] [--log-file])                      ## NOTE_150
-    help!    : help-options=([--help] [--examples])
+    verbose! : [--verbose] [--log-file]                                        ## NOTE_150
 
-    other!   : other-options=(general! help!)                                  ## NOTE_170
-    chat!    : chat-options=([--hi] [--bye] [--help])
+    general! : general-options=(verbose! [--examples] [--help])                ## NOTE_170
+    chat!    : chat-options=([--hi] [--bye] [--examples])
 
     configure! : --env --user [--indent] [--person]                            ## NOTE_200
     submit!    : -c -r [--start-job] [--person]
     get!       : -j [--json [--indent] | --b64 | --yaml]
     drop!      : <method> <n> [--print]                                        ## NOTE_800
 
-    configure : <task=configure> configure! other!                             ## NOTE_300
-    submit    : <task=submit> submit! other!
-    get       : <task=get> get! other!
-    drop      : <task=drop> drop! other!
+    configure : <task=configure> configure! general!                           ## NOTE_300
+    submit    : <task=submit> submit! general!
+    get       : <task=get> get! general!
+    drop      : <task=drop> drop! general!
 
     fubb : <fubb>... (--fast | --slow) [-a] [-b] [-x] chat!                    ## NOTE_400
     wizz : triples=(<a> <b> <c> [-z]){2,7} [-x] [-y] chat!
@@ -130,7 +134,6 @@ SPEC = '''
         ```Other options:```                                                   ## NOTE_420
             [--verbose]         : Blah blah
             [--log-file <path>] : Blah blah                                    ## NOTE_150
-            [--help]                                                           ## NOTE_520
             [--examples] : Blah blah
                                                                                ## NOTE_500
 
@@ -289,9 +292,6 @@ NOTE_420
 NOTE_500
     - Unless block-quoted, multiple blank lines are condensed to a single
       blank line in the help-text.
-
-NOTE_520
-    - Opt-specs do not require help text.
 
 NOTE_600
     - A block-comment.
