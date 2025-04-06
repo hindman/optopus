@@ -93,30 +93,30 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Mock-ups: create several more:
+Mock-ups:
 
-    - argparse-vs-optopus/
-        - in progress
-        - working on pgrep-3
+    - blort.py
 
-        - Ideas:
-            p.usage_style('clean')
-            p.group_up(kind = Option, name = 'FOO')
+    - optopus-naval-fate.py
 
-    - naval-fate
-    - EX_BLORT: revisit.
-    - Click repo.
+    - optopus-repo.py
         - Click's approach is quite awkward.
         - Also mock up how dispatching would work.
-    - Click other examples.
+
+    - optopus-setuptools.py
 
     - Check my current examples and mock them up where interesting.
+
+    - Check spec-vs-api/
+
     - Other project examples:
         - Argparse docs for anything prominent.
 
 new-notes : handle remaining or deferered issues:
-    
-    - dispaching: is it worth it? [after doing more mockups]
+
+    - other stuff.
+
+    - dispatching: is it worth it? [after doing more mockups]
 
 Implement recent changes in notes.txt:
 
@@ -132,6 +132,12 @@ Implement recent changes in notes.txt:
         - prompting for Args.
         - support for envvars
         - support for prefs [probably there already]
+
+    - Getting Context via Result:
+        - Switch back to callable.
+
+    - README:
+        - Edit examples based on new mockups.
 
     - Priority:
         - API renaming: 'high-precedence' => 'priority'.
@@ -184,26 +190,75 @@ new-notes: New notes
 --------
 
 Naming: Result.context:
-    - One of my demo scripts in the README uses --context.
-    - Maybe switch to Result.ctx.
-    - Or just modify the README demo.
+
+    - Decision:
+        - Switch back to callable Result.
+        - But make it more declarative.
+
+    - Previously, I considered making opts callable:
+        - Avoids name-collision entirely.
+        - Could support more queries/behaviors in future.
+
+    - But I balked when I read the mock-up code:
+
+        - Does not read intuitively.
+
+            c = opts().parser
+
+        - Admittely, the user could help out.
+
+            context = opts()
+            p = context.parser
+
+        - But the library should not rely on users for clarity.
+
+    - So I opted to go with a declarative approach, at the cost
+      of some name-collision risk.
+
+        c = opts.context
+
+    - Then I balked again, because the README examples use --context:
+
+    - A revised callable strategy:
+
+        - Let the user state what they want.
+
+            c = opts('context')
+            p = opts('parser')
+
+        - And support no-arg default:
+
+            p = opts().parser
+
+Terminology:
+
+    - Need a term for the representation of an opt-spec in help text.
+    - Possibilities:
+        - Use opt-spec in both contexts: my notes do that now; no good.
+        - Opt-text: but we also have Opt.text.
+        - Opt-help-text: maybe; but sort of the same problem.
+        - Opt-listing: that term already in use in a collective sense.
+        - Opt-doc: documentation for an Opt
+
+    - Tentative decision:
+
+        - Easiest to describe using the manpage style.
+
+        - The whole thing is one "opt-listing" (zero-inflection noun like sheep):
+
+            --val <n>, -v <n>               # The "opt-spec".
+                Blah blah blah blah.        # The "opt-help" or "opt-help-text".
 
 Help text style attributes:
 
     - API and notes:
 
         p.config_help_text(
-            options_summary = '<options>',
-            opt_listing_heading = 'unified',
-            alias_listing = 'compact',
+            options_summary = '<options>',   # PLACEHOLDER | '' to disable
+            opt_listing_heading = 'unified', # unified | by_kind | minimal
+            opt_listing_style = 'default',   # default | manpage
+            alias_listing = 'compact',       # compact | explicit | column | separate
         )
-
-        - options_summary:
-            - Set a different placeholder (angle-brackets optional).
-            - Set to empty/false to disable.
-
-        - opt_listing_heading:
-            - Not relevant if a listing has a user-supplied heading.
 
     - Summarized options in usage text:
         - All options summarized via a placeholder.
@@ -213,6 +268,10 @@ Help text style attributes:
         - unified: "Arguments".
         - by_kind: "Positionals" and "Options".
         - minimal: no heading.
+
+    - Opt-listing styles:
+        - default: opt-specs on left; aligned help texts on right
+        - manpage: opt-spec on its own line; then indented paragraph of help-text
 
     - Aliases in opt-listings:
         - explicit: classic style (argparse).

@@ -1,8 +1,10 @@
+#! /usr/bin/env python
+
 '''
 
-Example 2: basic script.
+README example 2: basic script.
 
-Simple pgrep, now with help text and optional positionals.
+Simple pgrep, now with help text, aliases, and optional positionals.
 
 Size: 54%.
 
@@ -28,3 +30,4 @@ p = Parser('''
     [-i --ignore-case] : Ignore case
     [-v --invert-match] : Select non-matching lines
 ''')
+

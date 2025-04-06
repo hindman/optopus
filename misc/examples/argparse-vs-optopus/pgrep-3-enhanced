@@ -1,7 +1,8 @@
+#! /usr/bin/env python
 
 '''
 
-Example 3a: enhanced script.
+README example 3a: enhanced script.
 
 A pgrep with more options, plus some conversion, validation, and choices.
 
@@ -10,16 +11,12 @@ Argparse configuration:
     - Provides less flexible conversion/validation
 
 Optopus help text:
-    - Cleaner
+    - Cleaner, more aesthetic.
     - Easier to read.
-    - More aesthetic.
 
-Notes:
-    - Optopus will also support a more traditional approach: listing aliases
-      immediately with options.
+Size: 69%.
 
-
-Size: 72%.
+Help size: 73%.
 
 '''
 
@@ -47,13 +44,12 @@ p = Parser('''
     [-v --invert-match] : Select non-matching lines
     [-m --max-count <n>] : Stop searching after N matches
     [-C --context <n>] : Print N lines of before/after context
-    [--color red|green|blue] : Highlight matching text
+    [--color <red|green|blue>] : Highlight matching text
 ''')
 
 p.config('rgx', convert = re.compile)
 p.config('path', convert = Path, validate = isfile)
-p.config('m C', convert = int, validate = ispositive)
-p.group_up(kind = Option, name = 'options')
+p.config('max_count', 'context', convert = int, validate = ispositive)
 
 ####
 # Optopus help text.
@@ -66,21 +62,12 @@ Usage:
 Arguments:
   <rgx>                  Python regular expression
   <path>                 Path(s) to input
-
-Options:
-  --help                 Print help text and exit
-  --ignore-case          Ignore case
-  --invert-match         Select non-matching lines
-  --max-count <n>        Stop searching after N matches
-  --context <n>          Print N lines of before/after context
+  --ignore-case, -i      Ignore case
+  --invert-match, -v     Select non-matching lines
+  --max-count <n>, -m    Stop searching after N matches
+  --context <n>, -C      Print N lines of before/after context
   --color <col>          Highlight matching text: red, green, blue
-
-Aliases:
-  --help                 -h
-  --ignore-case          -i
-  --invert-match         -v
-  --max-count            -m
-  --context              -C
+  --help, -h             Print help text and exit
 '''
 
 ####

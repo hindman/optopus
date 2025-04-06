@@ -1,260 +1,41 @@
 #! /usr/bin/env python
 
-####
-# Setup, just so the Argparse code is runnable.
-####
-
-import sys
-import argparse
-import re
-import os
-from pathlib import Path
-from textwrap import dedent
-
-class Parser:
-
-    def __init__(self, *xs, **kws):
-        pass
-
-    def config(self, *xs, **kws):
-        pass
-
-    def query(self, *xs, **kws):
-        return Query()
-
-class Query:
-
-    def __init__(self, *xs, **kws):
-        pass
-
-    def usage_group(self, *xs, **kws):
-        pass
-
-def isfile(path):
-    return True
-
-def ispositive(n):
-    return True
-
-def nonnegative(n):
-    return True
-
-####
-#
-# Example 1: minimal command-line script.
-#
-# Bare-bones grep-clone so you can use Python regexes.
-#
-# Compared to Argparse, Optopus much easier: shorter,
-# more intuitive, with less API to remember.
-#
-# Size comparison: 4.0x.
-#
-####
-
-# Optopus.
-
-p = Parser('pgrep :: [-i] [-v] <rgx> <path>')
-
-# Argparse.
-
-ap = argparse.ArgumentParser(prog = 'pgrep')
-ap.add_argument('-i', action = 'store_true')
-ap.add_argument('-v', action = 'store_true')
-ap.add_argument('rgx')
-ap.add_argument('path')
-
-####
-#
-# Example 2: basic script.
-#
-# Simple pgrep, now with help text and optional positionals.
-#
-# The Optopus configuration is more efficient, more
-# readable, and requires less API knowledge. You just type
-# what you want and have to remember nothing more than an
-# intuitive syntax -- intuitive because it relies heavily
-# on established conventions for command-line usage text.
-#
-# Size comparison: 1.9x.
-#
-####
-
-# Optopus.
-
-p = Parser('''pgrep
-    <rgx> : Python regular expression
-    [<path>...] : Path(s) to input
-    [-i --ignore-case] : Ignore case
-    [-v --invert-match] : Select non-matching lines
-''')
-
-# Argparse.
-
-ap = argparse.ArgumentParser(prog = 'pgrep')
-ap.add_argument('rgx', help = 'Python regular expression')
-ap.add_argument('path', nargs = '*', help = 'Path(s) to input')
-ap.add_argument('-i', '--ignore-case', action = 'store_true', help = 'Ignore case')
-ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select non-matching lines')
-
-####
-#
-# Example 3a: enhanced script.
-#
-# A pgrep with more options, plus some conversion, validation,
-# and choices.
-#
-# The Argparse configuration is notably heavier and harder to read
-# and scan. It also provides less flexible conversion/validation
-# (in the argparse example, we ignore isfile and ispositive).
-#
-# Size comparison: 1.4x.
-#
-####
-
-# Optopus.
-
-p = Parser('''pgrep
-    <rgx> : Python regular expression
-    [<path>...] : Path(s) to input
-    [-i --ignore-case] : Ignore case
-    [-v --invert-match] : Select non-matching lines
-    [-m --max-count <n>] : Stop searching after N matches
-    [-C --context <n>] : Print N lines of before/after context
-    [--color red|green|blue] : Highlight matching text
-''')
-
-p.config('rgx', convert = re.compile)
-p.config('path', convert = Path, validate = isfile)
-p.config('m C', convert = int, validate = ispositive)
-p.config(kind = 'option', sym = 'options')
-
-# Argparse.
-
-ap = argparse.ArgumentParser(prog = 'pgrep')
-ap.add_argument('rgx', metavar = '<rgx>', type = re.compile, help = 'Python regular expression')
-ap.add_argument('path', metavar = '<path>', type = Path, nargs = '*', help = 'Path(s) to input')
-ap.add_argument('--ignore-case', '-i', action = 'store_true', help = 'Ignore case')
-ap.add_argument('--invert-match', '-v', action = 'store_true', help = 'Select non-matching lines')
-ap.add_argument('--max-count', '-m', metavar = '<n>', type = int, help = 'Stop searching after N matches')
-ap.add_argument('--context', '-C', metavar = '<n>', type = int, help = 'Print N lines of before/after context')
-ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue'), help = 'Highlight matching text: red, green, blue')
-
-####
-#
-# Example 3b: help text.
-#
-# Optopus help text is cleaner, easier to read, and more aesthetic.
-#
-# The traditional approach -- listing aliases with options -- is
-# also supported.
-#
-####
-
-OPTOPUS_TEXT = '''
-Usage:
-  pgrep [options] <rgx> [<path>...]
-
-Positionals:
-  <rgx>                  Python regular expression
-  <path>                 Path(s) to input
-
-Options:
-  --help                 Print help text and exit
-  --ignore-case          Ignore case
-  --invert-match         Select non-matching lines
-  --max-count <n>        Stop searching after N matches
-  --context <n>          Print N lines of before/after context
-  --color <col>          Highlight matching text: red, green, blue
-
-Aliases:
-  --help                 -h
-  --ignore-case          -i
-  --invert-match         -v
-  --max-count            -m
-  --context              -C
 '''
 
-ARGPARSE_TEXT = '''
-usage: pgrep [-h] [--ignore-case] [--invert-match] [--max-count <n>]
-             [--context <n>] [--color <col>] <rgx> [<path> ...]
+README example 4: a subcommand-style program.
 
-positional arguments:
-  <rgx>                 Python regular expression
-  <path>                Path(s) to input
+The initial pgrep script has been expanded and renamed. It now includes various
+regex-based text processing utilities.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --ignore-case, -i     Ignore case
-  --invert-match, -v    Select non-matching lines
-  --max-count <n>, -m <n>
-                        Stop searching after N matches
-  --context <n>, -C <n>
-                        Print N lines of before/after context
-  --color <col>         Highlight matching text: red, green, blue
+Optopus:
+
+    - Even with subcommands, the Optopus usage remains quite intuitive.
+
+    - User must learn a few additional syntax rules (double-colon marker and
+      positional variants like <task=grep>), but API burden remains low.
+
+    - A Python programmer unfamiliar with the library could infer the intent
+      even without knowing the syntax rules.
+
+    - Help text is unified rather than separate -- a benefit in its own right
+      and an amplifier of the virtues noted in prior README examples.
+
+Argparse:
+
+    - To avoid code repetition for shared options, the user has to take some
+      care (in this case, defining a secondary data structure).
+
+Size: 76%.
+
+Help size: 73%.
+
 '''
 
 ####
-#
-# Example 4a: simple subcommand-style program.
-#
-# The initial pgrep script has been expanded and renamed.
-# It now includes various regex-based text processing utilities.
-#
-# Even with subcommands, the Optopus usage remains quite
-# intuitive. The user has to learn a few additional syntax rules
-# (the double-colon marker and positional variants like <task=grep>),
-# but the API burden remains quite low. A Python programmer unfamiliar
-# with the library could quickly infer the basic intent even without
-# knowing the syntax rules.
-#
-# The Argparse configuration is notably heavier and harder to read/scan. It
-# requires a lot more API to learn and remember. To avoid too much code
-# repetition for shared options, the user has to take some care (in this case,
-# defining a secondary data structure). As before, Argparse provides less
-# flexible conversion/validation.
-#
-# Size comparison: 1.5x.
-#
+# Argparse.
 ####
 
-# Optopus.
-
-p = Parser('''wrangle ::
-    <task=grep>   [-i] [-v] [-m] [-C]
-                  [--color <red|green|blue>]
-                  <rgx> [<path>...]
-    <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
-    <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
-
-    ::
-
-    <task>             : Task to perform
-    <task=grep>        : Emit lines matching pattern
-    <task=sub>         : Search for pattern and replace
-    <task=search>      : Emit text matching pattern
-    <rgx>              : Python regular expression
-    <path>             : Path(s) to input
-    <rep>              : Replacement text
-    -i --ignore-case   : Ignore case
-    -v --invert-match  : Select non-matching lines
-    -m --max-count <n> : Stop searching after N matches
-    -C --context <n>   : Print N lines of before/after context
-    --color <>         : Highlight matching text
-    -n --nsubs <n>     : N of substitutions
-    -g --group <n>     : Emit just capture group N [0 for all]
-    -d --delim <s>     : Delimeter for capture groups [tab]
-    -p --para          : Emit capture groups one-per-line, paragraph-style
-''')
-
-p.config('rgx', convert = re.compile)
-p.config('path', convert = Path, validate = isfile)
-p.config('m C n', convert = int, validate = ispositive)
-p.config('g', convert = int, validate = nonnegative)
-
-# Argparse.
-
-ap = argparse.ArgumentParser(prog = 'wrangle')
+ap = argparse.ArgumentParser()
 
 sps = ap.add_subparsers(dest = 'task', help = 'Task to perform', metavar = '<task>')
 sp1 = sps.add_parser('grep', help = 'Emit lines matching pattern')
@@ -289,57 +70,47 @@ sp3.add_argument('rgx', **conf['rgx'])
 sp3.add_argument('path', **conf['path'])
 
 ####
-#
-# Example 4b: help text.
-#
-# The Optopus help text is cleaner, easier to read, more compact,
-# and more aesthetic. It is also unified rather than separate.
-#
-# The library will also support use cases that need separate
-# help text for different usage variants.
-#
+# Optopus.
 ####
 
-OPTOPUS_TEXT = '''
-Usage:
-  wrangle grep [-h] [-i] [-v] [-m <n>] [-C <n>]
-          [--color <red|green|blue>] <rgx> [<path>...]
-  wrangle sub [-h] [-i] [-n <n>] <rgx> <rep> [<path>...]
-  wrangle search [-h] [-i] [-g <n>] [-d <s>] <rgx> [<path>...]
-  wrangle -h
+p = Parser('''
+    <task=grep>   [--ignore-case] [--invert-match] [--max-count] [--context]
+                  [--color <red|green|blue>]
+                  <rgx> [<path>...]
+    <task=sub>    [--ignore-case] [--nsubs]
+                  <rgx> <rep> [<path>...]
+    <task=search> [--ignore-case] [--group] [--delim | --para]
+                  <rgx> [<path>...]
 
-Positionals: task:
-  grep                   Emit lines matching pattern
-  sub                    Search for pattern and replace
-  search                 Emit text matching pattern
+    <task>               : Task to perform
+    <task=grep>          : Emit lines matching pattern
+    <task=sub>           : Search for pattern and replace
+    <task=search>        : Emit text matching pattern
+    <rgx>                : Python regular expression
+    <rep>                : Replacement text
+    [<path>...]          : Path(s) to input
+    [-i --ignore-case]   : Ignore case
+    [-v --invert-match]  : Select non-matching lines
+    [-m --max-count <n>] : Stop searching after N matches
+    [-C --context <n>]   : Print N lines of before/after context
+    [--color <>]         : Highlight matching text
+    [-n --nsubs <n>]     : N of substitutions
+    [-g --group <n>]     : Emit just capture group N [0 for all]
+    [-d --delim <s>]     : Delimeter for capture groups [tab]
+    [-p --para]          : Emit capture groups one-per-line, paragraph-style
+''')
 
-Positionals: other:
-  <rgx>                  Python regular expression
-  <path>                 Path(s) to input
+p.config('rgx', convert = re.compile)
+p.config('path', convert = Path, validate = isfile)
+p.config('max_count', 'context', 'nsubs', convert = int, validate = ispositive)
+p.config('group', convert = int, validate = nonnegative)
 
-Options:
-  --help                 Print help text and exit
-  --ignore-case          Ignore case
-  --invert-match         Select non-matching lines
-  --max-count <n>        Stop searching after N matches
-  --context <n>          Print N lines of before/after context
-  --color <>             Highlight matching text: red, green, blue
-  --nsubs <n>            N of substitutions
-  --group <n>            Emit just capture group N [0 for all]
-  --delim <s>            Delimeter for capture groups [tab]
+####
+# Argparse help text.
+####
 
-Aliases:
-  --help                 -h
-  --ignore-case          -i
-  --invert-match         -v
-  --max-count            -m
-  --context              -C
-  --nsubs                -n
-  --group                -g
-  --delim                -d
+# Main program.
 '''
-
-ARGPARSE_TEXT_HELP = '''
 usage: wrangle [-h] <task> ...
 
 positional arguments:
@@ -352,7 +123,8 @@ optional arguments:
   -h, --help  show this help message and exit
 '''
 
-ARGPARSE_TEXT_GREP = '''
+# Task: grep.
+'''
 usage: wrangle grep [-h] [--ignore-case] [--invert-match] [--max-count <n>]
                     [--context <n>] [--color <col>]
                     <rgx> [<path> ...]
@@ -372,7 +144,8 @@ optional arguments:
   --color <col>         Highlight matching text: red, green, blue
 '''
 
-ARGPARSE_TEXT_SUB = '''
+# Task: sub.
+'''
 usage: wrangle sub [-h] [--ignore-case] [--nsubs <n>] <rgx> <rep> [<path> ...]
 
 positional arguments:
@@ -386,7 +159,8 @@ optional arguments:
   --nsubs <n>, -n <n>  N of substitutions
 '''
 
-ARGPARSE_TEXT_SEARCH = '''
+# Task: search.
+'''
 usage: wrangle search [-h] [--ignore-case] [--group <n>] [--delim <s>]
                       <rgx> [<path> ...]
 
@@ -403,9 +177,37 @@ optional arguments:
 '''
 
 ####
-# Wrap up: to execute the last Argparse example.
+# Optopus help text.
 ####
 
-opts = ap.parse_args()
-print(opts)
+'''
+Usage:
+  wrangle grep [--ignore-case] [--invert-match] [--max-count <n>] [--context <n>]
+          [--color <red|green|blue>] [--help] <rgx> [<path>...]
+  wrangle sub [--ignore-case] [--nsubs <n>] [--help] <rgx> <rep> [<path>...]
+  wrangle search [--ignore-case] [--group <n>] [--delim <s> | --para] [--help]
+          <rgx> [<path>...]
+  wrangle --help
+
+Arguments:
+  <task>                 Task to perform:
+    grep                 - Emit lines matching pattern
+    sub                  - Search for pattern and replace
+    search               - Emit text matching pattern
+  <rgx>                  Python regular expression
+  <path>                 Path(s) to input
+  <rgx>                  Python regular expression
+  <rep>                  Replacement text
+  <path>                 Path(s) to input
+  --ignore-case, -i      Ignore case
+  --invert-match, -v     Select non-matching lines
+  --max-count <n>, -m    Stop searching after N matches
+  --context <n>, -C      Print N lines of before/after context
+  --color <>             Highlight matching text: red, green, blue
+  --nsubs <n>, -n        N of substitutions
+  --group <n>, -g        Emit just capture group N [0 for all]
+  --delim <s>, -d        Delimeter for capture groups [tab]
+  --para                 Emit capture groups one-per-line, paragraph-style
+  --help, -h             Print help text and exit
+'''
 

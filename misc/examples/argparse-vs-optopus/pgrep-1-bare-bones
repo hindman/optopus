@@ -1,7 +1,8 @@
+#! /usr/bin/env python
 
 '''
 
-Example 1: minimal command-line script.
+README example 1: minimal command-line script.
 
 Bare-bones grep-clone so you can use Python regexes.
 

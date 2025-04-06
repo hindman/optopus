@@ -50,7 +50,7 @@ def nonnegative(n):
 ...
 
 ####
-# Setup.
+# Wrapup.
 ####
 
 opts = ap.parse_args()
