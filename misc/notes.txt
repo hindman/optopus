@@ -95,7 +95,7 @@ todos: TODOs
 
 Mock-ups:
 
-    - blort.py
+    x blort.py
 
     - optopus-naval-fate.py
 
@@ -496,8 +496,9 @@ Help text style attributes:
 
         p.config_help_text(
             options_summary = '<options>',   # PLACEHOLDER | '' to disable
+            opt_desc_style = 'default',      # default or None | manpage
             opt_listing_heading = 'unified', # unified | by_kind | minimal
-            opt_desc_style = 'default',      # default | manpage
+            opt_listing_heading_indent = -4, # N spaces relative to opt-listing indent
             alias_listing = 'compact',       # compact | explicit | column | separate
         )
 
