@@ -93,45 +93,6 @@ toc: Table of contents
 todos: TODOs
 --------
 
-new-notes:
-
-    - See two most recent discussions.
-    - Seems like a mess...
-    - Maybe drop spec-support for documenting individual child entities?
-        - parameters (of Option)
-        - choices (of Argument)
-        - choices (of Parameter)
-
-        - support those configurations only via API?
-        - also make sure the help-text mockups are plausible for such scenarios.
-
-            --point <x=a|b> <y=c|d>      Blah point
-              <x>                        - Blah x
-                a                          - Blah x=a
-                b                          - Blah x=b
-              <y>                        - Blah y
-                ...
-
-    - Maybe related:
-
-        - Can a grammar include arg-variants based on parameter choice combos?
-
-            - Spec:
-
-                --point <x=a> <y=c> [--ac]
-                --point <x=a> <y=d> [--ad]
-                --point <x=b> <y=c> [--bc]
-                --point <x=b> <y=d> [--bc]
-
-            - Usage:
-
-                --point a c [--ac]
-                --point a d [--ad]
-                --point b c [--bc]
-                --point b d [--bc]
-                
-            - It's absurd ... but I think the current plan could handle it.
-
 Mock-ups:
 
     - blort.py
@@ -151,9 +112,10 @@ Mock-ups:
     - Other project examples:
         - Argparse docs for anything prominent.
 
-new-notes : handle remaining or deferered issues:
+new-notes :
 
-    - See the section.
+    - Edit, move to proper sections.
+    - Add notes to implementation tasks.
 
 Implement recent changes in notes.txt:
 
@@ -226,44 +188,19 @@ Argument parsing.
 new-notes: New notes
 --------
 
-Why an opt-listing excludes ntimes?
+Why an opt-desc excludes quantifiers:
 
     - Decision:
-        - Opt-listings do not in
 
-    - One might be tempted to include ntimes for simple items
-      where ntimes=(0,1).
+        - Opt-specs fully configure the Opt, with quantifiers.
+        - But opt-descs exclude the quantifiers.
+        - That aligns with other libraries (eg arparse).
 
-        [<x>]           Blah blah
-        [--foo]         Blah blah
+        - Rationale:
+            - Usage is responsible for grammar.
+            - Opt-descs document the Opt, its parameters, and their choices.
 
-    - The benefit of including ntimes is that the default policy of using the
-      placehold [<options>] in the usage-text remains viable.
-
-        - The usage grammar is still clear.
-        - Because in simple cases, all of the options represented by
-          the placehold are indeed optional, with ntimes=(0,1).
-
-    - But expressing ntimes generally in opt-listings would be bad becuase it
-      requires the end-user to understand the spec-syntax too well.
-
-        (--point <x> <y>){2}    Points used in calculation
-
-        ** This point is incorrect: the usage-section will necessarily need to
-        express the grammar, with quantifiers. So the user will need to
-        understand complex quantifiers like <x>{2,5}
-
-    - And it fails to convey the actual grammar when Opts are coupled
-      via a group ntimes.
-
-        # The spec.
-        [<a> <b>]...
-
-        # This attempt to include ntimes does not express the true grammar.
-        [<a>]...         Blah blah
-        [<b>]...         Blah blah
-
-    - What about quantifiers on the parameters?
+    - Mockups: quantifiers for parameters:
 
         - With quantifiers:
 
@@ -279,16 +216,67 @@ Why an opt-listing excludes ntimes?
             --vals <a> <b>              Blah blah
             --point <x> <y> <z>         Blah blah
 
-Can an opt-listing document an option's parameters?
+    - The benefit of including quantifers in the opt-descs is that the
+      default policy of using the placehold [<options>] in the usage-text
+      remains viable.
 
-    - Mockup:
+        - The usage grammar is still clear.
+        - Because in simple cases, all of the options represented by the
+          placeholder are indeed optional, with ntimes=(0,1).
 
-        --point <x> <y> <z>         Blah blah
-          <x>                       - Blah blah-x
-          <y>                       - Blah blah-y
-          <z>                       - Blah blah-z
+    - But quantifiers applied to individual opt-descs can break down:
 
-    - What would the spec-syntax be to declare those opt-listings?
+        # The spec: Opts in a quantified Group.
+        [<a> <b>]...
+
+        # The quantifier cannot be accurately expressed via single opt-descs.
+        [<a>]...         Blah blah
+        [<b>]...         Blah blah
+
+        - The fallback policy could be: do not include enclosing-Group quantifiers.
+
+The <options> placeholder policy and opt-descs:
+
+    - The <options> placeholder implies that all options take a simple form:
+        - All options having the same optional-vs-required status:
+            <options>
+            [<options>]
+        - With no other grammatical complexity.
+            - Opt.ntimes.
+            - Parameter.ntimes.
+            - Opt coupling via enclosing groups.
+        - Since the opt-descs cannot document such complexities, use of the
+          placeholder would mean that the grammar of the Opts is documented
+          nowhere in the help text.
+
+    - Policy to consider:
+        - Use the placeholder only if criteria below are met.
+        - If not, disable options_summary.
+
+Can an opt-desc document an option's parameters and choices?
+
+    - Decisions:
+        - Opt-descs will support documenting Opt child elements.
+        - Use the "simple approach" (see below) via unification policy.
+        - Add Choice to the OO model.
+
+    - Documentation might be desired for various child elements:
+        - Parameters (of Option).
+        - Choices (of Argument).
+        - Choices (of Parameter).
+
+        - Will spec-syntax support such use cases? If so, how?
+
+    - Mockups:
+
+        - Parameters:
+
+            --point <x> <y> <z>         Blah blah
+              <x>                       - Blah blah-x
+              <y>                       - Blah blah-y
+              <z>                       - Blah blah-z
+
+    - What would the spec-syntax be to declare those opt-descs?
 
         - Syntax for a positional with choices:
 
@@ -297,18 +285,18 @@ Can an opt-listing document an option's parameters?
             <action=stop>          : Blah blah stop
             <action=rest>          : Blah blah rest
 
-            * Question:
-                - Where do those help-texts live in the OO model?
-                - The first lives on Positional(action).
-                - Which has one Arg with 3 choices.
-                - Do we need a Choice class to hold the help-text?
-
         - An analogous syntax for parameter opt-specs:
 
             --point <x> <y> <z>    : Blah blah point
             --point=<x>            : Blah blah x
             --point=<y>            : Blah blah y
             --point=<z>            : Blah blah z
+
+            # Or use a spec-scope?
+            --point <x> <y> <z>    : Blah blah point
+            point >> <x>           : Blah blah x
+            point >> <y>           : Blah blah y
+            point >> <z>           : Blah blah z
 
             - OO model:
                 - Option(point).
@@ -319,16 +307,102 @@ Can an opt-listing document an option's parameters?
 
             --step <first=add|mult> <second=sub|div>
 
+            # Use equal sign?
             --step=<first=add>   : Blah blah first-add
             --step=<first=mult>  : Blah blah first-mult
 
-        ****
-        ** Starting to seems convoluted.
-        ****
+            # Or use a spec-scope?
+            step >> <first=add>   : Blah blah first-add
+            step >> <first=mult>  : Blah blah first-mult
 
-Parser.config():
+            # Or support path-syntax in the parameter-variant?
+            <step.first=add>      : Blah blah first-add
 
-    - We can use one method to achieve both varieties of bulk-configuration.
+            # Simple approach: take advantage of unification policy.
+            --step <first=add>    : Blah blah first-add
+
+            - Assessment:
+
+                - Equal sign:
+                    - Seems off: a misuse of equal.
+
+                - Spec-scope:
+                    - Works, I suppose.
+
+                - Path-syntax:
+                    - Seems off: looks like we are configuring a positional,
+                      but we are really operating on a param.
+
+                - Simple approach:
+                    - Yes, this is the best one.
+                    - The policy is to unify Opts with same name that have choices.
+
+    - I considered forcing such configurations to use the API:
+
+        - But that seems ill-considered.
+
+        - Opt-desc help-text belongs in the spec:
+            - Inherently involves textual information.
+            - And is implicated in page layout details.
+
+        - The API is not much clearer than the spec syntax:
+
+            --point <x=a|b> <y=c|d>
+
+            # Text for <x> parameter.
+            p.config('point.x', help = 'blah blah point-x')
+
+            # Text for <x=c> parameter. Not clear how API would work
+            ...
+
+    - Mockup: opt-descs for Opt, Parameter, Choice
+
+        --point <x=a|b> <y=c|d>      Blah point
+          <x>                        - Blah x
+            a                          - Blah x=a
+            b                          - Blah x=b
+          <y>                        - Blah y
+            ...
+
+    - Can a grammar include arg-variants based on parameter choice combos?
+
+        - Strange use case ... but I think current plan could handle it.
+
+        - Spec:
+
+            --point <x=a> <y=c> [--ac]
+            --point <x=a> <y=d> [--ad]
+            --point <x=b> <y=c> [--bc]
+            --point <x=b> <y=d> [--bc]
+
+        - Usage:
+
+            --point a c [--ac]
+            --point a d [--ad]
+            --point b c [--bc]
+            --point b d [--bc]
+            
+    - OO model: where to help-texts of child entities reside?
+
+        - Example:
+
+            <action=go|stop|rest>  : blah-action
+            <action=go>            : blah-go
+            <action=stop>          : blah-stop
+            <action=rest>          : blah-rest
+
+        - Model:
+
+            Positional(action, help='blah-action')
+                Arg.choices = [
+                    Choice(value='go', help='blah-go'),
+                    ...
+                ]
+
+Unifying Parser.config():
+
+    - Decisions:
+        - Use one method for both varieties of bulk-configuration.
 
     - Notation:
         - Opt used here to mean any grammar element that matches query.
@@ -340,7 +414,7 @@ Parser.config():
         - For a given attribute, Opts get distinct configuration.
 
         p.config(
-            foo = {'DEST_1':111, 'DEST_2':222},  # ATTRIBUTE => dict(DEST => VALUE).
+            foo = {'DEST_1':111, 'DEST_2':222},  # ATTRIBUTE => dict(DEST => VAL).
             bar = {'DEST_3':77, 'DEST_4':88},
         )
 
@@ -357,7 +431,7 @@ Naming: Result.context:
 
     - Decision:
         - Switch back to callable Result.
-        - But make it more declarative.
+        - But support a declarative calling style.
 
     - Previously, I considered making opts callable:
         - Avoids name-collision entirely.
@@ -393,25 +467,28 @@ Naming: Result.context:
 
             context = opts()
 
-Terminology:
+Terminology: what to call an opt-spec in the help-text?
 
-    - Need a term for the representation of an opt-spec in help text.
+    - Decision:
+        - Opt-spec becomes an opt-desc in the help-text.
 
-    - Possibilities:
-        - Opt-spec in both contexts: my notes do that now.
+        - Opt-listing is a listing of several opt-specs (in the spec) or
+          opt-descs (in the help text), optionally preceded by a heading.
+
+    - Other terms considered:
+        - Opt-spec: in both contexts.
         - Opt-text: but we also have Opt.text.
-        - Opt-help-text: maybe; but sort of the same problem.
-        - Opt-doc: documentation for an Opt; the term is not used elsewhere.
+        - Opt-help-text: same problem.
+        - Opt-doc: documentation for an Opt; sounds like docopt.
         - Opt-listing: that term already in use in a collective sense.
-
-    - Tentative decision:
-
-        - Use opt-listing as a zero-inflection noun (like sheep).
-
-        - Opt-listing mockup in the manpage style:
-
-            --val <n>, -v <n>               # The opt-spec portion.
-                Blah blah blah blah.        # The opt-help or opt-help-text.
+        - Opt-desc:
+            - This works.
+            - It provides a nice contrast: opt-spec becomes opt-desc.
+            - Opt-desc is a bit different that a full opt-spec, in the sense
+              that it includes no quantifers.
+            - ChatGPT implied that "option description" is used in the
+              command-line documentation tooling community but that did not
+              jump out immediately in my very brief web searches.
 
 Help text style attributes:
 
@@ -420,7 +497,7 @@ Help text style attributes:
         p.config_help_text(
             options_summary = '<options>',   # PLACEHOLDER | '' to disable
             opt_listing_heading = 'unified', # unified | by_kind | minimal
-            opt_listing_style = 'default',   # default | manpage
+            opt_desc_style = 'default',      # default | manpage
             alias_listing = 'compact',       # compact | explicit | column | separate
         )
 
@@ -433,7 +510,7 @@ Help text style attributes:
         - by_kind: "Positionals" and "Options".
         - minimal: no heading.
 
-    - Opt-listing styles:
+    - Opt-desc styles:
         - default: opt-specs on left; aligned help texts on right
         - manpage: opt-spec on its own line; then indented paragraph of help-text
 
