@@ -95,15 +95,11 @@ todos: TODOs
 
 Mock-ups:
 
+    x argparse-vs-optopus
     x blort.py
-
-    - optopus-naval-fate.py
+    x optopus-naval-fate.py
 
     - optopus-repo.py
-        - Click's approach is quite awkward.
-        - Also mock up how dispatching would work.
-
-    - optopus-setuptools.py
 
     - Check my current examples and mock them up where interesting.
 
@@ -116,6 +112,10 @@ new-notes :
 
     - Edit, move to proper sections.
     - Add notes to implementation tasks.
+
+    - dispatching examples to assess/mockup:
+        - naval-fate
+        - repo
 
 Implement recent changes in notes.txt:
 
