@@ -100,10 +100,6 @@ The help text:
       --password TEXT  The login password.
       --help           Show this message and exit.
 
-    ====================================
-
-
-
 '''
 
 
@@ -112,7 +108,6 @@ import posixpath
 import sys
 
 import click
-
 
 class Repo:
     def __init__(self, home):
@@ -128,9 +123,7 @@ class Repo:
     def __repr__(self):
         return f"<Repo {self.home}>"
 
-
 pass_repo = click.make_pass_decorator(Repo)
-
 
 @click.group()
 @click.option(
@@ -164,8 +157,6 @@ def cli(ctx, repo_home, config, verbose):
     ctx.obj.verbose = verbose
     for key, value in config:
         ctx.obj.set_config(key, value)
-
-
 
 @cli.command()
 @click.argument("src")
@@ -221,7 +212,6 @@ def setuser(repo, username, email, password):
     repo.set_config("email", email)
     repo.set_config("password", "*" * len(password))
     click.echo("Changed credentials.")
-
 
 @cli.command()
 @click.option(
