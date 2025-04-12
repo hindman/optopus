@@ -99,7 +99,13 @@ Mock-ups:
     x blort.py
     x optopus-naval-fate.py
 
-    - optopus-repo.py
+    . optopus-repo.py
+
+    - other click examples to consider:
+        termui
+        imagepipe
+
+        * No other examples are worthe bothering with.
 
     - Check my current examples and mock them up where interesting.
 
