@@ -6,33 +6,20 @@ repo: Optopus vs click.
 TODO:
 
     x Draft SPEC
-
-    - API setup:
-
-        "--repo-home",
-        envvar="REPO_HOME",
-        default=".repo",
-
-        "--shallow/--deep",
-        default=False,
-
-        "--rev", "-r", default="HEAD"
-
-        @click.confirmation_option()   # Done for --yes
-
-        @click.option("--username", prompt=True)
-
-        @click.option("--email", prompt="E-Mail")
-
-        @click.password_option(help="The login password.")
-
-        @click.argument("files", type=click.Path())
-        @click.argument("src", type=click.Path())
-        @click.argument("dst", type=click.Path())
+    x API config
 
     - Help text
 
+    - Help dispatch:
+        - Previous help-dispatch mockup returned a Section.
+        - But what about usage-text?
+        - eg, subcommand style program might want to return both a Section and
+          a Variant, the latter to build usage-test relevant to the Section.
+
     - Comparison notes.
+
+        - This mockup does not support --yes automatically. Not
+          sure Optopus will ever do that.
 
 '''
 
@@ -44,9 +31,9 @@ SPEC = '''
 
 general! : general-options=([--repo-home] [--config]... [--verbose])
 
-clone   : general! <command=clone> <src> [<dest>] [--shallow | --deep] [--rev]
+clone   : general! <command=clone> <src> [<dst>] [--shallow | --deep] [--rev]
 commit  : general! <command=commit> [<file>]... [--message]
-copy    : general! <command=copy> [<src>]... <dest> [--force]
+copy    : general! <command=copy> [<src>]... <dst> [--force]
 delete  : general! <command=delete> [--yes]
 setuser : general! <command=setuser> [--username] [--email] [--password]
 
@@ -75,13 +62,13 @@ General options :::
 Command: clone ::
 
 ```
-This will clone the repository at <src> into the folder <dest>. If <dest> is not
+This will clone the repository at <src> into the folder <dst>. If <dst> is not
 provided this will automatically use the last path component of <src> and create
 that folder.
 ```
 
     <src>               : Repository source
-    [<dest>]            : Directory path in which to put the cloned repo
+    [<dst>]             : Directory path in which to put the cloned repo
     [--deep]            : Deep checkout [the default]
     [--shallow]         : Shallow checkout
     [-r --rev <commit>] : Clone a specific revision instead of HEAD
@@ -105,11 +92,11 @@ Command: copy ::
 
 ```
 Copies one or multiple files to a new location. This copies all files from
-<src> to <dest>.
+<src> to <dst>.
 ```
 
     [<src>]... : File path
-    <dest>     : Directory path of destination
+    <dst>      : Directory path of destination
     [--force]  : Forcibly copy over an existing file
 
 Command: delete ::
@@ -135,10 +122,22 @@ This will override the current user config.
     [--password <pw>]   : Login password
 '''
 
-from optopus import Parser
+from optopus import Parser, Path
 
 p = Parser(SPEC, version = '1.0')
 p.config_help_text(options_summary = False)
+
+p.config('rev', default = 'HEAD')
+p.config('repo_home', default = '.repo', env = True)
+
+p.config('shallow', negaters = 'deep')
+
+p.config('username', 'password', prompt = True)
+p.config('email', prompt = 'Enter E-mail')
+
+p.config(dest = dict(file = 'files', src = 'srcs', dst = 'dsts'))
+p.config('files', 'srcs', 'dsts', convert = Path)
+
 opts = p.parse()
 
 ####

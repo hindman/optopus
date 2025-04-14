@@ -98,21 +98,11 @@ Mock-ups:
     x argparse-vs-optopus
     x blort.py
     x optopus-naval-fate.py
+    x Check spec-vs-api/
+    x Check my current examples and mock them up where interesting.
+    x other click examples to consider: termui, imagepipe
 
     . optopus-repo.py
-
-    - other click examples to consider:
-        termui
-        imagepipe
-
-        * No other examples are worthe bothering with.
-
-    - Check my current examples and mock them up where interesting.
-
-    - Check spec-vs-api/
-
-    - Other project examples:
-        - Argparse docs for anything prominent.
 
 new-notes :
 
@@ -193,6 +183,25 @@ Argument parsing.
 --------
 new-notes: New notes
 --------
+
+Prompting for var-inputs:
+
+    - Examples: username, credentials.
+
+    p.config('bar', prompt = PROMPT)
+    p.config('bar', password = PROMPT)   # Prompt via getpass.getpass().
+
+    Where PROMPT:
+        - True: default Optopus prompting.
+        - MSG: same, but using MSG.
+        - callable: no args; should return str or raise
+        - (MSG, STREAM) tuple: args sent to getpass()
+
+Parser.config():
+
+    - Use name, dest, or both?
+
+    - Both seems fraught.
 
 Why an opt-desc excludes quantifiers:
 
@@ -1069,7 +1078,7 @@ neck-diagram: EX_NECK_DIAG
     - This is a non-standard command line program: its grammar consists of one
       or more subcommands with a literal separator between them.
 
-    cmd! :  commands=(
+    cmd! :  command=(
                 <cmd=snum>   <snum>             |
                 <cmd=fnum>   <fnum>             |
                 <cmd=number> <numbering=on|off> |
@@ -3768,6 +3777,10 @@ dispatch: Dispatch
 
 ISSUES:
 
+    - Related issue to include in planning:
+        - Supporting a confirmation option: Click does --yes.
+        - Seems dubious.
+
     - Under what conditions does a dispatch function get called?
 
         - Dispatch always.
@@ -5053,6 +5066,9 @@ Applying settings to the Parser:
 
         # User configures Parser, telling Optopus about upstream inputs.
         p = Parser(SPEC, prefs = PREFS, envs = ENVS)
+
+        # Or user can apply such settings to specific Opts.
+        p.config('foo', pref = PREF, env = ENV)
 
     - Where PREFS:
 
