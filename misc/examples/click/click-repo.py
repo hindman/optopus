@@ -1,107 +1,10 @@
 '''
-
-This code is an example from the Click project:
-    - It emulates a subcommand-style program like Git.
-
-The help text:
-    - For the main program.
-    - Then for each subcommand.
-
-    ====================================
-
-    Usage: ex4-repo.py [OPTIONS] COMMAND [ARGS]...
-
-      Repo is a command line tool that showcases how to build complex command line
-      interfaces with Click.
-
-      This tool is supposed to look like a distributed version control system to
-      show how something like this can be structured.
-
-    Options:
-      --repo-home PATH    Changes the repository folder location.
-      --config KEY VALUE  Overrides a config key/value pair.
-      -v, --verbose       Enables verbose mode.
-      --version           Show the version and exit.
-      --help              Show this message and exit.
-
-    Commands:
-      clone    Clones a repository.
-      commit   Commits outstanding changes.
-      copy     Copies files.
-      delete   Deletes a repository.
-      setuser  Sets the user credentials.
-
-    ====================================
-
-    Usage: ex4-repo.py clone [OPTIONS] SRC [DEST]
-
-      Clones a repository.
-
-      This will clone the repository at SRC into the folder DEST.  If DEST is not
-      provided this will automatically use the last path component of SRC and
-      create that folder.
-
-    Options:
-      --shallow / --deep  Makes a checkout shallow or deep.  Deep by default.
-      -r, --rev TEXT      Clone a specific revision instead of HEAD.
-      --help              Show this message and exit.
-
-    ====================================
-
-    Usage: ex4-repo.py commit [OPTIONS] [FILES]...
-
-      Commits outstanding changes.
-
-      Commit changes to the given files into the repository.  You will need to
-      "repo push" to push up your changes to other repositories.
-
-      If a list of files is omitted, all changes reported by "repo status" will be
-      committed.
-
-    Options:
-      -m, --message TEXT  The commit message.  If provided multiple times each
-                          argument gets converted into a new line.
-      --help              Show this message and exit.
-
-    ====================================
-
-    Usage: ex4-repo.py copy [OPTIONS] [SRC]... DST
-
-      Copies one or multiple files to a new location.  This copies all files from
-      SRC to DST.
-
-    Options:
-      --force  forcibly copy over an existing managed file
-      --help   Show this message and exit.
-
-    ====================================
-
-    Usage: ex4-repo.py delete [OPTIONS]
-
-      Deletes a repository.
-
-      This will throw away the current repository.
-
-    Options:
-      --yes   Confirm the action without prompting.
-      --help  Show this message and exit.
-
-    ====================================
-
-    Usage: ex4-repo.py setuser [OPTIONS]
-
-      Sets the user credentials.
-
-      This will override the current user config.
-
-    Options:
-      --username TEXT  The developer's shown username.
-      --email TEXT     The developer's email address
-      --password TEXT  The login password.
-      --help           Show this message and exit.
-
+See the optopus implementation for notes.
 '''
 
+####
+# Click.
+####
 
 import os
 import posixpath
@@ -267,4 +170,105 @@ def copy(repo, src, dst, force):
 
 if __name__ == '__main__':
     cli()
+
+####
+# Click help texts.
+####
+
+'''
+
+====================================
+
+Usage: ex4-repo.py [OPTIONS] COMMAND [ARGS]...
+
+  Repo is a command line tool that showcases how to build complex command line
+  interfaces with Click.
+
+  This tool is supposed to look like a distributed version control system to
+  show how something like this can be structured.
+
+Options:
+  --repo-home PATH    Changes the repository folder location.
+  --config KEY VALUE  Overrides a config key/value pair.
+  -v, --verbose       Enables verbose mode.
+  --version           Show the version and exit.
+  --help              Show this message and exit.
+
+Commands:
+  clone    Clones a repository.
+  commit   Commits outstanding changes.
+  copy     Copies files.
+  delete   Deletes a repository.
+  setuser  Sets the user credentials.
+
+====================================
+
+Usage: ex4-repo.py clone [OPTIONS] SRC [DEST]
+
+  Clones a repository.
+
+  This will clone the repository at SRC into the folder DEST.  If DEST is not
+  provided this will automatically use the last path component of SRC and
+  create that folder.
+
+Options:
+  --shallow / --deep  Makes a checkout shallow or deep.  Deep by default.
+  -r, --rev TEXT      Clone a specific revision instead of HEAD.
+  --help              Show this message and exit.
+
+====================================
+
+Usage: ex4-repo.py commit [OPTIONS] [FILES]...
+
+  Commits outstanding changes.
+
+  Commit changes to the given files into the repository.  You will need to
+  "repo push" to push up your changes to other repositories.
+
+  If a list of files is omitted, all changes reported by "repo status" will be
+  committed.
+
+Options:
+  -m, --message TEXT  The commit message.  If provided multiple times each
+                      argument gets converted into a new line.
+  --help              Show this message and exit.
+
+====================================
+
+Usage: ex4-repo.py copy [OPTIONS] [SRC]... DST
+
+  Copies one or multiple files to a new location.  This copies all files from
+  SRC to DST.
+
+Options:
+  --force  forcibly copy over an existing managed file
+  --help   Show this message and exit.
+
+====================================
+
+Usage: ex4-repo.py delete [OPTIONS]
+
+  Deletes a repository.
+
+  This will throw away the current repository.
+
+Options:
+  --yes   Confirm the action without prompting.
+  --help  Show this message and exit.
+
+====================================
+
+Usage: ex4-repo.py setuser [OPTIONS]
+
+  Sets the user credentials.
+
+  This will override the current user config.
+
+Options:
+  --username TEXT  The developer's shown username.
+  --email TEXT     The developer's email address
+  --password TEXT  The login password.
+  --help           Show this message and exit.
+
+'''
 

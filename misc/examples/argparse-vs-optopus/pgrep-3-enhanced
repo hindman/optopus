@@ -57,7 +57,7 @@ p.config('max_count', 'context', convert = int, validate = ispositive)
 
 '''
 Usage:
-  pgrep [options] <rgx> [<path>...]
+  pgrep [<options>] <rgx> [<path>...]
 
 Arguments:
   <rgx>                  Python regular expression

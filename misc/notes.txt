@@ -93,27 +93,14 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Mock-ups:
-
-    x argparse-vs-optopus
-    x blort.py
-    x optopus-naval-fate.py
-    x Check spec-vs-api/
-    x Check my current examples and mock them up where interesting.
-    x other click examples to consider: termui, imagepipe
-
-    . optopus-repo.py
-
 new-notes :
-
     - Edit, move to proper sections.
     - Add notes to implementation tasks.
 
-    - dispatching examples to assess/mockup:
-        - naval-fate
-        - repo
-
 Implement recent changes in notes.txt:
+
+    - Edit classes-and-attributes section to include API stuff used in
+      optopus-mock-ups and decided in the rest of notes.txt.
 
     - Drop Opt.choice.
     - Clarify arg-variant defintion.
@@ -184,6 +171,18 @@ Argument parsing.
 new-notes: New notes
 --------
 
+How does the API query for Sections?
+
+    - There is no spec-syntax to give them a name.
+
+    - Option 1: augment the syntax:
+        - First impression: feels cryptic.
+
+    - Option 2: interpret Section queries differently:
+
+        - When user does this: p.query(X, kind = Section)
+        - Interpret X as glob-pattern (or substring), not exact match.
+
 Prompting for var-inputs:
 
     - Examples: username, credentials.
@@ -232,7 +231,7 @@ Why an opt-desc excludes quantifiers:
             --point <x> <y> <z>         Blah blah
 
     - The benefit of including quantifers in the opt-descs is that the
-      default policy of using the placehold [<options>] in the usage-text
+      default policy of using the placeholder [<options>] in the usage-text
       remains viable.
 
         - The usage grammar is still clear.
@@ -267,6 +266,38 @@ The <options> placeholder policy and opt-descs:
     - Policy to consider:
         - Use the placeholder only if criteria below are met.
         - If not, disable options_summary.
+
+    - But see the repo mockup:
+
+        - The usage-section has [<general-options>], as configured via SPEC.
+        - But one of those options has an unavoidably complex form:
+
+            [--config <key> <value>]... : Overrides a config key/value pair
+
+        - If you just strip away the quantifiers you get this:
+
+            --config <key> <value>        Overrides a config key/value pair
+
+        - The only way to convey the actual grammar is via the Opt's
+          help text, eg via a trailing remark:
+
+            # User could write the text.
+            Overrides a config key/value pair (repeatable)
+
+            # Optopus could attempt to do so, but this seems fraught.
+            Overrides a config key/value pair (0+)
+
+        - Or Optopus could include the quantifiers in complex cases:
+
+            [--config <key> <value>]...   Overrides a config key/value pair
+
+        - The example script comes from the Click project. Click does not deal
+          with this issue at all, leaving it in the user's hands.
+
+            - That might be a reasonable policy approach.
+
+            - If you summarize a group of options via a placeholder, it's your
+              job to convey usage in some other means.
 
 Can an opt-desc document an option's parameters and choices?
 
@@ -604,6 +635,7 @@ Function signatures for callable Opt attributes:
             - bool
             - help text
             - Section(s)
+            - (Section, Variant)
 
     - version:
         - Typically set via a version-str.
@@ -1089,7 +1121,7 @@ neck-diagram: EX_NECK_DIAG
 
     main : cmd! [ `/` cmd! ]...
 
-Syntax example: nab: EX_NAB
+nab: EX_NAB
 
     - Another separator-based grammar.
 
@@ -1101,6 +1133,14 @@ Syntax example: nab: EX_NAB
 
     main : [--trace] commands=(chomp! | findall! | grep! | range! | run!)...
     help : --help
+
+repo:
+
+    - A comparison of Click and Optopus for a subcommand program.
+    - Illustrates several API details.
+
+    - click-repo.py
+    - optopus-repo.py
 
 --------
 terminology: Terminology
@@ -3776,6 +3816,10 @@ dispatch: Dispatch
 --------
 
 ISSUES:
+
+    - dispatching examples to assess/mockup:
+        - naval-fate
+        - repo
 
     - Related issue to include in planning:
         - Supporting a confirmation option: Click does --yes.

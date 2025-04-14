@@ -105,6 +105,8 @@ p.config('path', convert = Path, validate = isfile)
 p.config('max_count', 'context', 'nsubs', convert = int, validate = ispositive)
 p.config('group', convert = int, validate = nonnegative)
 
+p.config_help_text(options_summary = False)
+
 ####
 # Argparse help text.
 ####

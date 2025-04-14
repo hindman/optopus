@@ -81,6 +81,8 @@ if __name__ == '__main__':
 
 '''
 
+====================================
+
 naval-fate --help
 
     Usage: naval-fate [OPTIONS] COMMAND [ARGS]...
@@ -99,6 +101,8 @@ naval-fate --help
       mine  Manages mines.
       ship  Manages ships.
 
+====================================
+
 naval-fate mine --help
 
     Usage: naval-fate mine [OPTIONS] COMMAND [ARGS]...
@@ -112,6 +116,8 @@ naval-fate mine --help
       remove  Removes a mine at a specific coordinate.
       set     Sets a mine at a specific coordinate.
 
+====================================
+
 naval-fate mine remove --help
 
     Usage: naval-fate mine remove [OPTIONS] X Y
@@ -120,6 +126,8 @@ naval-fate mine remove --help
 
     Options:
       --help  Show this message and exit.
+
+====================================
 
 naval-fate mine set --help
 
@@ -131,6 +139,8 @@ naval-fate mine set --help
       --moored    Moored (anchored) mine. Default.
       --drifting  Drifting mine.
       --help      Show this message and exit.
+
+====================================
 
 naval-fate ship --help
 
@@ -146,6 +156,8 @@ naval-fate ship --help
       new    Creates a new ship.
       shoot  Makes SHIP fire to X,Y.
 
+====================================
+
 naval-fate ship move --help
 
     Usage: naval-fate ship move [OPTIONS] SHIP X Y
@@ -156,6 +168,8 @@ naval-fate ship move --help
       --speed KN  Speed in knots.
       --help      Show this message and exit.
 
+====================================
+
 naval-fate ship move new --help
 
     Usage: naval-fate ship move [OPTIONS] SHIP X Y
@@ -165,6 +179,8 @@ naval-fate ship move new --help
     Options:
       --speed KN  Speed in knots.
       --help      Show this message and exit.
+
+====================================
 
 naval-fate ship move new shoot --help
 

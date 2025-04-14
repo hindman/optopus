@@ -252,6 +252,10 @@ p = Parser(SPEC, help = help_dispatch)
 # Achieves: singlar name (for help-text) and plural dest (for storage).
 p.config('triples', name = 'triple')                                                     ## NOTE_1240
 
+# Usage section will list options explicitly rather than
+# summarizing them with the <options> placeholder
+p.config_help_text(options_summary = False)
+
 ####
 # Notes.
 ####
