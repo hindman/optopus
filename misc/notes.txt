@@ -171,18 +171,6 @@ Argument parsing.
 new-notes: New notes
 --------
 
-How does the API query for Sections?
-
-    - There is no spec-syntax to give them a name.
-
-    - Option 1: augment the syntax:
-        - First impression: feels cryptic.
-
-    - Option 2: interpret Section queries differently:
-
-        - When user does this: p.query(X, kind = Section)
-        - Interpret X as glob-pattern (or substring), not exact match.
-
 Prompting for var-inputs:
 
     - Examples: username, credentials.
@@ -1353,7 +1341,7 @@ Parser:
 
             - See grammar-querying-api
 
-            p.query(*paths, kind = types, want = callable) => Query
+            p.query(*paths, **kws) => Query
 
         - Configuring grammar elements:
 
@@ -1417,7 +1405,7 @@ Grammar:
 
     - API:
 
-        query(*paths, kind = KIND, negate = False) -> Query
+        - See grammar-querying-api
 
 Query:
 
@@ -4163,7 +4151,29 @@ Why Optopus needs flexible querying:
 
 Querying grammar elements in a Parser:
 
-    p.query(*paths, kind = types, want = callable) => Query
+    - API:
+
+        p.query(
+            *paths,
+            kind = KIND,
+            exclude = KIND,
+            attr = ATTR,
+            negate = False,
+        ) => Query
+
+        - Where PATH:
+            - A data-dive-like query path [details below].
+            - Applied only against name and dest.
+
+        - Where KIND:
+            - Optopus type: Opt, Section, Variant, etc.
+            - Same, as a str.
+            - Sequence of such things.
+            - Default: None.
+
+        - Where ATTR:
+            - Attribute name to match.
+            - Default: ('name', 'dest').
 
     - Delegates the call to p.grammar.query().
 
@@ -4173,18 +4183,27 @@ Querying grammar elements in a Parser:
         - Can be a target of further subqueries.
         - Supports a config() method to apply configurations to the elements.
 
-    - Each path is a period-delimited query string of:
+    - PATH syntax:
 
-        Opt      | name, dest
-        OptArg   | name
-        Variant  | name
-        Group    | name, dest
-        Wildcard | *
+        - Each PATH can contain 1+ query-paths, space delimited.
+        - Each query-path contains 1+ elements, period delimited.
+        - Each query-element is a glob-pattern.
 
-    - The path elements operate in a loose data-dive way:
+    - Query-paths operate in a data-dive-like manner:
 
-        - The nesting can be direct (parent to child) or extended (any
-          grandparent to child).
+        - Each query-element will be tested against each candidate grammar
+          element in generally this way:
+
+            fnmatch(NAME_DEST, QUERY_ELEM)
+
+            - Since the targets (name or dest) have no hiearchical separators,
+              some glob-syntax features are irrelevant.
+
+        - When a PATH has multiple elements, they are interpreted in a flexible
+          nesting fashion to embrace both:
+
+            - Direct nesting: parent to child
+            - Extended nesting: any grandparent to child.
 
         - Example:
 
@@ -4210,22 +4229,9 @@ Querying grammar elements in a Parser:
 
             - Gets the 2nd Opt.
 
-    - Query paths can use a glob-style wildcard:
+    - Multiple query paths:
 
-        p = Parser('<x> [-z <a> <b>] | -z')
-        p.query('z.*')
-
-        - Gets OptArg(a) and OptArg(b), not Opt(z).
-
-    - Multiple query paths are combined in an OR-wise fashion:
-
-        p.query('foo', 'bar')
-
-        - Gets Opt(foo) and Opt(bar)
-
-    - Keyword arguments:
-        - kind: declares wanted types (single class or sequence of them).
-        - wanted: callable that takes an entity and returns bool.
+        - Combined in an OR-wise fashion.
 
 Why integer PATH elements behave differently:
 
@@ -4257,13 +4263,21 @@ Why integer PATH elements behave differently:
 
 Possible query helpers:
 
-    query_one(PATH)
-    query(PATH, one = True)
-    query(PATH, nexp = 1)
+    - Getting exactly one:
 
-    query_section()
-    query_variant()
-    etc
+        query_one(PATH)
+        query(PATH, one = True)
+        get(PATH)
+
+    - Getting specific kinds of grammar elements:
+
+        query(PATH, kind = 'Section')
+        query_section(PATH)
+
+    - Tenative decisions:
+
+        - Use get() to query for exactly one.
+        - Rely on kind; do not expand the API footprint.
 
 --------
 validation-notes: Validation notes
