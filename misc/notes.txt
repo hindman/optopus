@@ -171,6 +171,17 @@ Argument parsing.
 new-notes: New notes
 --------
 
+Adding user-defined Context:
+
+    p = Parser(SPEC, context = CTX)
+    opts = p.parse(ARGS)
+    c = opts('context')   # Regular Context.
+    u = opts('user')      # User-defined data, as a Context.
+
+    Where CTX:
+        - Context instance or dict.
+        - If dict, it is converted to a Context.
+
 Prompting for var-inputs:
 
     - Examples: username, credentials.
@@ -415,7 +426,7 @@ Can an opt-desc document an option's parameters and choices?
             --point a d [--ad]
             --point b c [--bc]
             --point b d [--bc]
-            
+
     - OO model: where to help-texts of child entities reside?
 
         - Example:
@@ -3803,7 +3814,117 @@ some usage examples for the end-user.
 dispatch: Dispatch
 --------
 
-ISSUES:
+NEW NOTES:
+
+    - Dispatch: clarified approach:
+
+        - Special flags:
+
+            --help
+            --version
+
+            # Priority dispatch.
+            p = Parser(SPEC, help = bool|FUNC)
+            p = Parser(SPEC, version = VERSION|FUNC)
+
+            # Regular dispatch.
+            p.config('help', dispatch = FUNC)
+            p.config('version', dispatch = FUNC)
+
+        - User flags:
+
+            --examples
+            --details
+
+            # Priority or regular.
+            p.config('examples', priority = bool|FUNC)
+            p.config('examples', dispatch = FUNC)
+
+        - If an Arg is supplied:
+
+            --path <path>
+            <age>
+            <action=go|stop>
+
+            p.config('age', dispatch = FUNC)
+            p.config('action', dispatch = dict(go = FUNC, stop = FUNC))
+
+        - FUNC details:
+            - Single-argument callable.
+            - Or a sequence of them.
+
+        - Calling protocol:
+            - Arguments pass to dispatch functions:
+                - The parsed Result: opts.
+                - The user can supply other data via user-Context.
+
+            - Return values from dispatch functions:
+                - Optopus collects them in a returns-Context.
+                - Store under the relevant dests.
+
+                opts = p.parse(ARGS)
+                rs = opts('returns')
+
+            - How a dispatch function can halt further dispatching:
+                - Exit program.
+                - Raise HaltDispatch.
+                    - exit_code:
+                        - Default = 0.
+                        - User can supply a positive int for unsuccesful exit.
+                        - Or None to suppress the exit.
+                    - msg:
+                        - Optopus will print msg.
+                        - To stderr if exit_code is a positive int.
+
+        - Dispatch order:
+            - Priority --help.
+            - Priority --version.
+            - Priorty Opts (configuration order).
+            - Regular Opts (configuration order).
+
+        * Should priority be restricted to Options?
+            - My notes currently say yes.
+            - They go even farther: flags only.
+            - See: Why priority-opts should be restricted to flags
+
+            - But a possible counter-argument:
+
+                - If user wants a priority Opt of any kind, give it to them.
+                - As the notes discuss:
+                    - If the parse fails.
+                    - Optopus selects the best-performing interpretation.
+                    - Then populates a Result as best it can.
+                    - If a priority Opt is set, then invoke its dispatch functions.
+
+                - The problem:
+                    - The two tests are different.
+                    - With a flag-only policy:
+                        - Parse fails.
+                        - Optopus does a second check for priority-flags.
+                        - This is done with a simple membership test.
+                        - No parsing required.
+                        - It is able to locate the flag even if it occurs
+                          beyond the position (in args) where the parsing
+                          halted.
+                    - But non-flags would be different:
+                        - Only args to the left of the failure point are
+                          considered.
+                        - This differs from the membership test across all args.
+
+        - Regular vs priority dispatch:
+            - Priority:
+                - Triggered by presense among args, even if the parse fails.
+                - Executed before regular dispatch.
+            - Regular:
+                - Triggered by user supplying an Opt in a successful parse.
+
+        - Why "priority" couples two behaviors:
+            - Tolerant/flexible parsing: merely requires presence among args.
+            - Dispatching priority.
+            - The behaviors are coupled under the most comman usage scenarios:
+                - Main examples are --help, --version.
+                - Other known examples: --examples, --details.
+                - If user wants priority without dispatch: dispatch=True.
 
     - dispatching examples to assess/mockup:
         - naval-fate
