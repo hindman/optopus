@@ -54,7 +54,7 @@ toc: Table of contents
         parsing-modes                 | Parsing modes
         zones-not-needed              | Zones not needed
         help-distpatching             | Help distpatching
-        dispatch                      | Dispatch
+        dispatch-to-callables         | Dispatching to callables
         argparse-and-greed            | argparse and greediness
         end-user-errors               | End-user errors
         converters-validators         | Converters and validators
@@ -171,35 +171,117 @@ Argument parsing.
 new-notes: New notes
 --------
 
-Adding user-defined Context:
+Unifying Parser.config():
 
-    p = Parser(SPEC, context = CTX)
-    opts = p.parse(ARGS)
-    c = opts('context')   # Regular Context.
-    u = opts('user')      # User-defined data, as a Context.
+    * Relevant section: opt-and-optarg-configuration
 
-    Where CTX:
-        - Context instance or dict.
-        - If dict, it is converted to a Context.
+    - Decisions:
+        - Use one method for both varieties of bulk-configuration.
 
-Prompting for var-inputs:
+    - Notation:
+        - Opt used here to mean any grammar element that matches query.
+        - DEST used here to mean any query-path.
+        - Opt attributes: foo, bar, etc.
+        - VAL: values assigned to Opt attributes (shown as ints).
 
-    - Examples: username, credentials.
+    - Set Opt attributes distinctly:
+        - For a given attribute, Opts get distinct configuration.
 
-    p.config('bar', prompt = PROMPT)
-    p.config('bar', password = PROMPT)   # Prompt via getpass.getpass().
+        p.config(
+            foo = {'DEST_1':111, 'DEST_2':222},  # ATTRIBUTE => dict(DEST => VAL).
+            bar = {'DEST_3':77, 'DEST_4':88},
+        )
 
-    Where PROMPT:
-        - True: default Optopus prompting.
-        - MSG: same, but using MSG.
-        - callable: no args; should return str or raise
-        - (MSG, STREAM) tuple: args sent to getpass()
+    - Set Opt attributes consistenty:
+        - For a given attribute, Opts get the same configuration.
 
-Parser.config():
+        p.config_B(
+            'DEST_1', 'DEST_2',                  # DESTs as args.
+            fubb = 3,                            # VALs, not dicts.
+            blort = 4
+        )
 
-    - Use name, dest, or both?
+Help text style attributes:
 
-    - Both seems fraught.
+    * Relevant section: help-text-formatting
+
+    - API and notes:
+
+        p.config_help_text(
+            options_summary = '<options>',   # PLACEHOLDER | '' to disable
+            opt_desc_style = 'default',      # default or None | manpage
+            opt_listing_heading = 'unified', # unified | by_kind | minimal
+            opt_listing_heading_indent = -4, # N spaces relative to opt-listing indent
+            alias_listing = 'compact',       # compact | explicit | column | separate
+        )
+
+    - Summarized options in usage text:
+        - All options summarized via a placeholder.
+        - Options/parameters listed explicitly (argparse).
+
+    - Opt-listing headings:
+        - unified: "Arguments".
+        - by_kind: "Positionals" and "Options".
+        - minimal: no heading.
+
+    - Opt-desc styles:
+        - default: opt-specs on left; aligned help texts on right
+        - manpage: opt-spec on its own line; then indented paragraph of help-text
+
+    - Aliases in opt-listings:
+        - explicit: classic style (argparse).
+        - compact: same, but drop parameters.
+        - column: compact in a column.
+        - separate: aliases under a separate heading ("Aliases").
+
+        - Mockups:
+
+            # Explicit.
+
+            --ignore-case, -i      Ignore case
+            --group <n>, -g <n>    Emit just capture group N [0 for all]
+            --delim <s>, -d <s>    Delimeter for capture groups [tab]
+
+            # Compact.
+
+            --ignore-case, -i      Ignore case
+            --group <n>, -g        Emit just capture group N [0 for all]
+            --delim <s>, -d        Delimeter for capture groups [tab]
+
+            # Column.
+
+            --ignore-case      -i  Ignore case
+            --group <n>        -g  Emit just capture group N [0 for all]
+            --delim <s>        -d  Delimeter for capture groups [tab]
+
+            # Separate.
+
+            --ignore-case      -i
+            --group            -g <n>
+            --delim            -d <s>
+
+Terminology: what to call an opt-spec in the help-text?
+
+    - Decision:
+        - Opt-spec becomes an opt-desc in the help-text.
+
+        - Opt-listing is a listing of several opt-specs (in the spec) or
+          opt-descs (in the help text), optionally preceded by a heading.
+
+    - Other terms considered:
+        - Opt-spec: in both contexts.
+        - Opt-text: but we also have Opt.text.
+        - Opt-help-text: same problem.
+        - Opt-doc: documentation for an Opt; sounds like docopt.
+        - Opt-listing: that term already in use in a collective sense.
+        - Opt-desc:
+            - This works.
+            - It provides a nice contrast: opt-spec becomes opt-desc.
+            - Opt-desc is a bit different that a full opt-spec, in the sense
+              that it includes no quantifers.
+            - ChatGPT implied that "option description" is used in the
+              command-line documentation tooling community but that did not
+              jump out immediately in my very brief web searches.
 
 Why an opt-desc excludes quantifiers:
 
@@ -443,207 +525,6 @@ Can an opt-desc document an option's parameters and choices?
                     Choice(value='go', help='blah-go'),
                     ...
                 ]
-
-Unifying Parser.config():
-
-    - Decisions:
-        - Use one method for both varieties of bulk-configuration.
-
-    - Notation:
-        - Opt used here to mean any grammar element that matches query.
-        - DEST used here to mean any query-path.
-        - Opt attributes: foo, bar, etc.
-        - VAL: values assigned to Opt attributes (shown as ints).
-
-    - Set Opt attributes distinctly:
-        - For a given attribute, Opts get distinct configuration.
-
-        p.config(
-            foo = {'DEST_1':111, 'DEST_2':222},  # ATTRIBUTE => dict(DEST => VAL).
-            bar = {'DEST_3':77, 'DEST_4':88},
-        )
-
-    - Set Opt attributes consistenty:
-        - For a given attribute, Opts get the same configuration.
-
-        p.config_B(
-            'DEST_1', 'DEST_2',                  # DESTs as args.
-            fubb = 3,                            # VALs, not dicts.
-            blort = 4
-        )
-
-Naming: Result.context:
-
-    - Decision:
-        - Switch back to callable Result.
-        - But support a declarative calling style.
-
-    - Previously, I considered making opts callable:
-        - Avoids name-collision entirely.
-        - Could support more queries/behaviors in future.
-
-    - But I balked when I read the mock-up code:
-
-        - Does not read intuitively.
-
-            c = opts().parser
-
-        - The user could help, but a library should not rely on that:
-
-            context = opts()
-            p = context.parser
-
-        - So I opted to go with a declarative approach, at the cost
-          of some name-collision risk.
-
-            c = opts.context
-
-        - Then I balked again, because the README examples use --context.
-
-    - A revised callable strategy:
-
-        - Have users request what they want.
-        - That will make project documentation more declarative.
-
-            c = opts('context')
-            p = opts('parser')
-
-        - Continue to support no-arg default for those favoring max brevity:
-
-            context = opts()
-
-Terminology: what to call an opt-spec in the help-text?
-
-    - Decision:
-        - Opt-spec becomes an opt-desc in the help-text.
-
-        - Opt-listing is a listing of several opt-specs (in the spec) or
-          opt-descs (in the help text), optionally preceded by a heading.
-
-    - Other terms considered:
-        - Opt-spec: in both contexts.
-        - Opt-text: but we also have Opt.text.
-        - Opt-help-text: same problem.
-        - Opt-doc: documentation for an Opt; sounds like docopt.
-        - Opt-listing: that term already in use in a collective sense.
-        - Opt-desc:
-            - This works.
-            - It provides a nice contrast: opt-spec becomes opt-desc.
-            - Opt-desc is a bit different that a full opt-spec, in the sense
-              that it includes no quantifers.
-            - ChatGPT implied that "option description" is used in the
-              command-line documentation tooling community but that did not
-              jump out immediately in my very brief web searches.
-
-Help text style attributes:
-
-    - API and notes:
-
-        p.config_help_text(
-            options_summary = '<options>',   # PLACEHOLDER | '' to disable
-            opt_desc_style = 'default',      # default or None | manpage
-            opt_listing_heading = 'unified', # unified | by_kind | minimal
-            opt_listing_heading_indent = -4, # N spaces relative to opt-listing indent
-            alias_listing = 'compact',       # compact | explicit | column | separate
-        )
-
-    - Summarized options in usage text:
-        - All options summarized via a placeholder.
-        - Options/parameters listed explicitly (argparse).
-
-    - Opt-listing headings:
-        - unified: "Arguments".
-        - by_kind: "Positionals" and "Options".
-        - minimal: no heading.
-
-    - Opt-desc styles:
-        - default: opt-specs on left; aligned help texts on right
-        - manpage: opt-spec on its own line; then indented paragraph of help-text
-
-    - Aliases in opt-listings:
-        - explicit: classic style (argparse).
-        - compact: same, but drop parameters.
-        - column: compact in a column.
-        - separate: aliases under a separate heading ("Aliases").
-
-        - Mockups:
-
-            # Explicit.
-
-            --ignore-case, -i      Ignore case
-            --group <n>, -g <n>    Emit just capture group N [0 for all]
-            --delim <s>, -d <s>    Delimeter for capture groups [tab]
-
-            # Compact.
-
-            --ignore-case, -i      Ignore case
-            --group <n>, -g        Emit just capture group N [0 for all]
-            --delim <s>, -d        Delimeter for capture groups [tab]
-
-            # Column.
-
-            --ignore-case      -i  Ignore case
-            --group <n>        -g  Emit just capture group N [0 for all]
-            --delim <s>        -d  Delimeter for capture groups [tab]
-
-            # Separate.
-
-            --ignore-case      -i
-            --group            -g <n>
-            --delim            -d <s>
-
-Function signatures for callable Opt attributes:
-
-    * Remaining issue: whether dispatch is helpful/needed.
-    * Defer this decision until after more mock-ups are done:
-        - Try to configure their dispatch.
-        - See how it looks.
-        - Write the equivalent roll-your-own code.
-
-    * Relevant sections:
-        converters-validators
-        help-distpatching
-        dispatch
-
-    - convert:
-        - this one is clear.
-        - convert(STR) => VAL or raise
-
-    - validate:
-        - I had some uncertainty about input-signature.
-
-            Simple        | VAL
-            Context-aware | VAL, OPT, PARSER, OTHER
-
-        - Tentative decision.
-
-            - Add a third concept: check.
-            - Convert/validate do basic value handling.
-            - Check can handle situations needing contextual information.
-            - Note that check can reside on Arg or Opt.
-
-            convert  | STR
-            validate | VAL
-            check    | VAL, CONTEXT
-
-    - help:
-        - The current notes seem generally plausible.
-        - Help is where dispatch is most compelling.
-
-        - A help callable should return:
-            - bool
-            - help text
-            - Section(s)
-            - (Section, Variant)
-
-    - version:
-        - Typically set via a version-str.
-        - If a callable: RESULT => STR
-        - Another useful kind dispatch.
-
-    - dispatch:
-        - Worth it at all?
-        - If so, what signature?
 
 --------
 road-map: Road map
@@ -3492,11 +3373,50 @@ Duplicate dests within a Result:
 parsed-data-with-context: Including Context with the Result
 --------
 
-Providing Context with Result:
+Summary:
 
-    - In prior planning work:
+    - The parsed Result (aka opts) will be callable.
+    - Using-facing attributes of Result will be defined by the user.
+    - The Result callable takes a str name (wanted type of info).
 
-        - The Result (aka opts) contained only the parsed data.
+API sketch:
+
+    # Define a Parse with user-context.
+    p = Parser(SPEC, context = dict(foo = 1, bar = 2))
+
+    # Get parsed Result.
+    opts = p.parse(ARGS)
+
+    # Retrieve contextual information in a declarative fashion.
+    c = opts('context')    # Context provided by Optopus.
+    p = opts('parser')     # The configured Parser.
+    u = opt('user')        # User-defined Context.
+
+    # Also default support to get Optopus Context (non-declarative).
+    c = opts()
+
+Context class:
+
+    - Generic container of attribute-value pairs.
+    - Based on types.SimpleNamespace.
+    - With support for dict-like iteration and get-item.
+
+The user context:
+
+    - User supplies it when defining the Parser.
+
+        p = Parser(SPEC, context = CTX)
+
+    - The supplied CTX can be:
+        - Dict (if so, Optopus converts to a Context).
+        - Context instance.
+        - Other object (left as-is).
+
+Rejected approaches:
+
+    - In early planning work:
+
+        - The Result contained only the parsed data.
 
         - That imposed annoying requirements on some callables:
             - Example: dispatch functions.
@@ -3510,26 +3430,41 @@ Providing Context with Result:
             - They might want to pass just opts.
             - But sometimes they need the Parser too.
 
-    - A better approach:
+    - Then I considered making opts callable:
 
-        - Context class:
-            - A place to holds lots of contextual information.
-            - Parser, current Opt, original ARGS, etc.
+        - Avoids attribute name collisions entirely.
+        - Could support more queries/behaviors in future.
 
-        - Assign that instance to Result.context.
+    - But I balked when I read the mock-up code:
 
-        - If the user needs to use a dest='context', they can change the
-          attribute for the Context some something else.
+        - Does not read intuitively/declaratively.
 
-            p = Parser(SPEC, context_attr = 'info')
+            p = opts().parser
 
-        - Optopus will raise if they don't (avoid silent name collisions).
+        - The user could help with intermediate variable naming, but a library
+          should not rely on that:
 
-    - Alternative rejected: making Result callable:
+            context = opts()
+            p = context.parser
 
-        - When I typed mock-up code in blort.py, it was jarring.
-        - The theory is sound.
-        - But the resulting code does not read in an intuitive way.
+    - Then I decided to devote an attribute name to the context.
+
+        p = opts.context.parser
+
+        - But one of my README examples had a --context option.
+        - So right out of the gate I was hitting naming conflicts.
+
+    - I considered allowing the user to change the name of that attribute:
+
+        p = Parser(SPEC, context_attr = 'info')
+
+        - But that seems as hassle too.
+        - One more thing for the user to forget.
+
+    - I went back to the callable strategy:
+
+        - But this time with a declarative approach, where the user supplied
+          the name for the kind of information wanted.
 
 --------
 eager-attachment-at-bounary: Eager option attachment at repetition boundaries
@@ -3811,8 +3746,10 @@ some usage examples for the end-user.
         o = Opt('task', help = DICT)
 
 --------
-dispatch: Dispatch
+dispatch-to-callables: Dispatching to callables
 --------
+
+Should the help-distpatching section (immediatley above) be moved here?
 
 NEW NOTES:
 
@@ -3930,6 +3867,19 @@ NEW NOTES:
         - naval-fate
         - repo
 
+    Prompting for var-inputs:
+
+        - Examples: username, credentials.
+
+        p.config('bar', prompt = PROMPT)
+        p.config('bar', password = PROMPT)   # Prompt via getpass.getpass().
+
+        Where PROMPT:
+            - True: default Optopus prompting.
+            - MSG: same, but using MSG.
+            - callable: no args; should return str or raise
+            - (MSG, STREAM) tuple: args sent to getpass()
+
     - Related issue to include in planning:
         - Supporting a confirmation option: Click does --yes.
         - Seems dubious.
@@ -4002,6 +3952,59 @@ NEW NOTES:
 
         - That suggests that Opt-level configuration is either a poor fit or
           insufficient on its own.
+
+    Function signatures for callable Opt attributes:
+
+        * Remaining issue: whether dispatch is helpful/needed.
+        * Defer this decision until after more mock-ups are done:
+            - Try to configure their dispatch.
+            - See how it looks.
+            - Write the equivalent roll-your-own code.
+
+        * Relevant sections:
+            converters-validators
+            help-distpatching
+            dispatch
+
+        - convert:
+            - this one is clear.
+            - convert(STR) => VAL or raise
+
+        - validate:
+            - I had some uncertainty about input-signature.
+
+                Simple        | VAL
+                Context-aware | VAL, OPT, PARSER, OTHER
+
+            - Tentative decision.
+
+                - Add a third concept: check.
+                - Convert/validate do basic value handling.
+                - Check can handle situations needing contextual information.
+                - Note that check can reside on Arg or Opt.
+
+                convert  | STR
+                validate | VAL
+                check    | VAL, CONTEXT
+
+        - help:
+            - The current notes seem generally plausible.
+            - Help is where dispatch is most compelling.
+
+            - A help callable should return:
+                - bool
+                - help text
+                - Section(s)
+                - (Section, Variant)
+
+        - version:
+            - Typically set via a version-str.
+            - If a callable: RESULT => STR
+            - Another useful kind dispatch.
+
+        - dispatch:
+            - Worth it at all?
+            - If so, what signature?
 
 Dispatching is probably can be pretty simple: tie one or more callables to
 Variants, Opts, or even Groups (hard to think of many use cases for the latter,
