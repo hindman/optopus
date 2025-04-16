@@ -34,9 +34,10 @@ toc: Table of contents
         variable-input-spec           | Spec for variable input
         opts-revised-OO-plan          | Revised OO plan for Opts and child elements
         groups-can-be-parameters      | Options can have Groups as parameters
+        parser-config-api             | Parser.config() API
         opt-and-optarg-configuration  | Configuration of Opt and OptArg
         help-related-options          | High-related options, and high precedence
-        help-text-formatting          | Help text formatting
+        help-text-formatting-and-api  | Help text formatting and API
         spec-parsing-general-approach | Spec parsing: general approach
         arg-parsing-algo              | Parsing algorithm
         alternative-parsing-algo      | Alternative parsing algorithm won't work after all
@@ -170,95 +171,6 @@ Argument parsing.
 --------
 new-notes: New notes
 --------
-
-Unifying Parser.config():
-
-    * Relevant section: opt-and-optarg-configuration
-
-    - Decisions:
-        - Use one method for both varieties of bulk-configuration.
-
-    - Notation:
-        - Opt used here to mean any grammar element that matches query.
-        - DEST used here to mean any query-path.
-        - Opt attributes: foo, bar, etc.
-        - VAL: values assigned to Opt attributes (shown as ints).
-
-    - Set Opt attributes distinctly:
-        - For a given attribute, Opts get distinct configuration.
-
-        p.config(
-            foo = {'DEST_1':111, 'DEST_2':222},  # ATTRIBUTE => dict(DEST => VAL).
-            bar = {'DEST_3':77, 'DEST_4':88},
-        )
-
-    - Set Opt attributes consistenty:
-        - For a given attribute, Opts get the same configuration.
-
-        p.config_B(
-            'DEST_1', 'DEST_2',                  # DESTs as args.
-            fubb = 3,                            # VALs, not dicts.
-            blort = 4
-        )
-
-Help text style attributes:
-
-    * Relevant section: help-text-formatting
-
-    - API and notes:
-
-        p.config_help_text(
-            options_summary = '<options>',   # PLACEHOLDER | '' to disable
-            opt_desc_style = 'default',      # default or None | manpage
-            opt_listing_heading = 'unified', # unified | by_kind | minimal
-            opt_listing_heading_indent = -4, # N spaces relative to opt-listing indent
-            alias_listing = 'compact',       # compact | explicit | column | separate
-        )
-
-    - Summarized options in usage text:
-        - All options summarized via a placeholder.
-        - Options/parameters listed explicitly (argparse).
-
-    - Opt-listing headings:
-        - unified: "Arguments".
-        - by_kind: "Positionals" and "Options".
-        - minimal: no heading.
-
-    - Opt-desc styles:
-        - default: opt-specs on left; aligned help texts on right
-        - manpage: opt-spec on its own line; then indented paragraph of help-text
-
-    - Aliases in opt-listings:
-        - explicit: classic style (argparse).
-        - compact: same, but drop parameters.
-        - column: compact in a column.
-        - separate: aliases under a separate heading ("Aliases").
-
-        - Mockups:
-
-            # Explicit.
-
-            --ignore-case, -i      Ignore case
-            --group <n>, -g <n>    Emit just capture group N [0 for all]
-            --delim <s>, -d <s>    Delimeter for capture groups [tab]
-
-            # Compact.
-
-            --ignore-case, -i      Ignore case
-            --group <n>, -g        Emit just capture group N [0 for all]
-            --delim <s>, -d        Delimeter for capture groups [tab]
-
-            # Column.
-
-            --ignore-case      -i  Ignore case
-            --group <n>        -g  Emit just capture group N [0 for all]
-            --delim <s>        -d  Delimeter for capture groups [tab]
-
-            # Separate.
-
-            --ignore-case      -i
-            --group            -g <n>
-            --delim            -d <s>
 
 Terminology: what to call an opt-spec in the help-text?
 
@@ -1237,12 +1149,7 @@ Parser:
 
         - Configuring grammar elements:
 
-            p.config(*paths, **kws)
-
-            - A shortcut for p.query(*paths).config(**kws).
-
-            - For the grammar elements returned by the query(), sets their
-              attributes based on the data in kws.
+            - See parser-config-api
 
         - Configuring one attribute across multiple elements:
 
@@ -2194,6 +2101,50 @@ The idea that options can have groups as parameters is a bit surpising:
         - Groups as parameters is just a logical extension of the core idea.
 
 --------
+parser-config-api: Parser.config() API
+--------
+
+The config() method is the main API to configure Opts:
+
+    p = Parser(SPEC)
+    p.config(*paths, **kws)
+
+    - The call is a shortcut for:
+
+        p.query(*paths).config(**kws)
+
+    - For Opts returned by query(), sets their attributes based on kws.
+
+    - For query() details, see grammar-querying-api
+
+Notation used here:
+    - Opt: any grammar element that matches query.
+    - PATH: query-path.
+    - Opt attributes: foo, bar, etc.
+    - VAL: values assigned to Opt attributes (shown as ints).
+
+Two general styles of config() calls:
+
+    - Distinct: for a given attribute, Opts get distinct configuration.
+        - No *paths are supplied.
+        - Instead each attribute has a dict[PATH => VAL].
+
+        p.config(
+            foo = {'PATH_1': 111, 'PATH_2': 222},
+            bar = {'PATH_3': 77, 'PATH_4': 88},
+        )
+
+    - Consistent: for a given attribute, Opts get the same configuration.
+        - One or more PATHS are supplied.
+        - Each attribute has a simple VAL.
+
+        p.config_B(
+            'PATH_1', 'PATH_2',
+            fubb = 3,
+            blort = 4
+        )
+
+--------
 opt-and-optarg-configuration: Configuration of Opt and OptArg
 --------
 
@@ -2400,30 +2351,116 @@ Other naming ideas considered:
     - Click does not appear to support the concept of a priority-flag.
 
 --------
-help-text-formatting: Help text formatting
+help-text-formatting-and-api: Help text formatting and API
 --------
 
-Text wrapping and indentation:
+Top-level API to configure help-text:
 
-    - Respect terminal widths, if known and within boundaries:
+    p = Parser(SPEC)
+    p.config_help_text(**kws)
 
-        min_width = 40
-        max_width = 100
+Help-text configuration parameters:
 
-    - Allow users to adjust those parameters.
+    p.config_help_text(
+        options_summary            = '<options>',
+        opt_desc_style             = 'default',
+        opt_listing_heading        = 'unified',
+        opt_listing_heading_indent = -4,
+        alias_listing              = 'compact',
+        min_width                  = 40
+        max_width                  = 100
+    )
 
-    - User-supplied text:
+    - options_summary: whether/how to summarize options in usage:
 
-        - Break into paragraphs (but preserve info about N of blank lines
-          between paragraphs).
+        - If a PLACEHOLDER is set (the default), it will be used to summarize
+          the options in the command-line usage.
 
-        - Rewrap to the desired width (probably using textwrap module).
+            blort [<options>] <path>...
 
-        - During wrapping, preserve the paragraphs original level of
-          indentation (based on the first line).
+        - The user can specify a different PLACEHOLDER.
+        - Or set it to empty str (or any false value) to disable.
+        - If that is done, options are listed explicitly in usage.
 
-        - Provide an easy syntax for users to suppress line wrapping
-          within the text (eg something borrowed from markdown)
+    - opt_desc_style: layout style for opt-descs:
+
+        - default (or None):
+            - The typical two-column style.
+            - Examples: argparse.
+
+            <rgx>                  Python regular expression
+            <path>                 Path(s) to input
+            --ignore-case, -i      Ignore case
+
+        - manpage:
+            - Each opt-spec on its own line.
+            - Then an indented paragraph of help-text.
+
+            --output <file>
+                Output to a specific file instead of stdout.
+
+    - opt_listing_heading: default heading/organization for opt-listings:
+        - unified: "Arguments".
+        - by_kind: "Positionals" and "Options".
+        - minimal: no heading.
+
+    - opt_listing_heading_indent: indentation of heading:
+        - Indentation in N of spaces.
+        - Expressed relative to indentation of the opt-listing in the spec.
+
+    - alias_listing: styles for documenting alieases in opt-listings:
+        - explicit: classic style (argparse).
+        - compact: same, but drop parameters on the aliases.
+        - column: like compact, but in a column.
+        - separate: like column, but the aliases under a separate heading.
+
+        - Mockups:
+
+            # Explicit.
+
+            --ignore-case, -i      Ignore case
+            --group <n>, -g <n>    Emit just capture group N [0 for all]
+            --delim <s>, -d <s>    Delimeter for capture groups [tab]
+
+            # Compact.
+
+            --ignore-case, -i      Ignore case
+            --group <n>, -g        Emit just capture group N [0 for all]
+            --delim <s>, -d        Delimeter for capture groups [tab]
+
+            # Column.
+
+            --ignore-case      -i  Ignore case
+            --group <n>        -g  Emit just capture group N [0 for all]
+            --delim <s>        -d  Delimeter for capture groups [tab]
+
+            # Separate.
+
+            --ignore-case          Ignore case
+            --group <n>            Emit just capture group N [0 for all]
+            --delim <s>            Delimeter for capture groups [tab]
+
+            Aliases:
+              --ignore-case    -i
+              --group          -g
+              --delim          -d
+
+    - min_width and max_width: of text wrapping:
+        - Under typical conditions, text is wrapped to terminal width.
+        - But there are lower and upper limits.
+
+Processing of user-supplied block-quotes:
+
+    - Break into paragraphs (but preserve info about N of blank lines
+      between paragraphs).
+
+    - Rewrap to the desired width (probably using textwrap module).
+
+    - During wrapping, preserve the paragraphs original level of indentation
+      (based on the first line).
+
+    - Provide an easy syntax for users to suppress line wrapping within the
+      text (eg something borrowed from markdown)
 
 --------
 spec-parsing-general-approach: Spec parsing: general approach
