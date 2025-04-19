@@ -4730,6 +4730,19 @@ Documenting Parameters and choices:
               element to declare that an opt-spec is a child of a preceding
               parent opt-spec.
 
+                # One approach: use anonymous scope syntax,
+                # where the parent is the preceding opt-spec.
+                --point <x> <y> <z> : Blah point
+                >> <x>              : Blah point-x
+
+                # Same, for a choice.
+                --step <op=add|subtract> : Blah op
+                >> <op=add>              : Blah op-add
+
+                # Same, for a choice.
+                <action=go|stop> : Blah action
+                >> <action=go>   : Blah action-go
+
             * Another issue: what will such documentation look like
               in the manpage format?
 
