@@ -88,7 +88,6 @@ toc: Table of contents
         other-tools                        | Other tools
         problems-scenarios-from-argparse   | Problems scenarios from argparse
         example-grammars                   | Example grammars
-        vim-modelines                      | Vim modelines
 
 --------
 todos: TODOs
@@ -104,6 +103,8 @@ opt-specs-and-opt-descs:
     - New notes have been pasted into the section.
     - Add notes to implementation tasks.
         - Add Choice to the OO model.
+        - Add new syntax for anonymous scope to declare a child opt-spec
+          relative to preceding parent opt-spec.
 
 Implement recent changes in notes.txt:
 
@@ -4735,16 +4736,29 @@ Documenting Parameters and choices:
                 --point <x> <y> <z> : Blah point
                 >> <x>              : Blah point-x
 
-                # Same, for a choice.
+                # Same, for a parameter choice.
                 --step <op=add|subtract> : Blah op
                 >> <op=add>              : Blah op-add
 
-                # Same, for a choice.
+                # Same, for a positional choice.
                 <action=go|stop> : Blah action
                 >> <action=go>   : Blah action-go
 
             * Another issue: what will such documentation look like
               in the manpage format?
+
+                - Use indentation for child elements.
+
+                # Positional and then choices.
+                <action>
+                    Blah blah blah blah blah blah blah blah blah
+                    blah blah blah blah blah blah.
+
+                    go
+                        Blah blah blah blah blah blah blah blah
+                        blah blah blah
+
+                    ...
 
     - Mockups:
 
@@ -6345,10 +6359,4 @@ Example 4:
 Example 5:
 
     (-a -x | -b... | [-a] -c -d) [-e | -f] [-g] <h> [<i>...] ([-j -k]... | -m -n)
-
---------
-vim-modelines: Vim modelines
---------
-
-vim: iskeyword=@,48-57,_,192-255,-
 
