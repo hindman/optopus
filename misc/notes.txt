@@ -36,7 +36,7 @@ toc: Table of contents
         groups-can-be-parameters      | Options can have Groups as parameters
         parser-config-api             | Parser.config() API
         opt-and-optarg-configuration  | Configuration of Opt and OptArg
-        help-related-options          | High-related options, and high precedence
+        help-and-priorty-options      | Help and priority options
         help-text-formatting-and-api  | Help text formatting and API
         spec-parsing-general-approach | Spec parsing: general approach
         arg-parsing-algo              | Parsing algorithm
@@ -95,6 +95,12 @@ todos: TODOs
 
 Implement recent changes in notes.txt:
 
+    __HERE3__ : OO work
+
+        - New OO model.
+        - OptArg => Arg.
+        - Add Choice to the OO model.
+
     - Edit classes-and-attributes section to include API stuff used in
       optopus-mock-ups and decided in the rest of notes.txt.
 
@@ -102,10 +108,6 @@ Implement recent changes in notes.txt:
     - Clarify arg-variant defintion.
 
     - Positional-spec can support two quantifiers directly: <x>{4}{0,2}
-
-    - New OO model.
-    - OptArg => Arg.
-    - Add Choice to the OO model.
 
     - Add new syntax for anonymous scope to declare a child opt-spec
       relative to preceding parent opt-spec.
@@ -115,19 +117,19 @@ Implement recent changes in notes.txt:
         - support for envvars
         - support for prefs [probably there already]
 
-    - Getting Context via Result:
-        - Switch back to callable.
+    x Getting Context via Result:
+        x Switch back to callable.
 
-    - README:
-        - Edit examples based on new mockups.
-
-    - Priority:
-        - API renaming: 'high-precedence' => 'priority'.
-        - Also use 'priority-flags' in some docs/notes.
-        - Restrict priority-opts to flags.
+    x Priority:
+        x API renaming: 'high-precedence' => 'priority'.
+        x Restrict priority-opts to flags.
 
     - Terminology:
         - opts : conventional variable name for parsed Result.
+        - priority-flags
+
+    - README:
+        - Edit examples based on new mockups.
 
 Editing pass over the rest of notes.txt:
 
@@ -170,6 +172,8 @@ Argument parsing.
 --------
 new-notes: New notes
 --------
+
+...
 
 --------
 road-map: Road map
@@ -260,7 +264,7 @@ Dispatching:
 
 Grammar enhancements:
 
-    High-precedence options.
+    Priority options.
 
     Anchored Opts.
 
@@ -1012,6 +1016,22 @@ Group:
         # Child elements.
         elems: list[Group or Opt]
 
+Opt and children: overview:
+
+    - Base classes: an Opt has 0+ Args:
+        Opt
+        Arg
+
+    - Opt kinds and their Arg kinds:
+        Positional
+            Argument
+        Option
+            Parameter
+        Literal
+            None
+
+__HERE3__ : OO work
+
 Opt:
     - Represents one command-line argument as a configurable unit.
     - Broadly defined to include its arguments and quantifiers.
@@ -1037,12 +1057,12 @@ Opt:
         elems: list[OptArg or Group]
 
         # Deferred stuff (might need more design work).
-        # - High precedence Opt.
+        # - Priority Opt (flags only).
         # - Anchored Opt.
         # - Hidden Opt.
         # - Opts to negate other flag Opts.
         # - Dispatch based on state of Opt.
-        high_precedence: bool
+        priority: bool
         anchor: bool
         hide: bool
         negaters: list[Opt]
@@ -1581,8 +1601,8 @@ and destination assignment.
     store        | Single            | --foo F         | F           | .
     append       | Repeatable single | -x A -x B       | [A, B]      | Overwrite on repeat
     extend       | Repeatable multi  | -x A B -x C D E | [A B C D E] | .
-    help         | High precedence   | .               |             | .
-    version      | "    "            | .               | .           | .
+    help         | Priority          | .               |             | .
+    version      | "                 | .               | .           | .
     ----------------------------------------------------------------------------------
     store_const  | 1 flag            | --frob          | X           | Not necessary
     append_const | 1+ flag           | --frob --frob   | [X x]       | Not necessary
@@ -2003,7 +2023,7 @@ Assignment of OptArg attributes via the parent-Opt:
             p.config('z', default = [77, 88]) # Different.
 
 --------
-help-related-options: High-related options, and high precedence
+help-and-priorty-options: Help and priority options
 --------
 
 Most options control the primary behaviors of a program. But some are special,
@@ -2023,7 +2043,7 @@ Consider a simple subcommand-style program. Assume that both <id> and the
 parameter for -n should be integers and that the program has both general help
 text and subcommand help text.
 
-    demo [--help] [-n {}] (print|delete) <id>
+    demo [--help] [-n <n>] <action=print|delete> <id>
 
 At least by default, if the end-user supplies the --help option, an argument
 parser should (1) print help text and exit, (2) select the help text that is
@@ -2037,11 +2057,11 @@ other command-line arguments. Some examples of desired behavior:
 Most argument parsers fail on #3 (they gripe instead of helping) and they do
 not easily support #2.
 
-Optopus addresses those problems with two mechanisms: high-precedence options
-and flexible dispatching. If an option is configured to be high-precedence,
+Optopus addresses those problems with two mechanisms: priority options
+and flexible dispatching. If an option is configured to be priority,
 its presence among the command-line arguments will trigger whatever action it
 has been configured to perform, and that dispatching configuration will take
-precendence over error reporting. When high-precedence options are used, the
+precendence over error reporting. When priority options are used, the
 parser performs a best-effort parsing to collect as much contextual information
 as it can before calling the code responsible taking action.
 
@@ -3172,6 +3192,9 @@ API sketch:
     # Also default support to get Optopus Context (non-declarative).
     c = opts()
 
+    # Other args are delegated to the Context.
+    f = opts('foo')        # Becomes => opts('context').foo
+
 Context class:
 
     - Generic container of attribute-value pairs.
@@ -3386,14 +3409,14 @@ Zones and anchoring:
     - Another question: is the zone concept needed, or could Group do the same
       thing? I increasingly think the latter.
 
-High precedence:
+Priorty:
 
     - Setting this attribute is easy in the API.
 
     - Although the syntax is not heavy, it's also not fully intuitive.
 
     - The majority of use cases will get the built-in help behavior, and the
-      library could interpret --help and --version options as high precedence
+      library could interpret --help and --version options as priority
       by default.
 
     - Infrequent use case, easy via the API: let's drop it from spec-syntax.
@@ -5346,7 +5369,7 @@ Reporting on data provenance:
     - Data-provenance will be available via the Context.
 
         opts = p.parse(ARGS)
-        sources = opts.context.sources
+        sources = opts('sources')
 
     - Where sources:
 
@@ -6002,7 +6025,7 @@ Python: Click
         - At least within the larger limits of the system.
         - But the API footprint is moderately large.
 
-    - Supports eager options (like high-precedence Opts).
+    - Supports eager options (like priority Opts).
 
     - Supports file handling and various other smart types:
         - Meaning types that carry additional requirements for
