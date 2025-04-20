@@ -93,19 +93,6 @@ toc: Table of contents
 todos: TODOs
 --------
 
-opt-specs-and-opt-descs:
-
-    - Edit this material.
-        - See the new problem that has rising regarding documenting
-          individual Parameters.
-        - Vim mark = p
-
-    - New notes have been pasted into the section.
-    - Add notes to implementation tasks.
-        - Add Choice to the OO model.
-        - Add new syntax for anonymous scope to declare a child opt-spec
-          relative to preceding parent opt-spec.
-
 Implement recent changes in notes.txt:
 
     - Edit classes-and-attributes section to include API stuff used in
@@ -118,6 +105,10 @@ Implement recent changes in notes.txt:
 
     - New OO model.
     - OptArg => Arg.
+    - Add Choice to the OO model.
+
+    - Add new syntax for anonymous scope to declare a child opt-spec
+      relative to preceding parent opt-spec.
 
     - Add to roadmap:
         - prompting for Args.
@@ -2203,6 +2194,13 @@ Processing of user-supplied block-quotes:
 
     - Provide an easy syntax for users to suppress line wrapping within the
       text (eg something borrowed from markdown)
+
+Why all literal text must be block-quoted:
+
+    - Because it would be difficult to distinguish opt-spec continuation lines
+      from lines of regular text in a section.
+
+    - This keeps parsing relative sane at a modest cost in usage.
 
 --------
 spec-parsing-general-approach: Spec parsing: general approach
@@ -4617,10 +4615,14 @@ Definitions:
 
     - opt-spec:
         - Configures an Opt in the spec.
-        - Including the Opt's aliases and help text.
-        - Also used to document:
-            - An Option's Parameters.
-            - Specific choices that an Opt's Args can take.
+        - Here Opt is defined broadly to include:
+            - The Opt itself: name, args, params, quantifiers, etc.
+            - Aliases.
+            - Help text:
+                - For the Opt.
+                - For child elements of the Opt.
+                    - Parameters.
+                    - Arg choices.
 
     - opt-desc:
         - An opt-spec becomes an opt-desc in the user-facing help-text.
@@ -4696,219 +4698,31 @@ Opt-descs: why they excludes quantifiers:
             - But examples like these illustrate that individual opt-descs are
               not up to the task of fully conveying grammar in complex cases.
 
-Documenting Parameters and choices:
+The <options> placeholder, opt-descs, and quantifiers:
 
-    - Opt-specs and opt-descs can document an Opt's "child elements".
-        - Parameters (of Option).
-        - Choices (of Argument).
-        - Choices (of Parameter).
-
-    ** I have a problem for how an opt-spec documents Parameters:
-
-        - Unification policy for opt-specs with choices provides a good way to
-          document choices.
-            - We know these two opt-specs configur the same Opt (ie should be
-              unified) because the policy for and opt-spec with choices tells
-              us to do it.
-
-            --step <op=add|subtract> : Blah op
-            --step <op=add>          : Blah op-add
-
-        - But that does not help to document individual parameters:
-            - Current policy would treat these an independent Opts.
-
-            --point <x> <y> <z> : Blah point
-            --point <x>         : Blah point-x
-
-        - The plan for representing child-elements in the opt-descs
-          involves an indentation strategy:
-
-            - That implies that the parent-child relationship appears
-              not only in the OO model (an internal Optopus concern)
-              but also in the end-user-facing help-text.
-
-            - Perhaps that suggests the need/opportunity for a syntactic
-              element to declare that an opt-spec is a child of a preceding
-              parent opt-spec.
-
-                # One approach: use anonymous scope syntax,
-                # where the parent is the preceding opt-spec.
-                --point <x> <y> <z> : Blah point
-                >> <x>              : Blah point-x
-
-                # Same, for a parameter choice.
-                --step <op=add|subtract> : Blah op
-                >> <op=add>              : Blah op-add
-
-                # Same, for a positional choice.
-                <action=go|stop> : Blah action
-                >> <action=go>   : Blah action-go
-
-            * Another issue: what will such documentation look like
-              in the manpage format?
-
-                - Use indentation for child elements.
-
-                # Positional and then choices.
-                <action>
-                    Blah blah blah blah blah blah blah blah blah
-                    blah blah blah blah blah blah.
-
-                    go
-                        Blah blah blah blah blah blah blah blah
-                        blah blah blah
-
-                    ...
-
-    - Mockups:
-
-        - Parameters:
-
-            --point <x> <y> <z>         Blah
-              <x>                       - Blah-x
-              <y>                       - Blah-y
-              <z>                       - Blah-z
-
-    - What would the spec-syntax be to declare those opt-descs?
-
-        - Syntax for a positional with choices:
-
-            <action=go|stop|rest>  : Blah actions
-            <action=go>            : Blah go
-            <action=stop>          : Blah stop
-            <action=rest>          : Blah rest
-
-        - An analogous syntax for parameter opt-specs:
-
-            --point <x> <y> <z>    : Blah point
-            --point=<x>            : Blah x
-            --point=<y>            : Blah y
-            --point=<z>            : Blah z
-
-            # Or use a spec-scope?
-            --point <x> <y> <z>    : Blah point
-            point >> <x>           : Blah x
-            point >> <y>           : Blah y
-            point >> <z>           : Blah z
-
-            - OO model:
-                - Option(point).
-                - Has 3 Parameter.
-                - Each can hold a help-text.
-
-        - An Option with Parameters with choices:
-
-            --step <first=add|mult> <second=sub|div>
-
-            # Use equal sign?
-            --step=<first=add>   : Blah first-add
-            --step=<first=mult>  : Blah first-mult
-
-            # Or use a spec-scope?
-            step >> <first=add>   : Blah first-add
-            step >> <first=mult>  : Blah first-mult
-
-            # Or support path-syntax in the parameter-variant?
-            <step.first=add>      : Blah first-add
-
-            # Simple approach: take advantage of unification policy.
-            --step <first=add>    : Blah first-add
-
-            - Assessment:
-
-                - Equal sign:
-                    - Seems off: a misuse of equal.
-
-                - Spec-scope:
-                    - Works, I suppose.
-
-                - Path-syntax:
-                    - Seems off: looks like we are configuring a positional,
-                      but we are really operating on a param.
-
-                - Simple approach:
-                    - Yes, this is the best one.
-                    - The policy is to unify Opts with same name that have choices.
-
-    - I considered forcing such configurations to use the API:
-
-        - But that seems ill-considered.
-
-        - Opt-desc help-text belongs in the spec:
-            - Inherently involves textual information.
-            - And is implicated in page layout details.
-
-        - The API is not much clearer than the spec syntax:
-
-            --point <x=a|b> <y=c|d>
-
-            # Text for <x> parameter.
-            p.config('point.x', help = 'blah blah point-x')
-
-            # Text for <x=c> parameter. Not clear how API would work
-            ...
-
-    - Mockup: opt-descs for Opt, Parameter, Choice
-
-        --point <x=a|b> <y=c|d>      Blah point
-          <x>                        - Blah x
-            a                          - Blah x=a
-            b                          - Blah x=b
-          <y>                        - Blah y
-            ...
-
-    - Can a grammar include arg-variants based on parameter choice combos?
-
-        - Strange use case ... but I think current plan could handle it.
-
-        - Spec:
-
-            --point <x=a> <y=c> [--ac]
-            --point <x=a> <y=d> [--ad]
-            --point <x=b> <y=c> [--bc]
-            --point <x=b> <y=d> [--bc]
-
-        - Usage:
-
-            --point a c [--ac]
-            --point a d [--ad]
-            --point b c [--bc]
-            --point b d [--bc]
-
-    - OO model: where to help-texts of child entities reside?
-
-        - Example:
-
-            <action=go|stop|rest>  : blah-action
-            <action=go>            : blah-go
-            <action=stop>          : blah-stop
-            <action=rest>          : blah-rest
-
-        - Model:
-
-            Positional(action, help='blah-action')
-                Arg.choices = [
-                    Choice(value='go', help='blah-go'),
-                    ...
-                ]
-
-
-The <options> placeholder policy and opt-descs:
+    - Summary:
+        - Leave it hands of the user.
+        - Let user disable options_summary if they want.
+        - Let the user supplement Opt help text to clarify grammatical details.
 
     - The <options> placeholder implies that all options take a simple form:
+
         - All options having the same optional-vs-required status:
             <options>
             [<options>]
+
         - With no other grammatical complexity.
             - Opt.ntimes.
             - Parameter.ntimes.
             - Opt coupling via enclosing groups.
+
         - Since the opt-descs cannot document such complexities, use of the
           placeholder would mean that the grammar of the Opts is documented
           nowhere in the help text.
 
-    - Policy to consider:
-        - Use the placeholder only if criteria below are met.
+    - One might be tempted to adopt a restrictive policy:
+
+        - Use the placeholder only if certain criteria are met.
         - If not, disable options_summary.
 
     - But see the repo mockup:
@@ -4938,62 +4752,176 @@ The <options> placeholder policy and opt-descs:
         - The example script comes from the Click project. Click does not deal
           with this issue at all, leaving it in the user's hands.
 
-            - That might be a reasonable policy approach.
+Documenting Parameters and choices:
 
-            - If you summarize a group of options via a placeholder, it's your
-              job to convey usage in some other means.
+    - Opt-specs and opt-descs can document an Opt's "child elements".
+        - Parameters (of Option).
+        - Choices of an Arg (Argument or Parameter).
 
+    - Syntax:
+        - The scoping syntax is used to declare the parent-child relationship.
+        - But in this case, the scope needs no query-path.
+        - Schematically:
 
+            parent-opt-spec
+            >> child-opt-spec-1
+            >> child-opt-spec-2
+            ...
 
+    - Documenting Parameters:
 
+        # Example opt-specs.
 
+        --point <x> <y> : Blah point
+        >> <x>          : Blah x
+        >> <y>          : Blah y
 
+        # Corresponding opt-descs.
 
+        --point <x> <y>   Blah point
+          <x>             - Blah x
+          <y>             - Blah y
 
-I considered adding a rule to require that the aliases, if any, reside
-separate from the grammar of the Opt configuration. An illustration:
+    - Documenting choices:
 
-    -f [--foo <>]          # OK.
-    -o (--opt <> <>){3}    # OK.
+        # Example opt-specs.
 
-    [-f --foo <>]          # Not OK: the -f alias should be outside brackets.
+        --step <op=add|subtract> : Blah op
+        >> <op=add>              : Blah op-add
+        >> <op=subtract>         : Blah op-subtract
 
-But the rule seems needlessly touchy. Since configuring a single
-Opt already requires nearly the full grammar, it makes more sense to parse
-the line as follows:
+        <action=go|stop> : Blah action
+        >> <action=go>   : Blah action-go
+        >> <action=stop> : Blah action-stop
 
-    expression [: [help-text]]
+        # Corresponding opt-descs.
 
-Then examine expression to extract any aliases and validate that it configures
-only a single Opt.
+        --step <op>          Blah op
+          add                - Blah op-add
+          subtract           - Blah op-subtract
 
-Because it would be difficult to distinguish opt-spec continuation lines from
-lines of regular text in a section, I decided to require block-quoting for
-regular text. This keeps parsing relative sane at a modest cost in usage.
+        <action>             Blah action
+          go                 - Blah action-go
+          stop               - Blah action-stop
 
-Opt-specs lines can also define help text for positional/parameter
-variants. The default help text for such elements (ie, without
-any explicit section configuration) is as follows:
+    - Doing both:
 
-    # Configuration:
+        # Example opt-specs.
 
-        <task>             : Task to perform
-        <task=foo>         : Foo blah
-        <task=bar>         : Bar blah
+        --mode <speed=fast|slow> <vol=loud|quiet> : Blah mode
+        >> <speed>                                : Blah mode-speed
+        >> <speed=fast>                           : Blah mode-speed-fast
+        >> <speed=slow>                           : Blah mode-speed-slow
+        >> <vol>                                  : Blah mode-vol
+        >> <vol=loud>                             : Blah mode-vol-loud
+        >> <vol=quiet>                            : Blah mode-vol-quiet
 
-        --mode <fast|slow> : Mode to use
-        --mode <=fast>     : Fast blah
-        --mode <=slow>     : Slow blah
+        # Corresponding opt-descs.
 
-    # Resulting help text:
+        --mode <speed> <vol>    Blah mode
+          <speed>               - Blah mode-speed
+            fast                  - Blah mode-speed-fast
+            slow                  - Blah mode-speed-slow
+          <vol>                 - Blah mode-vol
+            loud                  - Blah mode-vol-loud
+            quiet                 - Blah mode-vol-quiet
 
-        Positionals: task:
-          foo                Foo blah
-          bar                Bar blah
+    - In the manpage style, child-elements will be documented using the
+      indentation one might expect. For example, <action=go|stop> would
+      like like this in a manpage style:
 
-        Options: --mode:
-          --mode fast        Fast blah
-          --mode slow        Slow blah
+        <action>
+            Blah blah blah blah blah blah blah blah blah
+            blah blah blah blah blah blah.
+
+            go
+                Blah blah blah blah blah blah blah blah
+                blah blah blah
+
+            stop
+                Blah blah blah blah blah blah blah blah
+                blah blah blah
+
+    - Why the scoping syntax is needed:
+
+        - If one focused purely on documenting choices, one could avoid the
+          need for the scoping syntax.
+        - The policy regarding opt-spec unification for opt-specs involving
+          choices would be sufficient.
+        - But to document Parameters themselves, the scoping syntax is needed
+          to declare the parent-child relationship.
+        - Otherwise, each opt-spec would be interpreted an independent Opt.
+
+    - I considered requiring the API to document child elements:
+
+        - But that seems ill-considered.
+
+        - Opt-desc help-text belongs in the spec:
+            - Inherently involves textual information.
+            - And is implicated in page layout details.
+
+        - The API is not much clearer than the spec syntax:
+
+            --point <x=a|b> <y=c|d>
+
+            # Text for <x> parameter.
+            p.config('point.x', help = 'blah blah point-x')
+
+            # Text for <x=c> parameter. Not clear how API would work
+            ...
+
+OO model: where do help-texts of child entities reside?
+
+    - Example:
+
+        <action=go|stop> : blah-action
+        <action=go>      : blah-go
+        <action=stop>    : blah-stop
+
+    - Model:
+
+        Positional(action, help='blah-action')
+            Arg.choices = [
+                Choice(value='go', help='blah-go'),
+                Choice(value='stop', help='blah-stop'),
+            ]
+
+Where to configure aliases in an opt-spec:
+
+    - I considered adding a rule to require that the aliases, if any, reside
+      separate from the grammar of the Opt configuration. An illustration:
+
+        -f [--foo <>]          # OK.
+        -o (--opt <> <>){3}    # OK.
+
+        [-f --foo <>]          # Not OK: the -f alias should be outside brackets.
+
+    - But the rule seems needlessly touchy. Since configuring a single Opt
+      already requires nearly the full grammar, it makes more sense to parse
+      the line as follows:
+
+        expression [: [help-text]]
+
+    - Then examine expression to extract any aliases and validate that it
+      configures only a single Opt.
+
+Can a grammar include arg-variants based on parameter choice combos?
+
+    - Strange use case ... but I think current plan could handle it.
+
+    - Spec:
+
+        --point <x=a> <y=c> [--ac]
+        --point <x=a> <y=d> [--ad]
+        --point <x=b> <y=c> [--bc]
+        --point <x=b> <y=d> [--bc]
+
+    - Usage:
+
+        --point a c [--ac]
+        --point a d [--ad]
+        --point b c [--bc]
+        --point b d [--bc]
 
 --------
 group-level-validation-needed: Why Group-level validation should be retained
