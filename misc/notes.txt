@@ -23,6 +23,7 @@ toc: Table of contents
 
     discussion | Discussion
 
+        name: str
         api-vs-text                   | API-driven vs text-driven
         other-lib-weaknesses          | Addressing weaknesses common in other libraries
         other-goals                   | Other goals
@@ -1030,69 +1031,113 @@ Opt and children: overview:
         Literal
             None
 
-__HERE3__ : OO work
-
 Opt:
-    - Represents one command-line argument as a configurable unit.
-    - Broadly defined to include its arguments and quantifiers.
+    - Base class for Positional, Option, or Literal.
+    - Some of the common attributes listed for each subclass (below) might be
+      implemented at the Opt level (TBD).
     - Also see: opt-and-optarg-configuration
 
-    - Attributes:
+Positional:
+    - Subclass of Opt.
 
-        # Definition, identity, and kind.
+    - Attributes:
         spec: str
         name: str
         dest: str
-        kind: str   # pos or opt
-
-        # Aliases and help text.
-        aliases: list[str]
-        text: str
-
-        # Quantifiers.
+        help: str
         nargs: Quantifier
         ntimes: Quantifier
-
-        # Children.
-        elems: list[OptArg or Group]
-
-        # Deferred stuff (might need more design work).
-        # - Priority Opt (flags only).
-        # - Anchored Opt.
-        # - Hidden Opt.
-        # - Opts to negate other flag Opts.
-        # - Dispatch based on state of Opt.
-        priority: bool
-        anchor: bool
+        elems: list[Argument]
+        --
         hide: bool
-        negaters: list[Opt]
-        dispatch: callable(s)
+        anchor: bool
+        dispatch: list[callable]
 
-OptArg:
-    - Child object of Opt, representing one argument as a configurable unit.
-    - Also see: opt-and-optarg-configuration
+Option:
+    - Subclass of Opt.
 
     - Attributes:
-
-        # Definition and help text.
         spec: str
         name: str
-        text: str
+        dest: str
+        help: str
+        nargs: Quantifier
+        ntimes: Quantifier
+        elems: list[Parameter or Group]
+        --
+        hide: bool
+        anchor: bool
+        dispatch: list[callable]
+        --
+        aliases: list[str]
+        priority: bool                   # Flags only.
+        negaters: list[Option]
 
-        # Conversion and validation.
+Literal:
+    - Subclass of Opt.
+
+    - Attributes:
+        spec: str         # The literal value (no backquotes).
+        anchor: bool      # Always True.
+
+__HERE3__ : OO work
+
+    Question can Parameter have a dest?
+
+        --point <x> <y>  # Distinct names.
+        --point <p> <p>  # Shared name.
+        --point <> <>    # Anonymous
+
+        Result data for would be a flat-list in all cases:
+            opts.point = [X, Y]
+            opts.point = [P1, P2]
+            opts.point = [VAL, VAL]
+
+        How does user achieve this?
+            opts.point = Result(x = X, y = Y)
+
+        Possible policy:
+            - If all Parameters have distinct names, use an inner-Result.
+            - Otherwise, use a flat list.
+
+Arg:
+    - Base class for a variable-input as a configurable unit.
+    - Sub-classes: Argument or Parameter.
+    - Also see: opt-and-optarg-configuration
+
+Argument:
+    - Subclass of Arg.
+    - No name and no dest.
+
+    - Attributes:
+        spec: str
+        help: str
+        ntimes: Quantifier
+        choices: list[Choice]
+        default: object
+        factory: callable
         convert: callable
         validate: callable
 
-        # Choices:
-        # - For validation purposes.
-        # - For grammatical purposes (context: arg-variant).
-        choices: list[str]
-        choice: str
+Parameter:
+    - Subclass of Arg.
 
-        # Default value and quantifier.
+    - Attributes:
+        spec: str
+        name: str
+        dest: str
+        help: str
+        ntimes: Quantifier
+        choices: list[Choice]
         default: object
         factory: callable
-        ntimes: Quantifier
+        convert: callable
+        validate: callable
+
+Choice:
+    - Attributes:
+        spec: str      # The literal value.
+        help: str
 
 Result:
 
@@ -1785,7 +1830,7 @@ Why Literals cannot have a name:
     - A name would be used in the usage-text.
     - Which defeats the purpose of a Literal.
 
-Why Literals do not support quantifiers:
+Why Literals do not support quantifiers and dests:
 
     - Difficult to imagine plausible use cases:
 
@@ -1797,9 +1842,14 @@ Why Literals do not support quantifiers:
         - The choice will appear in the usage text (as desired).
         - Positionals support quantifiers.
         - Data would be stored in a dest.
+        - And the Positional could be anchored if the user cases about the
+          divider-aspect of a Literal.
 
         <speed=fast>... <x> <y>
         [<direction=down>] <x> <y>
+
+    - The existence of a better workaround implies that a Literal also has no
+      need for a dest.
 
 Literals as a grammatical dividers:
 
