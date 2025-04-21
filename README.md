@@ -191,9 +191,8 @@ p = Parser('''
 ''')
 
 p.config('rgx', convert = re.compile)
-p.config('path', convert = pathlib.Path, validate = isfile)
-p.config('m C', convert = int, validate = ispositive)
-p.config(kind = 'option', sym = 'options')
+p.config('path', convert = Path, validate = isfile)
+p.config('max_count', 'context', convert = int, validate = ispositive)
 ```
 
 #### Example 3 help text
@@ -232,26 +231,17 @@ from an alias listing.
 
 ```
 Usage:
-  pgrep [options] <rgx> [<path>...]
+  pgrep [<options>] <rgx> [<path>...]
 
-Positionals:
+Arguments:
   <rgx>                  Python regular expression
   <path>                 Path(s) to input
-
-Options:
-  --help                 Print help text and exit
-  --ignore-case          Ignore case
-  --invert-match         Select non-matching lines
-  --max-count <n>        Stop searching after N matches
-  --context <n>          Print N lines of before/after context
+  --ignore-case, -i      Ignore case
+  --invert-match, -v     Select non-matching lines
+  --max-count <n>, -m    Stop searching after N matches
+  --context <n>, -C      Print N lines of before/after context
   --color <col>          Highlight matching text: red, green, blue
-
-Aliases:
-  --help                 -h
-  --ignore-case          -i
-  --invert-match         -v
-  --max-count            -m
-  --context              -C
+  --help, -h             Print help text and exit
 ```
 
 #### Example 4
@@ -323,34 +313,38 @@ usage syntax already known to many developers: a pipe to delimit alternatives.
 
 ```python
 p = Parser('''wrangle
-    <task=grep>   [-i] [-v] [-m] [-C]
+    <task=grep>   [--ignore-case] [--invert-match] [--max-count] [--context]
                   [--color <red|green|blue>]
                   <rgx> [<path>...]
-    <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
-    <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
+    <task=sub>    [--ignore-case] [--nsubs]
+                  <rgx> <rep> [<path>...]
+    <task=search> [--ignore-case] [--group] [--delim | --para]
+                  <rgx> [<path>...]
 
-    <task>             : Task to perform
-    <task=grep>        : Emit lines matching pattern
-    <task=sub>         : Search for pattern and replace
-    <task=search>      : Emit text matching pattern
-    <rgx>              : Python regular expression
-    <path>             : Path(s) to input
-    <rep>              : Replacement text
-    -i --ignore-case   : Ignore case
-    -v --invert-match  : Select non-matching lines
-    -m --max-count <n> : Stop searching after N matches
-    -C --context <n>   : Print N lines of before/after context
-    --color <>         : Highlight matching text
-    -n --nsubs <n>     : N of substitutions
-    -g --group <n>     : Emit just capture group N [0 for all]
-    -d --delim <s>     : Delimeter for capture groups [tab]
-    -p --para          : Emit capture groups one-per-line, paragraph-style
+    <task>               : Task to perform
+    <task=grep>          : Emit lines matching pattern
+    <task=sub>           : Search for pattern and replace
+    <task=search>        : Emit text matching pattern
+    <rgx>                : Python regular expression
+    <rep>                : Replacement text
+    [<path>...]          : Path(s) to input
+    [-i --ignore-case]   : Ignore case
+    [-v --invert-match]  : Select non-matching lines
+    [-m --max-count <n>] : Stop searching after N matches
+    [-C --context <n>]   : Print N lines of before/after context
+    [--color <>]         : Highlight matching text
+    [-n --nsubs <n>]     : N of substitutions
+    [-g --group <n>]     : Emit just capture group N [0 for all]
+    [-d --delim <s>]     : Delimeter for capture groups [tab]
+    [-p --para]          : Emit capture groups one-per-line, paragraph-style
 ''')
 
 p.config('rgx', convert = re.compile)
-p.config('path', convert = pathlib.Path, validate = isfile)
-p.config('m C n', convert = int, validate = ispositive)
-p.config('g', convert = int, validate = nonnegative)
+p.config('path', convert = Path, validate = isfile)
+p.config('max_count', 'context', 'nsubs', convert = int, validate = ispositive)
+p.config('group', convert = int, validate = nonnegative)
+
+p.config_help_text(options_summary = False)
 ```
 
 #### Example 4 help text
@@ -429,40 +423,33 @@ separate help text for different usage variants (many programs do not).
 
 ```
 Usage:
-  wrangle grep [-h] [-i] [-v] [-m <n>] [-C <n>]
-          [--color <red|green|blue>] <rgx> [<path>...]
-  wrangle sub [-h] [-i] [-n <n>] <rgx> <rep> [<path>...]
-  wrangle search [-h] [-i] [-g <n>] [-d <s>] <rgx> [<path>...]
+  wrangle grep [--ignore-case] [--invert-match] [--max-count <n>] [--context <n>]
+          [--color <red|green|blue>] [--help] <rgx> [<path>...]
+  wrangle sub [--ignore-case] [--nsubs <n>] [--help] <rgx> <rep> [<path>...]
+  wrangle search [--ignore-case] [--group <n>] [--delim <s> | --para] [--help]
+          <rgx> [<path>...]
+  wrangle --help
 
-Positionals: task:
-  grep                   Emit lines matching pattern
-  sub                    Search for pattern and replace
-  search                 Emit text matching pattern
-
-Positionals: other:
+Arguments:
+  <task>                 Task to perform:
+    grep                 - Emit lines matching pattern
+    sub                  - Search for pattern and replace
+    search               - Emit text matching pattern
   <rgx>                  Python regular expression
   <path>                 Path(s) to input
-
-Options:
-  --help                 Print help text and exit
-  --ignore-case          Ignore case
-  --invert-match         Select non-matching lines
-  --max-count <n>        Stop searching after N matches
-  --context <n>          Print N lines of before/after context
+  <rgx>                  Python regular expression
+  <rep>                  Replacement text
+  <path>                 Path(s) to input
+  --ignore-case, -i      Ignore case
+  --invert-match, -v     Select non-matching lines
+  --max-count <n>, -m    Stop searching after N matches
+  --context <n>, -C      Print N lines of before/after context
   --color <>             Highlight matching text: red, green, blue
-  --nsubs <n>            N of substitutions
-  --group <n>            Emit just capture group N [0 for all]
-  --delim <s>            Delimeter for capture groups [tab]
-
-Aliases:
-  --help                 -h
-  --ignore-case          -i
-  --invert-match         -v
-  --max-count            -m
-  --context              -C
-  --nsubs                -n
-  --group                -g
-  --delim                -d
+  --nsubs <n>, -n        N of substitutions
+  --group <n>, -g        Emit just capture group N [0 for all]
+  --delim <s>, -d        Delimeter for capture groups [tab]
+  --para                 Emit capture groups one-per-line, paragraph-style
+  --help, -h             Print help text and exit
 ```
 
 ## Powerful grammars built from simple parts

@@ -36,7 +36,7 @@ toc: Table of contents
         opts-revised-OO-plan          | Revised OO plan for Opts and child elements
         groups-can-be-parameters      | Options can have Groups as parameters
         parser-config-api             | Parser.config() API
-        opt-and-optarg-configuration  | Configuration of Opt and OptArg
+        opt-and-arg-configuration     | Configuration of Opt and Arg
         help-and-priorty-options      | Help and priority options
         help-text-formatting-and-api  | Help text formatting and API
         spec-parsing-general-approach | Spec parsing: general approach
@@ -45,7 +45,7 @@ toc: Table of contents
         ambiguous-grammars            | Ambiguous grammars are not an issue
         opt-choices-vs-choice         | Opt.choices vs Opt.choice
         opt-independence              | Opt independence, duplicate names/dest, and opt-spec scope
-        parsed-data-structure         | Parsed data structuring: nargs, ntimes
+        parsed-data-structure         | Parsed data structuring: nargs, ntimes, and parmeters
         parsed-data-with-context      | Including Context with the Result
         eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
         spec-syntax-named-unnamed     | Spec-syntax: named and unnamed arguments
@@ -55,7 +55,6 @@ toc: Table of contents
         optional-positional-placement | Optional positionals before required are not a problem
         parsing-modes                 | Parsing modes
         zones-not-needed              | Zones not needed
-        help-distpatching             | Help distpatching
         dispatch-to-callables         | Dispatching to callables
         argparse-and-greed            | argparse and greediness
         end-user-errors               | End-user errors
@@ -71,7 +70,7 @@ toc: Table of contents
         group-level-validation-needed | Why Group-level validation should be retained
         usage-text-and-named-groups   | Usage-text and named groups or choices
         headings-in-spec-syntax       | Spec-syntax support for headings
-        optarg-choices-in-usage-text  | OptArg.choices in usage-text
+        arg-choices-in-usage-text     | Arg.choices in usage-text
         groups-need-names             | Why Group needs both dest and name
         degenerate-groups             | Degenerate groups with only one element
         settings-and-opts             | Opts and settings (preferences and environment variables)
@@ -94,69 +93,18 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Implement recent changes in notes.txt:
+Editing pass:
 
-    __HERE3__ : OO work
-
-        - New OO model.
-        - OptArg => Arg.
-        - Add Choice to the OO model.
-
-    - Edit classes-and-attributes section to include API stuff used in
-      optopus-mock-ups and decided in the rest of notes.txt.
-
-    - Drop Opt.choice.
-    - Clarify arg-variant defintion.
-
-    - Positional-spec can support two quantifiers directly: <x>{4}{0,2}
-
-    - Add new syntax for anonymous scope to declare a child opt-spec
-      relative to preceding parent opt-spec.
-
-    - Add to roadmap:
-        - prompting for Args.
-        - support for envvars
-        - support for prefs [probably there already]
-
-    x Getting Context via Result:
-        x Switch back to callable.
-
-    x Priority:
-        x API renaming: 'high-precedence' => 'priority'.
-        x Restrict priority-opts to flags.
-
-    - Terminology:
-        - opts : conventional variable name for parsed Result.
-        - priority-flags
-
-    - README:
-        - Edit examples based on new mockups.
-
-Editing pass over the rest of notes.txt:
-
-    __HERE2__ : start from beginning
-    __HERE1__ : where I left off during prior editing pass
+    __HERE1__ : full-reread of notes.txt
 
     - Edit to conform to new specification.
     - Add 'Summary' at the top of section, where applicable.
-    - Collect:
-        - Questions/doubts
-        - Examples
-        - Terminology
-        - Road map items
+    - Collect: questions, examples, terminology, road-map items.
 
-    - Optopus vs the competitors:
-        - Maybe augment the current README
-        - Include Click in a future write-up.
-
-Scan: other materials in misc
-
-Read-through: specification
-    - One more time.
-
-Editing pass.
-    - todos
+One more editing pass:
+    - specification
     - road-map
+    - todos
 
 Reread:
     - dev-notes
@@ -164,11 +112,18 @@ Reread:
     - code
     - arg-parsing-algo
 
-Spec-syntax parsing.
-
-Convert spec-syntax AST into a Grammar.
+Spec parsing.
+    - Convert spec-syntax AST into a Grammar.
 
 Argument parsing.
+
+Generate basic usage and help text.
+
+Docs: proper README [see readme-next-version].
+
+Upgrade classifers to beta.
+
+Release.
 
 --------
 new-notes: New notes
@@ -180,72 +135,61 @@ new-notes: New notes
 road-map: Road map
 --------
 
-Core enhancements:
+** Ordering in this section:
+    - Much of the ordering seems questionable.
+    - Revisit after achieving the core behaviors.
 
-    Error selection during failed argument parsing.
+Arg configuration:
 
-    Conversion/validation/choices.
+    - Convert.
 
-Help text: basic:
+    - Validate.
 
-    Automatic --help.
+    - Choices.
 
-    Help text: usage.
+    _ Factory.
 
-    Help text: options.
-
-    Docs: proper README; shift why-build elsewhere [see readme-next-version].
-
-    Upgrade classifers to beta.
+    - Utility types: Path, File, etc.
 
 Parsing enhancements:
 
-    Other parsing modes: no-conf, unknown-ok, unconverted-ok, invalid-ok.
+    - No-args behaviors, such as show-help or default-args.
 
-    No-args behaviors, such as show-help or default-args.
-
-    Data flattening/non-flattening in Result.
+    - Data flattening/non-flattening in Result.
 
 Help text: enhancements:
 
-    Help text: show defaults and choices.
+    - Help text: show defaults and choices.
 
-    Help text: sections.
+    - Help text: sections.
 
 Alternative inputs: basics:
 
-    Aliases.
+    - Aliases.
 
-    Tight binding of option and parameter: --opt=<param>
+    - Tight binding of option and parameter: --opt=<param>
 
-    Short-flag bundling.
+    - Short-flag bundling.
 
-    Option-prefix customization.
+    - Option-prefix customization.
 
-    Quoting customization.
+    - Quoting customization.
 
-    Non-option args having option prefix: negative numbers.
+    - Non-option args having option prefix: negative numbers.
 
-    Non-option args having option prefix: configurable escape prefix.
+    - Non-option args having option prefix: configurable escape prefix.
+
+    - Negaters.
 
 Project health:
 
-    Add validation to user-facing callables.
+    - Add validation to user-facing callables.
 
-    Documentation.
+    - Documentation.
 
-    Docstrings.
+    - Docstrings.
 
-    Github Actions for CI.
-
-Opt enhancements:
-
-    Opt.factory.
-
-    Negatable options: --foo and --no-foo.
-
-    File-type arguments. Let user decide behaviors: (1) validate path exists, (2)
-    opening (with encoding, mode, etc). Also support `-` for stdin/stdout.
+    - Github Actions for CI.
 
 Alternative/fuzzy inputs: handy:
 
@@ -285,6 +229,8 @@ Alternative inputs: other:
 
     Case-insensitive options.
 
+    Support prompting for inputs (eg password).
+
 Text customization:
 
     Help text: short options in separate section.
@@ -310,7 +256,7 @@ Development aids:
 
     Bash completion.
 
-    Integration with configuration data and environment variables.
+    Integration with configuration data (user prefs) and environment variables.
 
 Other possibilities:
 
@@ -385,13 +331,16 @@ Section:
     - The first section:
 
         [title ::]                        # Default title: 'Usage'
-        [variant...]                      # Allowed only in first section
+        [variant...]
         [opt-spec | block-quote]...
 
     - Other sections:
 
-        [spec-scope >>] title ::      # Title required
+        [spec-scope >>] title ::          # Title required
         [opt-spec | block-quote]...
+
+    - A spec-scope applied to a section is a shortcut for applying the scope to
+      all opt-specs within the section (detailed below).
 
 Variant:
 
@@ -425,7 +374,7 @@ Variant-spec:
 
     - Quantifiers:
 
-        ...            # 1 or more
+        ...            # Either 1+ or 0+ (latter if the entity is optional).
         {m,n}          # Repetition: m through n, inclusive.
         ?              # Non-greedy for preceding quantifier.
 
@@ -442,8 +391,21 @@ Opt-spec:
 
     - Explanation:
 
-        - An spec-scope is a Parser.query() path declaring the Opt (from
-          the grammar) to which the opt-spec should be connected.
+        - Spec-scope:
+
+            - Declares a kind of parent-child relationship.
+            - It can take two forms.
+
+            - A Parser.query() path:
+                - Parent is the Opt from the grammar.
+                - Child is the current opt-spec.
+                - Declares the Opt to which the opt-spec should be connected.
+
+            - Empty:
+                - Parent is the preceding (non-scoped) opt-spec.
+                - Child is the current opt-spec.
+                - Current opt-spec configures a child-element (Arg or Choice)
+                  of the parent.
 
         - A <pos> defines one positional argument (ie, positional-spec),
           optionally with a quantifer.
@@ -461,8 +423,8 @@ Opt-spec:
         - Partials.
         - Named groups.
 
-    - If Opts are declared in variants (a grammar) and in opt-specs,
-      the two configurations are merged:
+    - If Opts are declared in variants and later in opt-specs, the two
+      configurations are merged:
 
         - Opt-spec configuration is connected to the relevant Opt from the
           grammar (see opt-independence for details).
@@ -490,23 +452,19 @@ Positional-spec:
 
         <foo>         | Positional
         <foo=choices> | With choices
-        <foo=choice>  | Specific choice (in context of a variant-spec).
 
 Parameter-spec:
 
     - Syntax:
 
-        --foo <bar>         | Usage displays <bar>.
-        --foo <bar=choices> | Usage displays <bar>, not <choices>.
-        --foo <bar=choice>  | Specific choice (in context of variant-spec).
-
-        --foo <choices>     | Usage displays choices.
-        --foo <=choice>     | Specific choice (in context of variant-spec).
+        --foo <bar>
+        --foo <bar=choices>
+        --foo <choices>
 
 Choices:
 
-    - Consists of 1+ choice, which can be:
-
+    - Consists of 1+ choice, pipe-delimited.
+    - Choice can be:
         - Simple name consisting of \w or hyphen.
         - Quoted-literal.
 
@@ -518,7 +476,7 @@ Block-quotes and literals:
     - Quoting:
 
         Quote | Situation
-        ----------------------------
+        ------------------------------------
         ```   | Block quote
         ```!  | Block quote, no wrap
         ```#  | Block quote, spec-comment
@@ -527,7 +485,7 @@ Block-quotes and literals:
 
     - Notes:
 
-        - Tripple-quotes can sit on their own line, or not.
+        - Triple-quotes can sit on their own line, or not.
 
         - For no-wrap and spec-comment, the additional markers (exclamation or
           pound-sign) are applied only to the opening quote.
@@ -577,49 +535,19 @@ syntax-examples: Syntax examples
 
 pgrep: README example-1: EX_README_1
 
-    [-i] [-v] <rgx> <path>
+    - See argparse-vs-optopus/pgrep-1-bare-bones
 
 pgrep: README example-2: EX_README_2
 
-    <rgx> : Python regular expression
-    [<path>...] : Path(s) to input
-    [-i --ignore-case] : Ignore case
-    [-v --invert-match] : Select non-matching lines
+    - See argparse-vs-optopus/pgrep-2-basic
 
 pgrep: README example-3: EX_README_3
 
-    <rgx> : Python regular expression
-    [<path>...] : Path(s) to input
-    [-i --ignore-case] : Ignore case
-    [-v --invert-match] : Select non-matching lines
-    [-m --max-count <n>] : Stop searching after N matches
-    [-C --context <n>] : Print N lines of before/after context
-    [--color red|green|blue] : Highlight matching text
+    - See argparse-vs-optopus/pgrep-3-enhanced
 
 pgrep: README example-4: EX_README_4
 
-    <task=grep>   [-i] [-v] [-m] [-C]
-                  [--color <red|green|blue>]
-                  <rgx> [<path>...]
-    <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
-    <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
-
-    <task>             : Task to perform
-    <task=grep>        : Emit lines matching pattern
-    <task=sub>         : Search for pattern and replace
-    <task=search>      : Emit text matching pattern
-    <rgx>              : Python regular expression
-    <path>             : Path(s) to input
-    <rep>              : Replacement text
-    -i --ignore-case   : Ignore case
-    -v --invert-match  : Select non-matching lines
-    -m --max-count <n> : Stop searching after N matches
-    -C --context <n>   : Print N lines of before/after context
-    --color <>         : Highlight matching text
-    -n --nsubs <n>     : N of substitutions
-    -g --group <n>     : Emit just capture group N [0 for all]
-    -d --delim <s>     : Delimeter for capture groups [tab]
-    -p --para          : Emit capture groups one-per-line, paragraph-style
+    - See argparse-vs-optopus/wrangle
 
 Parser configuration: spec-vs-API: EX_JOB_CLIENT
 
@@ -672,6 +600,14 @@ repo:
     - click-repo.py
     - optopus-repo.py
 
+naval-fate:
+
+    - A comparison of Docopt, Click and Optopus.
+
+    - click-naval-fate.py
+    - optopus-naval-fate.py
+    - docopt-naval-fate
+
 --------
 terminology: Terminology
 --------
@@ -681,8 +617,9 @@ Library:
 
 Users:
 
-    user or library-user | Software developer using optopus
-    end-user             | Someone running a program that uses optopus
+    user         | Software developer using optopus
+    library-user | Ditto.
+    end-user     | Someone running a program that uses optopus
 
 Command line arguments:
 
@@ -706,14 +643,14 @@ Command line arguments:
 
 Help text:
 
-    Text         | Description
+    Text        | Description
     ------------------------------------------------------------------
-    Help text    | Full output from --help.
-    Usage text   | Just the command-line grammar.
-    Options text | List of options and positionals, perhaps in sections.
-    Other text   | Written by user (default: wrapped by optopus).
+    Help text   | Full output from --help.
+    Usage text  | Just the command-line grammar.
+    Opt listing | List of Opts and their help text, perhaps in sections.
+    Other text  | Written by user (default: wrapped by optopus).
     ------------------------------------------------------------------
-    Opt text     | Help text for a single positional or option.
+    Opt desc    | Help text for a single Opt
 
 Spec:
     - More formally: parser-spec.
@@ -756,9 +693,11 @@ Argument-variant: positional-variant and parameter-variant:
 Opt-spec:
     - A portion of a spec defining one Opt.
 
-Opt-spec-spope:
+Spec-spope:
     - A scoping declaration to connect an opt-spec or an entire section of
       opt-specs to a specific Opt implied by the usage grammar.
+    - Also a way to declare an opt-spec that configures a child-element of a
+      preceding opt-spec.
 
 Var-input:
     - Var-input:
@@ -773,7 +712,7 @@ Literal-input:
     - Examples:
         - The separator in a separator-based grammar: EX_NECK_DIAG.
         - In a subcommand-style program:
-            - Each subcommand is an OptArg.choice.
+            - Each subcommand is an Arg.choice.
             - In usage-text, each variant uses a choice as a literal-input.
 
 Anonymous-input:
@@ -805,7 +744,13 @@ Overview:
         Variant
         Group
         Opt
-        OptArg
+            Positional
+            Option
+            Literal
+        Arg
+            Argument
+            Parameter
+        Choice
         Result
         Query
 
@@ -821,6 +766,12 @@ Overview:
 
         Group:
             elems = List[Group or Opt]         # 0+
+
+        Opt:
+            elems = list[Argument or Parameter]
+
+        Arg:
+            choices = list[Choice]
 
     - Objects used during spec-parsing:
 
@@ -895,14 +846,6 @@ Parser:
 
             - Convenience method to set an attribute across multiple elements.
 
-            - Example: set all help texts in one place:
-
-                p.query(kind = Opt).config_each('text',
-                    foo = 'Blah',
-                    bar = 'Blah blah',
-                    ...
-                )
-
         - Obtaining help text or text for the error from most recent parse():
 
             p.help_text(section...)
@@ -952,7 +895,7 @@ Query:
 
     - Attributes:
 
-        elems: list[Group or Opt or OptArg]
+        elems: list[Group or Opt or Arg]
 
     - API:
 
@@ -1035,7 +978,7 @@ Opt:
     - Base class for Positional, Option, or Literal.
     - Some of the common attributes listed for each subclass (below) might be
       implemented at the Opt level (TBD).
-    - Also see: opt-and-optarg-configuration
+    - Also see: opt-and-arg-configuration
 
 Positional:
     - Subclass of Opt.
@@ -1080,30 +1023,10 @@ Literal:
         spec: str         # The literal value (no backquotes).
         anchor: bool      # Always True.
 
-__HERE3__ : OO work
-
-    Question can Parameter have a dest?
-
-        --point <x> <y>  # Distinct names.
-        --point <p> <p>  # Shared name.
-        --point <> <>    # Anonymous
-
-        Result data for would be a flat-list in all cases:
-            opts.point = [X, Y]
-            opts.point = [P1, P2]
-            opts.point = [VAL, VAL]
-
-        How does user achieve this?
-            opts.point = Result(x = X, y = Y)
-
-        Possible policy:
-            - If all Parameters have distinct names, use an inner-Result.
-            - Otherwise, use a flat list.
-
 Arg:
     - Base class for a variable-input as a configurable unit.
     - Sub-classes: Argument or Parameter.
-    - Also see: opt-and-optarg-configuration
+    - Also see: opt-and-arg-configuration
 
 Argument:
     - Subclass of Arg.
@@ -1124,8 +1047,6 @@ Parameter:
 
     - Attributes:
         spec: str
-        name: str
-        dest: str
         help: str
         ntimes: Quantifier
         choices: list[Choice]
@@ -1133,6 +1054,9 @@ Parameter:
         factory: callable
         convert: callable
         validate: callable
+        --
+        name: str
+        dest: str
 
 Choice:
     - Attributes:
@@ -1294,11 +1218,13 @@ The optopus library combines the best of both approaches:
         - Even though my experiments configuring argument parsers of varying
           complexity via usage text convinced me of the benefits of an
           API-driven approach, text-driven argument parsers have notable
-          advantages. Those advantages are focused on these core areas:
+          advantages.
+
+        - Those advantages are focused in a few core areas:
 
             - The command-line grammar.
-            - The associated naming for entities in that grammer and, thus, for
-              the parsed data returned to the caller.
+            - The associated naming for entities in that grammer.
+            - And thus the naming for the parsed data returned to the caller.
             - The configuration elements that are inherently textual:
                 - Help text for each positional or option.
                 - Other help text.
@@ -1321,6 +1247,7 @@ The optopus library combines the best of both approaches:
 
             - API-driven parsers struggle with command-lines that need any
               grammar falling beyond the most typical cases.
+
             - On stackoverflow and bugs.python.org, for example, one can find
               many command-line use cases (some of them quite simple) that are
               not supported easily by argparse but that are straightforward in
@@ -1330,16 +1257,21 @@ The optopus library combines the best of both approaches:
 
             - When internet users discuss command-line grammar scenarios, they
               invariably use a usage syntax to specify the desired grammar.
+
             - In my own research, I experimented with defining the needed
               grammars via an API, but I consistently found the text-based
               approach simpler to express and read.
+
             - For a good example, see this argparse discussion where a user
               describes a problem in general terms and suggests how the
               argparse API could be augmented to handle such cases.
+
                 - The discussion is somewhat difficult to understand without
                   very careful reading and thinking.
+
                 - Then the user provides a short one-line usage syntax, and the
                   issue is immediately clear.
+
                 - See https://bugs.python.org/issue11588
 
 Configuration via usage syntax is focused on grammar:
@@ -1405,7 +1337,7 @@ Allowing users to control the generated help text in a fine-grained manner.
 
     - Program complexity increases the need to organize and fine-tune help
       text, but not necessarily to write and layout the whole thing
-      (text-driven libraries require that).
+      (text-driven libraries require the latter).
 
     - Optopus provides many mechanisms for that fine tuning:
 
@@ -1486,10 +1418,8 @@ would format official sections in the help text: p.format(BLOB) should return
 text consistent with the look and behavior of other help text, based on Parser
 defaults and configuration.
 
-Include ability to merge options with user preferences. Note that the purpose
-of config files is typically to set the default values used by the command-line
-option parser. When defaults are supplied, it should also cause a required
-option to become non-required.
+Include ability to merge options with user preferences. When a preference is
+supplied, it should also cause a required option to become non-required.
 
 Make it easy to test the option parser.
 
@@ -1498,7 +1428,7 @@ serious flaw in some parsers (eg argparse). The library should support both
 "automatic" mode (where the parser will eagerly print help or error message and
 then exit) or non-automatic mode (where the parser will simply return an object
 containing all information and allow the user to decide what to do. [Note that
-argparse has addressed this, in whole or in part, in Python 3.9].
+argparse has partially addressed this in Python 3.9].
 
 Should have a design that is friendly to customization. Allow users to
 customize by writing simple functions or hooks rather than having to subclass.
@@ -1640,8 +1570,8 @@ and destination assignment.
 
     Action       | Option type       | Example         | Stored      | Notes
     ----------------------------------------------------------------------------------
-    store_true   | One flag          | --frob          | True (N=1)  | .
-    store_false  | One flag          | --frob          | False       | To override a True default
+    store_true   | Flag              | --frob          | True (N=1)  | .
+    store_false  | Flag              | --frob          | False       | To override a True default
     count        | Repeatable flag   | -v -v           | N           | .
     store        | Single            | --foo F         | F           | .
     append       | Repeatable single | -x A -x B       | [A, B]      | Overwrite on repeat
@@ -1666,9 +1596,9 @@ Notes:
 explicit-var-input-syntax: Why explicit syntax is needed for variable inputs
 --------
 
-Imagine that the grammar did not require explicit surrouding markers for
-parameters, positionals, and literal values: {}, <>, and ''. Every type of
-confusion would be possible.
+Imagine that the spec-syntax did not require explicit surrouding markers
+(braces, angle brackets, or quote marks) for parameters, positionals, and
+literal values. Every type of confusion would be possible.
 
     frob --type x y z   # Meaning of x, y, z unclear.
 
@@ -1760,7 +1690,7 @@ to configure name and dest independently.
 opts-revised-OO-plan: Revised OO plan for Opts and child elements
 --------
 
-In prior planing, Opt and OptArg were multi-purpose:
+In prior planing, Opt and Arg were multi-purpose:
 
     - A kind attribute would distinguish positional vs option.
 
@@ -1879,7 +1809,7 @@ The idea that options can have groups as parameters is a bit surpising:
         --point <x> (<y> <z>)...
 
         (1) A flag, a positional, and then a Group.
-        (2) Or an option with two parameters: OptArg then Group.
+        (2) Or an option with two parameters: Parameter then Group.
 
         - The first intpretation is tempting, but incorrect.
 
@@ -1948,14 +1878,14 @@ Two general styles of config() calls:
         )
 
 --------
-opt-and-optarg-configuration: Configuration of Opt and OptArg
+opt-and-arg-configuration: Configuration of Opt and Arg
 --------
 
 Opt child elements: Positionals vs Options:
 
     - Options:
 
-        - In vast majority of cases, all children will be OptArgs.
+        - In vast majority of cases, all children will be Parameters.
         - But elems can also be Groups (due to greedy parsing policy):
 
             --foo (<x>{2} <y>){3}
@@ -1963,46 +1893,46 @@ Opt child elements: Positionals vs Options:
 
     - Positionals:
 
-        - Child elems must be OptArg.
+        - Child elems must be Argument.
         - Under spec-parsing policies you cannot create a Positional having
           Groups as children.
 
-Quantifiers and configuration independence among OptArgs:
+Quantifiers and configuration independence among Args:
 
     - Examples:
 
         (--point <x> <y> <z>...){1,4}
 
         Option(name=point, nargs=(3,None), ntimes=(1,4))
-            OptArg(name=x, ntimes=1)
-            OptArg(name=y, ntimes=1)
-            OptArg(name=z, ntimes=(1,None))
+            Parameter(name=x, ntimes=1)
+            Parameter(name=y, ntimes=1)
+            Parameter(name=z, ntimes=(1,None))
 
         <val>{2}{3}
 
         Positional(name=val, nargs=2, ntimes=3)
-            OptArg(name=None, ntimes=1)
-            OptArg(name=None, ntimes=1)
+            Argument(name=None, ntimes=1)
+            Argument(name=None, ntimes=1)
 
     - Key points:
 
-        - N of OptArgs is based on nargs.
+        - N of Args is based on nargs.
 
-        - Each OptArg represents 1 independently configurable entity.
-        - Repetition across ntimes does create independent units.
+        - Each Arg represents 1 independently configurable entity.
+        - Repetition across ntimes does not create independent units.
 
         - Quantifiers available:
             - Opt: nargs and ntimes.
-            - OptArg: ntimes.
+            - Arg: ntimes.
                 - Represents one configurable entity.
                 - Which aligns with nargs restricted to 1.
 
-Names of OptArgs:
+Names of Args:
 
     - Options have flexibility in naming:
 
         - The Option has a name.
-        - The OptArg names can take various forms.
+        - The Parameter names can take various forms.
 
         --point <x> <y>  # Distinct names.
         --point <p> <p>  # Shared name.
@@ -2023,16 +1953,16 @@ Names of OptArgs:
             - Most common use case is to query just for the Positional.
             - Query-via-index can address the less common use cases.
 
-Assignment of OptArg attributes via the parent-Opt:
+Assignment of Arg attributes via the parent-Opt:
 
     - An example for the discussion:
 
         p = Parser('<x>{2} [<y>] [-z <a> <b>]')
 
-    - Configuration of Opts and OptArgs:
+    - Configuration of Opts and Args:
 
         - The most common and intuitive use cases:
-            - User wants child OptArgs to have identical configuration.
+            - User wants child Args to have identical configuration.
             - They want to apply that configuration via the Opt.name.
 
             # Should adhere to the DWIM policy.
@@ -2045,21 +1975,21 @@ Assignment of OptArg attributes via the parent-Opt:
 
         - Strict interpretion of query(PATH) would be bad:
 
-            - A query by Opt.name will get the Opt, not the OptArgs.
+            - A query by Opt.name will get the Opt, not the Args.
             - Forcing users query explicitly would be annoying.
 
             # Tedious.
             query('z.a', 'z.b')
             query('x.0', 'x.1')
 
-        - Opt and OptArg share some attribute names.
+        - Opt and Arg share some attribute names.
 
     - The policy:
 
         - If the query() PATH gets an Opt.
         - Apply each setting, based on its kwarg, to the appropriate object(s).
 
-        - If kwarg is shared by Opt/OptArg, apply setting to the Opt.
+        - If kwarg is shared by Opt/Arg, apply setting to the Opt.
             - The shared attributes (spec, name, text, ntimes) are not natural
               fits for configuration via query().
             - Users who need to can use explicit paths.
@@ -2200,7 +2130,8 @@ Help-text configuration parameters:
             - Then an indented paragraph of help-text.
 
             --output <file>
-                Output to a specific file instead of stdout.
+                Output to a specific file instead of stdout. Blah blah
+                blah blah blah.
 
     - opt_listing_heading: default heading/organization for opt-listings:
         - unified: "Arguments".
@@ -2211,7 +2142,7 @@ Help-text configuration parameters:
         - Indentation in N of spaces.
         - Expressed relative to indentation of the opt-listing in the spec.
 
-    - alias_listing: styles for documenting alieases in opt-listings:
+    - alias_listing: styles for documenting aliases in opt-listings:
         - explicit: classic style (argparse).
         - compact: same, but drop parameters on the aliases.
         - column: like compact, but in a column.
@@ -2774,8 +2705,6 @@ How should Optopus handle repetitions of a name/dest within a spec?
     - Notation:
         - Discussion will use "name" to represent name or dest.
 
-    - Begin with several examples:
-
 Examples: some theoretical edge cases:
 
     - These are not meant to be realistic.
@@ -2979,6 +2908,7 @@ Discussion of the policy across various domains:
             - How the user wants the usage text to look.
 
     - Why name uniqueness is not needed in the Grammar:
+
         - A Grammar is just a list[Group or Opt].
         - The name and dest are not quique IDs.
         - So no problems are caused by repetition.
@@ -3023,7 +2953,7 @@ Discussion of the policy across various domains:
             - At the moment of invalid input, get the valid choices from the
               unified Opt.
             - Implemented a correct listing of choices would require also
-              storing a subset of choices in the OptArg.
+              storing a subset of choices in the Arg.
             - Which might be too awkward.
 
     - Consolidation necessarily occurs during Result creation:
@@ -3113,7 +3043,7 @@ Background for the spec-scope syntax:
         https://chatgpt.com/share/67e1c05f-f654-8003-9c07-c556cea6c368
 
 --------
-parsed-data-structure: Parsed data structuring: nargs, ntimes
+parsed-data-structure: Parsed data structuring: nargs, ntimes, and parmeters
 --------
 
 The meaning of nargs and ntimes:
@@ -3133,7 +3063,7 @@ The meaning of nargs and ntimes:
 
         <x>                     #  1        (1,1)
         [<x>]                   #  1        (0,1)
-        (<x>{4}){0,2}           #  4        (0,2)
+        <x>{4}{0,2}             #  4        (0,2)
 
 Internally, all data assigned to destinations will be stored in a fully
 explicit manner. Assume a list of lists, where:
@@ -3153,7 +3083,7 @@ explicit manner. Assume a list of lists, where:
 
     - With plural ntimes:
 
-        (<z>{2}){3}
+        <z>{2}{3}
 
         [[a1, a2], ..., ...]
 
@@ -3161,10 +3091,10 @@ explicit manner. Assume a list of lists, where:
 
         (
             --foo <> <>
-            (<z>{2}){3}
+            <z>{2}{3}
         ){4}
 
-        foo: nargs   2, ntimes     4
+        foo: nargs   2, ntimes 1 x 4
         z  : nargs   2, ntimes 3 x 4
 
         foo = [
@@ -3192,7 +3122,9 @@ Flattening policy:
       will be flattened by default, as shown in the table.
 
     - User can request non-flattened data or flattened data to reverse the
-      usual defaults (marked with ** in the two columns for 2+ ntimes).
+      usual defaults
+
+    - Defaults are marked with ** in the two columns for 2+ ntimes.
 
     nargs | ntimes 0,1 | ntimes 2+ (flat)    | ntimes 2+ (non-flat)
     ---------------------------------------------------------------
@@ -3215,6 +3147,20 @@ Duplicate dests within a Result:
             X         # <x>
             [X, X]    # -x <x>{2}
         ]
+
+Parameters and inner-results:
+
+    - Summary:
+        - If all Parameters have defined and distinct dests, store the Option's
+          data in an inner-result.
+        - Otherwise, use a flat list.
+
+    - Examples:
+
+        --point <x> <y>  # Distinct names => Result(x = X, y = Y)
+        --point <p> <p>  # Shared name    => [X, Y]
+        --point <> <>    # Anonymous      => [X, Y]
+        --point <x> <>   # Mixed          => [X, Y]
 
 --------
 parsed-data-with-context: Including Context with the Result
@@ -3558,48 +3504,12 @@ Simpler approach:
     - Handle that via API.
 
 --------
-help-distpatching: Help distpatching
---------
-
-__HERE1__
-
-Optopus aims to support behavior like this:
-
-    frob --help              # Print general help.
-    frob configure --help    # Print help for the configure task.
-
-How does the user configure this help dispatching. More generally, what about
-supporting other help-printing scenarios that rely not on --help but on some
-other options: for example, I've had programs where I want --examples to print
-some usage examples for the end-user.
-
-    - Simple use case: standard help feature for a command-line program.
-
-        p = Parser(help = True|False)
-
-    - Help hook: any time the library's help feature is triggered, call the
-      user's function with some params and let them return something to tell
-      the library which help section(s) to print, if any.
-
-        p = Parser(help = CALLABLE)
-
-    - That approach is flexible for the general case, but it does not speak to
-      the most common type of complex use case (a program with subcommands,
-      where the subcommands and help sections have a 1:1 correspondence). Some
-      additional conveniences to support dispatching based on subcommands --
-      or, more correctly, based on the value taken by a specific Opt.
-
-        # For 1:1 correspondence between help sections and Opt values.
-        o = Opt('task', help = 'sections')
-
-        # For more flexibility, supply mapping from Opt value to section name.
-        o = Opt('task', help = DICT)
-
---------
 dispatch-to-callables: Dispatching to callables
 --------
 
-Should the help-distpatching section (immediatley above) be moved here?
+__HERE1__ : full-reread of notes.txt
+
+** This sections needs an overhaul
 
 NEW NOTES:
 
@@ -3813,7 +3723,6 @@ NEW NOTES:
 
         * Relevant sections:
             converters-validators
-            help-distpatching
             dispatch
 
         - convert:
@@ -3934,6 +3843,38 @@ positional and parameter variants. For example:
     p.config('task=experiment', dispatch = de)
     p.config('task=interactive', dispatch = di)
     p.config('task=rebuild', dispatch = dr)
+
+Optopus aims to support behavior like this:
+
+    frob --help              # Print general help.
+    frob configure --help    # Print help for the configure task.
+
+How does the user configure this help dispatching. More generally, what about
+supporting other help-printing scenarios that rely not on --help but on some
+other options: for example, I've had programs where I want --examples to print
+some usage examples for the end-user.
+
+    - Simple use case: standard help feature for a command-line program.
+
+        p = Parser(help = True|False)
+
+    - Help hook: any time the library's help feature is triggered, call the
+      user's function with some params and let them return something to tell
+      the library which help section(s) to print, if any.
+
+        p = Parser(help = CALLABLE)
+
+    - That approach is flexible for the general case, but it does not speak to
+      the most common type of complex use case (a program with subcommands,
+      where the subcommands and help sections have a 1:1 correspondence). Some
+      additional conveniences to support dispatching based on subcommands --
+      or, more correctly, based on the value taken by a specific Opt.
+
+        # For 1:1 correspondence between help sections and Opt values.
+        o = Opt('task', help = 'sections')
+
+        # For more flexibility, supply mapping from Opt value to section name.
+        o = Opt('task', help = DICT)
 
 --------
 argparse-and-greed: argparse and greediness
@@ -5133,20 +5074,20 @@ Triple vs double colons for headings:
     - Leaves open possiblity of supporting subheadings.
 
 --------
-optarg-choices-in-usage-text: OptArg.choices in usage-text
+arg-choices-in-usage-text: Arg.choices in usage-text
 --------
 
 Policy under most circumstances:
     - An entity is represented by its name in usage-text and spec.
-    - Under most circumstances, that is true for OptArgs.
+    - Under most circumstances, that is true for Args.
 
-But when an OptArg has either choices or choice, things change:
+But when an Arg has either choices or choice, things change:
 
-    - OptArg with choices:
+    - Arg with choices:
         - Use the name, if defined.
         - Otherwise, use choices as a stand-in for the symbolic name.
 
-    - OptArg with a choice:
+    - Arg with a choice:
         - This occurs in arg-variants.
         - Use the choice in usage-text, even if a name is defined.
         - Explanation:
@@ -5155,7 +5096,7 @@ But when an OptArg has either choices or choice, things change:
                 - The choice is no longer a var-input.
                 - It is a literal-input.
 
-    - OptArg with no choices and no name:
+    - Arg with no choices and no name:
         - Represented as an anonymous-input in usage:
 
             --point <> <>
@@ -5502,6 +5443,16 @@ Rationale:
 --------
 readme-next-version: README for next version
 --------
+
+Check README examples against mockups in examples/argparse-vs-optopus.
+
+Move most of the discussion elsewhere:
+    - Optopus vs alterantives.
+    - Motivation.
+
+Optopus vs the competitors:
+    - Maybe augment the current README
+    - Include Click in a future write-up.
 
 Add some default setting to at least one example.
 
