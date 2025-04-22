@@ -2070,12 +2070,51 @@ Why priority-opts should be restricted to flags:
         - If a priority-opt is a flag:
             - Parser is able to see that the flag is present.
             - The test is easy: '--help' in ARGS
+            - It is able to locate the flag even if it occurs beyond the
+              position (in args) where the parsing halted.
 
         - But if a priority-opt were allowed to be more complex:
             - With Args having grammatical/validation requirements.
             - How would Optopus successfully parse the entity?
             - Parsing has already failed.
             - Seems fraught.
+            - An Opt could be marked as priority, but that configuration will
+              take effect only if the priority Opt appears to the left of the
+              point (in args) where the parsing halted.
+
+    - A possible counter-argument: let users do what the want:
+        - If the parse fails.
+        - Optopus selects the best-performing interpretation.
+        - Then populates a Result as best it can.
+        - If a priority Opt is set, then invoke its dispatch functions.
+
+        - In addition, the test for priority Options could be enhanced:
+            - First perform a simple membership test: Opt.name in ARGS.
+            - If yes:
+                - Try to parse that Opt.
+                - Starting just after the position of Opt.name in ARGS.
+                - Even if to right of position where the full parse() halted.
+
+            - That would allow for priority Option, such as:
+                --details <topic>
+
+    - Weighing the arguments:
+        - User flexibility is generally a project goal.
+        - But priority Opts are a
+
+        - The two tests are different.
+        - With a flag-only policy:
+            - Parse fails.
+            - Optopus does a second check for priority-flags.
+            - This is done with a simple membership test.
+            - No parsing required.
+            - It is able to locate the flag even if it occurs
+              beyond the position (in args) where the parsing
+              halted.
+        - But non-flags would be different:
+            - Only args to the left of the failure point are
+              considered.
+            - This differs from the membership test across all args.
 
 Other naming ideas considered:
     - My early planning used 'high-precedence': verbose; unnatural.
@@ -3405,7 +3444,7 @@ Zones and anchoring:
     - Another question: is the zone concept needed, or could Group do the same
       thing? I increasingly think the latter.
 
-Priorty:
+Priority:
 
     - Setting this attribute is easy in the API.
 
@@ -3511,119 +3550,232 @@ __HERE1__ : full-reread of notes.txt
 
 ** This sections needs an overhaul
 
+    - Belongs in a different section:
+        - Prompting for end-user inputs.
+        - Convert/validate
+
+Overview:
+
+    - Two kinds of dispatch:
+
+        - Regular:
+            - Any Opt.
+            - Triggered by user supplying an Opt in a successful parse.
+
+        - Priority:
+            - Any Option.
+            - Triggered by presense among args, even if the parse fails.
+
+    - Special treatment for special priority-flags:
+        --help
+        --version
+
+    - Dispatch order:
+        - Priority --help.
+        - Priority --version.
+        - Priority Opts.
+        - Regular Opts.
+
+        - Within the last two groups:
+            - Default order = configuration order.
+                - Parser will track order of dispatch configuration, by Opt.
+                - If Opt has multiple callables: called in sequence order.
+            - If needed, API call can be used to modify the order [TBD].
+
+API summary:
+
+    - Notation:
+        - FUNC:
+            - Single-argument callable.
+            - Or a sequence of them: if so,
+        - bool:
+            - help: use default Optopus help function.
+            - priority: use noop function.
+
+    - Special priority-flags:
+
+        --help
+        --version
+
+        # Priority dispatch.
+        p = Parser(SPEC, help = bool|FUNC)
+        p = Parser(SPEC, version = VERSION|FUNC)
+
+        # Regular dispatch.
+        p.config('help', dispatch = FUNC, priority = False)
+        p.config('version', dispatch = FUNC, priority = False)
+
+    - Other flags:
+
+        --examples
+        --details
+
+        # Priority or regular.
+        p.config('examples', priority = bool|FUNC)
+        p.config('examples', dispatch = FUNC)
+
+    - Other Opts:
+
+        --path <path>
+        <age>
+        <action=go|stop>
+
+        p.config('age', dispatch = FUNC)
+        p.config('action', dispatch = dict(go = FUNC, stop = FUNC))
+
+Calling protocol for dispatching:
+
+    - When dispatch occurs:
+
+        - Priority:
+            - After parse() finishes or fails.
+            - Important consequence:
+                - If any Option has priority.
+                - And if that Option is present in Args.
+                - Then failed parse() calls do not halt.
+            - That consequence is the purpose of priority=True:
+                - If the priority-option is present.
+                - Do not halt in the face of a failed parse().
+
+        - Regular:
+            - Only after a successful parse().
+
+    - Arguments pass to dispatch functions:
+        - The parsed Result: opts.
+        - The user can supply other data via user-Context.
+
+    - Return values expected from special flags:
+
+        - help:
+            - bool: default Optopus help-text.
+            - text: Optopus will print it.
+            - Section(s): help text for specific sections.
+            - (Section, Variant): ditto, with variant-specific usage-text.
+            - Any false: Optopus will do nothing.
+            - Exit: user function halts program.
+
+        - version:
+            - VER: default Optopus function, using VER as the version string.
+            - Any false: Optopus will do nothing.
+            - Exit: user function halts program.
+
+    - Handling of return values from dispatch functions:
+
+        - Optopus collects them in a returns-Context.
+        - Stored under the relevant Opt dests.
+
+        # Configure the parser.
+        p = Parser(...)
+
+        # Dispatch occurs after parse() finishes.
+        opts = p.parse(ARGS)
+
+        # User can examine return values from those calls.
+        rs = opts('returns')
+
+    - How a dispatch function can halt further dispatching:
+        - Exit program.
+        - Raise HaltDispatch. Optopus will check two attributes:
+            - exit_code:
+                - Default = 0.
+                - User can supply a positive int for unsuccesful exit.
+                - Or None to suppress the exit.
+            - msg:
+                - Optopus will print msg.
+                - To stderr if exit_code is a positive int.
+
+Why dispatch operates at the level of Opt, not Arg:
+
+    - One could do it at the Arg-level, in theory.
+
+    - But its seems implausible to want it:
+        - Positionals: does not make a lot of sense.
+        - Parameters: conceivable, but unlikely a frequent use case.
+
+ Why "priority" couples two behaviors:
+
+    - Flexible parsing: simple membership test in ARGS.
+    - Dispatching priority.
+
+    - The behaviors are coupled under the most comman usage scenarios:
+        - Main examples are --help, --version.
+        - Other known examples: --examples, --details.
+        - If user wants priority without dispatch: priority=True.
+
+Under what conditions does a dispatch function get called?
+
+    - Dispatch always.
+        - Is this even helpful?
+        - The user could easily call the function themselves.
+
+    - Dispatch if Opt is supplied.
+        - I think this is the right approach.
+
+    - Dispatch if Opt is supplied and non-required.
+        - A bit too subtle.
+
+Scepticism about the necessity of dispatch:
+
+    - I have *never* found dispatching to be a difficult or annoying part
+      of writing scripts.
+
+    - Several easy approaches are readily at hand, and I usually pick the one
+      that fits the script's grammar best.
+
+        - Ordinary script with some special flags:
+            - Basic conditional logic for the special flags.
+            - Quite often the flags lead to early program exits.
+            - Then just get down to business.
+
+        - Situations where dispatch is driven by the value given for a
+          primary Opt (eg, subcommand-style script).
+            - Use a dispatch dict.
+            - Use code to get the right callable via its name:
+                - gettattr() if functions are in a class or module.
+                - globals() if they are at the top-level in a script.
+
+        - Situations where multiple functions are called (eg, steps).
+            - Very similar the to previous situation.
+            - But you are just calling a function for each of an Opt's
+              plural nargs.
+
+        - I have rarely needed anything fancier than that.
+
+    - Relative to those basic approaches, can the dispatching API be simpler?
+
+        - Any plan requiring heavy API knowledge is bad.
+        - Users do not write scripts frequently enough to master the API.
+        - They end up having to look it up every time.
+
+    - Remember that it does not make sense to compare the Optopus
+      ease-of-dispatch to that of Click.
+
+        - Click makes dispatch semiautomatic because it forces you to configure
+          your parser at the functions themselves.
+
+        - But that approach comes with unacceptable costs and drawbacks.
+
+        - For Optopus the relevant comparison is between a proposed API for
+          dispatch and the roll-your-own alternatives.
+
 NEW NOTES:
 
-    - Dispatch: clarified approach:
+    ** Move the help-and-priorty-options material into this section.
 
-        - Special flags:
+    ** Think about the common use case: subcommand program:
 
-            --help
-            --version
+        - Yes user can supply a dict for total control.
 
-            # Priority dispatch.
-            p = Parser(SPEC, help = bool|FUNC)
-            p = Parser(SPEC, version = VERSION|FUNC)
+        - But is there a simpler model:
 
-            # Regular dispatch.
-            p.config('help', dispatch = FUNC)
-            p.config('version', dispatch = FUNC)
+            [<options>] <cmd=go|stop|rest>
 
-        - User flags:
+            - You want value of <cmd> to drive two things:
+                - Help for subcommands.
+                - Variant for usage-text.
+                - Dispatch.
 
-            --examples
-            --details
-
-            # Priority or regular.
-            p.config('examples', priority = bool|FUNC)
-            p.config('examples', dispatch = FUNC)
-
-        - If an Arg is supplied:
-
-            --path <path>
-            <age>
-            <action=go|stop>
-
-            p.config('age', dispatch = FUNC)
-            p.config('action', dispatch = dict(go = FUNC, stop = FUNC))
-
-        - FUNC details:
-            - Single-argument callable.
-            - Or a sequence of them.
-
-        - Calling protocol:
-            - Arguments pass to dispatch functions:
-                - The parsed Result: opts.
-                - The user can supply other data via user-Context.
-
-            - Return values from dispatch functions:
-                - Optopus collects them in a returns-Context.
-                - Store under the relevant dests.
-
-                opts = p.parse(ARGS)
-                rs = opts('returns')
-
-            - How a dispatch function can halt further dispatching:
-                - Exit program.
-                - Raise HaltDispatch.
-                    - exit_code:
-                        - Default = 0.
-                        - User can supply a positive int for unsuccesful exit.
-                        - Or None to suppress the exit.
-                    - msg:
-                        - Optopus will print msg.
-                        - To stderr if exit_code is a positive int.
-
-        - Dispatch order:
-            - Priority --help.
-            - Priority --version.
-            - Priorty Opts (configuration order).
-            - Regular Opts (configuration order).
-
-        * Should priority be restricted to Options?
-            - My notes currently say yes.
-            - They go even farther: flags only.
-            - See: Why priority-opts should be restricted to flags
-
-            - But a possible counter-argument:
-
-                - If user wants a priority Opt of any kind, give it to them.
-                - As the notes discuss:
-                    - If the parse fails.
-                    - Optopus selects the best-performing interpretation.
-                    - Then populates a Result as best it can.
-                    - If a priority Opt is set, then invoke its dispatch functions.
-
-                - The problem:
-                    - The two tests are different.
-                    - With a flag-only policy:
-                        - Parse fails.
-                        - Optopus does a second check for priority-flags.
-                        - This is done with a simple membership test.
-                        - No parsing required.
-                        - It is able to locate the flag even if it occurs
-                          beyond the position (in args) where the parsing
-                          halted.
-                    - But non-flags would be different:
-                        - Only args to the left of the failure point are
-                          considered.
-                        - This differs from the membership test across all args.
-
-        - Regular vs priority dispatch:
-            - Priority:
-                - Triggered by presense among args, even if the parse fails.
-                - Executed before regular dispatch.
-            - Regular:
-                - Triggered by user supplying an Opt in a successful parse.
-
-        - Why "priority" couples two behaviors:
-            - Tolerant/flexible parsing: merely requires presence among args.
-            - Dispatching priority.
-            - The behaviors are coupled under the most comman usage scenarios:
-                - Main examples are --help, --version.
-                - Other known examples: --examples, --details.
-                - If user wants priority without dispatch: dispatch=True.
-
-    - dispatching examples to assess/mockup:
+    Dispatching examples to assess/mockup:
         - naval-fate
         - repo
 
@@ -3640,70 +3792,11 @@ NEW NOTES:
             - callable: no args; should return str or raise
             - (MSG, STREAM) tuple: args sent to getpass()
 
-    - Related issue to include in planning:
-        - Supporting a confirmation option: Click does --yes.
-        - Seems dubious.
+    Confirmation option: --yes.
+        - Click handles it.
+        - Should Optopus?
 
-    - Under what conditions does a dispatch function get called?
-
-        - Dispatch always.
-            - Is this even helpful?
-            - The user could easily call the function themselves.
-
-        - Dispatch if Opt is supplied.
-            - I think this is the right approach.
-
-        - Dispatch if Opt is supplied and non-required.
-            - Seems a bit subtle.
-
-    - Can I come up with a dispatching plan that seems simpler that
-      roll-your-own?
-
-        - I have *never* found dispatching to be a difficult or annoying part
-          of writing scripts.
-
-        - Several easy approaches are readily at hand, and I usually pick the one
-          that fits the script's grammar best.
-
-            - Ordinary script with some special flags:
-                - Basic conditional logic for the special flags.
-                - Quite often the flags lead to early program exits.
-                - Then just get down to business.
-
-            - Situations where dispatch is driven by the value given for a
-              primary Opt (eg, subcommand-style script).
-                - Use a dispatch dict.
-                - Use code to get the right callable via its name:
-                    - gettattr() if functions are in a class or module.
-                    - globals() if they are at the top-level in a script.
-
-            - Situations where multiple functions are called (eg, steps).
-                - Very similar the to previous situation.
-                - But you are just calling a function for each of an Opt's
-                  plural nargs.
-
-            - I have rarely needed anything fancier than that.
-
-        - Relative to those basic approaches, can I design an API that is
-          simpler?
-
-            - Any plan requiring heavy API knowledge is bad.
-            - Users do not write scripts frequently enough to master the API.
-            - They end up having to look it up every time.
-
-        - Remember that it does not make sense to compare the Optopus
-          ease-of-dispatch to that of Click.
-
-            - Click makes dispatch easier/semiautomatic because it forces you
-              to configure your parser at the functions themselves.
-
-            - But that approach comes with costs and drawbacks I find
-              unacceptable.
-
-            - For Optopus the relevant comparison is between a proposed API for
-              dispatch and the roll-your-own alternatives.
-
-    - How does the user control dispatching order?
+    API to control dispatching order:
 
         - Under a very simple model where you just link callables to Opts,
           how does the user convey calling order?
@@ -3713,13 +3806,7 @@ NEW NOTES:
         - That suggests that Opt-level configuration is either a poor fit or
           insufficient on its own.
 
-    Function signatures for callable Opt attributes:
-
-        * Remaining issue: whether dispatch is helpful/needed.
-        * Defer this decision until after more mock-ups are done:
-            - Try to configure their dispatch.
-            - See how it looks.
-            - Write the equivalent roll-your-own code.
+    Function signatures for convert/validate/check:
 
         * Relevant sections:
             converters-validators
@@ -3746,29 +3833,6 @@ NEW NOTES:
                 validate | VAL
                 check    | VAL, CONTEXT
 
-        - help:
-            - The current notes seem generally plausible.
-            - Help is where dispatch is most compelling.
-
-            - A help callable should return:
-                - bool
-                - help text
-                - Section(s)
-                - (Section, Variant)
-
-        - version:
-            - Typically set via a version-str.
-            - If a callable: RESULT => STR
-            - Another useful kind dispatch.
-
-        - dispatch:
-            - Worth it at all?
-            - If so, what signature?
-
-Dispatching is probably can be pretty simple: tie one or more callables to
-Variants, Opts, or even Groups (hard to think of many use cases for the latter,
-but it is probably easy to support).
-
 The argument passing details are important. Not everyone wants opts to be
 passed everywhere. In other notes, I planned to have dispatch functions called
 with three arguments.
@@ -3783,12 +3847,6 @@ Dispatch occurs after argument parsing and validation. At that point, it is not
 clear why the dispatch function needs VAL and OPT. Nor does it seem like users
 want all of their dispatch functions tied to a rigid signature (eg, always
 passing RES everywhere).
-
-What might users want to pass to dispatch calls?
-
-    - The parsed Result (which does not exist at config-time).
-    - Other objects (eg lib).
-    - One or more Result.DEST values, perhaps as kwargs.
 
 Example API usages:
 
