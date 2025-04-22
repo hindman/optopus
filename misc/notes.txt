@@ -3770,10 +3770,48 @@ NEW NOTES:
 
             [<options>] <cmd=go|stop|rest>
 
-            - You want value of <cmd> to drive two things:
-                - Help for subcommands.
-                - Variant for usage-text.
-                - Dispatch.
+            - You want value of <cmd> to drive 3 things:
+                - Usage-text: based on Variants.
+                - Help-test: based on Sections.
+                - Dispatch: based on <cmd>.
+
+                ** Tentative decision:
+                    - Being with Option 3.
+                    - Add support for Option 1 later [details TBD].
+
+                - Option 1:
+                    - User names things consistently.
+                    - The <cmd> choices.
+                    - Names of Variants/Sections.
+
+                    - Something like this could work if the Section naming
+                      agreed with <cmd> choices. This would work because
+                      Optopus has access to the Sections and Variants.
+
+                        p = Parser(SPEC, help = dispatch_with('cmd))
+
+                    - But the same approach will be insufficient for dispatch,
+                      because Optopus does not know which functions to call.
+
+                        - The user could supply a LOOKUP object.
+                            - An instance with the needed methods.
+                            - A class/module having the needed callable.
+                            - globals()
+
+                        p.config('action', dispatch = dispatch_with('cmd', LOOKUP))
+
+                - Option 2:
+                    - User orders things consistently.
+                    - Order of <cmd> choices.
+                    - list[Section] and list[Variant].
+
+                    - This approach offer false promise.
+                        - It is only marginally easier for the user to type.
+                        - Resulting code is more brittle, less declarative.
+
+                - Option 3:
+                    - User supplies mappings.
+                    - Works and is supported by the current API plan.
 
     Dispatching examples to assess/mockup:
         - naval-fate
