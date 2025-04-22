@@ -37,7 +37,6 @@ toc: Table of contents
         groups-can-be-parameters      | Options can have Groups as parameters
         parser-config-api             | Parser.config() API
         opt-and-arg-configuration     | Configuration of Opt and Arg
-        help-and-priorty-options      | Help and priority options
         help-text-formatting-and-api  | Help text formatting and API
         spec-parsing-general-approach | Spec parsing: general approach
         arg-parsing-algo              | Parsing algorithm
@@ -2003,126 +2002,6 @@ Assignment of Arg attributes via the parent-Opt:
             p.config('z', default = [77, 88]) # Different.
 
 --------
-help-and-priorty-options: Help and priority options
---------
-
-Most options control the primary behaviors of a program. But some are special,
-most notably those related to user help:
-
-    --help
-    --version
-    --examples
-    --demo
-
-Argument parsing libraries often provide a convenient mechanism for --help and
-sometimes --version, but rarely anything else. In addition, they tend to
-provide such features in a way that is slightly misleading (at least in a
-strict sense) and definitely not as convenient for users as it could be.
-
-Consider a simple subcommand-style program. Assume that both <id> and the
-parameter for -n should be integers and that the program has both general help
-text and subcommand help text.
-
-    demo [--help] [-n <n>] <action=print|delete> <id>
-
-At least by default, if the end-user supplies the --help option, an argument
-parser should (1) print help text and exit, (2) select the help text that is
-relevant given the other command-line arguments, and (3) ignore errors in the
-other command-line arguments. Some examples of desired behavior:
-
-    demo --help                # General help.
-    demo --help delete         # Delete help.
-    demo --help -n HI delete   # Same, in spite of invalid -n parameter.
-
-Most argument parsers fail on #3 (they gripe instead of helping) and they do
-not easily support #2.
-
-Optopus addresses those problems with two mechanisms: priority options
-and flexible dispatching. If an option is configured to be priority,
-its presence among the command-line arguments will trigger whatever action it
-has been configured to perform, and that dispatching configuration will take
-precendence over error reporting. When priority options are used, the
-parser performs a best-effort parsing to collect as much contextual information
-as it can before calling the code responsible taking action.
-
-There are limits, of course. Some types of bad input can reduce the accuracy of
-that best-effort parse. In this example, -Q in an unknown option and is treated
-by default as a flag taking no parameters, which then means that HI is is
-interpretted an invalid subcommand.
-
-    demo --help -Q HI delete   # General help rather than delete help.
-
-Why priority-opts should be restricted to flags:
-
-    - Context:
-        - If an opt has priority.
-        - Its dispatching should occur no matter what.
-        - Even in the face of otherwise invalid ARGS.
-        - Example: --help.
-
-    - But consider how parsing would work under those conditions:
-
-        - Parsing of all ARGS fails.
-        - Select variant that did the best (eg, max N ARGS consumed).
-        - Optopus populates a Result up to the ARG that failed.
-        - What happens next?
-
-        - If a priority-opt is a flag:
-            - Parser is able to see that the flag is present.
-            - The test is easy: '--help' in ARGS
-            - It is able to locate the flag even if it occurs beyond the
-              position (in args) where the parsing halted.
-
-        - But if a priority-opt were allowed to be more complex:
-            - With Args having grammatical/validation requirements.
-            - How would Optopus successfully parse the entity?
-            - Parsing has already failed.
-            - Seems fraught.
-            - An Opt could be marked as priority, but that configuration will
-              take effect only if the priority Opt appears to the left of the
-              point (in args) where the parsing halted.
-
-    - A possible counter-argument: let users do what the want:
-        - If the parse fails.
-        - Optopus selects the best-performing interpretation.
-        - Then populates a Result as best it can.
-        - If a priority Opt is set, then invoke its dispatch functions.
-
-        - In addition, the test for priority Options could be enhanced:
-            - First perform a simple membership test: Opt.name in ARGS.
-            - If yes:
-                - Try to parse that Opt.
-                - Starting just after the position of Opt.name in ARGS.
-                - Even if to right of position where the full parse() halted.
-
-            - That would allow for priority Option, such as:
-                --details <topic>
-
-    - Weighing the arguments:
-        - User flexibility is generally a project goal.
-        - But priority Opts are a
-
-        - The two tests are different.
-        - With a flag-only policy:
-            - Parse fails.
-            - Optopus does a second check for priority-flags.
-            - This is done with a simple membership test.
-            - No parsing required.
-            - It is able to locate the flag even if it occurs
-              beyond the position (in args) where the parsing
-              halted.
-        - But non-flags would be different:
-            - Only args to the left of the failure point are
-              considered.
-            - This differs from the membership test across all args.
-
-Other naming ideas considered:
-    - My early planning used 'high-precedence': verbose; unnatural.
-    - Click uses 'eager'.
-    - But their concept deals mainly with dispatch ordering.
-    - Click does not appear to support the concept of a priority-flag.
-
---------
 help-text-formatting-and-api: Help text formatting and API
 --------
 
@@ -3548,11 +3427,59 @@ dispatch-to-callables: Dispatching to callables
 
 __HERE1__ : full-reread of notes.txt
 
-** This sections needs an overhaul
+** Section overhaul notes:
 
-    - Belongs in a different section:
-        - Prompting for end-user inputs.
-        - Convert/validate
+    ** Move to other sections:
+
+        Prompting for var-inputs:
+
+            - Examples: username, credentials.
+
+            p.config('bar', prompt = PROMPT)
+            p.config('bar', password = PROMPT)   # Prompt via getpass.getpass().
+
+            Where PROMPT:
+                - True: default Optopus prompting.
+                - MSG: same, but using MSG.
+                - callable: no args; should return str or raise
+                - (MSG, STREAM) tuple: args sent to getpass()
+
+        Confirmation option: --yes.
+            - Click handles it.
+            - Should Optopus?
+
+        Function signatures for convert/validate/check:
+
+            * Relevant sections:
+                converters-validators
+                dispatch
+
+            - convert:
+                - this one is clear.
+                - convert(STR) => VAL or raise
+
+            - validate:
+                - I had some uncertainty about input-signature.
+
+                    Simple        | VAL
+                    Context-aware | VAL, OPT, PARSER, OTHER
+
+                - Tentative decision.
+
+                    - Add a third concept: check.
+                    - Convert/validate do basic value handling.
+                    - Check can handle situations needing contextual information.
+                    - Note that check can reside on Arg or Opt.
+
+                    convert  | STR
+                    validate | VAL
+                    check    | VAL, CONTEXT
+
+    ** Check these mockups in light on dispatching plan:
+        - naval-fate
+        - repo
+
+    ** Continue with notes.txt editing pass, starting with this section.
 
 Overview:
 
@@ -3566,7 +3493,7 @@ Overview:
             - Any Option.
             - Triggered by presense among args, even if the parse fails.
 
-    - Special treatment for special priority-flags:
+    - Special priority-flags:
         --help
         --version
 
@@ -3587,7 +3514,11 @@ API summary:
     - Notation:
         - FUNC:
             - Single-argument callable.
-            - Or a sequence of them: if so,
+            - Or a sequence of them.
+            - Or a dict of them.
+        - FUNC_LOOKUP:
+            - dict[str => FUNC]
+            - Object where getattr('foo') => FUNC.
         - bool:
             - help: use default Optopus help function.
             - priority: use noop function.
@@ -3598,8 +3529,8 @@ API summary:
         --version
 
         # Priority dispatch.
-        p = Parser(SPEC, help = bool|FUNC)
-        p = Parser(SPEC, version = VERSION|FUNC)
+        p = Parser(SPEC, help = bool|FUNC)         # Default: True.
+        p = Parser(SPEC, version = VERSION|FUNC)   # Default: None.
 
         # Regular dispatch.
         p.config('help', dispatch = FUNC, priority = False)
@@ -3621,7 +3552,7 @@ API summary:
         <action=go|stop>
 
         p.config('age', dispatch = FUNC)
-        p.config('action', dispatch = dict(go = FUNC, stop = FUNC))
+        p.config('action', dispatch = FUNC_LOOKUP)
 
 Calling protocol for dispatching:
 
@@ -3758,219 +3689,159 @@ Scepticism about the necessity of dispatch:
         - For Optopus the relevant comparison is between a proposed API for
           dispatch and the roll-your-own alternatives.
 
-NEW NOTES:
+Special support for regular subcommand programs:
 
-    ** Move the help-and-priorty-options material into this section.
+    - An example:
 
-    ** Think about the common use case: subcommand program:
+        [<options>] <cmd=go|stop>
 
-        - Yes user can supply a dict for total control.
+    - In a typical subcommand program, user wants <cmd> to drive 3 things:
+        - Variant selection to drive usage-text.
+        - Section selection to drive help-text.
+        - Function selection for dispatch.
 
-        - But is there a simpler model:
+    - Optopus will support this in two ways:
 
-            [<options>] <cmd=go|stop|rest>
+        - Full flexibility: user supplies their own callables:
+            - Help and usage text: FUNC returns Sections/Variants.
+            - Regular dispatch: dispatch dict tied to Opt(CMD).
+            - These approaches are part of the API outlined above.
 
-            - You want value of <cmd> to drive 3 things:
-                - Usage-text: based on Variants.
-                - Help-test: based on Sections.
-                - Dispatch: based on <cmd>.
+        - Configuration simplicity via naming consistency:
+            - User names things consistently.
+            - The <cmd> choices.
+            - Names of Variants/Sections.
 
-                ** Tentative decision:
-                    - Being with Option 3.
-                    - Add support for Option 1 later [details TBD].
+            - Help dispatch:
 
-                - Option 1:
-                    - User names things consistently.
-                    - The <cmd> choices.
-                    - Names of Variants/Sections.
+                p = Parser(SPEC, help = dispatch_with('cmd))
 
-                    - Something like this could work if the Section naming
-                      agreed with <cmd> choices. This would work because
-                      Optopus has access to the Sections and Variants.
+            - Regular dispatch:
+                - No different/simpler than the flexible approach.
 
-                        p = Parser(SPEC, help = dispatch_with('cmd))
+                p.config('cmd', dispatch = FUNC_LOOKUP)
 
-                    - But the same approach will be insufficient for dispatch,
-                      because Optopus does not know which functions to call.
+    - Rejected approach:
+        - User orders things consistently.
+        - Help: list[Section/Variant] aligning with order of choices.
+        - Dispatch: list[FUNC] aligning in the same way.
 
-                        - The user could supply a LOOKUP object.
-                            - An instance with the needed methods.
-                            - A class/module having the needed callable.
-                            - globals()
+        - This approach offer false promise.
+            - It is only marginally easier for the user to type.
+            - Resulting code is more brittle, less declarative.
 
-                        p.config('action', dispatch = dispatch_with('cmd', LOOKUP))
+Motivation for priority dispatch:
 
-                - Option 2:
-                    - User orders things consistently.
-                    - Order of <cmd> choices.
-                    - list[Section] and list[Variant].
+    - Most options control the primary behaviors of a program.
+    - But some are special, most notably those related to user help:
 
-                    - This approach offer false promise.
-                        - It is only marginally easier for the user to type.
-                        - Resulting code is more brittle, less declarative.
+        --help
+        --version
+        --examples
+        --demo
 
-                - Option 3:
-                    - User supplies mappings.
-                    - Works and is supported by the current API plan.
+    - Argument parsing libraries often provide a convenient mechanism for:
 
-    Dispatching examples to assess/mockup:
-        - naval-fate
-        - repo
+          --help    (usually)
+          --version (sometimes)
 
-    Prompting for var-inputs:
+    - But that support tends to be not as convenient for users as it could be.
 
-        - Examples: username, credentials.
+    - Consider a simple subcommand-style program.
+        - The program has both general and subcommmand help-text.
+        - Both <id> and <n> should be integers.
 
-        p.config('bar', prompt = PROMPT)
-        p.config('bar', password = PROMPT)   # Prompt via getpass.getpass().
+        demo [--help] [-n <n>] <action=print|delete> <id>
 
-        Where PROMPT:
-            - True: default Optopus prompting.
-            - MSG: same, but using MSG.
-            - callable: no args; should return str or raise
-            - (MSG, STREAM) tuple: args sent to getpass()
+    - If end-user supplies --help, an argument parser should:
 
-    Confirmation option: --yes.
-        - Click handles it.
-        - Should Optopus?
+        - 1. Print help text and exit
+        - 2. Select the help text that is relevant, given ARGS.
+        - 3. Ignore errors in ARGS to the extent possible.
 
-    API to control dispatching order:
+        - Examples of desired behavior:
 
-        - Under a very simple model where you just link callables to Opts,
-          how does the user convey calling order?
+            demo --help                # General help.
+            demo --help delete         # Delete help.
+            demo --help -n HI delete   # Same, in spite of invalid -n parameter.
 
-        - In most scripts I have written the order is critical.
+        - Most argument parsers:
+            - Do not easily support #2.
+            - Fail on #3: they gripe instead of helping.
 
-        - That suggests that Opt-level configuration is either a poor fit or
-          insufficient on its own.
+    - Optopus addresses those problems with two mechanisms:
+        - Priority options.
+        - Flexible dispatching.
 
-    Function signatures for convert/validate/check:
+    - There are limits, of course.
+        - Some bad input can reduce the accuracy of a best-effort parse.
+        - If parsing halts at unknown -Q:
+            - Either remaining ARGS will be ignored.
+            - Or 'HI' will be interpreted as an invalid <action>.
+        - Even item #3 above could be tricky:
+            - 'HI' is an invalid <n> and will halt parsing.
+            - How will Optopus know to provide delete-help rather than
+              general-help?
+        - It is not clear how far it is worth it to pursue a super-relaxed form
+          of parsing to glean more context for providing help.
 
-        * Relevant sections:
-            converters-validators
-            dispatch
+Why priority-opts should be restricted to flags or Options:
 
-        - convert:
-            - this one is clear.
-            - convert(STR) => VAL or raise
+    - Decision for now:
+        - Restrict to Options.
+        - Details TBD: 
+            - Mildly encourage users to restrict themselves to flags in docs.
+            - Think more about best-effort forms of parsing.
+            - Maybe restrict to flags later if such parsing seems not worth it.
 
-        - validate:
-            - I had some uncertainty about input-signature.
+    - Context:
+        - If an opt has priority.
+        - Its dispatching should occur no matter what.
+        - Even in the face of otherwise invalid ARGS.
+        - Example: --help.
 
-                Simple        | VAL
-                Context-aware | VAL, OPT, PARSER, OTHER
+    - But consider how parsing would work under those conditions:
 
-            - Tentative decision.
+        - Parsing of all ARGS fails.
+        - Select variant that did the best (eg, max N ARGS consumed).
+        - Optopus populates a Result up to the ARG that failed.
+        - What happens next?
 
-                - Add a third concept: check.
-                - Convert/validate do basic value handling.
-                - Check can handle situations needing contextual information.
-                - Note that check can reside on Arg or Opt.
+        - If a priority-opt is a flag:
+            - Parser is able to see that the flag is present.
+            - The test is easy: '--help' in ARGS
+            - It is able to locate the flag even if it occurs beyond the
+              position (in args) where the parsing halted.
 
-                convert  | STR
-                validate | VAL
-                check    | VAL, CONTEXT
+        - But if a priority-opt were allowed to be more complex:
+            - With Args having grammatical/validation requirements.
+            - How would Optopus successfully parse the entity?
+            - Parsing has already failed.
+            - An Opt could be marked as priority, but that configuration will
+              take effect only if the priority Opt appears to the left of the
+              point (in args) where the parsing halted.
 
-The argument passing details are important. Not everyone wants opts to be
-passed everywhere. In other notes, I planned to have dispatch functions called
-with three arguments.
+    - A possible counter-argument: let users do what the want:
+        - If the parse fails.
+        - Optopus selects the best-performing interpretation.
+        - Then populates a Result as best it can.
+        - If a priority Opt is set, then invoke its dispatch functions.
 
-    # I suspect that this plan is not good.
+        - In addition, the test for priority Options could be enhanced:
+            - First perform a simple membership test: Opt.name in ARGS.
+            - If yes:
+                - Try to parse that Opt.
+                - Starting just after the index of Opt.name in ARGS.
+                - That allows for a peek beyond index where parse() halted.
+            - That would allow for priority Option, such as:
+                --details <topic>
 
-    VAL | Value for the Opt
-    OPT | Opt triggering the call
-    RES | Result from Parser.parse()
+Priority options: rejected naming alternatives:
 
-Dispatch occurs after argument parsing and validation. At that point, it is not
-clear why the dispatch function needs VAL and OPT. Nor does it seem like users
-want all of their dispatch functions tied to a rigid signature (eg, always
-passing RES everywhere).
-
-Example API usages:
-
-    - The example is based on my pocket script, which could be reframed with
-      usage variants such as experiment, interactive, and rebuild.
-
-    - The imported RES is a simple configuration object to tell Optopus
-      to pass the parsed Result to the dispatch function.
-
-    - The RES.foo examples mean to pass the value of Result.foo.
-
-    - And the dispatcher() function returns a configured object telling Optopus
-      which args/kwargs to pass to the function. Its signature is 1+ callables
-      plus kwargs.
-
-        from optopus import Parser, RES, dispatcher
-
-        # Load the Pocket library and configure the Parser.
-        lib = ...
-        p = Parser(...)
-
-        # Some dispatchers.
-        de = dispatcher(experiment)
-        di = dispatcher(do_interactive, lib, RES)
-        dr = dispatcher(rebuild_library, limit = RES.limit, progress = RES.progress)
-
-        # Tie those dispatchers to usage variants.
-        p.config('experiment', dispatch = de)
-        p.config('interactive', dispatch = di)
-        p.config('rebuild', dispatch = dr)
-
-    - But is that better than a user would do on their own?
-
-        if opts.experiment:
-            experiment(...)
-        elif opts.interactive:
-            do_interactive(...)
-        elif opts.rebuild:
-            rebuild_library(...)
-
-That example illustrates one way to achieve a fairly generalized support for
-dispatching. A simpler usage form might also be nice -- namely, either a single
-callable or a sequence of callables. In this case they are simply passed the
-parsed Result.
-
-    p.config('foo', dispatch = f)
-    p.config('foo', dispatch = (g, h))
-
-Also worth considering whether it makes any sense to tie dispatching to
-positional and parameter variants. For example:
-
-    p.config('task=experiment', dispatch = de)
-    p.config('task=interactive', dispatch = di)
-    p.config('task=rebuild', dispatch = dr)
-
-Optopus aims to support behavior like this:
-
-    frob --help              # Print general help.
-    frob configure --help    # Print help for the configure task.
-
-How does the user configure this help dispatching. More generally, what about
-supporting other help-printing scenarios that rely not on --help but on some
-other options: for example, I've had programs where I want --examples to print
-some usage examples for the end-user.
-
-    - Simple use case: standard help feature for a command-line program.
-
-        p = Parser(help = True|False)
-
-    - Help hook: any time the library's help feature is triggered, call the
-      user's function with some params and let them return something to tell
-      the library which help section(s) to print, if any.
-
-        p = Parser(help = CALLABLE)
-
-    - That approach is flexible for the general case, but it does not speak to
-      the most common type of complex use case (a program with subcommands,
-      where the subcommands and help sections have a 1:1 correspondence). Some
-      additional conveniences to support dispatching based on subcommands --
-      or, more correctly, based on the value taken by a specific Opt.
-
-        # For 1:1 correspondence between help sections and Opt values.
-        o = Opt('task', help = 'sections')
-
-        # For more flexibility, supply mapping from Opt value to section name.
-        o = Opt('task', help = DICT)
+    - My early planning used 'high-precedence': verbose; unnatural.
+    - Click uses 'eager'.
+    - But their concept deals mainly with dispatch ordering.
+    - Click does not appear to support the concept of a priority-flag.
 
 --------
 argparse-and-greed: argparse and greediness
