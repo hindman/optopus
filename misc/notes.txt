@@ -24,60 +24,60 @@ toc: Table of contents
     discussion | Discussion
 
         name: str
-        api-vs-text                   | API-driven vs text-driven
-        other-lib-weaknesses          | Addressing weaknesses common in other libraries
-        other-goals                   | Other goals
-        standard-cli-grammar          | Standard command-line grammar
-        cli-grammar-vs-regex          | Command-line grammar vs. regex
-        subparsers-not-needed         | Optopus does not need the subparser concept
-        opt-action-not-needed         | Optopus does not need the action concept
-        explicit-var-input-syntax     | Why explicit syntax is needed for variable inputs
-        variable-input-spec           | Spec for variable input
-        opts-revised-OO-plan          | Revised OO plan for Opts and child elements
-        groups-can-be-parameters      | Options can have Groups as parameters
-        parser-config-api             | Parser.config() API
-        opt-and-arg-configuration     | Configuration of Opt and Arg
-        help-text-formatting-and-api  | Help text formatting and API
-        spec-parsing-general-approach | Spec parsing: general approach
-        arg-parsing-algo              | Parsing algorithm
-        alternative-parsing-algo      | Alternative parsing algorithm won't work after all
-        ambiguous-grammars            | Ambiguous grammars are not an issue
-        opt-choices-vs-choice         | Opt.choices vs Opt.choice
-        opt-independence              | Opt independence, duplicate names/dest, and opt-spec scope
-        parsed-data-structure         | Parsed data structuring: nargs, ntimes, and parmeters
-        parsed-data-with-context      | Including Context with the Result
-        eager-attachment-at-bounary   | Eager option attachment at repetition boundaries
-        spec-syntax-named-unnamed     | Spec-syntax: named and unnamed arguments
-        variants-needed               | Variants: why they are needed
-        general-name-assignment       | General name assignment: needed after all
-        spec-syntax-complexity        | Spec-syntax: is it too complex?
-        optional-positional-placement | Optional positionals before required are not a problem
-        parsing-modes                 | Parsing modes
-        zones-not-needed              | Zones not needed
-        dispatch-to-callables         | Dispatching to callables
-        prompting-for-var-inputs      | Prompting end-user for var-inputs
-        confirmation-option           | Supporting confirmation options like --yes
-        argparse-and-greed            | argparse and greediness
-        end-user-errors               | End-user errors
-        converters-validators         | Converters and validators
-        grammar-querying-api          | Grammar querying API
-        validation-notes              | Validation notes
-        strategy-reassessment         | Reassess the strategy
-        spec-syntax-revisited         | Spec-syntax revisited
-        spec-as-format-string         | Spec as a format string not needed
-        var-input-representation      | Representing var-inputs in spec-syntax
-        enhanced-quantifiers          | Enhanced quantifiers
-        opt-specs-and-opt-descs       | Opt-specs and opt-descs
-        group-level-validation-needed | Why Group-level validation should be retained
-        usage-text-and-named-groups   | Usage-text and named groups or choices
-        headings-in-spec-syntax       | Spec-syntax support for headings
-        arg-choices-in-usage-text     | Arg.choices in usage-text
-        groups-need-names             | Why Group needs both dest and name
-        degenerate-groups             | Degenerate groups with only one element
-        settings-and-opts             | Opts and settings (preferences and environment variables)
-        parser-serialization          | Parser serialization
-        man-pages-and-optopus         | Optopus and man-pages
-        readme-next-version           | README for next version
+        api-vs-text                    | API-driven vs text-driven
+        other-lib-weaknesses           | Addressing weaknesses common in other libraries
+        other-goals                    | Other goals
+        standard-cli-grammar           | Standard command-line grammar
+        cli-grammar-vs-regex           | Command-line grammar vs. regex
+        subparsers-not-needed          | Optopus does not need the subparser concept
+        opt-action-not-needed          | Optopus does not need the action concept
+        explicit-var-input-syntax      | Why explicit syntax is needed for variable inputs
+        variable-input-spec            | Spec for variable input
+        opts-revised-OO-plan           | Revised OO plan for Opts and child elements
+        groups-can-be-parameters       | Options can have Groups as parameters
+        parser-config-api              | Parser.config() API
+        opt-and-arg-configuration      | Configuration of Opt and Arg
+        help-text-formatting-and-api   | Help text formatting and API
+        spec-parsing-general-approach  | Spec parsing: general approach
+        arg-parsing-algo               | Parsing algorithm
+        alternative-parsing-algo       | Alternative parsing algorithm won't work after all
+        ambiguous-grammars             | Ambiguous grammars are not an issue
+        opt-choices-vs-choice          | Opt.choices vs Opt.choice
+        opt-independence               | Opt independence, duplicate names/dest, and opt-spec scope
+        parsed-data-structure          | Parsed data structuring: nargs, ntimes, and parmeters
+        parsed-data-with-context       | Including Context with the Result
+        eager-attachment-at-bounary    | Eager option attachment at repetition boundaries
+        spec-syntax-named-unnamed      | Spec-syntax: named and unnamed arguments
+        variants-needed                | Variants: why they are needed
+        general-name-assignment        | General name assignment: needed after all
+        spec-syntax-complexity         | Spec-syntax: is it too complex?
+        optional-positional-placement  | Optional positionals before required are not a problem
+        parsing-modes                  | Parsing modes
+        zones-not-needed               | Zones not needed
+        dispatch-to-callables          | Dispatching to callables
+        prompting-for-var-inputs       | Prompting end-user for var-inputs
+        confirmation-option            | Supporting confirmation options like --yes
+        argparse-and-greed             | argparse and greediness
+        end-user-errors                | End-user errors
+        converters-validators          | Converters and validators
+        grammar-querying-api           | Grammar querying API
+        validation-notes               | Validation notes
+        strategy-reassessment          | Reassess the strategy
+        opt-spec-subset-of-spec-syntax | Opt-spec syntax is a subset of the spec-syntax
+        spec-as-format-string          | Spec as a format string not needed
+        var-input-representation       | Representing var-inputs in spec-syntax
+        enhanced-quantifiers           | Enhanced quantifiers
+        opt-specs-and-opt-descs        | Opt-specs and opt-descs
+        group-level-validation-needed  | Why Group-level validation should be retained
+        usage-text-and-named-groups    | Usage-text and named groups or choices
+        headings-in-spec-syntax        | Spec-syntax support for headings
+        arg-choices-in-usage-text      | Arg.choices in usage-text
+        groups-need-names              | Why Group needs both dest and name
+        degenerate-groups              | Degenerate groups with only one element
+        settings-and-opts              | Opts and settings (preferences and environment variables)
+        parser-serialization           | Parser serialization
+        man-pages-and-optopus          | Optopus and man-pages
+        readme-next-version            | README for next version
 
     reference | Reference
 
@@ -3427,8 +3427,6 @@ Simpler approach:
 dispatch-to-callables: Dispatching to callables
 --------
 
-__HERE1__ : full-reread of notes.txt
-
 Overview:
 
     - Kinds of dispatch:
@@ -3448,6 +3446,7 @@ Overview:
             - Triggered by user supplying an Opt in a successful parse.
 
     - Special priority-flags:
+
         --help
         --version
 
@@ -3464,7 +3463,7 @@ Overview:
             - Default order = configuration order.
                 - Parser will track order of dispatch configuration, by Opt.
                 - If Opt has multiple callables: called in sequence order.
-            - If needed, API call can be used to modify the order [TBD].
+            - If needed, API can support modifying the order [TBD].
 
 API summary:
 
@@ -3472,13 +3471,16 @@ API summary:
         - FUNC:
             - Single-argument callable.
             - Or a sequence of them.
-            - Or a dict of them.
         - FUNC_LOOKUP:
             - dict[str => FUNC]
             - Object where getattr('foo') => FUNC.
         - bool:
-            - help: use default Optopus help function.
-            - priority: use noop function.
+            - help:
+                - True: use default Optopus help function.
+                - False: disable automatic support for --help.
+            - priority:
+                - True: use noop function.
+                - False: disable priority status for --help or --version.
 
     - Special priority-flags:
 
@@ -3525,27 +3527,39 @@ Calling protocol for dispatching:
                 - If the priority-option is present.
                 - Do not halt in the face of a failed parse().
 
+        - Prompted:
+            - Only after a successful parse().
+            - Before regular dispatch.
+
         - Regular:
             - Only after a successful parse().
 
     - Arguments pass to dispatch functions:
+
         - The parsed Result: opts.
         - The user can supply other data via user-Context.
 
-    - Return values expected from special flags:
+    - Return values expected from callables for special-flags:
+
+        - help and version:
+            - False:
+                - Optopus will do nothing.
+                - Dispatching continues.
+            - Raise HaltDispatch:
+                - Optopus halts dispatching.
+                - Program continues.
+                - Details below.
+            - Exit:
+                - Program halts.
 
         - help:
-            - bool: default Optopus help-text.
+            - True: default Optopus help-text.
             - text: Optopus will print it.
             - Section(s): help text for specific sections.
-            - (Section, Variant): ditto, with variant-specific usage-text.
-            - Any false: Optopus will do nothing.
-            - Exit: user function halts program.
+            - Two-tuple: (Sections, Variants): ditto, with specific usage-text.
 
         - version:
             - VER: default Optopus function, using VER as the version string.
-            - Any false: Optopus will do nothing.
-            - Exit: user function halts program.
 
     - Handling of return values from dispatch functions:
 
@@ -3562,6 +3576,7 @@ Calling protocol for dispatching:
         rs = opts('returns')
 
     - How a dispatch function can halt further dispatching:
+
         - Exit program.
         - Raise HaltDispatch. Optopus will check two attributes:
             - exit_code:
@@ -3582,13 +3597,13 @@ Why dispatch operates at the level of Opt, not Arg:
 
  Why "priority" couples two behaviors:
 
-    - Flexible parsing: simple membership test in ARGS.
-    - Dispatching priority.
+    1. Flexible parsing: simple membership test in ARGS.
+    2. Dispatching priority.
 
     - The behaviors are coupled under the most comman usage scenarios:
         - Main examples are --help, --version.
         - Other known examples: --examples, --details.
-        - If user wants priority without dispatch: priority=True.
+        - If user wants priority with noop dispatch: priority=True.
 
 Under what conditions does a dispatch function get called?
 
@@ -3666,8 +3681,8 @@ Special support for regular subcommand programs:
 
         - Configuration simplicity via naming consistency:
             - User names things consistently.
-            - The <cmd> choices.
-            - Names of Variants/Sections.
+                - The <cmd> choices.
+                - Names of Variants/Sections.
 
             - Help dispatch:
 
@@ -3746,7 +3761,7 @@ Why priority-opts should be restricted to flags or Options:
 
     - Decision for now:
         - Restrict to Options.
-        - Details TBD: 
+        - Details TBD:
             - Mildly encourage users to restrict themselves to flags in docs.
             - Think more about best-effort forms of parsing.
             - Maybe restrict to flags later if such parsing seems not worth it.
@@ -3804,6 +3819,10 @@ Priority options: rejected naming alternatives:
 prompting-for-var-inputs: Prompting end-user for var-inputs
 --------
 
+This is a form of dispatch, at least in its implementation protocol. It is a
+bit different than regular dispatch in the sense that it occurs before the full
+Result is available.
+
 Examples: username, credentials.
 
     p.config('bar', prompt = PROMPT)
@@ -3844,14 +3863,12 @@ Optopus could support this under the dispatch umbrella:
     Where CONFIRM:
         - bool: if True, use default Optopus prompt
         - MSG: same, but with the user-supplied prompt MSG.
-        - (MSG1, MSG2): same, but with user-supplied prompt-MSG and
-          exit-MSG.
+        - (MSG1, MSG2): same, with user-supplied prompt-MSG and exit-MSG.
         - callable:
             - Takes opts as parsed Result.
             - Should return True to confirm.
             - If False, program exits.
-            - If HaltDispatch is raised Optopus will check and act
-              accordingly.
+            - If HaltDispatch is raised Optopus will check and act accordingly.
 
 --------
 argparse-and-greed: argparse and greediness
@@ -3921,9 +3938,10 @@ Inferring intent from error types is tempting but not always so powerful:
 The resolution is to consider how other parsers behave:
 
     - They always try to consume as much of the input as possible. This
-      suggests that the first criterion for error-selection is to maximize S.ai.
+      suggests that the first criterion for error-selection is to maximize the
+      index of ARGS at which parsing halted.
 
-    - Multiple interpretations can fail with the same S.ai. To resolve ties,
+    - Multiple interpretations can fail with the same index. To resolve ties,
       consider how errors can occur (consuming an OPT, consuming a POS, or
       during final checks). For each of those cases, the error-reporting
       precedence is fairly clear-cut [listed below].
@@ -3959,63 +3977,57 @@ Types of errors in precedence order, by failure source:
 converters-validators: Converters and validators
 --------
 
-** Edit to reflect new policy: Result.context
-    - Dispatch: just a Result might be sufficient
-    - Validator: not sure about this one
-
-    - If a user wants to do ordinary convert/validate:
-        - Value-in and value-out (or raise).
-        - They can do all of it in the convert function.
-
-    - If a user has wider validation needs, they can use validate. But this
-      function will take more arguments.
-
-** Function signatures for convert/validate/check:
+Optopus supports three concepts to check Arg inputs:
 
     - convert:
-        - this one is clear.
-        - convert(STR) => VAL or raise
+        - Takes a str direct from ARGS.
+        - Returns a new value of the desired type.
+        - Optionally, can also perform validation.
 
     - validate:
-        - I had some uncertainty about input-signature.
+        - Takes a value (maybe str from ARGS; maybe a converted value).
+        - Returns a bool to indicate whether it is valid.
 
-            Simple        | VAL
-            Context-aware | VAL, OPT, PARSER, OTHER
+    - check:
+        - Takes an Opt and a Result.
+        - Returns a bool to indicate whether the Opt is OK.
 
-        - Tentative decision.
+    - General notes:
+        - The convert and validate operations are intended to perform basic
+          operations on the ARGS supplied by the end-user. Hence a simple
+          calling protocol focused on the values.
+        - The check operation is intended to support broader checks that might
+          require more contextual information, either about a full Opt (eg all
+          of its Arguments or Parameters) or about an Opt in the context of the
+          rest of the Result.
 
-            - Add a third concept: check.
-            - Convert/validate do basic value handling.
-            - Check can handle situations needing contextual information.
-            - Note that check can reside on Arg or Opt.
+Calling protocol:
 
-            convert  | STR
-            validate | VAL
-            check    | VAL, CONTEXT
+    - convert:
+        - Takes STR.
+        - Returns a VAL.
 
-Function signatures:
+    - validate:
+        - Takes a VAL.
+        - Returns bool to indicate validity.
 
-    Function  | Signature
-    -----------------------------------------------
-    Converter | STR            => OBJ/raise
-    Validator | VAL, OPT, RES  => True/False/raise
-    Dispatch  | VAL, OPT, RES  => None                # No. See dispatch section [above].
+    - check:
+        - Take a grammar element and the Result.
+        - The element is typically an Opt, but could be Group or Variant.
+        - Occurs at the end of the parsing process.
+        - All Args have been converted/validated.
+        - The full Result is known.
+        - Returns bool to indicate whether the check is OK.
 
-Users need not use both convert and validate:
-    - Optopus supports but does not require both.
-    - Users can do both tasks in convert.
-
-Errors raised during convert/validate:
-
-    - Optopus policy:
-        - Get MSG from the exception.
+    - If convert/validate/check raise:
+        - Optopus will get MSG, if any, from the exception.
         - Build the end-user-facing error message, with MSG at end.
 
-    - Other libraries require users to raise specific exceptions:
-        - Examples:
-            - argparse.ArgumentError
-            - click.BadParameter
-        - Seems like a needless hassle.
+        - Other libraries require users to raise specific exceptions:
+            - Examples:
+                - argparse.ArgumentError
+                - click.BadParameter
+            - Seems like a needless hassle.
 
 Support smart-types for convert/validate:
 
@@ -4089,6 +4101,10 @@ Querying grammar elements in a Parser:
         - Where ATTR:
             - Attribute name to match.
             - Default: ('name', 'dest').
+
+        - If negate=True:
+            - Select entities that do not meeting the criteria.
+            - Most likely useful as a subquery to filter out unwanted items.
 
     - Delegates the call to p.grammar.query().
 
@@ -4209,13 +4225,12 @@ Consider using a library:
     - valid8 is interesting but seems a bit over-engineered.
 
     - Its docs point to other tools that could have interesting ideas.
-        - I briefly check them.
+        - I briefly checked them.
         - Common patterns I dislike:
             - Specifying validation via decorators, docstrings, annotations.
             - Elaborate DSL syntaxes.
 
-If not a library, consider implementing a simple validation module for the
-project:
+Consider implementing a simple validation module for the project:
 
     - Some of the libraries I saw treated the process very formally, with a
       large API to learn.
@@ -4302,7 +4317,7 @@ scripts (EX_JOB_CLIENT), I realize I underestimated the power of the text-based
 configuration syntax.
 
     - It's true that I did find writing the literal help text tedious. I also
-      dislike the idea that it will lack dynamic formatting behavior.
+      disliked the idea that it would lack dynamic formatting behavior.
 
     - However, the API based configuration is very ineffecient and repetitive
       compared to the brevity, clarity, and intutiveness of the text approach.
@@ -4321,7 +4336,7 @@ programmer:
     - Choice values (if simple strings).
 
 The simplest, clearest way to write that material is as a block of options
-text. Lines likes these cover all of those bases:
+text. Lines likes these cover most of those bases:
 
     General::
     --job-id -j ID    : The job id.
@@ -4335,7 +4350,8 @@ And this text-centric approach is flexible in allowing a variety of
 usage patterns:
 
     - It can be treated as literal options text, for those who prefer that
-      approach. Essentialy, Optopus will support a Docopt mode.
+      approach. Essentialy, Optopus will support a Docopt mode [less certain
+      about this now].
 
     - But treating it as configuration syntax will be easier for many who (1)
       don't want to have to lay everything out precisely and (2) especially
@@ -4350,142 +4366,55 @@ the writeup place greater emphasis on some practical examples illustrating the
 superiority of the text-based approach over argparse.
 
 --------
-spec-syntax-revisited: Spec-syntax revisited
+opt-spec-subset-of-spec-syntax: Opt-spec syntax is a subset of the spec-syntax
 --------
 
-Enhance spec syntax increase its power, reducing user hassle:
+Opt-specs use a grammar subset, not an alternative grammar:
 
-    - Program name.
-    - Options text, optionally with section titles.
-    - Opt symbols.
-    - Regular text.
+    - Implication: options are not assumed to be optional.
+    - Square brackets required if intended.
 
-Simplify and unify the syntax:
+Supported subset of the full spec-syntax:
 
-    - Ensure that Optopus supports the full spectrum of usages, ranging from
-      quick-and-dirty to complex.
+    name
+    dest
+    nargs
+    ntimes
+    choices
+    aliases
+    help
 
-    - Prioritize ease of use for the simplest cases.
+Opt-spec lines can be confused with unnamed variants:
 
-        - Program name optional.
-        - Variant names optional.
-        - Section headings optional.
+    - The issue is fundamental.
+    - Not really addressable via extended peeks or other fancy parsing.
+    - Example: 3 variants or 3 bare-bones opt-spec lines?
 
-    - Minimize baroque syntax elements:
+        pgrep
+        <rgx>
+        --ignore-case -i
+        --invert-match -v
 
-        - Reduce special punctuation when possible.
-        - Meaningful whitespace is more intuitive that odd punctuation.
-        - Make surviving punctuation as unified/congruous as possible.
+Resolving the confusion:
 
-Use angle brackets for all variable end-user inputs:
+    - First, note that the ambiguous examples are not compelling use cases.
 
-    - See variable-end-user-input.
+    - Second, rely on a greedy parsing policy.
 
-Punctuation markers:
+        - In first section, first look for variants.
+        - Anything that could be a variant will be interpreted that way.
 
-    - Summary of plan:
+        - If user is unhappy with the parser:
+            - The configuration problem is easily noticed
+            - Also easily fixed: add a trailing colon to the first line that
+              should be treated as opt-spec rather than variant.
 
-        Situation       | Marker       | When required
-        -------------------------------------------------
-        Grammar section | Double colon | If variant(s)
-        Other sections  | Double colon | Always
-        Opt-spec        | Colon        | If help text
-        Variant         | Colon        | If named
+    - Rationale:
 
-    - Sections:
-
-        - The grammar section:
-
-            - Must appear first in the spec. If user wants a different section
-              ordering: define the sections in the spec; use API to move
-              sections as needed.
-
-            - No regular text.
-
-            - Default title is `Usage`, configurable only via API.
-
-        - The grammar section, regardless of form, can be followed by zero or
-          more other sections that:
-
-            - Must use marker.
-            - Can omit a title.
-            - Can define opt-spec lines.
-            - Can include regular text.
-
-            - If a line parses as opt-spec, it will be interpreted that way
-              (unless quoting is used).
-
-        - What if the user does not want a trailing colon on section titles?
-
-            - Let them adjust via the API.
-
-    - opt-spec:
-
-        - Supported Opt grammar subset:
-
-            sym
-            dest
-            nargs
-            ntimes
-            choices
-            aliases
-            text
-
-        - Note that opt-spec uses a grammar subset, not an alternative grammar:
-
-            - This means, for example, that options are not assumed
-              to be optional: square brackets required if intended.
-
-        - Note that opt-spec lines can be confused with unnamed variants. The
-          issue is fundamental, not really addressable via extended peeks or
-          other fancy parsing. For example, does this spec define 3 variants or
-          3 bare-bones opt-spec lines?
-
-            pgrep
-            <rgx>
-            --ignore-case -i
-            --invert-match -v
-
-            - Ultimately, I decided to rely on a greedy parsing policy to
-              address this potential ambiguity.
-
-                - The ambiguous examples are not compelling use cases.
-                - In first section, first look for variants.
-                - If user is unhappy with the parser, the configuration problem
-                  is easily noticed and easily fixed (add a trailing colon to
-                  the first lines that should be treated as opt-spec rather
-                  than variant).
-
-        - The most common use case is to derive grammar from 1+ opt-spec
-          sections. It works well for many standard grammar needs, and opt-spec
-          is more featureful than variant (because it supports aliases and
-          help text). So the no-variant use case should have the least hassle.
-
-Dest, sym, and values:
-
-    - Examples without choices:
-
-        Example                 | Usage text            | Dest
-        ------------------------------------------------------------------
-        <paths>...              | <paths>...            | paths
-        <path.paths>...         | <path>...             | paths
-        <PATH!paths>...         | PATH...               | paths
-        ------------------------------------------------------------------
-        --strategy <s>          | --strategy <s>        | strategy
-        --elems <e> <e> [<e>]   | --elems <e> <e> [<e>] | elems
-        --point <row.x> <COL!y> | --point <row> COL     | point.x, point.y
-        --point <.x> <.y>       | --point <p> <p>       | point.x, point.y
-        --point <> <>           | --point <p> <p>       | point
-        ------------------------------------------------------------------
-
-    - Examples involving choices and positional/parameter variants:
-
-        Example               || Usage text        || Dest
-        --------------------------------------------------------------------
-        <mode=fast|slow>      || <fast|slow>       || mode
-        <mode=fast>           || fast              || mode
-        <MODE.mode=fast|slow> || mode              || mode
-        <MODE!mode=fast|slow> || MODE              || mode
+        - The most common use case is to derive grammar from 1+ opt-specs.
+        - It works well for many standard grammar needs, and opt-spec is more
+          featureful than variant (because it supports aliases and help text).
+        - So the no-variant use case should have the least hassle.
 
 --------
 spec-as-format-string: Spec as a format string not needed
@@ -4604,8 +4533,7 @@ Verdict: angle style:
         [--point <x> <y>] <z>  # 2-param option, required positional.
 
     - If needed later, support other styles for usage text and grammar
-      syntax (especially sensitive). Note that sensitive style in usage
-      text is partially supported via the SYM! notation.
+      syntax (especially sensitive).
 
 --------
 enhanced-quantifiers: Enhanced quantifiers
@@ -5104,6 +5032,14 @@ But when an Arg has either choices or choice, things change:
 --------
 groups-need-names: Why Group needs both dest and name
 --------
+
+__HERE1__ : full-reread of notes.txt
+
+** ISSUE:
+
+    - Try to mockup the usage-text for EX_NAB.
+    - How will user achieve sensible usage-text for a case like this?
+    - The mockup below seems to be working with an outdated plan.
 
 Why Group needs a dest:
 
