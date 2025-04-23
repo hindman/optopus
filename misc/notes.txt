@@ -55,6 +55,8 @@ toc: Table of contents
         parsing-modes                 | Parsing modes
         zones-not-needed              | Zones not needed
         dispatch-to-callables         | Dispatching to callables
+        prompting-for-var-inputs      | Prompting end-user for var-inputs
+        confirmation-option           | Supporting confirmation options like --yes
         argparse-and-greed            | argparse and greediness
         end-user-errors               | End-user errors
         converters-validators         | Converters and validators
@@ -3427,83 +3429,38 @@ dispatch-to-callables: Dispatching to callables
 
 __HERE1__ : full-reread of notes.txt
 
-** Section overhaul notes:
-
-    ** Move to other sections:
-
-        Prompting for var-inputs:
-
-            - Examples: username, credentials.
-
-            p.config('bar', prompt = PROMPT)
-            p.config('bar', password = PROMPT)   # Prompt via getpass.getpass().
-
-            Where PROMPT:
-                - True: default Optopus prompting.
-                - MSG: same, but using MSG.
-                - callable: no args; should return str or raise
-                - (MSG, STREAM) tuple: args sent to getpass()
-
-        Confirmation option: --yes.
-            - Click handles it.
-            - Should Optopus?
-
-        Function signatures for convert/validate/check:
-
-            * Relevant sections:
-                converters-validators
-                dispatch
-
-            - convert:
-                - this one is clear.
-                - convert(STR) => VAL or raise
-
-            - validate:
-                - I had some uncertainty about input-signature.
-
-                    Simple        | VAL
-                    Context-aware | VAL, OPT, PARSER, OTHER
-
-                - Tentative decision.
-
-                    - Add a third concept: check.
-                    - Convert/validate do basic value handling.
-                    - Check can handle situations needing contextual information.
-                    - Note that check can reside on Arg or Opt.
-
-                    convert  | STR
-                    validate | VAL
-                    check    | VAL, CONTEXT
-
-    ** Check these mockups in light on dispatching plan:
-        - naval-fate
-        - repo
-
-    ** Continue with notes.txt editing pass, starting with this section.
-
 Overview:
 
-    - Two kinds of dispatch:
-
-        - Regular:
-            - Any Opt.
-            - Triggered by user supplying an Opt in a successful parse.
+    - Kinds of dispatch:
 
         - Priority:
             - Any Option.
             - Triggered by presense among args, even if the parse fails.
+
+        - Prompted:
+            - Any Opt.
+            - Get Arg input(s) via prompting.
+            - Includes confirmation Opts (eg --yes).
+            - Occurs only after successful parse.
+
+        - Regular:
+            - Any Opt.
+            - Triggered by user supplying an Opt in a successful parse.
 
     - Special priority-flags:
         --help
         --version
 
     - Dispatch order:
+
         - Priority --help.
         - Priority --version.
+
         - Priority Opts.
+        - Prompted Opts [discussed in separate sections].
         - Regular Opts.
 
-        - Within the last two groups:
+        - Within the last 3 groups:
             - Default order = configuration order.
                 - Parser will track order of dispatch configuration, by Opt.
                 - If Opt has multiple callables: called in sequence order.
@@ -3844,6 +3801,59 @@ Priority options: rejected naming alternatives:
     - Click does not appear to support the concept of a priority-flag.
 
 --------
+prompting-for-var-inputs: Prompting end-user for var-inputs
+--------
+
+Examples: username, credentials.
+
+    p.config('bar', prompt = PROMPT)
+    p.config('bar', password = PROMPT)   # Prompt via getpass.getpass().
+
+    Where PROMPT:
+        - True:
+            - Default Optopus prompting.
+        - MSG:
+            - Same, but using MSG.
+        - callable:
+            - Called with opts (Result so far).
+            - Should return VAL or raise.
+            - The VAL will then go through the Opt's convert/validate/check.
+        - (MSG, STREAM) tuple:
+            - Args sent to getpass().
+
+--------
+confirmation-option: Supporting confirmation options like --yes
+--------
+
+Decision for now:
+    - Deferred.
+    - Seems doable within current plans for dispatching.
+    - This would be a type of prompted Opt.
+
+Click supports something called a confirmation option:
+    - Example: --yes.
+
+    - I presume it works like this:
+        - End-user supplies --yes: no prompting occurs.
+        - Otherwise, prompt the user before proceeding with dispatch.
+
+Optopus could support this under the dispatch umbrella:
+
+    p.config('yes', confirm = CONFIRM)
+
+    Where CONFIRM:
+        - bool: if True, use default Optopus prompt
+        - MSG: same, but with the user-supplied prompt MSG.
+        - (MSG1, MSG2): same, but with user-supplied prompt-MSG and
+          exit-MSG.
+        - callable:
+            - Takes opts as parsed Result.
+            - Should return True to confirm.
+            - If False, program exits.
+            - If HaltDispatch is raised Optopus will check and act
+              accordingly.
+
+--------
 argparse-and-greed: argparse and greediness
 --------
 
@@ -3959,6 +3969,29 @@ converters-validators: Converters and validators
 
     - If a user has wider validation needs, they can use validate. But this
       function will take more arguments.
+
+** Function signatures for convert/validate/check:
+
+    - convert:
+        - this one is clear.
+        - convert(STR) => VAL or raise
+
+    - validate:
+        - I had some uncertainty about input-signature.
+
+            Simple        | VAL
+            Context-aware | VAL, OPT, PARSER, OTHER
+
+        - Tentative decision.
+
+            - Add a third concept: check.
+            - Convert/validate do basic value handling.
+            - Check can handle situations needing contextual information.
+            - Note that check can reside on Arg or Opt.
+
+            convert  | STR
+            validate | VAL
+            check    | VAL, CONTEXT
 
 Function signatures:
 
