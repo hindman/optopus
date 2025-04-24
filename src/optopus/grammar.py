@@ -198,6 +198,11 @@ def define_tokdefs():
     cnm = c(r.name)
 
     # Tuples to define TokDef instances.
+    #
+    # - Emit: becomes a bool; false shown as 0.0 so that they stand out visually.
+    # - Modes: single-letter keys to get specific Pmodes.
+    # - Pattern: glued together via regex snippets.
+    #
     tups = (
         # Kind             Emit  Modes    Pattern
         # - Quoted.
@@ -297,7 +302,7 @@ class RegexLexer(object):
 
     def __init__(self, text, validator, tokdefs = None):
         # Inputs:
-        # - Text to be lexxed.
+        # - Text to be lexed.
         # - Validator function from parser to validate tokens.
         # - TokDefs currently of interest.
         self.text = text

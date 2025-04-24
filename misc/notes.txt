@@ -64,7 +64,7 @@ toc: Table of contents
         validation-notes               | Validation notes
         strategy-reassessment          | Reassess the strategy
         opt-spec-subset-of-spec-syntax | Opt-spec syntax is a subset of the spec-syntax
-        spec-as-format-string          | Spec as a format string not needed
+        help-text-as-format-strings    | Help text elements as format-strings
         var-input-representation       | Representing var-inputs in spec-syntax
         enhanced-quantifiers           | Enhanced quantifiers
         opt-specs-and-opt-descs        | Opt-specs and opt-descs
@@ -85,7 +85,6 @@ toc: Table of contents
         parsing-process-generally          | Parsing process generally
         pegs-cfgs-and-packrat-parsing      | PEGs, CFGs, and packrat parsing
         grammar-types                      | Grammar types
-        api-driven-vs-text-driven-examples | API-driven vs text-driven examples
         other-tools                        | Other tools
         problems-scenarios-from-argparse   | Problems scenarios from argparse
         example-grammars                   | Example grammars
@@ -94,27 +93,29 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Editing pass:
+Code reorientation:
 
-    __HERE1__ : full-reread of notes.txt
+    - Run and read tests.
+    - Scan through the modules.
+    - Find out the state of parsing API and what is runnable.
 
-    - Edit to conform to new specification.
-    - Add 'Summary' at the top of section, where applicable.
-    - Collect: questions, examples, terminology, road-map items.
+Drop attrs and general dev setup:
 
-One more editing pass:
-    - specification
-    - road-map
-    - todos
+    - Convert code to dataclasses.
+    - Modify setup.py:
+        - attrs: drop
+        - kwexception: add
+    - Create new virtualenv.
+    - Get things back to runnable state.
+    - Update dev-notes and tasks.py, if needed.
 
-Reread:
-    - dev-notes
-    - setup.py etc
-    - code
-    - arg-parsing-algo
+Spec-parsing:
 
-Spec parsing.
-    - Convert spec-syntax AST into a Grammar.
+    - Read current code
+    - Read arg-parsing-algo
+
+    - Resume code work:
+        - Next step might be: Convert spec-syntax AST into a Grammar.
 
 Argument parsing.
 
@@ -125,6 +126,9 @@ Docs: proper README [see readme-next-version].
 Upgrade classifers to beta.
 
 Release.
+
+Plan next release:
+    - Edit road-map.
 
 --------
 new-notes: New notes
@@ -608,6 +612,17 @@ naval-fate:
     - click-naval-fate.py
     - optopus-naval-fate.py
     - docopt-naval-fate
+
+API-driven configuration vs text-driven configuration:
+
+    - See misc/examples/spec-vs-api/
+
+    - Simple programs.
+        get-pocket-items
+        daily-reading
+
+    - More complex examples.
+        job-client-*
 
 --------
 terminology: Terminology
@@ -4417,26 +4432,132 @@ Resolving the confusion:
         - So the no-variant use case should have the least hassle.
 
 --------
-spec-as-format-string: Spec as a format string not needed
+help-text-as-format-strings: Help text elements as format-strings
 --------
 
-Initially I thought it would be useful to allow the spec to function as a
-format string.
+When writing help-text elements, a user sometimes needs to refer to data that
+is best known to Optopus. Some common and conceivable use cases:
 
-But if the format() call occurs early (before spec parsing), there is no
-purpose served: the user could just call format() to create the spec in the
-first place.
+    - Opt help-text:
+        - List the choices.
+        - State the default.
 
-There might be a use case for calling format() after parsing has derived
-grammar and opt-spec metadata.
+    - General help-text:
+        - List or mention subcommand choices.
+        - Document usage variants, in situations where the usage-text generated
+          by Optopus uses a symbolic name (eg, separator based grammars).
 
-    - Presumably the purpose would be to insert material into help text that is
-      more under the domain of Optopus than the user.
+API overview:
 
-    - Another possible use case is to call format() after end-user
-      arguments are parsed -- eg, in response to error.
+    - User configures Parser:
 
-    - Defer this until a use case is known.
+        p = Parser(SPEC)
+        p.config(...)
+
+    - User tells Optopus to format the help-texts.
+
+        p.format_help_texts(**kws)
+
+    - What Optopus will do:
+
+        - Traverse the Grammar.
+        - Call str.format(self = self, **kws) on all help-text elements.
+        - Where self is the configured Parser.
+        - Elements having formatting-braces will be augmented.
+        - Those without them will be unchanged.
+
+    - Syntax supported in the formatting-braces:
+
+        - Generally: regular Python using the regular Optopus API.
+
+        - Plus support for an abbreviated syntax for opt-specs:
+
+            - OPT will be replaced by the syntax to get() the needed element
+              (Opt, Arg, or Choice).
+
+            - Example:
+
+                [--style <s>] : Set style to {OPT.choices_help}
+
+            - During spec-parsing, Optopus will convert the help-text for
+              that Opt into the following:
+
+                Set style to {self.get('style').choices_help}
+
+            - Then the user's subsequent call of format_help_texts() will do
+              the right thing.
+
+A few API conveniences:
+
+    - choices_help: the choices, comma-delimited:
+
+        'foo, bar, fubb'
+
+    - choices_default_help: same, followed by default:
+
+        'foo, bar, fubb [default: foo]'
+
+    - usage_text: usage text for any grammar element.
+
+        - See example below.
+
+A more complex example: documenting partial variants:
+
+    - Consider EX_NAB, which has the following variants:
+
+        - The variants.
+
+            [--trace] commands=(chomp! | findall! | grep! | range! | run!)...
+            --help
+
+        - API:
+
+            p.config('commands', name = 'command')
+
+        - The usage-text.
+
+            nab [--trace] <command>...
+            nab --help
+
+    - How will user document the actual grammar, which lives in the partials?
+
+    - One approach is to document them using format_help_texts():
+
+        - Add the following to the SPEC, after the variants
+
+            Where <command>:::
+                {p.get('chomp').usage_text}
+                {p.get('findall').usage_text}
+                ...
+
+        - The usage-text:
+
+            nab [--trace] <command>...
+            nab --help
+
+            Where <command>:
+                chomp
+                findall <rgx> [-a]
+                ...
+
+    - Another approach: unnamed Group, plus an indented usage style:
+
+        - This will cause Optopus to document the full grammar explicitly.
+        - That will make the usage less readable.
+
+        - But the user could tell Optopus to use an indented style for
+          the main Variant, producing something like this:
+
+            nab [--trace] (
+                    chomp |
+                    findall <rgx> [-a] |
+                    grep <rgx> [-i] [-v] [-s] |
+                    range <start> <stop> [<step>] [-g] |
+                    run <code> [-g <>] [-a] [-v] [-i]
+                )...
+            nab --help
+
+        - For now, this API possibility is deferred.
 
 --------
 var-input-representation: Representing var-inputs in spec-syntax
@@ -5033,14 +5154,6 @@ But when an Arg has either choices or choice, things change:
 groups-need-names: Why Group needs both dest and name
 --------
 
-__HERE1__ : full-reread of notes.txt
-
-** ISSUE:
-
-    - Try to mockup the usage-text for EX_NAB.
-    - How will user achieve sensible usage-text for a case like this?
-    - The mockup below seems to be working with an outdated plan.
-
 Why Group needs a dest:
 
     - Example: EX_NAB.
@@ -5106,33 +5219,6 @@ In early planning work, Group had dest but no name.
       name attribute across all grammar entities.
     - Namely, that the 'name' is the primary decide to represent the entity
       both in usage-text (directly) and the API (via queries).
-
-But consider the usage text for nab: EX_NAB:
-
-    - The fully-explicit usage is unwieldy:
-
-        Usages:
-            nab [--trace] (chomp | findall <rgx> [-a] | grep <rgx> [-i] [-v]
-                [-s] | range <start> <stop> [<step>] [-g] | run <code> [-g <>]
-                [-a] [-v] [-i])...
-            nab --help
-
-    - More intuitive would be documenting usage via partial-variants:
-
-        Usage:
-            nab [--trace] command...
-            nab --help
-
-            Where command:
-                chomp
-                findall <rgx> [-a]
-                grep <rgx> [-i] [-v] [-s]
-                range <start> <stop> [<step>] [-g]
-                run <code> [-g <>] [-a] [-v] [-i]
-
-    - The Group.name provides the mechanism to achive outcomes like that.
-        - As with other grammar entities, the name is the
-          symbolic representative in usage-text.
 
 Optopus users can achieve various usage-text styles for Groups:
 
@@ -5559,12 +5645,12 @@ Chomsky Hierarchy:
     class of language it generates, the type of automaton that recognizes it, and
     the form its rules must have.
 
-    Grammar | Languages               | Recognizer automaton       | Allowed production rules
+    Grammar | Languages              | Recognizer automaton       | Allowed production rules
     -----------------------------------------------------------------------------------
-    Type-3  | Regular                 | Finite state               | A   => a | aB
-    Type-2  | Context-free            | Non-deterministic pushdown | A   => x
-    Type-1  | Context-sensitive       | LB-ND Turing machine       | xAy => xzy
-    Type-0  | Recursively enumberable | Turing machine             | z   => x
+    Type-3  | Regular                | Finite state               | A   => a | aB
+    Type-2  | Context-free           | Non-deterministic pushdown | A   => x
+    Type-1  | Context-sensitive      | LB-ND Turing machine       | xAy => xzy
+    Type-0  | Recursively enumerable | Turing machine             | z   => x
 
     Symbols and abbreviations:
 
@@ -5634,19 +5720,6 @@ Chomsky Hierarchy:
 
         - Context-sensitive (Type-0) is wide open, no constraints on the
           grammar.
-
---------
-api-driven-vs-text-driven-examples: API-driven vs text-driven examples
---------
-
-misc/examples/spec-vs-api/
-
-    # Simple programs.
-    get-pocket-items
-    daily-reading
-
-    # More complex examples.
-    job-client-*
 
 --------
 other-tools: Other tools
