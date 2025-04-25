@@ -4,6 +4,20 @@ from optopus.grammar import (
     TokDefs,
 )
 
+def dump_grammar(tr, sp, g):
+    tr.dump('')
+    print('# TEXT')
+    print(sp.text)
+    print('\n# GRAMMAR')
+    for line in g.pp(g):
+        print(line)
+
+def test_readme_ex1(tr):
+    spec = 'pgrep [-i] [-v] <rgx>{1,3} <path>'
+    sp = SpecParser(spec)
+    g = sp.parse()
+    # dump_grammar(tr, sp, g)
+
 def test_readme_examples(tr):
     # A minimal test to make sure we can parse the examples
     # from the README to completion.
@@ -94,11 +108,4 @@ foo bar fubb.
         g = sp.parse()
 
         continue
-
-        tr.dump('')
-        print('# TEXT')
-        print(sp.text)
-        print('\n# GRAMMAR')
-        for line in g.pp(g):
-            print(line)
 

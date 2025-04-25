@@ -93,20 +93,18 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Code reorientation:
-
-    - Run and read tests.
-    - Scan through the modules.
-    - Find out the state of parsing API and what is runnable.
+Document how these work in more detail:
+    - RegexLexer
+    - SpecParser
 
 Drop attrs and general dev setup:
 
-    - Convert code to dataclasses.
-    - Modify setup.py:
-        - attrs: drop
-        - kwexception: add
+    x Convert code to dataclasses.
+    x Modify setup.py:
+        x attrs: drop
+        x kwexception: add
+
     - Create new virtualenv.
-    - Get things back to runnable state.
     - Update dev-notes and tasks.py, if needed.
 
 Spec-parsing:
@@ -310,8 +308,8 @@ Publish:
 Installing from test pypi:
 
     pip install --index-url https://test.pypi.org/simple/ optopus
-    pip uninstall attrs short-con
-    pip install attrs short-con
+    pip uninstall short-con
+    pip install short-con
 
 Tag file creation:
 

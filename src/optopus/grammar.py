@@ -16,134 +16,141 @@ TODO:
 # Imports.
 ####
 
-import attr
-import re
-from short_con import cons, constants
 import inspect
-from functools import cache
+import re
+
 from collections import OrderedDict
+from dataclasses import dataclass, replace as clone
+from functools import cache
+from short_con import cons, constants
 
 from .errors import OptopusError
-
-def attrcls(*names):
-    # Takes attribute names as list or space-delimited string.
-    # Returns a class decorator that will add attributes
-    # to the given class. Invoke this decorator so that it
-    # executes before @attr.s().
-    names = tuple(nm for name in names for nm in name.split())
-
-    def decorator(cls):
-        for nm in names:
-            setattr(cls, nm, attr.ib())
-        return cls
-
-    return decorator
 
 ####
 # Data classes.
 ####
 
-@attr.s(frozen = True)
-@attrcls('kind regex modes emit')
+@dataclass(frozen = True)
 class TokDef:
-    pass
+    kind: str
+    regex: str
+    modes: list
+    emit: bool
 
-@attr.s(frozen = True)
-@attrcls('kind text m width pos line col nlines isfirst indent newlines')
+@dataclass(frozen = True)
 class Token:
+    kind: str
+    text: str
+    m: int
+    width: int
+    pos: int
+    line: int
+    col: int
+    nlines: int
+    isfirst: bool
+    indent: int
+    newlines: int
 
     def isa(self, *tds):
         return any(self.kind == td.kind for td in tds)
 
-@attr.s(frozen = True)
-@attrcls('name')
+@dataclass(frozen = True)
 class Prog:
-    pass
+    name: str
 
-@attr.s(frozen = True)
-@attrcls('name is_partial elems')
+@dataclass(frozen = True)
 class Variant:
-    pass
+    name: str
+    is_partial: bool
+    elems: list
 
-@attr.s(frozen = True)
-@attrcls('elems text')
+@dataclass(frozen = True)
 class OptHelp:
-    pass
+    elems: list[str]
+    text: str
 
-@attr.s(frozen = True)
-@attrcls('title')
+@dataclass(frozen = True)
 class SectionTitle:
-    pass
+    title: str
 
-@attr.s(frozen = True)
-@attrcls('text')
+@dataclass(frozen = True)
 class QuotedBlock:
-    pass
+    text: str
 
-@attr.s(frozen = True)
-@attrcls('text')
+@dataclass(frozen = True)
 class QuotedLiteral:
-    pass
+    text: str
 
-@attr.s(frozen = True)
-@attrcls('name')
+@dataclass(frozen = True)
+class Quantifier:
+    m: int
+    n: int
+    greedy: bool
+
+@dataclass(frozen = True)
 class PartialUsage:
-    pass
+    text: str
 
-@attr.s(frozen = True)
-@attrcls('elems quantifier')
+@dataclass(frozen = True)
 class Parenthesized:
-    pass
+    elems: list
+    quantifier: Quantifier
 
-@attr.s(frozen = True)
-@attrcls('elems quantifier')
+@dataclass(frozen = True)
 class Bracketed:
-    pass
+    elems: list
+    quantifier: Quantifier
 
-@attr.s(frozen = True)
-@attrcls('sym dest symlit val vals')
+@dataclass(frozen = True)
 class SymDest:
-    pass
+    sym: str
+    dest: str
+    symlit: str
+    val: str
+    vals: list
 
-@attr.s(frozen = True)
-@attrcls('sym dest symlit choices quantifier')
+@dataclass(frozen = True)
 class Positional:
-    pass
+    sym: str
+    dest: str
+    symlit: str
+    choices: list
+    quantifier: Quantifier
 
-@attr.s(frozen = True)
-@attrcls('dest params quantifier')
+@dataclass(frozen = True)
 class Option:
-    pass
+    dest: str
+    params: list
+    quantifier: Quantifier
 
-@attr.s(frozen = True)
-@attrcls('')
+@dataclass(frozen = True)
 class ChoiceSep:
     pass
 
-@attr.s(frozen = True)
-@attrcls('m n greedy')
-class Quantifier:
-    pass
-
-@attr.s(frozen = True)
-@attrcls('sym dest symlit choice')
+@dataclass(frozen = True)
 class PositionalVariant:
-    pass
+    sym: str
+    dest: str
+    symlit: str
+    choice: str
 
-@attr.s(frozen = True)
-@attrcls('sym dest symlit choices')
+@dataclass(frozen = True)
 class Parameter:
-    pass
+    sym: str
+    dest: str
+    symlit: str
+    choices: list
 
-@attr.s(frozen = True)
-@attrcls('sym dest symlit choice')
+@dataclass(frozen = True)
 class ParameterVariant:
-    pass
+    sym: str
+    dest: str
+    symlit: str
+    choice: str
 
-@attr.s(frozen = True)
-@attrcls('elems')
+@dataclass(frozen = True)
 class Grammar:
-    pass
+    elems: list
 
     @staticmethod
     def pp(elem, level = 0):
@@ -449,10 +456,10 @@ class RegexLexer(object):
 # SpecParser.
 ####
 
-@attr.s(frozen = True)
+@dataclass(frozen = True)
 class Handler:
-    method = attr.ib()
-    next_mode = attr.ib()
+    method: object
+    next_mode: str
 
 class SpecParser:
 
@@ -797,7 +804,7 @@ class SpecParser:
             if e and isinstance(e, takes_quantifier):
                 q = self.quantifier()
                 if q:
-                    e = attr.evolve(e, quantifier = q)
+                    e = clone(e, quantifier = q)
                 elems.append(e)
             elif e:
                 elems.append(e)

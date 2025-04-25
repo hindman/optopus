@@ -17,6 +17,8 @@
 ####
 
 from invoke import task
+from glob import glob
+import subprocess
 
 LIB = 'optopus'
 
@@ -29,15 +31,40 @@ def tags(c):
     c.run('mtags --recipe .opttxt --write u --toc order')
 
 @task
-def test(c, cov = False):
+def test(c, func = None, cov = False):
     '''
-    Run pytest, optional opening coverage report.
+    Run pytest. optionally opening coverage report.
     '''
+    # Set the target: the thing to be tested.
+    if func is None:
+        target = 'tests'
+    else:
+        path = path_for_test_func(func)
+        target = f'{path}::{func}'
+    # Build pytest command.
     cov_args = f'--cov {LIB} --cov-report html' if cov else ''
-    cmd = 'pytest --color yes -s -v {} tests'.format(cov_args)
+    cmd = f'pytest --color yes -s -vv {cov_args} {target}'
+    # Run and cover.
     c.run(cmd)
     if cov:
         c.run('open htmlcov/index.html')
+
+def path_for_test_func(func):
+    # Takes a test function name.
+    # Returns the path to its test file, or exits.
+    tests = glob('tests/test_*.py')
+    args = ['ack', '-l', f'^def {func}'] + tests
+    result = subprocess.run(args, stdout = subprocess.PIPE)
+    out = result.stdout.decode('utf-8').strip()
+    paths = out.split('\n') if out else []
+    n = len(paths)
+    if n == 1:
+        return paths[0]
+    elif n == 0:
+        sys.exit('No matching paths.')
+    else:
+        txt = '\n'.join(paths)
+        sys.exit(f'Too many matching paths.\n{txt}')
 
 @task
 def tox(c):
