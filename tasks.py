@@ -16,9 +16,12 @@
 #
 ####
 
-from invoke import task
-from glob import glob
 import subprocess
+import sys
+
+from glob import glob
+from invoke import task
+from pathlib import Path
 
 LIB = 'optopus'
 
@@ -81,7 +84,7 @@ def dist(c, publish = False, test = False, verbose = False):
     '''
     repo = 'testpypi' if test else 'pypi'
     c.run('rm -rf dist')
-    c.run('python setup.py sdist bdist_wheel')
+    c.run('python -m build')
     c.run('echo')
     c.run('twine check dist/*')
     if publish:
@@ -89,9 +92,9 @@ def dist(c, publish = False, test = False, verbose = False):
         c.run(f'twine upload -r {repo} dist/* {vflag}')
 
 @task
-def bump(c, kind = 'minor', local = False):
+def bump(c, kind = 'minor', edit_only = False, push = False, suffix = None):
     '''
-    Version bump: minor unless --kind major|patch. Commits/pushes unless --local.
+    Version bump: --kind <minor|major|patch> [--edit-only] [--push] [--suffix <msg>]
     '''
     # Validate.
     assert kind in ('major', 'minor', 'patch')
@@ -119,7 +122,10 @@ def bump(c, kind = 'minor', local = False):
         print(f'Bumped to {version}.')
 
     # Commit and push.
-    if not local:
-        c.run(f"git commit {path} -m 'Version {version}'")
-        c.run('git push origin master')
+    if not edit_only:
+        suffix = '' if suffix is None else f': {suffix}'
+        msg = f'Version {version}{suffix}'
+        c.run(f"git commit {path} -m '{msg}'")
+        if push:
+            c.run('git push origin master')
 

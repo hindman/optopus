@@ -1,13 +1,6 @@
 
 '''
 
-Status at the end of prior work:
-    - Able to lex/parse the README examples to an AST.
-    - Looks good so far after some moderately thorough verification.
-
-TODO:
-    - Convert grammar-syntax AST into a Grammar.
-
 '''
 
 ####
@@ -30,9 +23,19 @@ from .errors import OptopusError
 
 @dataclass(frozen = True)
 class TokDef:
+    # Defines how to find and process a Token.
+
+    # Token kind/name.
     kind: str
-    regex: str
-    modes: list
+
+    # Regex to match the token.
+    regex: re.Pattern
+
+    # Parsing modes that use the Token.
+    modes: tuple[str]
+
+    # Whether the RegexLexer should emit the Token back to the
+    # SpecParser (or just consume it and update lexer position).
     emit: bool
 
 @dataclass(frozen = True)
@@ -868,6 +871,15 @@ class SpecParser:
     ####
 
     def elems(self):
+        # TODO:
+        # - name is cryptic
+        # - what is the theme here?
+        #
+        # - Shouldn't takes_quantifier be set in each dataclass?
+        # - The code using this function speaks of a ParseElem:
+        #   - what is that?
+        #   - should it be formalized: eg a base dataclass
+
         elems = []
         takes_quantifier = (Parenthesized, Bracketed, Positional, Option)
         while True:

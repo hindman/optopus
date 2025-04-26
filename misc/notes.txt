@@ -94,17 +94,6 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Drop attrs and general dev setup:
-
-    x Convert code to dataclasses.
-    x Modify setup.py:
-        x attrs: drop
-        x kwexception: add
-
-    - Update tasks.py: check mvs project.
-    - Create new virtualenv.
-    - Update dev-notes, if needed.
-
 Spec-parsing:
 
     - Document how these work in more detail:
@@ -136,6 +125,13 @@ Docs: proper README [see readme-next-version].
 Upgrade classifers to beta.
 
 Release.
+    - Maybe drop tox.
+    - Set up Github Actions.
+    - Support nothing older than 3.7 [when dicts were ordered]
+    - Current status:
+        3.7: end of life
+        3.8: end of life
+        3.9: nearly there
 
 Plan next release:
     - Edit road-map.
