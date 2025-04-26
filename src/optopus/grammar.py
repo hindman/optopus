@@ -1,13 +1,11 @@
 
 '''
 
-Status:
-
+Status at the end of prior work:
     - Able to lex/parse the README examples to an AST.
     - Looks good so far after some moderately thorough verification.
 
 TODO:
-
     - Convert grammar-syntax AST into a Grammar.
 
 '''
@@ -39,23 +37,37 @@ class TokDef:
 
 @dataclass(frozen = True)
 class Token:
+    # Token kind/name.
     kind: str
+
+    # The actual text and the Match object that found it.
+    # For Token(eof) and Token(err), m=None.
     text: str
-    m: int
+    m: re.Match
+
+    # Width of text, N of lines in it, and indexes of newline chars.
     width: int
+    nlines: int
+    newlines: tuple[int]
+
+    # Position of the matched text within the larger corpus.
     pos: int
     line: int
     col: int
-    nlines: int
-    isfirst: bool
+
+    # Attributes related to the line on which the Token started:
+    # - Indentation of the line, in N of spaces.
+    # - Whether Token is the first on the line, other than Token(indent).
     indent: int
-    newlines: int
+    isfirst: bool
 
     def isa(self, *tds):
         return any(self.kind == td.kind for td in tds)
 
 @dataclass(frozen = True)
 class Prog:
+    # TODO: seems unused.
+    # Probably not needed with the new spec-syntax.
     name: str
 
 @dataclass(frozen = True)
@@ -178,6 +190,10 @@ def define_regex_snippets():
     name = r'\w+(?:[_-]\w+)*'
     num = r'\d+'
     q = hws0 + ',' + hws0
+    # TODO:
+    # - Make the names of the regex patterns less cryptic.
+    # - Pull the patterns in define_tokdefs() into this data as well, so that
+    #   function can be simplified to focus purely on TokDef definition.
     return cons(
         hws0   = hws0,
         hws1   = hws1,
@@ -312,6 +328,16 @@ class RegexLexer(object):
         # - Text to be lexed.
         # - Validator function from parser to validate tokens.
         # - TokDefs currently of interest.
+        #
+        # TODO:
+        #   - why is tokdefs a supported arg?
+        #   - it's not used here
+        #   - for testing only?
+        #   - maybe because the SpecParser does set RegexLexer.tokdefs
+        #     whenever the parsing-mode changes. So it's contemplated
+        #     that a future RegexLexer might want to set them during
+        #     creation?
+        #
         self.text = text
         self.validator = validator
         self.tokdefs = tokdefs
@@ -371,6 +397,11 @@ class RegexLexer(object):
 
         # And if we didn't get a token, we have lexed as far as
         # we can. Set the end token and return it.
+        #
+        # TODO: this is opaque:
+        #  - Modify create_token() to handle m = None.
+        #  - There is no need for a final re.Match object.
+        #
         td = (TokDefs.err, TokDefs.eof)[self.pos > self.maxpos]
         m = re.search('^$', '')
         tok = self.create_token(td, m)
@@ -380,7 +411,7 @@ class RegexLexer(object):
         return tok
 
     def match_token(self):
-        # Starting at self.pos, reutn the next Token.
+        # Starting at self.pos, return the next Token.
         #
         # For non-emitted tokens, we break out of the for-loop,
         # but enter the while-loop again. This allows the lexer
@@ -476,7 +507,6 @@ class SpecParser:
         self.allow_second = False
 
         # Parsing modes. First define the handlers for each mode.
-        # Then set the initial mode.
         self.handlers = {
             Pmodes.variant: (
                 Handler(self.section_title, Pmodes.section),
@@ -493,10 +523,58 @@ class SpecParser:
             ),
             Pmodes.help_text: tuple(),
         }
+
+        # Set the initial mode (see the setter).
         self.mode = Pmodes.variant
 
         # Tokens the parser has ever eaten and TokDefs
         # it is currently trying to eat.
+        #
+        # TODO:
+        #   - SpecParser.menu vs RegexLexer.tokdefs is important.
+        #
+        #   - My current understanding:
+        #
+        #   - The parsing mode defines a universe of tokens that the
+        #     RegexLexer will hunt for.
+        #
+        #   - The Parser asks the lexer to look when it calls
+        #     get_next_token().
+        #
+        #   - During that call, the lexer uses RegexLexer.tokdefs.
+        #
+        #   - If the lexer finds a matching token, it then asks
+        #     the Parser whether the token is currently of interest (as
+        #     opposed to being generally relevant based on parsing mode).
+        #
+        #   - To ask that question of the Parser, RegexLexer
+        #     call self.validator, which is Parser.taste().
+        #
+        #   - The Parser.taste() method uses SpecParser.menu, which
+        #     consists of a subset of RegexLexer.tokdefs. The logic
+        #     in that method has to consider contextual information (related
+        #     to indentation, isfirst, etc).
+        #
+        #   - If Parser.taste() return True, then the lexer returns
+        #     the token from get_next_token(). Otherwise, the lexer
+        #     will simply store the token in its self.curr and return None.
+        #
+        #   - So the Parser and RegexLexer are engaged in a back-and-forth
+        #     dialogue as things move along.
+        #
+        #       Parser: we're in a new mode and are hunting for these tokens.
+        #       Lexer: fine, updating RegexLexer.tokdefs
+        #
+        #       Parser: gimme a token
+        #       Lexer: found one; do you like it.
+        #       Parser: no; it's not on Parser.menu
+        #       Lexer: ok, storing it for later
+        #
+        #       Parser: gimme a token
+        #       Lexer: found one (it's the same one, dude); do you like it?
+        #       Parser: yes
+        #       Lexer: here you go
+
         self.eaten = []
         self.menu = None
 
@@ -510,6 +588,8 @@ class SpecParser:
 
     @mode.setter
     def mode(self, mode):
+        # When the mode changes, we tell RegexLexer
+        # which tokens it should be looking for.
         self._mode = mode
         self.lexer.tokdefs = tuple(
             td for td in TokDefs.values()

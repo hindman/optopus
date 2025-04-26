@@ -94,14 +94,6 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Argparse bug:
-    - something related to optional positional, choices, and --help
-    - document it here
-
-Document how these work in more detail:
-    - RegexLexer
-    - SpecParser
-
 Drop attrs and general dev setup:
 
     x Convert code to dataclasses.
@@ -109,18 +101,33 @@ Drop attrs and general dev setup:
         x attrs: drop
         x kwexception: add
 
+    - Update tasks.py: check mvs project.
     - Create new virtualenv.
-    - Update dev-notes and tasks.py, if needed.
+    - Update dev-notes, if needed.
 
 Spec-parsing:
 
-    - Read current code
-    - Read arg-parsing-algo
+    - Document how these work in more detail:
+        - RegexLexer
+        - SpecParser
 
-    - Resume code work:
-        - Next step might be: Convert spec-syntax AST into a Grammar.
+    - Refactor the current code:
+        - Clearer, more declarative, better comments.
+        - Same functionality.
+        - Get that running:
+            - With current tests passing.
+            - And with debug=True.
+
+    - Modify code to use the new spec-syntax:
+        - Change the specs used in the tests.
+        - Adjust tokens, tokdefs, etc.
+        - Adjust algo as needed.
+        - Get tests and debug functional again.
+
+    - Convert spec-syntax AST into a proper Grammar.
 
 Argument parsing.
+    - Read arg-parsing-algo
 
 Generate basic usage and help text.
 
