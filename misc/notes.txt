@@ -81,17 +81,22 @@ toc: Table of contents
 
     reference | Reference
 
-        parsing-resources                  | Parsing resources
-        parsing-process-generally          | Parsing process generally
-        pegs-cfgs-and-packrat-parsing      | PEGs, CFGs, and packrat parsing
-        grammar-types                      | Grammar types
-        other-tools                        | Other tools
-        problems-scenarios-from-argparse   | Problems scenarios from argparse
-        example-grammars                   | Example grammars
+        parsing-resources                | Parsing resources
+        parsing-process-generally        | Parsing process generally
+        pegs-cfgs-and-packrat-parsing    | PEGs, CFGs, and packrat parsing
+        grammar-types                    | Grammar types
+        other-tools                      | Other tools
+        problems-scenarios-from-argparse | Problems scenarios from argparse
+        example-grammars                 | Example grammars
+        argparse-problems                | Examples of problems with argparse
 
 --------
 todos: TODOs
 --------
+
+Argparse bug:
+    - something related to optional positional, choices, and --help
+    - document it here
 
 Document how these work in more detail:
     - RegexLexer
@@ -6318,4 +6323,35 @@ Example 4:
 Example 5:
 
     (-a -x | -b... | [-a] -c -d) [-e | -f] [-g] <h> [<i>...] ([-j -k]... | -m -n)
+
+--------
+argparse-problems: Examples of problems with argparse
+--------
+
+Argparse fails with a positional with choices taking 0+ inputs.
+
+    - Example:
+
+        import argparse
+        p = argparse.ArgumentParser()
+        p.add_argument('letter', nargs = '*', choices = ['a', 'b'])
+        opts = p.parse_args()
+        print(opts)
+
+    - Error if you supply zero arguments:
+
+        error: argument letter: invalid choice: [] (choose from 'a', 'b')
+
+    - It will do the right thing if you convert the positional to an option:
+
+        p.add_argument('--letter', nargs = '*', choices = ['a', 'b'])
+
+    - It will also do the right thing if you drop choices and do the
+      choices-validation yourself.
+
+        p.add_argument('letter', nargs = '*')
+
+    - Possible fix coming in Python 3.14
+
+        https://github.com/python/cpython/issues/53834
 
