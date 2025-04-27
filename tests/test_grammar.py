@@ -14,7 +14,7 @@ def dump_grammar(tr, sp, g):
 
 def test_readme_ex1(tr):
     spec = 'pgrep [-i] [-v] <rgx>{1,3} <path>'
-    sp = SpecParser(spec)
+    sp = SpecParser(spec, debug = False)
     g = sp.parse()
     # dump_grammar(tr, sp, g)
 

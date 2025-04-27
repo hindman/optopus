@@ -101,8 +101,7 @@ Spec-parsing:
     - Document them in more detail: RegexLexer and SpecParser
 
     - test backstop:
-        - debug:
-            - make configurable via the two classes
+        x debug: make configurable via the two classes
         - write tests to capture debug output to files
             - use this as dev work goes forward to ensure nothing broken
 
@@ -136,7 +135,9 @@ Upgrade classifers to beta.
 Release.
     - Maybe drop tox.
     - Set up Github Actions.
-    - Support nothing older than 3.7 [when dicts were ordered]
+    - Support nothing older than 3.7
+        3.6 : f-strings added
+        3.7 : dicts ordered
     - Current status:
         3.7: end of life
         3.8: end of life

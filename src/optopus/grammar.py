@@ -316,9 +316,7 @@ ParenPairs = {
     TokDefs.angle_open: TokDefs.angle_close,
 }
 
-Debug = cons(
-    emit = False,
-)
+DEBUG = False
 
 ####
 # Lexer.
@@ -326,7 +324,7 @@ Debug = cons(
 
 class RegexLexer(object):
 
-    def __init__(self, text, validator, tokdefs = None):
+    def __init__(self, text, validator, tokdefs = None, debug = False):
         # Inputs:
         # - Text to be lexed.
         # - Validator function from parser to validate tokens.
@@ -344,6 +342,7 @@ class RegexLexer(object):
         self.text = text
         self.validator = validator
         self.tokdefs = tokdefs
+        self._debug = debug
 
         # Current token and final token, that latter to be set
         # with Token(eof)/Token(err) when lexing finishes.
@@ -388,11 +387,11 @@ class RegexLexer(object):
         # If we got a Token, return either the token or None --
         # the latter if the parser is not happy with it.
         if tok:
-            debug(2, lexed = tok.kind)
+            self.debug(2, lexed = tok.kind)
             if self.validator(tok):
                 self.update_location(tok)
                 self.curr = None
-                debug(2, returned = tok.kind)
+                self.debug(2, returned = tok.kind)
                 return tok
             else:
                 self.curr = tok
@@ -486,6 +485,23 @@ class RegexLexer(object):
         else:
             self.isfirst = False
 
+    def debug(self, n_indent, **kws):
+        if not (DEBUG or self._debug):
+            return
+
+        if not kws:
+            print()
+            return
+
+        indent = Chars.space * (n_indent * 4)
+        func_name = get_caller_name()
+        params = ', '.join(
+            f'{k} = {v!r}'
+            for k, v in kws.items()
+        )
+        msg = f'{indent}{func_name}({params})'
+        print(msg)
+
 ####
 # SpecParser.
 ####
@@ -497,10 +513,11 @@ class Handler:
 
 class SpecParser:
 
-    def __init__(self, text):
+    def __init__(self, text, debug = False):
         # The text and the lexer.
         self.text = text
-        self.lexer = RegexLexer(text, self.taste)
+        self._debug = debug
+        self.lexer = RegexLexer(text, self.taste, debug = debug)
 
         # Line and indent from the first Token of the top-level
         # ParseElem currently under construction by the parser.
@@ -608,8 +625,9 @@ class SpecParser:
         # (opt_help or variant), and get the program name, if any.
         # Because the first variant can reside on the same line as
         # the program name, we set the allow_second flag.
-        debug(0)
-        debug(0, mode_check = 'started')
+        lex = self.lexer
+        lex.debug(0)
+        lex.debug(0, mode_check = 'started')
         tok = self.eat(TokDefs.section_name)
         if tok:
             self.mode = Pmodes.opt_help
@@ -620,7 +638,7 @@ class SpecParser:
             tok = self.eat(TokDefs.name)
             prog = tok.text if tok else None
             allow_second = bool(tok)
-        debug(0, mode = self.mode)
+        lex.debug(0, mode = self.mode)
 
         # Parse everything into a list of ParseElem.
         elems = list(self.do_parse(allow_second))
@@ -652,7 +670,7 @@ class SpecParser:
             # we break from the loop and then re-enter it. If no handlers
             # succeed, we will exit the outer loop.
             for h in self.handlers[self.mode]:
-                debug(0, handler = h.method.__name__)
+                self.lexer.debug(0, handler = h.method.__name__)
                 elem = h.method()
                 if elem:
                     yield elem
@@ -748,14 +766,14 @@ class SpecParser:
 
     def eat(self, *tds):
         self.menu = tds
-        debug(1, wanted = ','.join(td.kind for td in tds))
+        self.lexer.debug(1, wanted = ','.join(td.kind for td in tds))
         tok = self.lexer.get_next_token()
         if tok is None:
             return None
         elif tok.isa(TokDefs.eof, TokDefs.err):
             return None
         else:
-            debug(
+            self.lexer.debug(
                 2,
                 eaten = tok.kind,
                 text = tok.text,
@@ -782,28 +800,27 @@ class SpecParser:
         if any(tok.isa(td) for td in self.menu):
             if self.indent is None:
                 if tok.isfirst or self.allow_second:
-                    debug(2, isfirst = True)
+                    self.lexer.debug(2, isfirst = True)
                     # HERE_INDENT
                     self.indent = tok.indent
                     self.line = tok.line
                     return True
                 else:
-                    debug(2, isfirst = False)
+                    self.lexer.debug(2, isfirst = False)
                     return False
             else:
                 if self.line == tok.line:
-                    debug(2, indent_ok = 'line', line = self.line)
+                    self.lexer.debug(2, indent_ok = 'line', line = self.line)
                     return True
                 elif self.indent < tok.indent:
-                    debug(2, indent_ok = 'indent', self_indent = self.indent, tok_indent = tok.indent)
+                    self.lexer.debug(2, indent_ok = 'indent', self_indent = self.indent, tok_indent = tok.indent)
                     # HERE_INDENT
                     # self.line = tok.line
                     return True
                 else:
-                    debug(2, indent_ok = False, self_indent = self.indent, tok_indent = tok.indent)
+                    self.lexer.debug(2, indent_ok = False, self_indent = self.indent, tok_indent = tok.indent)
                     return False
         else:
-            # debug(2, kind = False)
             return False
 
     ####
@@ -1125,17 +1142,4 @@ def get_caller_name(offset = 2):
         x = x.f_back
     x = x.f_code.co_name
     return x
-
-def debug(indent, **kws):
-    if Debug.emit:
-        msg = ''
-        if kws:
-            func = get_caller_name()
-            gen = ('{} = {!r}'.format(k, v) for k, v in kws.items())
-            msg = '{}{}({})'.format(
-                Chars.space * (indent * 4),
-                func,
-                ', '.join(gen)
-            )
-        print(msg)
 
