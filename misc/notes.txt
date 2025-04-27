@@ -96,12 +96,21 @@ todos: TODOs
 
 Spec-parsing:
 
-    - Document how these work in more detail:
-        - RegexLexer
-        - SpecParser
+    x Figure out how RegexLexer and SpecParser work.
+
+    - Document them in more detail: RegexLexer and SpecParser
+
+    - test backstop:
+        - debug:
+            - make configurable via the two classes
+        - write tests to capture debug output to files
+            - use this as dev work goes forward to ensure nothing broken
 
     - Refactor the current code:
         - Clearer, more declarative, better comments.
+            - convert regex snippets
+            - convert todefs
+            - convert opthelp => optspec
         - Same functionality.
         - Get that running:
             - With current tests passing.
