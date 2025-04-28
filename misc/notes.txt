@@ -96,21 +96,13 @@ todos: TODOs
 
 Spec-parsing:
 
-    x Figure out how RegexLexer and SpecParser work.
-
-    x test backstop:
-        x debug: make configurable via the two classes
-        x add mechanism to capture debug output during test
-        x write tests to capture debug output to files
-
-    - Document with more detail: RegexLexer and SpecParser.
-
     - Refactor the current code:
-        - Clearer, more declarative, better comments.
-            - convert regex snippets
-            - convert todefs
-            - convert opthelp => optspec
-        - Same functionality.
+
+        - regex snippets
+        - todefs
+        - opthelp => optspec
+        - better comments, etc.
+
         - Get that running:
             - With current tests passing.
             - And with debug=True.

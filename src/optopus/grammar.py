@@ -1,6 +1,137 @@
 
 '''
 
+----
+Spec-parsing overview
+----
+
+TokDefs and Tokens:
+
+    - These are the atomic entitites of the parsing process:
+
+        Kind         | Example text
+        ----------------------------
+        long_option  | --foo
+        short_option | -x
+        newline      | \n
+        paren_open   | (
+        brack_close  | ]
+
+    - TokDef:
+        - Has a kind attribute a regex.
+        - Used by RegexLexer to hunt for tokens of interest.
+
+    - Token:
+        - Emitted by RegexLexer when it finds a match.
+        - Has a kind attribute paralleling the TokDef.
+        - Contains the matched text, plus information about the position of
+          that match within the larger corpus (line, col, etc).
+
+SpecParser and RegexLexer: overview:
+
+    - The RegexLexer:
+        - Works with atomic units: Tokens.
+        - Its primary function is get_next_token().
+
+    - The SpecParser:
+        - Works with more meaningful grammatical units.
+        - Those units are expressed in various parsing functions.
+        - Examples:
+            - variant()
+            - opt_help()
+            - section_title()
+            - quoted_block()
+
+        - Parsing functions are hierarchical:
+            - Some match large things: eg variants or opt-helps.
+            - Others match small things within those larger grammatical
+              units: eg, long options, positional, parameters, etc.
+
+        - The spec-syntax requires contextual parsing:
+            - The SpecParser uses a mode attribute to manage context.
+            - When the mode changes:
+                - The parser tells the lexer which TokDefs to search for.
+                - The parser changes which parsing functions to call.
+
+            - The parser uses self.handlers to manage contextual parsing:
+                - It is a dict mapping each parsing mode to one or more Handler
+                  instances.
+                - Each Handler holds a parsing function to try and, optionally,
+                  and parsing mode to advance to next if that parsing function
+                  finds a match.
+
+Spec-parsing: the process:
+
+    - Intialization:
+        - SpecParser sets itself up.
+        - It creates self.lexer holding a RegexLexer.
+        - The RegexLexer is given two things:
+            - The text to be processed.
+            - A validator function: Lexer.taste() [details below].
+
+    - SpecParser.parse() is invoked:
+
+        - That invocation occurs in two context:
+            - Unit tests for SpecParser.
+            - By a user: p = Parser(SPEC)
+
+        - The parse() method:
+            - Does some preliminary work.
+            - Then it calls do_parse().
+
+        - The do_parse() method:
+            - This method orchestates the contextual parsing process.
+            - It tries relevant Handlers [details below].
+            - And it switches parsing mode as needed if a Handler is matched.
+
+    - When do_parse() tries a Handler:
+        - It calls the Handler's parsing function.
+
+    - When a parsing function is called:
+        - It calls eat(), passing in 1+ TokDefs.
+        - Those TokDefs are a subset of the broader list of TokDefs that the
+          RegexLexer was given when the parsing mode was set.
+        - The eat() method assigns those TokDefs to self.menu.
+        - Then it calls RegexLexer.get_next_token().
+
+    - When get_next_token() is called:
+        - The lexer tries each TokDef in self.tokdefs.
+        - When it finds a match:
+            - It creates a Token.
+            - It calls self.validator() with that Token.
+            - In effect, it says to the SpecParser:
+                - I found a Token relevant for the current parsing mode.
+                - But is it the right kind, given the current context?
+
+        - The validator function is SpecParser.taste():
+            - It first checks whether the matched Token is on self.menu.
+            - Then it checks other contextual details related to line
+              indentation and start-of-line status.
+            - It returns True is all criteria are met.
+
+        - Then get_next_token() reacts to that bool:
+            - If True:
+                - It updates its own location information (line, col, etc).
+                - Returns the Token.
+            - If False:
+                - It just stores the Token in self.curr.
+                - And it returns None.
+                - Storing the Token is self.curr is just an optimization:
+                    - The next call to get_next_token() will immediately use
+                      self.curr rather than checking the self.tokdefs.
+
+    - The parsing function keeps going:
+        - A parsing function might need to uses self.eat() multiple times to
+          assemble the grammatical entity it is trying to match.
+        - It those eat() calls lead down a successful path, it eventually
+          returns the relevant ParseElem.
+        - Otherwise it returns None.
+
+        * Currently, ParseElem is just a conceptual device representing various
+          dataclasses comprising the various grammatical entities. As the
+          refactoring moves forward, I might make ParseElem an official base
+          class.
+
 '''
 
 ####
@@ -566,52 +697,6 @@ class SpecParser:
 
         # Tokens the parser has ever eaten and TokDefs
         # it is currently trying to eat.
-        #
-        # TODO:
-        #   - SpecParser.menu vs RegexLexer.tokdefs is important.
-        #
-        #   - My current understanding:
-        #
-        #   - The parsing mode defines a universe of tokens that the
-        #     RegexLexer will hunt for.
-        #
-        #   - The Parser asks the lexer to look when it calls
-        #     get_next_token().
-        #
-        #   - During that call, the lexer uses RegexLexer.tokdefs.
-        #
-        #   - If the lexer finds a matching token, it then asks
-        #     the Parser whether the token is currently of interest (as
-        #     opposed to being generally relevant based on parsing mode).
-        #
-        #   - To ask that question of the Parser, RegexLexer
-        #     call self.validator, which is Parser.taste().
-        #
-        #   - The Parser.taste() method uses SpecParser.menu, which
-        #     consists of a subset of RegexLexer.tokdefs. The logic
-        #     in that method has to consider contextual information (related
-        #     to indentation, isfirst, etc).
-        #
-        #   - If Parser.taste() return True, then the lexer returns
-        #     the token from get_next_token(). Otherwise, the lexer
-        #     will simply store the token in its self.curr and return None.
-        #
-        #   - So the Parser and RegexLexer are engaged in a back-and-forth
-        #     dialogue as things move along.
-        #
-        #       Parser: we're in a new mode and are hunting for these tokens.
-        #       Lexer: fine, updating RegexLexer.tokdefs
-        #
-        #       Parser: gimme a token
-        #       Lexer: found one; do you like it.
-        #       Parser: no; it's not on Parser.menu
-        #       Lexer: ok, storing it for later
-        #
-        #       Parser: gimme a token
-        #       Lexer: found one (it's the same one, dude); do you like it?
-        #       Parser: yes
-        #       Lexer: here you go
-
         self.eaten = []
         self.menu = None
 
