@@ -9,6 +9,7 @@
 
 import inspect
 import re
+import sys
 
 from collections import OrderedDict
 from dataclasses import dataclass, replace as clone
@@ -316,8 +317,6 @@ ParenPairs = {
     TokDefs.angle_open: TokDefs.angle_close,
 }
 
-DEBUG = False
-
 ####
 # Lexer.
 ####
@@ -342,7 +341,7 @@ class RegexLexer(object):
         self.text = text
         self.validator = validator
         self.tokdefs = tokdefs
-        self._debug = debug
+        self.debug_fh = debug
 
         # Current token and final token, that latter to be set
         # with Token(eof)/Token(err) when lexing finishes.
@@ -486,11 +485,19 @@ class RegexLexer(object):
             self.isfirst = False
 
     def debug(self, n_indent, **kws):
-        if not (DEBUG or self._debug):
+        if not self.debug_fh:
             return
 
+        if self.debug_fh is True:
+            fh = sys.stdout
+        elif self.debug_fh:
+            fh = self.debug_fh
+        else:
+            return
+
+
         if not kws:
-            print()
+            print(file = fh)
             return
 
         indent = Chars.space * (n_indent * 4)
@@ -500,7 +507,7 @@ class RegexLexer(object):
             for k, v in kws.items()
         )
         msg = f'{indent}{func_name}({params})'
-        print(msg)
+        print(msg, file = fh)
 
 ####
 # SpecParser.
@@ -516,7 +523,7 @@ class SpecParser:
     def __init__(self, text, debug = False):
         # The text and the lexer.
         self.text = text
-        self._debug = debug
+        self.debug_fh = debug
         self.lexer = RegexLexer(text, self.taste, debug = debug)
 
         # Line and indent from the first Token of the top-level
