@@ -41,3 +41,6 @@
 # PyCharm .idea settings
 .idea
 
+# Optopus test outputs.
+/tests/ex_diff/got/
+

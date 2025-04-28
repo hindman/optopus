@@ -1,6 +1,8 @@
 
 import io
+from pathlib import Path
 
+from short_con import cons
 from optopus.grammar import (
     SpecParser,
     TokDefs,
@@ -20,11 +22,13 @@ class Sio(io.StringIO):
 # Example specs.
 ####
 
-EX01 = '''
+SPECS = {}
+
+SPECS['ex01'] = '''
 pgrep [-i] [-v] <rgx> <path>
 '''
 
-EX02 = '''
+SPECS['ex02'] = '''
 pgrep ::
 
 <rgx> : Python regular expression
@@ -33,7 +37,7 @@ pgrep ::
 [-v --invert-match] : Select non-matching lines
 '''
 
-EX03 = '''
+SPECS['ex03'] = '''
 wrangle
 
 <task=grep>   [-i] [-v] [-m] [-C]
@@ -62,14 +66,14 @@ wrangle
 -p --para          : Emit capture groups one-per-line, paragraph-style
 '''
 
-EX04 = '''
+SPECS['ex04'] = '''
 pgrep
 [-i] [-v]
     <rgx> <path>
 [--foo] <blort>
 '''
 
-EX05 = '''
+SPECS['ex05'] = '''
 pgrep ::
 <rgx> : Python
         regular
@@ -82,7 +86,7 @@ pgrep ::
                         lines
 '''
 
-EX06 = '''
+SPECS['ex06'] = '''
 pgrep
   [-i]? [-v]...
        <rgx> <path>{1,7}?
@@ -114,38 +118,61 @@ foo bar fubb.
           lines
 '''
 
-def dump_grammar(tr, sp, g):
-    lines = [
-        '# TEXT',
-        sp.text,
-        '',
-        '# GRAMMAR',
-        *Grammar.pp(g)
-    ]
-    msg = '\n'.join(lines)
-    tr.dump(msg)
-
-def test_readme_ex1(tr):
-    spec = EX01.strip() + '{1,3}'
+def test_ex1(tr):
+    spec = SPECS['ex01'].strip() + '{1,3}'
     sp = SpecParser(spec, debug = False)
     g = sp.parse()
-    # dump_grammar(tr, sp, g)
 
-def test_readme_examples(tr):
-    TESTS = (
-        (EX01, False, 0),
-        (EX02, False, 0),
-        (EX03, False, 0),
-        (EX04, False, 0),
-        (EX05, False, 0),
-        (EX06, False, 0),
+def test_examples(tr):
+
+    for exkey, spec in SPECS.items():
+        fh = None
+        sp = SpecParser(spec, debug = Sio())
+        grammar = sp.parse()
+        parser_debug = str(sp.debug_fh)
+
+        got_text = '\n'.join([
+            '\n# SPEC',
+            spec,
+            '\n# PARSER_DEBUG',
+            parser_debug,
+            '\n# GRAMMAR',
+            grammar.pp,
+            '',
+        ])
+
+        paths = example_paths(exkey)
+
+        # Write the text we got.
+        write_file(paths.got, got_text)
+
+        # Read the text we expect, if possible.
+        # Otherwise, write it for next time.
+        if paths.exp.is_file():
+            exp_text = read_file(paths.exp)
+        else:
+            write_file(paths.exp, got_text)
+            exp_text = got_text
+
+        # Assert.
+        ok = got_text == exp_text
+        assert ok, f'diff {paths.exp} {paths.got}'
+
+####
+# Helpers.
+####
+
+def example_paths(exkey):
+    return cons(
+        got = Path('tests') / 'ex_diff' / 'got' / exkey,
+        exp = Path('tests') / 'ex_diff' / 'exp' / exkey,
     )
 
-    for text, debug, exp in TESTS:
-        fh = None
-        sp = SpecParser(text, debug = fh)
-        g = sp.parse()
+def read_file(path):
+    with open(path) as fh:
+        return fh.read()
 
-        # dump_grammar(tr, sp, g)
-        # tr.dump(sp.debug_fh)
+def write_file(path, text):
+    with open(path, 'w') as fh:
+        fh.write(text)
 

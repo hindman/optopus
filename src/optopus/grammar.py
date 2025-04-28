@@ -168,20 +168,30 @@ class ParameterVariant:
 class Grammar:
     elems: list
 
+    @property
+    def pp(self):
+        return '\n'.join(Grammar.pp_gen(self))
+
     @staticmethod
-    def pp(elem, level = 0):
-        lines = []
-        indent = '    '
-        add = lambda lev, s: lines.append(indent * lev + s)
-        add(level, elem.__class__.__name__ + '(')
-        special = ('elems', 'params')
-        for k, v in elem.__dict__.items():
-            if k not in special:
-                add(level + 1, '{} = {!r}'.format(k, v))
-        for k in special:
-            for e in getattr(elem, k, []):
-                lines.extend(Grammar.pp(e, level + 1))
-        return lines
+    def pp_gen(elem, level = 0):
+        # Setup.
+        cls_name = elem.__class__.__name__
+        indent1 = '    ' * level
+        indent2 = '    ' * (level + 1)
+        has_child_elems = ('elems', 'params')
+
+        # Start with the class of the current element.
+        yield f'{indent1}{cls_name}('
+
+        # Then basic attributes.
+        for attr, v in elem.__dict__.items():
+            if attr not in has_child_elems:
+                yield f'{indent2}{attr} = {v!r}'
+
+        # Then recurse to child elements.
+        for attr in has_child_elems:
+            for child in getattr(elem, attr, []):
+                yield from Grammar.pp_gen(child, level + 1)
 
 ####
 # Functions to return constants collections.
