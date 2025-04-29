@@ -100,11 +100,11 @@ Usage:
     $program_name $opt_spec ...
 
 $group_label:
-    $opt_spec     $opt_help_text
+    $opt_spec     $opt_spec_text
     ...
 
 $group_label:
-    $opt_spec     $opt_help_text
+    $opt_spec     $opt_spec_text
     ...
 
 Short options:
@@ -143,7 +143,7 @@ DESCRIPTION
 OPTIONS
 
     $opt_spec
-        $opt_help_text
+        $opt_spec_text
 
     ...
 

@@ -96,16 +96,21 @@ todos: TODOs
 
 Spec-parsing:
 
-    - Refactor the current code:
+    - Refactor the current code mainly for clarity:
 
-        - regex snippets
-        - todefs
-        - opthelp => optspec
-        - better comments, etc.
+        x opthelp => optspec
+        x regex snippets
+        x tokdefs
 
-        - Get that running:
-            - With current tests passing.
-            - And with debug=True.
+        - other code:
+            - assess, edit
+            - don't go too far at this stage
+
+        - docs:
+            - improve comments
+            - collect notes, TODOs
+
+        - Passing current tests.
 
     - Modify code to use the new spec-syntax:
         - Change the specs used in the tests.

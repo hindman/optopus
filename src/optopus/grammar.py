@@ -38,12 +38,12 @@ SpecParser and RegexLexer: overview:
         - Those units are expressed in various parsing functions.
         - Examples:
             - variant()
-            - opt_help()
+            - opt_spec()
             - section_title()
             - quoted_block()
 
         - Parsing functions are hierarchical:
-            - Some match large things: eg variants or opt-helps.
+            - Some match large things: eg variants or opt-specs.
             - Others match small things within those larger grammatical
               units: eg, long options, positional, parameters, etc.
 
@@ -142,7 +142,7 @@ import inspect
 import re
 import sys
 
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 from dataclasses import dataclass, replace as clone
 from functools import cache
 from short_con import cons, constants
@@ -328,114 +328,187 @@ class Grammar:
 # Functions to return constants collections.
 ####
 
-@cache
-def define_regex_snippets():
-    hws0 = r'[ \t]*'
-    hws1 = r'[ \t]+'
-    name = r'\w+(?:[_-]\w+)*'
-    num = r'\d+'
-    q = hws0 + ',' + hws0
+class Rgxs:
     # TODO:
     # - Make the names of the regex patterns less cryptic.
     # - Pull the patterns in define_tokdefs() into this data as well, so that
     #   function can be simplified to focus purely on TokDef definition.
-    return cons(
-        hws0   = hws0,
-        hws1   = hws1,
-        name   = name,
-        num    = num,
-        q      = q,
-        prog   = name + r'(?:\.\w+)?',
-        eol    = hws0 + r'(?=\n)',
-        bq     = r'(?<!\\)`',
-        bq3    = r'(?<!\\)```',
-        pre    = '-',
-        quant  = hws0 + '|'.join((num + q + num, num + q, q + num, num, q)) + hws0,
-        quoted = r'[\s\S]*?',
-        head   = '(?m)^',
+
+    '''
+
+    Python regex notes:
+        - Non-capturing group: (?:foo)
+        - Look-ahead: (?=foo)  (?!foo)
+        - Look-behind: (?<foo) (?<!foo)
+        - Multi-line mode: (?m)          #  So ^$ match start/end of any line.
+
+    TODO:
+        - Can names start with numbers?
+        - Why are there RGXS in constants and Rgxs here?
+        - When dropping prog, figure out why section_name and prog are
+          intertwined in the code.
+
+    '''
+
+    captured = lambda s: f'({s})'
+    wrapped_in = lambda wrap, guts: f'{wrap}{guts}{wrap}'
+
+    whitespace0 = r'[ \t]*'
+    whitespace1 = r'[ \t]+'
+    alphanum  = r'[a-z0-9]'
+    alphanum0 = fr'{alphanum}*'
+    alphanum1 = fr'{alphanum}+'
+
+    valid_name = fr'{alphanum1}(?:[_-]{alphanum1})*'
+    captured_name = captured(valid_name)
+
+    number = r'\d+'
+    comma_sep = wrapped_in(whitespace0, ',')
+    option_prefix    = '-'
+
+
+    prog   = fr'{valid_name}(?:\.{alphanum1})?'
+    end_of_line    = fr'{whitespace0}(?=\n)'
+
+    not_backslash = r'(?<!\\)'
+    backquote = r'`'
+    backquote1 = not_backslash + backquote
+    backquote3 = not_backslash + (backquote * 3)
+
+    start_of_line   = '(?m)^'
+
+    captured_guts = captured(r'[\s\S]*?')
+
+    not_whitespace = r'(?=\S)'
+
+    section_marker = '::' + end_of_line
+
+    dot = r'\.'
+    quant_range_guts  = (
+        whitespace0 +
+        '|'.join((
+            number + comma_sep + number,
+            number + comma_sep,
+            number,
+            comma_sep + number,
+            comma_sep,
+        )) +
+        whitespace0
     )
+
+
+    # Rgxs used by TokDefs.
+    # - Quoted.
+    quoted_block   = wrapped_in(backquote3, captured_guts)
+    quoted_literal = wrapped_in(backquote1, captured_guts)
+    # - Whitespace.
+    newline        =  r'\n'
+    indent         = start_of_line + whitespace1 + not_whitespace
+    whitespace     = whitespace1
+    # - Sections.
+    section_name   = captured(prog) + whitespace0 + section_marker
+    section_title  = captured('.*') + section_marker
+    # - Parens.
+    paren_open     =  r'\('
+    paren_close    =  r'\)'
+    brack_open     =  r'\['
+    brack_close    =  r'\]'
+    angle_open     =  '<'
+    angle_close    =  '>'
+    # - Quants.
+    quant_range    =  r'\{' + captured(quant_range_guts) + r'\}'
+    triple_dot     = dot * 3
+    question       =  r'\?'
+    # - Separators.
+    choice_sep     =  r'\|'
+    assign         =  '='
+    opt_spec_sep   =  ':'
+    # - Options.
+    long_option    = option_prefix + option_prefix + captured_name
+    short_option   = option_prefix + captured(r'\w')
+    # - Variants.
+    partial_def    = captured_name + '!' + whitespace0 + ':'
+    variant_def    = captured_name + whitespace0 + ':'
+    partial_usage  = captured_name + '!'
+    # - Sym,           dest.
+    sym_dest       = captured_name + wrapped_in(whitespace0, captured('[!.]')) + captured_name
+    dot_dest       = dot + whitespace0 + captured_name
+    solo_dest      = captured_name + whitespace0 + r'(?=[>=])'
+    name           = valid_name
+    # - Special.
+    rest_of_line   =  '.+'
+    eof            =  ''
+    err            =  ''
 
 @cache
 def define_tokdefs():
-    # Helper to wrap a regex elem in a capture.
-    c = lambda s: '(' + s + ')'
 
-    # Convenience vars.
-    r = Snippets
-    hw = r.hws0
-    cnm = c(r.name)
+    # Combos of parsing modes used by the TokDefs.
+    Modes = cons(
+        vosh = list(Pmodes.values()),
+        vos  = [Pmodes.variant, Pmodes.opt_spec, Pmodes.section],
+        os   = [Pmodes.opt_spec, Pmodes.section],
+        v    = [Pmodes.variant],
+        s    = [Pmodes.section],
+        h    = [Pmodes.help_text],
+        none = [],
+    )
 
-    # Tuples to define TokDef instances.
-    #
-    # - Emit: becomes a bool; false shown as 0.0 so that they stand out visually.
-    # - Modes: single-letter keys to get specific Pmodes.
-    # - Pattern: glued together via regex snippets.
-    #
-    tups = (
-        # Kind             Emit  Modes    Pattern
+    # Tuples to define TokDefs: kind, emit, and modes.
+    td_tups = [
         # - Quoted.
-        ('quoted_block',   1,    '  s ',  r.bq3 + c(r.quoted) + r.bq3),
-        ('quoted_literal', 1,    'vos ',  r.bq + c(r.quoted) + r.bq),
+        ('quoted_block',   True,  Modes.s),
+        ('quoted_literal', True,  Modes.vos),
         # - Whitespace.
-        ('newline',        0.0,  'vosh',  r'\n'),
-        ('indent',         0.0,  'vosh',  r.head + r.hws1 + r'(?=\S)'),
-        ('whitespace',     0.0,  'vosh',  r.hws1),
+        ('newline',        False, Modes.vosh),
+        ('indent',         False, Modes.vosh),
+        ('whitespace',     False, Modes.vosh),
         # - Sections.
-        ('section_name',   1,    'v   ',  c(r.prog) + hw + '::' + r.eol),
-        ('section_title',  1,    'vos ',  c('.*') + '::' + r.eol),
+        ('section_name',   True,  Modes.v),
+        ('section_title',  True,  Modes.vos),
         # - Parens.
-        ('paren_open',     1,    'vos ',  r'\('),
-        ('paren_close',    1,    'vos ',  r'\)'),
-        ('brack_open',     1,    'vos ',  r'\['),
-        ('brack_close',    1,    'vos ',  r'\]'),
-        ('angle_open',     1,    'vos ',  '<'),
-        ('angle_close',    1,    'vos ',  '>'),
+        ('paren_open',     True,  Modes.vos),
+        ('paren_close',    True,  Modes.vos),
+        ('brack_open',     True,  Modes.vos),
+        ('brack_close',    True,  Modes.vos),
+        ('angle_open',     True,  Modes.vos),
+        ('angle_close',    True,  Modes.vos),
         # - Quants.
-        ('quant_range',    1,    'vos ',  r'\{' + c(r.quant) + r'\}'),
-        ('triple_dot',     1,    'vos ',  r'\.\.\.'),
-        ('question',       1,    'vos ',  r'\?'),
+        ('quant_range',    True,  Modes.vos),
+        ('triple_dot',     True,  Modes.vos),
+        ('question',       True,  Modes.vos),
         # - Separators.
-        ('choice_sep',     1,    'vos ',  r'\|'),
-        ('assign',         1,    'vos ',  '='),
-        ('opt_help_sep',   1,    ' os ',  ':'),
+        ('choice_sep',     True,  Modes.vos),
+        ('assign',         True,  Modes.vos),
+        ('opt_spec_sep',   True,  Modes.os),
         # - Options.
-        ('long_option',    1,    'vos ',  r.pre + r.pre + cnm),
-        ('short_option',   1,    'vos ',  r.pre + c(r'\w')),
+        ('long_option',    True,  Modes.vos),
+        ('short_option',   True,  Modes.vos),
         # - Variants.
-        ('partial_def',    1,    'v   ',  cnm + '!' + hw + ':'),
-        ('variant_def',    1,    'v   ',  cnm + hw + ':'),
-        ('partial_usage',  1,    'v   ',  cnm + '!'),
-        # - Sym, dest.
-        ('sym_dest',       1,    'vos ',  cnm + hw + c('[!.]') + hw + cnm),
-        ('dot_dest',       1,    'vos ',  r'\.' + hw + cnm),
-        ('solo_dest',      1,    'vos ',  cnm + hw + r'(?=[>=])'),
-        ('name',           1,    'vos ',  r.name),
+        ('partial_def',    True,  Modes.v),
+        ('variant_def',    True,  Modes.v),
+        ('partial_usage',  True,  Modes.v),
+        # - Sym,           dest.
+        ('sym_dest',       True,  Modes.vos),
+        ('dot_dest',       True,  Modes.vos),
+        ('solo_dest',      True,  Modes.vos),
+        ('name',           True,  Modes.vos),
         # - Special.
-        ('rest_of_line',   1,    '   h',  '.+'),
-        ('eof',            0.0,  '    ',  ''),
-        ('err',            0.0,  '    ',  ''),
-    )
+        ('rest_of_line',   True,  Modes.h),
+        ('eof',            False, Modes.none),
+        ('err',            False, Modes.none),
+    ]
 
-    # Parser modes.
-    pms = dict(
-        v = Pmodes.variant,
-        o = Pmodes.opt_help,
-        s = Pmodes.section,
-        h = Pmodes.help_text,
-    )
-
-    # Create a dict mapping kind to each TokDef.
-    tds = OrderedDict()
-    for kind, emit, ms, patt in tups:
-        tds[kind] = TokDef(
+    # Return a constants collection of TokDefs, keyed by kind.
+    return constants({
+        kind : TokDef(
             kind = kind,
-            regex = re.compile(patt),
-            modes = tuple(pms[m] for m in ms if m != Chars.space),
-            emit = bool(emit),
+            emit = emit,
+            modes = tuple(modes),
+            regex = re.compile(getattr(Rgxs, kind)),
         )
-
-    # Return them as a constants collection.
-    return constants(tds)
+        for kind, emit, modes in td_tups
+    })
 
 ####
 # Parsing and grammar constants.
@@ -448,8 +521,7 @@ Chars = cons(
     comma = ',',
 )
 
-Pmodes = cons('variant opt_help section help_text')
-Snippets = define_regex_snippets()
+Pmodes = cons('variant opt_spec section help_text')
 TokDefs = define_tokdefs()
 
 ParenPairs = {
@@ -680,14 +752,14 @@ class SpecParser:
                 Handler(self.section_title, Pmodes.section),
                 Handler(self.variant, None),
             ),
-            Pmodes.opt_help: (
+            Pmodes.opt_spec: (
                 Handler(self.section_title, Pmodes.section),
-                Handler(self.opt_help, None),
+                Handler(self.opt_spec, None),
             ),
             Pmodes.section: (
                 Handler(self.quoted_block, None),
                 Handler(self.section_title, None),
-                Handler(self.opt_help, None),
+                Handler(self.opt_spec, None),
             ),
             Pmodes.help_text: tuple(),
         }
@@ -724,7 +796,7 @@ class SpecParser:
 
     def parse(self):
         # Determine the parsing mode for the grammar section
-        # (opt_help or variant), and get the program name, if any.
+        # (opt_spec or variant), and get the program name, if any.
         # Because the first variant can reside on the same line as
         # the program name, we set the allow_second flag.
         lex = self.lexer
@@ -732,7 +804,7 @@ class SpecParser:
         lex.debug(0, mode_check = 'started')
         tok = self.eat(TokDefs.section_name)
         if tok:
-            self.mode = Pmodes.opt_help
+            self.mode = Pmodes.opt_spec
             prog = tok.m.group(1)
             allow_second = False
         else:
@@ -949,15 +1021,15 @@ class SpecParser:
         else:
             self.error('A Variant cannot be empty')
 
-    def opt_help(self):
+    def opt_spec(self):
         # Try to get elements.
         elems = self.elems()
         if not elems:
             return None
 
-        # Try to get the Opt help text and any continuation lines.
+        # Try to get the help text and any continuation lines.
         texts = []
-        if self.eat(TokDefs.opt_help_sep):
+        if self.eat(TokDefs.opt_spec_sep):
             self.mode = Pmodes.help_text
             while True:
                 tok = self.eat(TokDefs.rest_of_line)
@@ -965,7 +1037,7 @@ class SpecParser:
                     texts.append(tok.text.strip())
                 else:
                     break
-            self.mode = Pmodes.opt_help
+            self.mode = Pmodes.opt_spec
 
         # Join text parts and return.
         text = Chars.space.join(t for t in texts if t)

@@ -132,10 +132,10 @@ readable, and requires less API knowledge. You just type what you want and have
 to remember little more than a mostly already-known syntax. Note that [Example
 1](#example-1) used what Optopus calls a usage-variant syntax: it expressed the
 full command-line grammar in schematic form. Example 2 uses a closely related
-syntax, called opt-help syntax. Each line configures a single Opt (a
+syntax, called opt-spec syntax. Each line configures a single Opt (a
 configuration object representing a positional argument or option) using the
 same syntax seen in the first example, optionally accompanied by one or more
-aliases and help text. Because the opt-help syntax is more featureful at the
+aliases and help text. Because the opt-spec syntax is more featureful at the
 level of individual Opts (it can declare aliases and help text), it is often
 the easiest mechanism to use for non-trivial scripts that do not have any
 special grammatical needs.
@@ -304,7 +304,7 @@ with the library could quickly infer the basic intent even without knowing the
 all of the rules. This example illustrates both syntax styles mentioned above:
 usage-variant syntax to define the subcommand-style grammar that our program
 needs in the first section (for convenience, this section can refer to the Opts
-via their short aliases); followed by another section using opt-help syntax to
+via their short aliases); followed by another section using opt-spec syntax to
 configure the individual Opts more fully. Finally, notice that this
 configuration does more than the argparse example: it defines the `-d` and `-p`
 options as alternatives (mutually exclusive). That behavior is achievable in
