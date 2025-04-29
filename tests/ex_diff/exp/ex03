@@ -2720,12 +2720,12 @@ Grammar(
                     sym = None
                     dest = None
                     symlit = False
-                    choices = ('red', 'green', 'blue')
+                    choices = ['red', 'green', 'blue']
         Positional(
             sym = None
             dest = 'rgx'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
         Bracketed(
             quantifier = None
@@ -2733,7 +2733,7 @@ Grammar(
                 sym = None
                 dest = 'path'
                 symlit = False
-                choices = ()
+                choices = []
                 quantifier = Quantifier(m=1, n=None, greedy=True)
     Variant(
         name = None
@@ -2757,13 +2757,13 @@ Grammar(
             sym = None
             dest = 'rgx'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
         Positional(
             sym = None
             dest = 'rep'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
         Bracketed(
             quantifier = None
@@ -2771,7 +2771,7 @@ Grammar(
                 sym = None
                 dest = 'path'
                 symlit = False
-                choices = ()
+                choices = []
                 quantifier = Quantifier(m=1, n=None, greedy=True)
     Variant(
         name = None
@@ -2804,7 +2804,7 @@ Grammar(
             sym = None
             dest = 'rgx'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
         Bracketed(
             quantifier = None
@@ -2812,7 +2812,7 @@ Grammar(
                 sym = None
                 dest = 'path'
                 symlit = False
-                choices = ()
+                choices = []
                 quantifier = Quantifier(m=1, n=None, greedy=True)
     SectionTitle(
         title = ''
@@ -2822,7 +2822,7 @@ Grammar(
             sym = None
             dest = 'task'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
     OptHelp(
         text = 'Emit lines matching pattern'
@@ -2851,7 +2851,7 @@ Grammar(
             sym = None
             dest = 'rgx'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
     OptHelp(
         text = 'Path(s) to input'
@@ -2859,7 +2859,7 @@ Grammar(
             sym = None
             dest = 'path'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
     OptHelp(
         text = 'Replacement text'
@@ -2867,7 +2867,7 @@ Grammar(
             sym = None
             dest = 'rep'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
     OptHelp(
         text = 'Ignore case'
@@ -2897,7 +2897,7 @@ Grammar(
                 sym = 'n'
                 dest = None
                 symlit = False
-                choices = ()
+                choices = []
     OptHelp(
         text = 'Print N lines of before/after context'
         Option(
@@ -2910,7 +2910,7 @@ Grammar(
                 sym = 'n'
                 dest = None
                 symlit = False
-                choices = ()
+                choices = []
     OptHelp(
         text = 'Highlight matching text'
         Option(
@@ -2920,7 +2920,7 @@ Grammar(
                 sym = None
                 dest = None
                 symlit = False
-                choices = ()
+                choices = []
     OptHelp(
         text = 'N of substitutions'
         Option(
@@ -2933,7 +2933,7 @@ Grammar(
                 sym = 'n'
                 dest = None
                 symlit = False
-                choices = ()
+                choices = []
     OptHelp(
         text = 'Emit just capture group N [0 for all]'
         Option(
@@ -2946,7 +2946,7 @@ Grammar(
                 sym = 'n'
                 dest = None
                 symlit = False
-                choices = ()
+                choices = []
     OptHelp(
         text = 'Delimeter for capture groups [tab]'
         Option(
@@ -2959,7 +2959,7 @@ Grammar(
                 sym = 's'
                 dest = None
                 symlit = False
-                choices = ()
+                choices = []
     OptHelp(
         text = 'Emit capture groups one-per-line, paragraph-style'
         Option(

@@ -464,7 +464,7 @@ Grammar(
             sym = None
             dest = 'rgx'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
     OptHelp(
         text = 'Path(s) to input'
@@ -474,7 +474,7 @@ Grammar(
                 sym = None
                 dest = 'path'
                 symlit = False
-                choices = ()
+                choices = []
                 quantifier = Quantifier(m=1, n=None, greedy=True)
     OptHelp(
         text = 'Ignore case'

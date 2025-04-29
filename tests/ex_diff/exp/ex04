@@ -389,13 +389,13 @@ Grammar(
             sym = None
             dest = 'rgx'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
         Positional(
             sym = None
             dest = 'path'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
     Variant(
         name = None
@@ -409,5 +409,5 @@ Grammar(
             sym = None
             dest = 'blort'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None

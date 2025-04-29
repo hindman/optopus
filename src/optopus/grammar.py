@@ -2,6 +2,23 @@
 '''
 
 ----
+TODOs, issues, questions
+----
+
+Rgxs and TokDefs:
+    - The kind values are repeated in various spots.
+    - Perhaps both should be defined together to keep them in sync.
+
+The Prog ParseElem:
+    - Not used.
+    - Probably not needed with the new spec-syntax.
+    - Why are section_name and prog are intertwined in the code?
+
+Can names start with numbers?
+
+Why are there RGXS in constants and Rgxs here?
+
+----
 Spec-parsing overview
 ----
 
@@ -127,10 +144,79 @@ Spec-parsing: the process:
           returns the relevant ParseElem.
         - Otherwise it returns None.
 
-        * Currently, ParseElem is just a conceptual device representing various
-          dataclasses comprising the various grammatical entities. As the
-          refactoring moves forward, I might make ParseElem an official base
-          class.
+----
+My old notes on converting the AST to a proper Grammar
+----
+
+Partition elems on the first SectionTitle:
+
+    gelems : grammar section (all Variant or OptHelp)
+    selems : other
+
+Convert selems into groups, one per section:
+
+    SectionTitle
+    0+ QuotedBlock
+    0+ OptHelp        # Can be full or mere references.
+
+At this point, we will have:
+
+    prog : name or None
+    variants : 0+
+    opthelps : 0+
+    sections : 0+
+
+If no variants:
+    If no opthelps:
+        - No-config parsing?
+        - Or raise?
+    Else:
+        - Create one Variant from the opthelps.
+
+Processing a sequence of elems:
+
+    - Applies to Variant, Parenthesized, Bracketed.
+
+    - Organize into groups, partitioning on ChoiceSep.
+    - If multiple groups, we will end up with Group(mutext=True)
+
+    ...
+
+
+
+Sections:
+    - An ordered list of section-elems.
+    - Where each section-elem is: QuotedBlock or Opt-reference.
+
+ParseElem: top-level:
+    Variant: name is_partial elems
+    OptHelp: elems text
+    SectionTitle: title
+    QuotedBlock: text
+
+ParseElem: elems:
+    ChoiceSep:
+    QuotedLiteral: text
+        - Becomes an Opt.
+        - But has no dest.
+        - Essentially requires the variant to include a positional constant.
+        - Does that make it like a PositionalVariant with one choice and no dest or sym?
+    PartialUsage: name
+        - Insert the elems from the Variant(partial=True)
+    Parenthesized: elems quantifier
+        - Convert to Group or quantified Opt.
+    Bracketed: elems quantifier
+        - Convert to Group or quantified Opt.
+    Option: dest params quantifier
+    Positional: sym dest symlit choices quantifier
+    PositionalVariant: sym dest symlit choice
+    Parameter: sym dest symlit choices
+    ParameterVariant: sym dest symlit choice
+
+ParseElem: subcomponents:
+    SymDest: sym dest symlit val vals
+    Quantifier: m n greedy
+    QuotedLiteral: text
 
 '''
 
@@ -142,18 +228,17 @@ import inspect
 import re
 import sys
 
-from collections import OrderedDict, Counter
+from collections import Counter
 from dataclasses import dataclass, replace as clone
-from functools import cache
 from short_con import cons, constants
 
 from .errors import OptopusError
 
 ####
-# Data classes.
+# Data classes: TokDef and Token.
 ####
 
-@dataclass(frozen = True)
+@dataclass
 class TokDef:
     # Defines how to find and process a Token.
 
@@ -164,13 +249,13 @@ class TokDef:
     regex: re.Pattern
 
     # Parsing modes that use the Token.
-    modes: tuple[str]
+    modes: list[str]
 
     # Whether the RegexLexer should emit the Token back to the
     # SpecParser (or just consume it and update lexer position).
     emit: bool
 
-@dataclass(frozen = True)
+@dataclass
 class Token:
     # Token kind/name.
     kind: str
@@ -183,7 +268,7 @@ class Token:
     # Width of text, N of lines in it, and indexes of newline chars.
     width: int
     nlines: int
-    newlines: tuple[int]
+    newlines: list[int]
 
     # Position of the matched text within the larger corpus.
     pos: int
@@ -199,103 +284,120 @@ class Token:
     def isa(self, *tds):
         return any(self.kind == td.kind for td in tds)
 
-@dataclass(frozen = True)
-class Prog:
-    # TODO: seems unused.
-    # Probably not needed with the new spec-syntax.
+####
+#
+# Data classes: ParseElems.
+#
+# These are intermediate objects used during spec-parsing.
+# They are not user-facing and they do not end up as elements
+# within the ultimate Grammar returned by SpecParser.parser().
+#
+####
+
+@dataclass
+class ParseElem:
+    # Just a base class, mostly as a device for terminology.
+    pass
+
+@dataclass
+class Prog(ParseElem):
     name: str
 
-@dataclass(frozen = True)
-class Variant:
+@dataclass
+class Variant(ParseElem):
     name: str
     is_partial: bool
     elems: list
 
-@dataclass(frozen = True)
-class OptHelp:
+@dataclass
+class OptHelp(ParseElem):
     elems: list[str]
     text: str
 
-@dataclass(frozen = True)
-class SectionTitle:
+@dataclass
+class SectionTitle(ParseElem):
     title: str
 
-@dataclass(frozen = True)
-class QuotedBlock:
+@dataclass
+class QuotedBlock(ParseElem):
     text: str
 
-@dataclass(frozen = True)
-class QuotedLiteral:
+@dataclass
+class QuotedLiteral(ParseElem):
     text: str
 
-@dataclass(frozen = True)
-class Quantifier:
+@dataclass
+class Quantifier(ParseElem):
     m: int
     n: int
     greedy: bool
 
-@dataclass(frozen = True)
-class PartialUsage:
+@dataclass
+class PartialUsage(ParseElem):
     text: str
 
-@dataclass(frozen = True)
-class Parenthesized:
+@dataclass
+class Parenthesized(ParseElem):
     elems: list
     quantifier: Quantifier
 
-@dataclass(frozen = True)
-class Bracketed:
+@dataclass
+class Bracketed(ParseElem):
     elems: list
     quantifier: Quantifier
 
-@dataclass(frozen = True)
-class SymDest:
+@dataclass
+class SymDest(ParseElem):
     sym: str
     dest: str
     symlit: str
     val: str
     vals: list
 
-@dataclass(frozen = True)
-class Positional:
+@dataclass
+class Positional(ParseElem):
     sym: str
     dest: str
     symlit: str
     choices: list
     quantifier: Quantifier
 
-@dataclass(frozen = True)
-class Option:
+@dataclass
+class Option(ParseElem):
     dest: str
     params: list
     quantifier: Quantifier
 
-@dataclass(frozen = True)
-class ChoiceSep:
+@dataclass
+class ChoiceSep(ParseElem):
     pass
 
-@dataclass(frozen = True)
-class PositionalVariant:
+@dataclass
+class PositionalVariant(ParseElem):
     sym: str
     dest: str
     symlit: str
     choice: str
 
-@dataclass(frozen = True)
-class Parameter:
+@dataclass
+class Parameter(ParseElem):
     sym: str
     dest: str
     symlit: str
     choices: list
 
-@dataclass(frozen = True)
-class ParameterVariant:
+@dataclass
+class ParameterVariant(ParseElem):
     sym: str
     dest: str
     symlit: str
     choice: str
 
-@dataclass(frozen = True)
+####
+# Grammar.
+####
+
+@dataclass
 class Grammar:
     elems: list
 
@@ -329,61 +431,60 @@ class Grammar:
 ####
 
 class Rgxs:
-    # TODO:
-    # - Make the names of the regex patterns less cryptic.
-    # - Pull the patterns in define_tokdefs() into this data as well, so that
-    #   function can be simplified to focus purely on TokDef definition.
 
-    '''
+    ####
+    # Python regex notes/reminders:
+    #     - Non-capturing group | (?:foo)
+    #     - Look-ahead          | (?=foo) (?!foo)
+    #     - Look-behind         | (?<foo) (?<!foo)
+    #     - Multi-line mode     | (?m)
+    ####
 
-    Python regex notes:
-        - Non-capturing group: (?:foo)
-        - Look-ahead: (?=foo)  (?!foo)
-        - Look-behind: (?<foo) (?<!foo)
-        - Multi-line mode: (?m)          #  So ^$ match start/end of any line.
-
-    TODO:
-        - Can names start with numbers?
-        - Why are there RGXS in constants and Rgxs here?
-        - When dropping prog, figure out why section_name and prog are
-          intertwined in the code.
-
-    '''
+    ####
+    # Helpers to build regex patterns.
+    ####
 
     captured = lambda s: f'({s})'
     wrapped_in = lambda wrap, guts: f'{wrap}{guts}{wrap}'
 
+    ####
+    # Building blocks use to assemble larger regex patterns.
+    ####
+
+    # Whitespace.
     whitespace0 = r'[ \t]*'
     whitespace1 = r'[ \t]+'
-    alphanum  = r'[a-z0-9]'
+    not_whitespace = r'(?=\S)'
+
+    # Letters, digits, and numbers.
+    alphanum = r'[a-z0-9]'
     alphanum0 = fr'{alphanum}*'
     alphanum1 = fr'{alphanum}+'
+    number = r'\d+'
 
+    # Valid names.
     valid_name = fr'{alphanum1}(?:[_-]{alphanum1})*'
     captured_name = captured(valid_name)
+    prog = fr'{valid_name}(?:\.{alphanum1})?'
 
-    number = r'\d+'
-    comma_sep = wrapped_in(whitespace0, ',')
-    option_prefix    = '-'
+    # Start and end of line.
+    start_of_line = '(?m)^'
+    end_of_line = fr'{whitespace0}(?=\n)'
 
-
-    prog   = fr'{valid_name}(?:\.{alphanum1})?'
-    end_of_line    = fr'{whitespace0}(?=\n)'
-
+    # Backquotes and the stuff inside of them.
     not_backslash = r'(?<!\\)'
     backquote = r'`'
     backquote1 = not_backslash + backquote
     backquote3 = not_backslash + (backquote * 3)
-
-    start_of_line   = '(?m)^'
-
     captured_guts = captured(r'[\s\S]*?')
 
-    not_whitespace = r'(?=\S)'
-
+    # Punctuation.
+    option_prefix = '-'
+    dot = r'\.'
+    comma_sep = wrapped_in(whitespace0, ',')
     section_marker = '::' + end_of_line
 
-    dot = r'\.'
+    # Stuff inside a quantifier range.
     quant_range_guts  = (
         whitespace0 +
         '|'.join((
@@ -396,8 +497,10 @@ class Rgxs:
         whitespace0
     )
 
-
+    ####
     # Rgxs used by TokDefs.
+    ####
+
     # - Quoted.
     quoted_block   = wrapped_in(backquote3, captured_guts)
     quoted_literal = wrapped_in(backquote1, captured_guts)
@@ -440,7 +543,6 @@ class Rgxs:
     eof            =  ''
     err            =  ''
 
-@cache
 def define_tokdefs():
 
     # Combos of parsing modes used by the TokDefs.
@@ -504,7 +606,7 @@ def define_tokdefs():
         kind : TokDef(
             kind = kind,
             emit = emit,
-            modes = tuple(modes),
+            modes = modes,
             regex = re.compile(getattr(Rgxs, kind)),
         )
         for kind, emit, modes in td_tups
@@ -524,11 +626,11 @@ Chars = cons(
 Pmodes = cons('variant opt_spec section help_text')
 TokDefs = define_tokdefs()
 
-ParenPairs = {
-    TokDefs.paren_open: TokDefs.paren_close,
-    TokDefs.brack_open: TokDefs.brack_close,
-    TokDefs.angle_open: TokDefs.angle_close,
-}
+ParenPairs = constants({
+    TokDefs.paren_open.kind: TokDefs.paren_close,
+    TokDefs.brack_open.kind: TokDefs.brack_close,
+    TokDefs.angle_open.kind: TokDefs.angle_close,
+})
 
 ####
 # Lexer.
@@ -648,10 +750,10 @@ class RegexLexer(object):
     def create_token(self, tokdef, m):
         # Helper to create Token from a TokDef and a regex Match.
         text = m.group(0)
-        newlines = tuple(
+        newlines = [
             i for i, c in enumerate(text)
             if c == Chars.newline
-        )
+        ]
         return Token(
             kind = tokdef.kind,
             text = text,
@@ -726,7 +828,7 @@ class RegexLexer(object):
 # SpecParser.
 ####
 
-@dataclass(frozen = True)
+@dataclass
 class Handler:
     method: object
     next_mode: str
@@ -748,20 +850,20 @@ class SpecParser:
 
         # Parsing modes. First define the handlers for each mode.
         self.handlers = {
-            Pmodes.variant: (
+            Pmodes.variant: [
                 Handler(self.section_title, Pmodes.section),
                 Handler(self.variant, None),
-            ),
-            Pmodes.opt_spec: (
+            ],
+            Pmodes.opt_spec: [
                 Handler(self.section_title, Pmodes.section),
                 Handler(self.opt_spec, None),
-            ),
-            Pmodes.section: (
+            ],
+            Pmodes.section: [
                 Handler(self.quoted_block, None),
                 Handler(self.section_title, None),
                 Handler(self.opt_spec, None),
-            ),
-            Pmodes.help_text: tuple(),
+            ],
+            Pmodes.help_text: [],
         }
 
         # Set the initial mode (see the setter).
@@ -785,10 +887,10 @@ class SpecParser:
         # When the mode changes, we tell RegexLexer
         # which tokens it should be looking for.
         self._mode = mode
-        self.lexer.tokdefs = tuple(
+        self.lexer.tokdefs = [
             td for td in TokDefs.values()
             if mode in td.modes
-        )
+        ]
 
     ####
     # Parse a spec.
@@ -859,80 +961,7 @@ class SpecParser:
 
     def build_grammar(self, prog, elems):
         g = Grammar(elems)
-
         return g
-
-        '''
-
-        Partition elems on the first SectionTitle:
-
-            gelems : grammar section (all Variant or OptHelp)
-            selems : other
-
-        Convert selems into groups, one per section:
-
-            SectionTitle
-            0+ QuotedBlock
-            0+ OptHelp        # Can be full or mere references.
-
-        At this point, we will have:
-
-            prog : name or None
-            variants : 0+
-            opthelps : 0+
-            sections : 0+
-
-        If no variants:
-            If no opthelps:
-                - No-config parsing?
-                - Or raise?
-            Else:
-                - Create one Variant from the opthelps.
-
-        Processing a sequence of elems:
-
-            - Applies to Variant, Parenthesized, Bracketed.
-
-            - Organize into groups, partitioning on ChoiceSep.
-            - If multiple groups, we will end up with Group(mutext=True)
-
-            ...
-
-        Sections:
-            - An ordered list of section-elems.
-            - Where each section-elem is: QuotedBlock or Opt-reference.
-
-        '''
-
-        # ParseElem: top-level:
-        #     Variant: name is_partial elems
-        #     OptHelp: elems text
-        #     SectionTitle: title
-        #     QuotedBlock: text
-        #
-        # ParseElem: elems:
-        #     ChoiceSep:
-        #     QuotedLiteral: text
-        #         - Becomes an Opt.
-        #         - But has no dest.
-        #         - Essentially requires the variant to include a positional constant.
-        #         - Does that make it like a PositionalVariant with one choice and no dest or sym?
-        #     PartialUsage: name
-        #         - Insert the elems from the Variant(partial=True)
-        #     Parenthesized: elems quantifier
-        #         - Convert to Group or quantified Opt.
-        #     Bracketed: elems quantifier
-        #         - Convert to Group or quantified Opt.
-        #     Option: dest params quantifier
-        #     Positional: sym dest symlit choices quantifier
-        #     PositionalVariant: sym dest symlit choice
-        #     Parameter: sym dest symlit choices
-        #     ParameterVariant: sym dest symlit choice
-        #
-        # ParseElem: subcomponents:
-        #     SymDest: sym dest symlit val vals
-        #     Quantifier: m n greedy
-        #     QuotedLiteral: text
 
     ####
     # Eat tokens.
@@ -1224,7 +1253,7 @@ class SpecParser:
             vals = None
         else:
             val = None
-            vals = tuple(vals)
+            vals = vals
 
         # Return.
         return SymDest(sym, dest, symlit, val, vals)
@@ -1260,7 +1289,7 @@ class SpecParser:
             return None
 
     def parenthesized(self, td_open, method, empty_ok = False, **kws):
-        td_close = ParenPairs[td_open]
+        td_close = ParenPairs[td_open.kind]
         tok = self.eat(td_open)
         if tok:
             elem = method(**kws)

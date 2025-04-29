@@ -746,13 +746,13 @@ Grammar(
             sym = None
             dest = 'rgx'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
         Positional(
             sym = None
             dest = 'path'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = Quantifier(m=1, n=7, greedy=False)
     Variant(
         name = None
@@ -766,7 +766,7 @@ Grammar(
             sym = None
             dest = 'blort'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = Quantifier(m=None, n=None, greedy=False)
     SectionTitle(
         title = 'Positionals needed'
@@ -778,7 +778,7 @@ Grammar(
             sym = None
             dest = 'rgx'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
     OptHelp(
         text = 'Path to the file'
@@ -786,7 +786,7 @@ Grammar(
             sym = None
             dest = 'path'
             symlit = False
-            choices = ()
+            choices = []
             quantifier = None
     SectionTitle(
         title = 'Options'
