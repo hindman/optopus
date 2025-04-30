@@ -5,9 +5,8 @@
 TODOs, issues, questions
 ----
 
-Rgxs and TokDefs:
-    - The kind values are repeated in various spots.
-    - Perhaps both should be defined together to keep them in sync.
+Editing pass:
+    __HERE__
 
 The Prog ParseElem:
     - Not used.
@@ -150,28 +149,28 @@ My old notes on converting the AST to a proper Grammar
 
 Partition elems on the first SectionTitle:
 
-    gelems : grammar section (all Variant or OptHelp)
+    gelems : grammar section (all Variant or OptSpec)
     selems : other
 
 Convert selems into groups, one per section:
 
     SectionTitle
     0+ QuotedBlock
-    0+ OptHelp        # Can be full or mere references.
+    0+ OptSpec        # Can be full or mere references.
 
 At this point, we will have:
 
     prog : name or None
     variants : 0+
-    opthelps : 0+
+    optspecs : 0+
     sections : 0+
 
 If no variants:
-    If no opthelps:
+    If no optspecs:
         - No-config parsing?
         - Or raise?
     Else:
-        - Create one Variant from the opthelps.
+        - Create one Variant from the optspecs.
 
 Processing a sequence of elems:
 
@@ -190,7 +189,7 @@ Sections:
 
 ParseElem: top-level:
     Variant: name is_partial elems
-    OptHelp: elems text
+    OptSpec: elems text
     SectionTitle: title
     QuotedBlock: text
 
@@ -271,6 +270,8 @@ class Token:
     newlines: list[int]
 
     # Position of the matched text within the larger corpus.
+    # - character index (0-based)
+    # - line and column number (1-based)
     pos: int
     line: int
     col: int
@@ -310,7 +311,7 @@ class Variant(ParseElem):
     elems: list
 
 @dataclass
-class OptHelp(ParseElem):
+class OptSpec(ParseElem):
     elems: list[str]
     text: str
 
@@ -403,6 +404,7 @@ class Grammar:
 
     @property
     def pp(self):
+        # Return the Grammar as pretty-printable text.
         return '\n'.join(Grammar.pp_gen(self))
 
     @staticmethod
@@ -430,7 +432,8 @@ class Grammar:
 # Functions to return constants collections.
 ####
 
-class Rgxs:
+def define_tokdefs():
+    # Returns a constants collections of TokDef instances keyed, by kind.
 
     ####
     # Python regex notes/reminders:
@@ -466,6 +469,7 @@ class Rgxs:
     valid_name = fr'{alphanum1}(?:[_-]{alphanum1})*'
     captured_name = captured(valid_name)
     prog = fr'{valid_name}(?:\.{alphanum1})?'
+    full_sym_dest = captured_name + wrapped_in(whitespace0, captured('[!.]')) + captured_name
 
     # Start and end of line.
     start_of_line = '(?m)^'
@@ -498,54 +502,9 @@ class Rgxs:
     )
 
     ####
-    # Rgxs used by TokDefs.
+    # Combos of parsing modes used by the TokDefs.
     ####
 
-    # - Quoted.
-    quoted_block   = wrapped_in(backquote3, captured_guts)
-    quoted_literal = wrapped_in(backquote1, captured_guts)
-    # - Whitespace.
-    newline        =  r'\n'
-    indent         = start_of_line + whitespace1 + not_whitespace
-    whitespace     = whitespace1
-    # - Sections.
-    section_name   = captured(prog) + whitespace0 + section_marker
-    section_title  = captured('.*') + section_marker
-    # - Parens.
-    paren_open     =  r'\('
-    paren_close    =  r'\)'
-    brack_open     =  r'\['
-    brack_close    =  r'\]'
-    angle_open     =  '<'
-    angle_close    =  '>'
-    # - Quants.
-    quant_range    =  r'\{' + captured(quant_range_guts) + r'\}'
-    triple_dot     = dot * 3
-    question       =  r'\?'
-    # - Separators.
-    choice_sep     =  r'\|'
-    assign         =  '='
-    opt_spec_sep   =  ':'
-    # - Options.
-    long_option    = option_prefix + option_prefix + captured_name
-    short_option   = option_prefix + captured(r'\w')
-    # - Variants.
-    partial_def    = captured_name + '!' + whitespace0 + ':'
-    variant_def    = captured_name + whitespace0 + ':'
-    partial_usage  = captured_name + '!'
-    # - Sym,           dest.
-    sym_dest       = captured_name + wrapped_in(whitespace0, captured('[!.]')) + captured_name
-    dot_dest       = dot + whitespace0 + captured_name
-    solo_dest      = captured_name + whitespace0 + r'(?=[>=])'
-    name           = valid_name
-    # - Special.
-    rest_of_line   =  '.+'
-    eof            =  ''
-    err            =  ''
-
-def define_tokdefs():
-
-    # Combos of parsing modes used by the TokDefs.
     Modes = cons(
         vosh = list(Pmodes.values()),
         vos  = [Pmodes.variant, Pmodes.opt_spec, Pmodes.section],
@@ -556,60 +515,64 @@ def define_tokdefs():
         none = [],
     )
 
-    # Tuples to define TokDefs: kind, emit, and modes.
+    ####
+    # Tuples to define TokDef instances.
+    ####
+
     td_tups = [
         # - Quoted.
-        ('quoted_block',   True,  Modes.s),
-        ('quoted_literal', True,  Modes.vos),
+        ('quoted_block',   Modes.s,    wrapped_in(backquote3, captured_guts)),
+        ('quoted_literal', Modes.vos,  wrapped_in(backquote1, captured_guts)),
         # - Whitespace.
-        ('newline',        False, Modes.vosh),
-        ('indent',         False, Modes.vosh),
-        ('whitespace',     False, Modes.vosh),
+        ('newline',        Modes.vosh,  r'\n'),
+        ('indent',         Modes.vosh, start_of_line + whitespace1 + not_whitespace),
+        ('whitespace',     Modes.vosh, whitespace1),
         # - Sections.
-        ('section_name',   True,  Modes.v),
-        ('section_title',  True,  Modes.vos),
+        ('section_name',   Modes.v,    captured(prog) + whitespace0 + section_marker),
+        ('section_title',  Modes.vos,  captured('.*') + section_marker),
         # - Parens.
-        ('paren_open',     True,  Modes.vos),
-        ('paren_close',    True,  Modes.vos),
-        ('brack_open',     True,  Modes.vos),
-        ('brack_close',    True,  Modes.vos),
-        ('angle_open',     True,  Modes.vos),
-        ('angle_close',    True,  Modes.vos),
+        ('paren_open',     Modes.vos,   r'\('),
+        ('paren_close',    Modes.vos,   r'\)'),
+        ('brack_open',     Modes.vos,   r'\['),
+        ('brack_close',    Modes.vos,   r'\]'),
+        ('angle_open',     Modes.vos,   '<'),
+        ('angle_close',    Modes.vos,   '>'),
         # - Quants.
-        ('quant_range',    True,  Modes.vos),
-        ('triple_dot',     True,  Modes.vos),
-        ('question',       True,  Modes.vos),
+        ('quant_range',    Modes.vos,   r'\{' + captured(quant_range_guts) + r'\}'),
+        ('triple_dot',     Modes.vos,  dot * 3),
+        ('question',       Modes.vos,   r'\?'),
         # - Separators.
-        ('choice_sep',     True,  Modes.vos),
-        ('assign',         True,  Modes.vos),
-        ('opt_spec_sep',   True,  Modes.os),
+        ('choice_sep',     Modes.vos,   r'\|'),
+        ('assign',         Modes.vos,   '='),
+        ('opt_spec_sep',   Modes.os,    ':'),
         # - Options.
-        ('long_option',    True,  Modes.vos),
-        ('short_option',   True,  Modes.vos),
+        ('long_option',    Modes.vos,  option_prefix + option_prefix + captured_name),
+        ('short_option',   Modes.vos,  option_prefix + captured(r'\w')),
         # - Variants.
-        ('partial_def',    True,  Modes.v),
-        ('variant_def',    True,  Modes.v),
-        ('partial_usage',  True,  Modes.v),
-        # - Sym,           dest.
-        ('sym_dest',       True,  Modes.vos),
-        ('dot_dest',       True,  Modes.vos),
-        ('solo_dest',      True,  Modes.vos),
-        ('name',           True,  Modes.vos),
+        ('partial_def',    Modes.v,    captured_name + '!' + whitespace0 + ':'),
+        ('variant_def',    Modes.v,    captured_name + whitespace0 + ':'),
+        ('partial_usage',  Modes.v,    captured_name + '!'),
+        # - Sym, dest.
+        ('sym_dest',       Modes.vos,  full_sym_dest),
+        ('dot_dest',       Modes.vos,  dot + whitespace0 + captured_name),
+        ('solo_dest',      Modes.vos,  captured_name + whitespace0 + r'(?=[>=])'),
+        ('name',           Modes.vos,  valid_name),
         # - Special.
-        ('rest_of_line',   True,  Modes.h),
-        ('eof',            False, Modes.none),
-        ('err',            False, Modes.none),
+        ('rest_of_line',   Modes.h,     '.+'),
+        ('eof',            Modes.none,  ''),
+        ('err',            Modes.none,  ''),
     ]
 
-    # Return a constants collection of TokDefs, keyed by kind.
+    # Return the TokDefs constants collections.
+    NO_EMIT = ('newline', 'indent', 'whitespace', 'eof', 'err')
     return constants({
         kind : TokDef(
             kind = kind,
-            emit = emit,
+            emit = kind not in NO_EMIT,
             modes = modes,
-            regex = re.compile(getattr(Rgxs, kind)),
+            regex = re.compile(pattern),
         )
-        for kind, emit, modes in td_tups
+        for kind, modes, pattern in td_tups
     })
 
 ####
@@ -624,7 +587,9 @@ Chars = cons(
 )
 
 Pmodes = cons('variant opt_spec section help_text')
+
 TokDefs = define_tokdefs()
+Rgxs = constants({kind : td.regex for kind, td in TokDefs})
 
 ParenPairs = constants({
     TokDefs.paren_open.kind: TokDefs.paren_close,
@@ -639,24 +604,19 @@ ParenPairs = constants({
 class RegexLexer(object):
 
     def __init__(self, text, validator, tokdefs = None, debug = False):
-        # Inputs:
-        # - Text to be lexed.
-        # - Validator function from parser to validate tokens.
-        # - TokDefs currently of interest.
-        #
-        # TODO:
-        #   - why is tokdefs a supported arg?
-        #   - it's not used here
-        #   - for testing only?
-        #   - maybe because the SpecParser does set RegexLexer.tokdefs
-        #     whenever the parsing-mode changes. So it's contemplated
-        #     that a future RegexLexer might want to set them during
-        #     creation?
-        #
+        # Text to be lexed.
         self.text = text
-        self.validator = validator
-        self.tokdefs = tokdefs
+
+        # File handle for debug output.
         self.debug_fh = debug
+
+        # TokDefs currently of interest. Modal parsers can change
+        # them when the parsing mode changes.
+        self.tokdefs = tokdefs
+
+        # A validation function. Called in get_next_token() to ask the parser
+        # whether the matched Token is a kind of immediate of interest.
+        self.validator = validator
 
         # Current token and final token, that latter to be set
         # with Token(eof)/Token(err) when lexing finishes.
@@ -687,6 +647,8 @@ class RegexLexer(object):
         self.curr = None
 
     def get_next_token(self):
+        # This is the method used by the parser during the parsing process.
+
         # Return if we are already done lexing.
         if self.end:
             return self.end
@@ -698,8 +660,9 @@ class RegexLexer(object):
         else:
             tok = self.match_token()
 
-        # If we got a Token, return either the token or None --
-        # the latter if the parser is not happy with it.
+        # If we got a Token, ask the parser's validation function
+        # whether to return it or cache it in self.curr.
+        # If returned, we update location information.
         if tok:
             self.debug(2, lexed = tok.kind)
             if self.validator(tok):
@@ -711,16 +674,11 @@ class RegexLexer(object):
                 self.curr = tok
                 return None
 
-        # And if we didn't get a token, we have lexed as far as
+        # If we did not get a token, we have lexed as far as
         # we can. Set the end token and return it.
-        #
-        # TODO: this is opaque:
-        #  - Modify create_token() to handle m = None.
-        #  - There is no need for a final re.Match object.
-        #
-        td = (TokDefs.err, TokDefs.eof)[self.pos > self.maxpos]
-        m = re.search('^$', '')
-        tok = self.create_token(td, m)
+        done = self.pos > self.maxpos
+        td = TokDefs.eof if done else TokDefs.err
+        tok = self.create_token(td)
         self.curr = None
         self.end = tok
         self.update_location(tok)
@@ -729,10 +687,9 @@ class RegexLexer(object):
     def match_token(self):
         # Starting at self.pos, return the next Token.
         #
-        # For non-emitted tokens, we break out of the for-loop,
-        # but enter the while-loop again. This allows the lexer
-        # to be able to ignore any number of non-emitted tokens
-        # on each call of the function.
+        # For non-emitted tokens, we break out of the for-loop, but enter the
+        # while-loop again. This allows the lexer to be able to ignore 0+
+        # non-emitted tokens on each call of the function.
         tok = True
         while tok:
             tok = None
@@ -747,10 +704,10 @@ class RegexLexer(object):
                         break
         return None
 
-    def create_token(self, tokdef, m):
+    def create_token(self, tokdef, m = None):
         # Helper to create Token from a TokDef and a regex Match.
-        text = m.group(0)
-        newlines = [
+        text = m.group(0) if m else ''
+        newline_indexes = [
             i for i, c in enumerate(text)
             if c == Chars.newline
         ]
@@ -762,10 +719,10 @@ class RegexLexer(object):
             pos = self.pos,
             line = self.line,
             col = self.col,
-            nlines = len(newlines) + 1,
+            nlines = len(newline_indexes) + 1,
             isfirst = self.isfirst,
             indent = self.indent,
-            newlines = newlines,
+            newlines = newline_indexes,
         )
 
     def update_location(self, tok):
@@ -782,14 +739,19 @@ class RegexLexer(object):
         #     fubb\nbar\n   | 9         | (4,8)        | 1
         #     fubb\nbar\nxy | 11        | (4,8)        | 3
         #
+
+        # Character index, line number, column number.
         self.pos += tok.width
         self.line += tok.nlines - 1
-        self.col = (
-            tok.width - tok.newlines[-1] if tok.newlines
-            else self.col + tok.width
-        )
+        if tok.newlines:
+            # Text straddles multiple lines. New column number
+            # is the width of the text on the last line.
+            self.col = tok.width - tok.newlines[-1]
+        else:
+            # Easy case: just add the token's width.
+            self.col += tok.width
 
-        # Update indent-related info.
+        # Update the parser's indent-related info.
         if tok.isa(TokDefs.newline):
             self.indent = 0
             self.isfirst = True
@@ -800,9 +762,7 @@ class RegexLexer(object):
             self.isfirst = False
 
     def debug(self, n_indent, **kws):
-        if not self.debug_fh:
-            return
-
+        # Decided whether and where to send debug output.
         if self.debug_fh is True:
             fh = sys.stdout
         elif self.debug_fh:
@@ -810,11 +770,12 @@ class RegexLexer(object):
         else:
             return
 
-
+        # Log a blank line if no kws.
         if not kws:
             print(file = fh)
             return
 
+        # Otherwise, assemble the message and log it.
         indent = Chars.space * (n_indent * 4)
         func_name = get_caller_name()
         params = ', '.join(
@@ -827,6 +788,8 @@ class RegexLexer(object):
 ####
 # SpecParser.
 ####
+
+# __HERE__
 
 @dataclass
 class Handler:
@@ -930,7 +893,7 @@ class SpecParser:
     def do_parse(self, allow_second):
         # Yields top-level ParseElem (those declared in self.handlers).
 
-        # The first OptHelp or SectionTitle must start on new line.
+        # The first OptSpec or SectionTitle must start on new line.
         # That differs from the first Variant, which is allowed
         # to immediately follow the program name, if any.
 
@@ -1070,7 +1033,7 @@ class SpecParser:
 
         # Join text parts and return.
         text = Chars.space.join(t for t in texts if t)
-        return OptHelp(elems, text)
+        return OptSpec(elems, text)
 
     def section_title(self):
         tok = self.eat(TokDefs.section_title, TokDefs.section_name)

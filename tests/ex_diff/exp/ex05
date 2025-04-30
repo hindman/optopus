@@ -482,7 +482,7 @@ do_parse(handler = 'opt_spec')
 
 # GRAMMAR
 Grammar(
-    OptHelp(
+    OptSpec(
         text = 'Python regular expression'
         Positional(
             sym = None
@@ -490,7 +490,7 @@ Grammar(
             symlit = False
             choices = []
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Path(s) to input'
         Bracketed(
             quantifier = None
@@ -500,7 +500,7 @@ Grammar(
                 symlit = False
                 choices = []
                 quantifier = Quantifier(m=1, n=None, greedy=True)
-    OptHelp(
+    OptSpec(
         text = 'Ignore case'
         Bracketed(
             quantifier = None
@@ -510,7 +510,7 @@ Grammar(
             Option(
                 dest = 'ignore-case'
                 quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Select non-matching lines'
         Bracketed(
             quantifier = None

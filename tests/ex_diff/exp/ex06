@@ -772,7 +772,7 @@ Grammar(
         title = 'Positionals needed'
     QuotedBlock(
         text = '\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'
-    OptHelp(
+    OptSpec(
         text = 'Regular expression'
         Positional(
             sym = None
@@ -780,7 +780,7 @@ Grammar(
             symlit = False
             choices = []
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Path to the file'
         Positional(
             sym = None
@@ -792,12 +792,12 @@ Grammar(
         title = 'Options'
     QuotedBlock(
         text = '\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'
-    OptHelp(
+    OptSpec(
         text = 'Ignore case during search'
         Option(
             dest = 'i'
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Ivert: emit non-matched lines'
         Option(
             dest = 'v'

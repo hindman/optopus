@@ -2816,7 +2816,7 @@ Grammar(
                 quantifier = Quantifier(m=1, n=None, greedy=True)
     SectionTitle(
         title = ''
-    OptHelp(
+    OptSpec(
         text = 'Task to perform'
         Positional(
             sym = None
@@ -2824,28 +2824,28 @@ Grammar(
             symlit = False
             choices = []
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Emit lines matching pattern'
         PositionalVariant(
             sym = None
             dest = 'task'
             symlit = False
             choice = 'grep'
-    OptHelp(
+    OptSpec(
         text = 'Search for pattern and replace'
         PositionalVariant(
             sym = None
             dest = 'task'
             symlit = False
             choice = 'sub'
-    OptHelp(
+    OptSpec(
         text = 'Emit text matching pattern'
         PositionalVariant(
             sym = None
             dest = 'task'
             symlit = False
             choice = 'search'
-    OptHelp(
+    OptSpec(
         text = 'Python regular expression'
         Positional(
             sym = None
@@ -2853,7 +2853,7 @@ Grammar(
             symlit = False
             choices = []
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Path(s) to input'
         Positional(
             sym = None
@@ -2861,7 +2861,7 @@ Grammar(
             symlit = False
             choices = []
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Replacement text'
         Positional(
             sym = None
@@ -2869,7 +2869,7 @@ Grammar(
             symlit = False
             choices = []
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Ignore case'
         Option(
             dest = 'i'
@@ -2877,7 +2877,7 @@ Grammar(
         Option(
             dest = 'ignore-case'
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Select non-matching lines'
         Option(
             dest = 'v'
@@ -2885,7 +2885,7 @@ Grammar(
         Option(
             dest = 'invert-match'
             quantifier = None
-    OptHelp(
+    OptSpec(
         text = 'Stop searching after N matches'
         Option(
             dest = 'm'
@@ -2898,7 +2898,7 @@ Grammar(
                 dest = None
                 symlit = False
                 choices = []
-    OptHelp(
+    OptSpec(
         text = 'Print N lines of before/after context'
         Option(
             dest = 'C'
@@ -2911,7 +2911,7 @@ Grammar(
                 dest = None
                 symlit = False
                 choices = []
-    OptHelp(
+    OptSpec(
         text = 'Highlight matching text'
         Option(
             dest = 'color'
@@ -2921,7 +2921,7 @@ Grammar(
                 dest = None
                 symlit = False
                 choices = []
-    OptHelp(
+    OptSpec(
         text = 'N of substitutions'
         Option(
             dest = 'n'
@@ -2934,7 +2934,7 @@ Grammar(
                 dest = None
                 symlit = False
                 choices = []
-    OptHelp(
+    OptSpec(
         text = 'Emit just capture group N [0 for all]'
         Option(
             dest = 'g'
@@ -2947,7 +2947,7 @@ Grammar(
                 dest = None
                 symlit = False
                 choices = []
-    OptHelp(
+    OptSpec(
         text = 'Delimeter for capture groups [tab]'
         Option(
             dest = 'd'
@@ -2960,7 +2960,7 @@ Grammar(
                 dest = None
                 symlit = False
                 choices = []
-    OptHelp(
+    OptSpec(
         text = 'Emit capture groups one-per-line, paragraph-style'
         Option(
             dest = 'p'
