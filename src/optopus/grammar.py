@@ -789,17 +789,19 @@ class RegexLexer(object):
 # SpecParser.
 ####
 
-# __HERE__
-
 @dataclass
 class Handler:
+    # Data object used by SpecParser to manage transitions
+    # from one parsing mode to the next. Holds a top-level
+    # parsing function and the next mode to advance to if
+    # that function finds a match.
     method: object
     next_mode: str
 
 class SpecParser:
 
     def __init__(self, text, debug = False):
-        # The text and the lexer.
+        # The text, whether/where to emit debug output, and the lexer.
         self.text = text
         self.debug_fh = debug
         self.lexer = RegexLexer(text, self.taste, debug = debug)
@@ -811,7 +813,9 @@ class SpecParser:
         self.indent = None
         self.allow_second = False
 
-        # Parsing modes. First define the handlers for each mode.
+        # Parsing modes. Each mode has 0+ handlers to try. If a handler finds a
+        # match and if the handler has a next-mode, the parser will advance to
+        # the next parsing-mode.
         self.handlers = {
             Pmodes.variant: [
                 Handler(self.section_title, Pmodes.section),
@@ -829,13 +833,16 @@ class SpecParser:
             Pmodes.help_text: [],
         }
 
-        # Set the initial mode (see the setter).
+        # Set the initial mode, which triggers the setter
+        # to tell the RegexLexer which TokDefs to use.
         self.mode = Pmodes.variant
 
-        # Tokens the parser has ever eaten and TokDefs
-        # it is currently trying to eat.
-        self.eaten = []
+        # TokDefs the parser currently trying to eat: these are a subset of
+        # those given to the RegexLexer whenever the parsing mode changes.
         self.menu = None
+
+        # Tokens the parser has ever eaten.
+        self.eaten = []
 
     ####
     # Setting the parser mode.
@@ -851,7 +858,8 @@ class SpecParser:
         # which tokens it should be looking for.
         self._mode = mode
         self.lexer.tokdefs = [
-            td for td in TokDefs.values()
+            td
+            for td in TokDefs.values()
             if mode in td.modes
         ]
 
@@ -860,13 +868,23 @@ class SpecParser:
     ####
 
     def parse(self):
-        # Determine the parsing mode for the grammar section
-        # (opt_spec or variant), and get the program name, if any.
-        # Because the first variant can reside on the same line as
-        # the program name, we set the allow_second flag.
+        # This is the method used by the Optopus argument Parser
+        # to parse a SPEC.
+
+        # Setup.
         lex = self.lexer
         lex.debug(0)
         lex.debug(0, mode_check = 'started')
+
+        # Determine the parsing mode for the grammar section
+        # (opt_spec or variant), and get the program name, if any.
+        #
+        # Because the first variant can reside on the same line as
+        # the program name, we set the allow_second flag.
+        #
+        # The TokDef used (section_name) is misleading: at this moment,
+        # we are looking for the program name [both use the same regex].
+        #
         tok = self.eat(TokDefs.section_name)
         if tok:
             self.mode = Pmodes.opt_spec
@@ -879,7 +897,7 @@ class SpecParser:
             allow_second = bool(tok)
         lex.debug(0, mode = self.mode)
 
-        # Parse everything into a list of ParseElem.
+        # Parse everything else in the SPEC into a list of ParseElem.
         elems = list(self.do_parse(allow_second))
 
         # Raise if we did not parse the full text.
@@ -896,33 +914,39 @@ class SpecParser:
         # The first OptSpec or SectionTitle must start on new line.
         # That differs from the first Variant, which is allowed
         # to immediately follow the program name, if any.
-
         self.indent = None
         self.line = None
         self.allow_second = allow_second
 
-        # Emit all ParseElem that we find.
+        # Emit all top-level ParseElem that we find.
         elem = True
         while elem:
             elem = False
-            # Try the handlers until one succeeds. When that occurs,
-            # we break from the loop and then re-enter it. If no handlers
-            # succeed, we will exit the outer loop.
+
+            # Try the handlers until one succeeds.
             for h in self.handlers[self.mode]:
                 self.lexer.debug(0, handler = h.method.__name__)
                 elem = h.method()
                 if elem:
                     yield elem
+
                     # Every subsequent top-level ParseElem must start on a fresh line.
                     self.indent = None
                     self.line = None
                     self.allow_second = False
+
                     # Advance parser mode, if needed.
                     if h.next_mode:
                         self.mode = h.next_mode
+
+                    # If the handler succeeded, we we break from the
+                    # inner-loop but stay in the outer-loop.
+                    # That allows us to try all handlers again (in order).
                     break
 
     def build_grammar(self, prog, elems):
+        # Converts the AST-style data generated during self.parse() into
+        # a proper Grammar instance.
         g = Grammar(elems)
         return g
 
@@ -931,8 +955,22 @@ class SpecParser:
     ####
 
     def eat(self, *tds):
+        # This is the method used by parsing function to get another Token.
+
+        # The caller provides 1+ TokDefs, which are put in self.menu.
         self.menu = tds
         self.lexer.debug(1, wanted = ','.join(td.kind for td in tds))
+
+        # Ask the RegexLexer for another Token. That won't succeed unless:
+        #
+        # - Token is in list of TokDefs appropriate to the parsing mode.
+        #
+        # - Token is of immediate interest to the parsing function that
+        #   called eat(), and thus is in self.menu.
+        #
+        # - Token satifies other criteria (indentation, etc) checked by
+        #   the Token validator function: see self.taste() below.
+        #
         tok = self.lexer.get_next_token()
         if tok is None:
             return None
@@ -951,47 +989,60 @@ class SpecParser:
             return tok
 
     def taste(self, tok):
-        # Returns true if the next token from the lexer is the
-        # right kind, based on last eat() call, and if it adheres
-        # to rules regarding indentation and start-of-line status.
-        #
-        # - If SpecParser has no indent yet, we are starting a new
-        #   top-level ParseElem. So we expect a first-of-line Token.
-        #   If so, we remember that token's indent and line.
-        #
-        # - For subsequent tokens in the expression, we expect tokens
-        #   from the same line or a continuation line indented farther
-        #   than the first line of the expression.
-        #
-        if any(tok.isa(td) for td in self.menu):
-            if self.indent is None:
-                if tok.isfirst or self.allow_second:
-                    self.lexer.debug(2, isfirst = True)
-                    # HERE_INDENT
-                    self.indent = tok.indent
-                    self.line = tok.line
-                    return True
-                else:
-                    self.lexer.debug(2, isfirst = False)
-                    return False
+        # This is the Token validator function used by RegexLexer. It checks
+        # whether the Token is a kind of immediate interest and whether it
+        # satisifes the rules regarding indentation and start-of-line status.
+
+        # The most recent eat() call set the menu to contain the TokDefs of
+        # immediate interest. Return false if the current Token does not match.
+        if not any(tok.isa(td) for td in self.menu):
+            return False
+
+        # If SpecParser has no indent yet, we are starting a new
+        # top-level ParseElem and thus expect a first-of-line Token.
+        # If so, we remember that token's indent and line.
+        if self.indent is None:
+            if tok.isfirst or self.allow_second:
+                self.lexer.debug(2, isfirst = True)
+                self.indent = tok.indent
+                self.line = tok.line
+                return True
             else:
-                if self.line == tok.line:
-                    self.lexer.debug(2, indent_ok = 'line', line = self.line)
-                    return True
-                elif self.indent < tok.indent:
-                    self.lexer.debug(2, indent_ok = 'indent', self_indent = self.indent, tok_indent = tok.indent)
-                    # HERE_INDENT
-                    # self.line = tok.line
-                    return True
-                else:
-                    self.lexer.debug(2, indent_ok = False, self_indent = self.indent, tok_indent = tok.indent)
-                    return False
+                self.lexer.debug(2, isfirst = False)
+                return False
+
+        # For subsequent tokens in the expression, we expect tokens either from
+        # the same line or from a continuation line indented farther than the
+        # first line of the expression.
+        if self.line == tok.line:
+            self.lexer.debug(
+                2,
+                indent_ok = 'line',
+                line = self.line,
+            )
+            return True
+        elif self.indent < tok.indent:
+            self.lexer.debug(
+                2,
+                indent_ok = 'indent',
+                self_indent = self.indent,
+                tok_indent = tok.indent,
+            )
+            return True
         else:
+            self.lexer.debug(
+                2,
+                indent_ok = False,
+                self_indent = self.indent,
+                tok_indent = tok.indent,
+            )
             return False
 
     ####
     # Top-level ParseElem handlers.
     ####
+
+    # __HERE__
 
     def variant(self):
         # Get variant/partial name, if any.
