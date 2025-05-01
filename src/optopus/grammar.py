@@ -1,5 +1,205 @@
 
-'''
+r'''
+
+** The ongoing work to build a detailed parsing plan seems to be
+duplicating/modifying the spec-syntax section in notes.txt.
+
+    - Perhaps I should shift my efforts into editing that material directly (in
+      notes.txt), based on the details and terminology changes that are
+      in-progress below.
+
+** Alternative ideas for SpecParser:
+
+    ** Second thoughts about these ideas:
+        - They are worth considering.
+        - But use caution: don't overdo it and push too many higher-level
+          concerns into the lower-level operations:
+            - lexing: lowest level
+            - parsing
+            - grammar-building: highest level
+
+    - Parsing functions that can fail and reset the lexer:
+
+        - Call a parsing function.
+        - Note the current lexer position: START_POS.
+        - Try to build the desired ParseElem.
+            - Failure scenario:
+                - Consume 0+ tokens successfully.
+                - Hit a roadblock.
+                - Reset the lexer to back to START_POS.
+                - Return None.
+            - Success scenario:
+                - Consume 1+ tokens successfully.
+                - Return ParseElem.
+
+        - My concern about current design:
+            - Parsing functions can partially succeed:
+                - Consume some tokens.
+                - Then fail, without resetting lexer position.
+            - That requires too much care in trying the parsing functions
+              and/or the TokDefs in the correct order.
+                - Some care is unavoidable (eg find quoted material first).
+                - But current design amplifies such needs.
+                - Seems somewhat brittle.
+
+    - Always tell lexer the TokDefs to try during get_next_token():
+
+        - The current approach has:
+            - lexer.tokdefs: general list, based on mode.
+            - self.menu: specific list, based on last eat() call.
+            - self.taste: contextual validation (indent, first-of-line status).
+
+        - Not clear how much benefit comes from lexer.tokdefs.
+            - It's not even clear whether it is truly used or necessary.
+            - The SpecParser never calls:
+                - eat() without supplying TokDefs
+                - get_next_token() outside of eat()
+            - So SpecParser is always looking for something more specific than
+              lexer.tokdefs.
+
+        - Current design seems:
+            - Possibly too limiting:
+                - We have modes which involve a broad range of tokdefs.
+                - What if we end up needing more modes or sub-modes?
+            - Possibly too brittle:
+                - Because the tokdefs for a mode are broad, you have
+                  to be careful about ordering.
+
+----
+Parsing the new spec-syntax
+----
+
+Spec breakdown:
+
+    - spec:
+
+        [first-section]
+        [section...]
+
+    - first-section:
+
+        [title ::]
+        [variant...]
+        [opt-spec | block-quote]...
+
+    - section:
+
+        [spec-scope >>] title ::
+        [opt-spec | block-quote]...
+
+Section breakdown:
+
+    - title:
+        - Rgxs.section_title
+            - Some text.
+            - Line-ending section_marker.
+
+    - spec-scope:
+        - query-path               # New
+        - spec-scope-marker (>>)   # New
+
+    - block-quote
+        - Rgxs.quoted_block                                   # Rename => block_quote
+            - Rgxs.backquote3
+            - Optional markers: no-wrap (!) or comment (#).   # Add.
+            - Rgxs.captured_guts
+            - Rgxs.backquote3
+
+    - variant:
+
+        [valid-name[!] :] variant-spec
+
+    - opt-spec:
+
+        [[spec-scope] >>] (positional-spec | full-option-spec) [: [opt-help-text]]
+
+Breaking down the simpler parts of the section breakdown:
+
+    - valid-name:
+
+        python-name | usage-name
+
+        - Notes:
+            - python-name: valid Python name
+            - usage-name: same, using hyphens
+
+    - query-path:
+
+        query-elem [. query-elem]...
+
+    - query-elem
+
+        valid-name | \d+
+
+    - opt-help-text
+
+        - The rest of the line, plus continuation lines.
+        - Colon marker without opt-help-text can be used to distinguish
+          opt-spec from variant to avoid ambiguity.
+
+Variant-spec breakdown:
+
+    (
+        quoted-literal |
+        partial-usage |
+        group |
+        option |
+        positional
+    )...
+
+    - quoted-literal:
+        - backquote
+        - text
+        - backquote
+
+        - No name, dest, or quantifier.
+
+    - partial-usage:
+        - python-name
+        - exclamation mark
+        - quantifier
+
+Group breakdown:
+
+    [ valid-name = ] group-spec
+
+    - group-spec:
+        - Opening marker: ( or [
+        - 1+ relevant ParseElem based on context (variant or opt-spec)
+        - Appropriate closing marker: ) or ]
+
+Quantifier breakdown:
+
+    TODO
+
+Full-option-spec:
+
+    [alias...] option-spec
+
+    - Where alias is a bare-option.
+
+Option-spec:
+
+    bare-option [group-spec | parameter-spec]...
+
+    - Where bare-option is just the option itself:
+        -f
+        --bar
+
+    - Where the option-spec can be wrapped in a group-spec that:
+        - Contains one ParseElem: the Opt being configured.
+        - Functions as a quantifier:
+            - Typically square brackets for non-required
+
+Parameter-spec:
+
+    group | parameter
+
+    TODO
+
+Positional-spec:
+
+    TODO
 
 ----
 TODOs, issues, questions
@@ -963,7 +1163,7 @@ class SpecParser:
     ####
 
     def eat(self, *tds):
-        # This is the method used by parsing function to get another Token.
+        # This is the method used by parsing functions to get another Token.
 
         # The caller provides 1+ TokDefs, which are put in self.menu.
         self.menu = tds

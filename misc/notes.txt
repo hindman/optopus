@@ -336,13 +336,14 @@ spec-syntax: Spec syntax
 
 Spec:
 
-    - A spec is 0+ sections.
+    - A spec is a special first-section and then some other sections.
 
+        [first-section]
         [section...]
 
 Section:
 
-    - The first section:
+    - The first-section:
 
         [title ::]                        # Default title: 'Usage'
         [variant...]
@@ -400,26 +401,24 @@ Opt-spec:
 
     - Syntax:
 
-        [spec-scope >>] <pos>            [: [help-text]]
-        [spec-scope >>] [alias...] --opt [: [help-text]]
+        [[spec-scope] >>] <pos>            [: [opt-help-text]]
+        [[spec-scope] >>] [alias...] --opt [: [opt-help-text]]
 
     - Explanation:
 
-        - Spec-scope:
+        - The spec-scope marker (>>) declares a parent-child relationship.
 
-            - Declares a kind of parent-child relationship.
-            - It can take two forms.
-
-            - A Parser.query() path:
+            - With a spec-scope:
+                - Format: a Parser.query() path.
                 - Parent is the Opt from the grammar.
                 - Child is the current opt-spec.
                 - Declares the Opt to which the opt-spec should be connected.
 
-            - Empty:
+            - Without a spec-scope:
                 - Parent is the preceding (non-scoped) opt-spec.
                 - Child is the current opt-spec.
-                - Current opt-spec configures a child-element (Arg or Choice)
-                  of the parent.
+                - Child configures an Arg or Choice of the parent.
+                - This spec-scope form is not allowed with section titles.
 
         - A <pos> defines one positional argument (ie, positional-spec),
           optionally with a quantifer.
@@ -4125,7 +4124,8 @@ Querying grammar elements in a Parser:
 
         - Where ATTR:
             - Attribute name to match.
-            - Default: ('name', 'dest').
+            - Choices: name, dest, or both.
+            - Default: both.
 
         - If negate=True:
             - Select entities that do not meeting the criteria.
@@ -4152,8 +4152,17 @@ Querying grammar elements in a Parser:
 
             fnmatch(NAME_DEST, QUERY_ELEM)
 
-            - Since the targets (name or dest) have no hiearchical separators,
-              some glob-syntax features are irrelevant.
+        - The query-element can use a restricted glob-syntax:
+
+            ? for single character
+            * 0+ characters
+
+            - To keep spec-parsing and query-path-parsing reasonable, other
+              glob-syntax features are not supported.
+            - Thus the character set for a query-element is limited:
+                - valid-name characters: leters, digits, underscore, hyphen.
+                - integers
+                - basic glob markers: ? and *.
 
         - When a PATH has multiple elements, they are interpreted in a flexible
           nesting fashion to embrace both:
