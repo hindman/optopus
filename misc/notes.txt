@@ -96,29 +96,25 @@ todos: TODOs
 
 Spec-parsing:
 
-    - Refactor the current code mainly for clarity:
-
-        x opthelp => optspec
-        x regex snippets
-        x tokdefs
-
-        - other code:
-            - assess, edit
-            - don't go too far at this stage
-
-        - docs:
-            - improve comments
-            - collect notes, TODOs
-
-        - Passing current tests.
-
     - Modify code to use the new spec-syntax:
+
+        - Planning:
+            - tokens
+            - parsing functions
+            - modes
+
         - Change the specs used in the tests.
         - Adjust tokens, tokdefs, etc.
         - Adjust algo as needed.
         - Get tests and debug functional again.
 
     - Convert spec-syntax AST into a proper Grammar.
+
+New questions/issues:
+
+    - Can names start with numbers?
+        - Decide policy.
+        - Adjust regexs in grammar.py accordingly.
 
 Argument parsing.
     - Read arg-parsing-algo
@@ -478,6 +474,7 @@ Parameter-spec:
         --foo <bar>
         --foo <bar=choices>
         --foo <choices>
+        --foo <>
 
 Choices:
 

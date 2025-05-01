@@ -5,17 +5,29 @@
 TODOs, issues, questions
 ----
 
-Editing pass:
-    __HERE__
+The elems() method:
+    - Should takes_quantifier be set in each ParseElem class?
 
-The Prog ParseElem:
-    - Not used.
-    - Probably not needed with the new spec-syntax.
-    - Why are section_name and prog are intertwined in the code?
+    - A better name for the method?
 
-Can names start with numbers?
+        - It looks like the method deals with the parts of the grammar shared
+          by opt-specs and variants.
 
-Why are there RGXS in constants and Rgxs here?
+        Function           | Top level | Uses elems() | elems()
+        -------------------------------------------------------
+        variant()          | yes       | yes          | .
+        opt_spec()         | yes       | yes          | .
+        section_title()    | yes       | .            | .
+        quoted_block()     | yes       | .            | .
+        -------------------------------------------------------
+        quoted_literal()   | .         | .            | yes
+        choice_sep()       | .         | .            | yes
+        partial_usage()    | .         | .            | yes
+        paren_expression() | .         | .            | yes
+        brack_expression() | .         | .            | yes
+        positional()       | .         | .            | yes
+        long_option()      | .         | .            | yes
+        short_option()     | .         | .            | yes
 
 ----
 Spec-parsing overview
@@ -299,10 +311,6 @@ class Token:
 class ParseElem:
     # Just a base class, mostly as a device for terminology.
     pass
-
-@dataclass
-class Prog(ParseElem):
-    name: str
 
 @dataclass
 class Variant(ParseElem):
@@ -1039,10 +1047,8 @@ class SpecParser:
             return False
 
     ####
-    # Top-level ParseElem handlers.
+    # Top-level parsing functions.
     ####
-
-    # __HERE__
 
     def variant(self):
         # Get variant/partial name, if any.
@@ -1101,19 +1107,11 @@ class SpecParser:
             return None
 
     ####
-    # ParseElem obtained via the elems() helper.
+    # The elems() helper, which deals with parsing functions
+    # shared by variants and opt-specs.
     ####
 
     def elems(self):
-        # TODO:
-        # - name is cryptic
-        # - what is the theme here?
-        #
-        # - Shouldn't takes_quantifier be set in each dataclass?
-        # - The code using this function speaks of a ParseElem:
-        #   - what is that?
-        #   - should it be formalized: eg a base dataclass
-
         elems = []
         takes_quantifier = (Parenthesized, Bracketed, Positional, Option)
         while True:
@@ -1138,17 +1136,17 @@ class SpecParser:
                 break
         return elems
 
-    def choice_sep(self):
-        tok = self.eat(TokDefs.choice_sep)
-        if tok:
-            return ChoiceSep()
-        else:
-            return None
-
     def quoted_literal(self):
         tok = self.eat(TokDefs.quoted_literal)
         if tok:
             return QuotedLiteral(text = tok.m.group(1))
+        else:
+            return None
+
+    def choice_sep(self):
+        tok = self.eat(TokDefs.choice_sep)
+        if tok:
+            return ChoiceSep()
         else:
             return None
 
@@ -1173,6 +1171,19 @@ class SpecParser:
         else:
             return None
 
+    def positional(self):
+        # Try to get a SymDest elem.
+        sd = self.parenthesized(TokDefs.angle_open, self.symdest, for_pos = True)
+        if not sd:
+            return None
+
+        # Return Positional or PositionalVariant.
+        xs = (sd.sym, sd.dest, sd.symlit)
+        if sd.val is None:
+            return Positional(*xs, choices = sd.vals, quantifier = None)
+        else:
+            return PositionalVariant(*xs, choice = sd.val)
+
     def long_option(self):
         return self.option(TokDefs.long_option)
 
@@ -1187,19 +1198,6 @@ class SpecParser:
             return Option(dest, params, None)
         else:
             return None
-
-    def positional(self):
-        # Try to get a SymDest elem.
-        sd = self.parenthesized(TokDefs.angle_open, self.symdest, for_pos = True)
-        if not sd:
-            return None
-
-        # Return Positional or PositionalVariant.
-        xs = (sd.sym, sd.dest, sd.symlit)
-        if sd.val is None:
-            return Positional(*xs, choices = sd.vals, quantifier = None)
-        else:
-            return PositionalVariant(*xs, choice = sd.val)
 
     def parameter(self):
         # Try to get a SymDest elem.
@@ -1324,6 +1322,8 @@ class SpecParser:
     ####
 
     def error(self, msg, **kws):
+        # Called when spec-parsing fails.
+        # Raises OptopusError with kws, plus position/token info.
         lex = self.lexer
         kws.update(
             msg = msg,
@@ -1335,6 +1335,8 @@ class SpecParser:
         raise OptopusError(**kws)
 
     def parse_first(self, *methods):
+        # Takes 1+ parsing functions.
+        # Returns the elem from the first that succeeds.
         elem = None
         for m in methods:
             elem = m()
@@ -1343,6 +1345,8 @@ class SpecParser:
         return elem
 
     def parse_some(self, method):
+        # Takes a parsing function.
+        # Collects as many elems as possible and returns them.
         elems = []
         while True:
             e = method()
