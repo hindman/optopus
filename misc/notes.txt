@@ -334,107 +334,74 @@ specification: Specification
 spec-syntax: Spec syntax
 --------
 
-Spec:
+spec:
 
-    - A spec is a special first-section and then some other sections.
+    [first-section]
+    [section...]
 
-        [first-section]
-        [section...]
+first-section:
 
-Section:
+    [section-title ::]
+    [variant...]
+    [opt-spec | block-quote]...
 
-    - The first-section:
+    - Default section-title: Usage.
 
-        [title ::]                        # Default title: 'Usage'
-        [variant...]
-        [opt-spec | block-quote]...
+section:
 
-    - Other sections:
-
-        [spec-scope >>] title ::          # Title required
-        [opt-spec | block-quote]...
+    [spec-scope >>] section-title ::
+    [opt-spec | block-quote]...
 
     - A spec-scope applied to a section is a shortcut for applying the scope to
-      all opt-specs within the section (detailed below).
+      all opt-specs within the section (details below).
 
-Variant:
+section-title:
 
-    [name :] variant-spec                 # Regular
-    name! : variant-spec                  # Partial
+    title-text ::
 
-Variant-spec:
+    - The title-text must be on one line.
+    - The section-marker must end the line.
 
-    - Options:
+spec-scope:
 
-        -f             # Short.
-        --foo          # Long.
-        -abc           # Bundled flags: -a -b -c.
+    query-path >>
 
-    - Positionals and parameters:
+query-path:
 
-        <bar>          # Positional.
-        -f <fubb>      # Parameter.
+    query-elem [. query-elem]...
 
-    - Quoted literals:
+query-elem:
 
-        `hello`        # Can be positional, positional-choice, parameter-choice.
+    glob-char... | digit...
 
-    - Groups and alternatives:
+    - Can be a name/dest glob pattern or a positive integer.
+    - Glob pattern uses: python-name characters; and wildcards (? and *).
 
-        ()             # Group.
-        []             # Group, optional.
-        foo=()         # Named group.
-        foo=[]         # Named group, optional.
-        |              # Alternatives separator.
+block-quote:
 
-    - Quantifiers:
+    opening-triple-quote quoted-text ```
 
-        ...            # Either 1+ or 0+ (latter if the entity is optional).
-        {m,n}          # Repetition: m through n, inclusive.
-        ?              # Non-greedy for preceding quantifier.
+    - Where opening-triple-quote:
 
-    - Partial:
+        ```  | .
+        ```! | no wrap
+        ```# | spec-comment
 
-        foo!           # Insert foo partial into the variant.
+        - Triple-quotes can sit on their own line, or not.
 
-Opt-spec:
+    - Where quoted-text:
 
-    - Syntax:
+        - Can span multiple lines.
 
-        [[spec-scope] >>] <pos>            [: [opt-help-text]]
-        [[spec-scope] >>] [alias...] --opt [: [opt-help-text]]
+variant:
 
-    - Explanation:
+    [valid-name[!] :] variant-spec
 
-        - The spec-scope marker (>>) declares a parent-child relationship.
+    - Marker (!) means partial-variant.
 
-            - With a spec-scope:
-                - Format: a Parser.query() path.
-                - Parent is the Opt from the grammar.
-                - Child is the current opt-spec.
-                - Declares the Opt to which the opt-spec should be connected.
+opt-spec:
 
-            - Without a spec-scope:
-                - Parent is the preceding (non-scoped) opt-spec.
-                - Child is the current opt-spec.
-                - Child configures an Arg or Choice of the parent.
-                - This spec-scope form is not allowed with section titles.
-
-        - A <pos> defines one positional argument (ie, positional-spec),
-          optionally with a quantifer.
-
-        - An --opt consists of an opt-mention (eg --foo), optionally
-          with a quantifer and 1+ parameter-specs.
-
-        - An alias is an opt-mention (eg -f) that functions as a synonym in the
-          usage for the --opt.
-
-    - An opt-spec uses a subset of variant-spec grammar. The following
-      are not supported:
-
-        - Variants.
-        - Partials.
-        - Named groups.
+    [[spec-scope] >>] (positional-spec | option-alias-spec) [: [opt-help-text]]
 
     - If Opts are declared in variants and later in opt-specs, the two
       configurations are merged:
@@ -445,74 +412,185 @@ Opt-spec:
         - Opt declared in the grammar can use an abbrievated form (an
           opt-mention), leaving the full configuration to the opt-spec.
 
-Opt-mention:
+    - The spec-scope marker (>>) declares a parent-child relationship.
 
-    - An opt-mention is just the Opt.name, with appropriate punctuation:
+        - With a spec-scope:
+            - Parent: Opt from variants.
+            - Child: current opt-spec.
+            - Declares the Opt to which the opt-spec should be connected.
 
-        <foo> | Positional.
-        --bar | Long option.
-        -b    | Short option.
+        - Without a spec-scope:
+            - Parent: preceding (non-scoped) opt-spec.
+            - Child: current opt-spec.
+            - Child configures an Arg or Choice of the parent.
 
-Var-input:
+valid-name:
+
+    python-name | usage-name
+
+    - Where:
+
+        python-name | Valid Python name
+        usage-name  | Same, with hyphens => underscores
+
+opt-help-text
+
+    - The rest of the line, plus continuation lines.
+    - Colon marker without opt-help-text can be used to distinguish opt-spec
+      from variant (to avoid ambiguity).
+
+variant-spec:
+
+    variant-elem...
+
+variant-elem:
+
+    (
+        option-spec |
+        positional-spec |
+        quoted-literal |
+        group-spec |
+        partial-usage
+    )
+
+    - All take a quantifer except quoted-literal.
+
+variant-elem: examples with comments:
+
+    - Options:
+
+        -f             # Short.
+        -abc           # Bundled flags: -a -b -c.
+        --foo          # Long.
+        --age <yr>     # Long with parameters (groups can be parameters too).
+
+    - Positionals:
+
+        <bar>          # Single.
+        <path>...      # With quantifier.
+
+    - Quoted literals:
+
+        `hello`        # Becomes a Literal, a limited form of Opt.
+
+    - Groups and alternatives:
+
+        ()             # Group.
+        []             # Group, optional.
+        foo=()         # Named group.
+        foo=[]         # Named group, optional.
+        |              # Alternatives separator.
+
+    - Partial:
+
+        foo!           # Insert foo partial into the variant.
+
+    - Quantifiers:
+
+        ...            # Either 1+ or 0+ (latter if the entity is optional).
+        {m,n}          # Repetition: m through n, inclusive.
+        ?              # Non-greedy for preceding quantifier.
+
+quantifer:
+
+    triple-dot[?]
+    quant-range[?]
+
+    - Where triple-dot:
+
+        ...
+
+    - Where quant-range:
+
+        {min,max}
+        {min,}
+
+        - Both are positive integers.
+
+    - Where ? marker:
+
+        - Makes preceding quantifier non-greedy.
+
+quoted-literal:
+
+    ` text `
+
+    - Does not support: name, dest, or quantifier.
+    - Use backslash to get a literal backquote.
+
+partial-usage:
+
+    python-name! quantifier
+
+group-spec:
+
+    [ valid-name = ] group
+
+group:
+
+    ( variant-elem... )
+    [ variant-elem... ]
+
+option-alias-spec:
+
+    [alias...] option-spec
+
+    - Where alias = bare-option.
+
+bare-option:
+
+    - first-char
+    -- python-name
+
+    - Where first-char is a valid first character in a python-name.
+
+option-spec:
+
+    bare-option [full-parameter-spec...]
+
+full-parameter-spec:
+
+    parameter-group | parameter-spec
+
+parameter-group:
+
+    ( parameter-spec... )
+    [ parameter-spec... ]
+
+parameter-spec:
+
+    < valid-name >
+    < valid-name = choices >
+    < choices >
+    < >
+
+choices:
+
+    choice [ | choices ]
+
+choice:
+
+    valid-name | quoted-literal
+
+positional-spec:
+
+    < valid-name >
+    < valid-name = choices >
+
+opt-mention:
+
+    - Consists of Opt.name, with appropriate punctuation.
+    - Examples:
+
+        <foo>
+        --bar
+        -b
+
+var-input:
 
     - Variable input provided by the user.
-    - See positional-spec and parameter-spec for details.
     - Primarily an internal term, not user-facing.
-
-Positional-spec:
-
-    - Syntax:
-
-        <foo>         | Positional
-        <foo=choices> | With choices
-
-Parameter-spec:
-
-    - Syntax:
-
-        --foo <bar>
-        --foo <bar=choices>
-        --foo <choices>
-        --foo <>
-
-Choices:
-
-    - Consists of 1+ choice, pipe-delimited.
-    - Choice can be:
-        - Simple name consisting of \w or hyphen.
-        - Quoted-literal.
-
-Block-quotes and literals:
-
-    - A section can contain literal text intersperced among the variant-specs
-      and opt-specs.
-
-    - Quoting:
-
-        Quote | Situation
-        ------------------------------------
-        ```   | Block quote
-        ```!  | Block quote, no wrap
-        ```#  | Block quote, spec-comment
-        `     | Inline quote
-        \`    | Literal backquote
-
-    - Notes:
-
-        - Triple-quotes can sit on their own line, or not.
-
-        - For no-wrap and spec-comment, the additional markers (exclamation or
-          pound-sign) are applied only to the opening quote.
-
-Names:
-
-    - Must be simple "words":
-        - Start with a letter.
-        - Allowed: letters, digits, underscores, or hyphens.
-
-    - By default, most names in the spec are also the dest:
-        - Dests cannot have hyphens.
-        - So a hyphen-to-underscore conversion is applied.
+    - Forms: positional-spec and parameter-spec.
 
 Whitespace rules:
 
@@ -537,7 +615,7 @@ Whitespace rules:
 
     - Whitespace not allowed:
 
-        - Between option prefix and its dest.
+        - Between option prefix and its name.
 
         - Between partial name and its exclamation mark.
 
@@ -1829,17 +1907,17 @@ groups-can-be-parameters: Options can have Groups as parameters
 
 The idea that options can have groups as parameters is a bit surpising:
 
-    - Example:
+    --point <x> (<y> <z>)...
 
-        --point <x> (<y> <z>)...
+    (1) A flag, a positional, and then a Group.
+    (2) Or an option with two parameters: Parameter then Group.
 
-        (1) A flag, a positional, and then a Group.
-        (2) Or an option with two parameters: Parameter then Group.
+    - The first intpretation is tempting, but incorrect.
 
-        - The first intpretation is tempting, but incorrect.
+Rationale based on parsing philosophy:
 
-    - That ambiguity is just a fancy version of a fundamental ambiguity that I
-      have already worked out:
+    - That ambiguity noted above is just a fancy version of a fundamental
+      ambiguity already worked out:
 
         - This is an option with two parameters:
 
@@ -1857,6 +1935,28 @@ The idea that options can have groups as parameters is a bit surpising:
 
         - Without a greedy policy, many ambiguities/complications arise.
         - Groups as parameters is just a logical extension of the core idea.
+
+    - One could propose special policy workarounds:
+
+        - Groups cannot be parameters.
+        - But then an optional parameter becomes awkward:
+
+            --help [<topic>]
+
+        - One could add more policy: bracketed, degenerate group with one
+          paramater can be a paramater.
+        - And that starts to feel finicky.
+
+Rationale based on core features:
+
+    - Parameters and positionals are similar in most respects.
+    - Positionals can reside in groups with rich quantifiers.
+    - Parameters should do the same.
+
+    - These plausible and similar use cases:
+
+        scores=(<lo> <hi>)...
+        --scores (<lo> <hi>)...
 
 --------
 parser-config-api: Parser.config() API
