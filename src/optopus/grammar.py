@@ -1,6 +1,120 @@
 
 r'''
 
+----
+Parsing the new spec-syntax
+----
+
+Which parsing functions having early "overlap"?
+
+    - Example of overlap:
+
+        - Text with four tokens: T1 T2 T3 T4.
+        - Two parsing functions: pf1() and pf2()
+            - They both can consume T1 and T2.
+            - But pf1() will fail upon T3.
+            - While pf2() can consume all four.
+
+    - Ways to address the problem:
+
+        - Try the functions in the correct order.
+            - In the example, try pf2() first.
+            - This can work if there is an unambiguously correct order.
+
+        - In cases where such overlap can occur:
+            - Try pf1().
+            - Reset lexer position.
+            - Try pf2().
+            - Could work, but is more complex than relying on ordering.
+
+    - Function with potential overlap:
+
+        - Overlap 1: variant and opt-spec.
+
+            - This is a known overlap with a lot of planning behind it.
+            - Anything that parses as a variant is interpreted that way.
+
+            - The overlap can consist of several tokens:
+
+            - When parsing a variant fails:
+                - If the failure occurs on Token(colon-marker).
+                - Then the parser have two ways to respond:
+                    - Reset lexer position and try to parse opt-spec instead.
+                    - Forge ahead by somehow using the tokens/elems collected
+                      so far to build an opt-spec rather than a variant.
+
+                - The mechanics of doing this seem awkward.
+                    ...
+
+        - Overlap 2: section-title-spec and opt-spec.
+
+            - The overlap is fairly narrow: both can start with a spec-scope.
+            - Possible resolution:
+                - The spec-scope can be expressed as a single Token.regex.
+                - Create another TokDef: section-scope.
+                    - Same regex.
+                    - Plus the section-title marker (:).
+                - Always try the section-title-spec first.
+
+Parsing function hierarchy:
+
+    first-section
+        section-title
+        variant
+            valid-name
+                python-name
+                usage-name
+            variant-spec
+                variant-elem
+                    option-spec
+                        bare-option
+                        full-parameter-spec
+                            parameter-spec
+                                valid-name
+                                choices
+                                    choice
+                                        valid-name
+                                        quoted-literal
+                            parameter-group
+                                parameter-spec
+                        quantifier
+                            triple-dot
+                            quant-range
+                    positional-spec
+                        valid-name
+                        choices
+                        quantifier
+                    group-spec
+                        valid-name
+                        group
+                            variant-elem
+                        quantifier
+                    quoted-literal
+                    partial-usage
+                        python-name
+        section-content-elem
+            heading
+            block-quote
+            opt-spec
+                spec-scope
+                    query-path
+                        query-elem
+                positional-spec
+                option-alias-spec
+                    bare-option
+                    option-spec
+                opt-help-text
+                    rest-of-line + continuation-lines
+    section
+        section-title-spec
+            spec-scope
+            section-title
+        section-content-elem
+
+----
+Alternative approaches, ideas, questions
+----
+
 ** The ongoing work to build a detailed parsing plan seems to be
 duplicating/modifying the spec-syntax section in notes.txt.
 
@@ -64,12 +178,6 @@ duplicating/modifying the spec-syntax section in notes.txt.
             - Possibly too brittle:
                 - Because the tokdefs for a mode are broad, you have
                   to be careful about ordering.
-
-----
-Parsing the new spec-syntax
-----
-
-...
 
 ----
 TODOs, issues, questions

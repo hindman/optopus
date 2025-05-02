@@ -343,14 +343,18 @@ first-section:
 
     [section-title ::]
     [variant...]
-    [opt-spec | block-quote]...
+    [section-content-elem...]
 
     - Default section-title: Usage.
 
 section:
 
+    section-title-spec ::
+    [section-content-elem...]
+
+section-title-spec:
+
     [spec-scope >>] section-title ::
-    [opt-spec | block-quote]...
 
     - A spec-scope applied to a section is a shortcut for applying the scope to
       all opt-specs within the section (details below).
@@ -359,8 +363,7 @@ section-title:
 
     title-text ::
 
-    - The title-text must be on one line.
-    - The section-marker must end the line.
+    - Text and marker must be on one line.
 
 spec-scope:
 
@@ -376,6 +379,17 @@ query-elem:
 
     - Can be a name/dest glob pattern or a positive integer.
     - Glob pattern uses: python-name characters; and wildcards (? and *).
+
+section-content-elem:
+
+    [heading | opt-spec | block-quote]...
+
+heading:
+
+    heading-text :::
+
+    - The heading-text must be on one line.
+    - The marker must end the line.
 
 block-quote:
 
@@ -448,12 +462,13 @@ variant-elem:
     (
         option-spec |
         positional-spec |
-        quoted-literal |
         group-spec |
+        quoted-literal |
         partial-usage
     )
 
-    - All take a quantifer except quoted-literal.
+    - All take a quantifer except quoted-literal and partial-usage.
+    - The latter because user can wrap partial-usage in a group.
 
 variant-elem: examples with comments:
 
@@ -520,7 +535,7 @@ quoted-literal:
 
 partial-usage:
 
-    python-name! quantifier
+    python-name!
 
 group-spec:
 
@@ -550,12 +565,7 @@ option-spec:
 
 full-parameter-spec:
 
-    parameter-group | parameter-spec
-
-parameter-group:
-
-    ( parameter-spec... )
-    [ parameter-spec... ]
+    parameter-spec | parameter-group
 
 parameter-spec:
 
@@ -572,6 +582,11 @@ choice:
 
     valid-name | quoted-literal
 
+parameter-group:
+
+    ( parameter-spec... )
+    [ parameter-spec... ]
+
 positional-spec:
 
     < valid-name >
@@ -579,6 +594,7 @@ positional-spec:
 
 opt-mention:
 
+    - A term/concept more than a parsing element.
     - Consists of Opt.name, with appropriate punctuation.
     - Examples:
 
