@@ -1,13 +1,11 @@
 
-################################
-# OLD FILE -- DO NOT EDIT
-################################
-
 import io
+import pytest
+
 from pathlib import Path
 
 from short_con import cons
-from optopus.grammar import (
+from optopus.new_grammar import (
     SpecParser,
     TokDefs,
     Grammar,
@@ -122,11 +120,13 @@ foo bar fubb.
           lines
 '''
 
+@pytest.mark.skip(reason = 'spec-parsing-overhaul')
 def test_ex1(tr):
     spec = SPECS['ex01'].strip() + '{1,3}'
     sp = SpecParser(spec, debug = False)
     g = sp.parse()
 
+@pytest.mark.skip(reason = 'spec-parsing-overhaul')
 def test_examples(tr):
 
     for exkey, spec in SPECS.items():

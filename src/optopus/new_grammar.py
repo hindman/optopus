@@ -1,7 +1,376 @@
 
-################################
-# OLD FILE -- DO NOT EDIT
-################################
+'''
+
+----
+Parsing the new spec-syntax
+----
+
+Implementation notes:
+
+    - The variant() parsing function will need reset-lexer-position.
+
+    - staging plan:
+        - Edit NEW files, while keeping OLD runnable.
+        - When ready, swap back (Git history currently in NEW).
+
+Parsing function hierarchy:
+
+    first-section
+        section-title
+        variant
+            valid-name
+                python-name
+                usage-name
+            variant-spec
+                variant-elem
+                    option-spec
+                        bare-option
+                        full-parameter-spec
+                            parameter-spec
+                                valid-name
+                                choices
+                                    choice
+                                        valid-name
+                                        quoted-literal
+                            parameter-group
+                                parameter-spec
+                        quantifier
+                            triple-dot
+                            quant-range
+                    positional-spec
+                        valid-name
+                        choices
+                        quantifier
+                    group-spec
+                        valid-name
+                        group
+                            variant-elem
+                        quantifier
+                    quoted-literal
+                    partial-usage
+                        python-name
+        section-content-elem
+            heading
+            block-quote
+            opt-spec
+                spec-scope
+                    query-path
+                        query-elem
+                positional-spec
+                option-alias-spec
+                    bare-option
+                    option-spec
+                opt-help-text
+                    rest-of-line + continuation-lines
+    section
+        section-title-spec
+            spec-scope
+            section-title
+        section-content-elem
+
+----
+Notes and questions
+----
+
+Which parsing functions having early "overlap"?
+
+    - Example of overlap:
+
+        - Text with four tokens: T1 T2 T3 T4.
+        - Two parsing functions: pf1() and pf2()
+            - They both can consume T1 and T2.
+            - But pf1() will fail upon T3.
+            - While pf2() can consume all four.
+
+    - Ways to address the problem:
+
+        - Try the functions in the correct order.
+            - In the example, try pf2() first.
+            - This can work if there is an unambiguously correct order.
+
+        - In cases where such overlap can occur:
+            - Try pf1().
+            - If failed, reset lexer position.
+            - Try pf2().
+            - Could work, but is more complex than relying on ordering.
+
+    - Parsing functions with potential overlap:
+
+        - Overlap 1: variant and opt-spec.
+
+            - This is a known overlap with a lot of planning behind it.
+            - Anything that parses as a variant is interpreted that way.
+
+            - The overlap can consist of several tokens.
+
+            - When parsing a variant fails:
+                - If the failure occurs on Token(colon-marker).
+                - Then the parser has at least two ways to respond:
+                    - Reset lexer position and try to parse opt-spec instead.
+                    - Forge ahead by somehow using the tokens/elems collected
+                      so far to build an opt-spec rather than a variant.
+                - The reset approach seems the simpler of the two.
+
+        - Overlap 2: section-title-spec and opt-spec.
+
+            - The overlap is fairly narrow: both can start with a spec-scope.
+            - Possible resolution:
+                - The spec-scope can be expressed as a single Token.regex.
+                - Add another Rgxs entry: Rgx.spec-scope + Rgxs.section_title
+            - If that approach works (seems likely), a section title (scoped or
+              unscoped) can always be identified in a single token.
+            - Hence no overlap issue.
+
+Why not ask specifically for what is on SpecParser.menu?
+
+    - Parser gives lexer a general list of TokDefs whenever the parsing is set.
+    - But taste() approves only tokens on the menu.
+    - Why bother with the general list in RegexLexer.tokdefs?
+
+        - Allows lexer to handle non-emitted tokens.
+        - Relieves parser of the need to pass them in every time, properly
+          ordered.
+
+        - But that would be easy to handle inside the parser.
+            - Keep the full, ordered list in the parser.
+            - Given tds passed to eat(), build an ordered sub-list
+              to pass to get_next_token().
+
+        - Provides a caching mechanism:
+            - Most parsing modes use most of the tokens.
+            - So the cached token is often used.
+            - Performance gain probably irrelevant for this project.
+            - But caching does seem correct in a textbook way.
+
+----
+TODOs, issues, questions
+----
+
+The elems() method:
+    - Should takes_quantifier be set in each ParseElem class?
+
+    - A better name for the method?
+
+        - It looks like the method deals with the parts of the grammar shared
+          by opt-specs and variants.
+
+        Function           | Top level | Uses elems() | elems()
+        -------------------------------------------------------
+        variant()          | yes       | yes          | .
+        opt_spec()         | yes       | yes          | .
+        section_title()    | yes       | .            | .
+        quoted_block()     | yes       | .            | .
+        -------------------------------------------------------
+        quoted_literal()   | .         | .            | yes
+        choice_sep()       | .         | .            | yes
+        partial_usage()    | .         | .            | yes
+        paren_expression() | .         | .            | yes
+        brack_expression() | .         | .            | yes
+        positional()       | .         | .            | yes
+        long_option()      | .         | .            | yes
+        short_option()     | .         | .            | yes
+
+----
+Spec-parsing overview
+----
+
+TokDefs and Tokens:
+
+    - These are the atomic entitites of the parsing process:
+
+        Kind         | Example text
+        ----------------------------
+        long_option  | --foo
+        short_option | -x
+        newline      | \n
+        paren_open   | (
+        brack_close  | ]
+
+    - TokDef:
+        - Has a kind attribute a regex.
+        - Used by RegexLexer to hunt for tokens of interest.
+
+    - Token:
+        - Emitted by RegexLexer when it finds a match.
+        - Has a kind attribute paralleling the TokDef.
+        - Contains the matched text, plus information about the position of
+          that match within the larger corpus (line, col, etc).
+
+SpecParser and RegexLexer: overview:
+
+    - The RegexLexer:
+        - Works with atomic units: Tokens.
+        - Its primary function is get_next_token().
+
+    - The SpecParser:
+        - Works with more meaningful grammatical units.
+        - Those units are expressed in various parsing functions.
+        - Examples:
+            - variant()
+            - opt_spec()
+            - section_title()
+            - quoted_block()
+
+        - Parsing functions are hierarchical:
+            - Some match large things: eg variants or opt-specs.
+            - Others match small things within those larger grammatical
+              units: eg, long options, positional, parameters, etc.
+
+        - The spec-syntax requires contextual parsing:
+            - The SpecParser uses a mode attribute to manage context.
+            - When the mode changes:
+                - The parser tells the lexer which TokDefs to search for.
+                - The parser changes which parsing functions to call.
+
+            - The parser uses self.handlers to manage contextual parsing:
+                - It is a dict mapping each parsing mode to one or more Handler
+                  instances.
+                - Each Handler holds a parsing function to try and, optionally,
+                  and parsing mode to advance to next if that parsing function
+                  finds a match.
+
+Spec-parsing: the process:
+
+    - Intialization:
+        - SpecParser sets itself up.
+        - It creates self.lexer holding a RegexLexer.
+        - The RegexLexer is given two things:
+            - The text to be processed.
+            - A validator function: Lexer.taste() [details below].
+
+    - SpecParser.parse() is invoked:
+
+        - That invocation occurs in two context:
+            - Unit tests for SpecParser.
+            - By a user: p = Parser(SPEC)
+
+        - The parse() method:
+            - Does some preliminary work.
+            - Then it calls do_parse().
+
+        - The do_parse() method:
+            - This method orchestates the contextual parsing process.
+            - It tries relevant Handlers [details below].
+            - And it switches parsing mode as needed if a Handler is matched.
+
+    - When do_parse() tries a Handler:
+        - It calls the Handler's parsing function.
+
+    - When a parsing function is called:
+        - It calls eat(), passing in 1+ TokDefs.
+        - Those TokDefs are a subset of the broader list of TokDefs that the
+          RegexLexer was given when the parsing mode was set.
+        - The eat() method assigns those TokDefs to self.menu.
+        - Then it calls RegexLexer.get_next_token().
+
+    - When get_next_token() is called:
+        - The lexer tries each TokDef in self.tokdefs.
+        - When it finds a match:
+            - It creates a Token.
+            - It calls self.validator() with that Token.
+            - In effect, it says to the SpecParser:
+                - I found a Token relevant for the current parsing mode.
+                - But is it the right kind, given the current context?
+
+        - The validator function is SpecParser.taste():
+            - It first checks whether the matched Token is on self.menu.
+            - Then it checks other contextual details related to line
+              indentation and start-of-line status.
+            - It returns True is all criteria are met.
+
+        - Then get_next_token() reacts to that bool:
+            - If True:
+                - It updates its own location information (line, col, etc).
+                - Returns the Token.
+            - If False:
+                - It just stores the Token in self.curr.
+                - And it returns None.
+                - Storing the Token is self.curr is just an optimization:
+                    - The next call to get_next_token() will immediately use
+                      self.curr rather than checking the self.tokdefs.
+
+    - The parsing function keeps going:
+        - A parsing function might need to uses self.eat() multiple times to
+          assemble the grammatical entity it is trying to match.
+        - It those eat() calls lead down a successful path, it eventually
+          returns the relevant ParseElem.
+        - Otherwise it returns None.
+
+----
+My old notes on converting the AST to a proper Grammar
+----
+
+Partition elems on the first SectionTitle:
+
+    gelems : grammar section (all Variant or OptSpec)
+    selems : other
+
+Convert selems into groups, one per section:
+
+    SectionTitle
+    0+ QuotedBlock
+    0+ OptSpec        # Can be full or mere references.
+
+At this point, we will have:
+
+    prog : name or None
+    variants : 0+
+    optspecs : 0+
+    sections : 0+
+
+If no variants:
+    If no optspecs:
+        - No-config parsing?
+        - Or raise?
+    Else:
+        - Create one Variant from the optspecs.
+
+Processing a sequence of elems:
+
+    - Applies to Variant, Parenthesized, Bracketed.
+
+    - Organize into groups, partitioning on ChoiceSep.
+    - If multiple groups, we will end up with Group(mutext=True)
+
+    ...
+
+
+
+Sections:
+    - An ordered list of section-elems.
+    - Where each section-elem is: QuotedBlock or Opt-reference.
+
+ParseElem: top-level:
+    Variant: name is_partial elems
+    OptSpec: elems text
+    SectionTitle: title
+    QuotedBlock: text
+
+ParseElem: elems:
+    ChoiceSep:
+    QuotedLiteral: text
+        - Becomes an Opt.
+        - But has no dest.
+        - Essentially requires the variant to include a positional constant.
+        - Does that make it like a PositionalVariant with one choice and no dest or sym?
+    PartialUsage: name
+        - Insert the elems from the Variant(partial=True)
+    Parenthesized: elems quantifier
+        - Convert to Group or quantified Opt.
+    Bracketed: elems quantifier
+        - Convert to Group or quantified Opt.
+    Option: dest params quantifier
+    Positional: sym dest symlit choices quantifier
+    PositionalVariant: sym dest symlit choice
+    Parameter: sym dest symlit choices
+    ParameterVariant: sym dest symlit choice
+
+ParseElem: subcomponents:
+    SymDest: sym dest symlit val vals
+    Quantifier: m n greedy
+    QuotedLiteral: text
+
+'''
 
 ####
 # Imports.
