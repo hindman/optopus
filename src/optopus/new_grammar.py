@@ -15,8 +15,7 @@ Implementation notes:
 
 Parsing function hierarchy:
 
-    first-section
-        section-title
+    usage-section
         variant
             valid-name
                 python-name

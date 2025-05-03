@@ -69,6 +69,7 @@ toc: Table of contents
         enhanced-quantifiers           | Enhanced quantifiers
         opt-specs-and-opt-descs        | Opt-specs and opt-descs
         group-level-validation-needed  | Why Group-level validation should be retained
+        usage-section-spec-syntax      | Usage section in the spec-syntax
         usage-text-and-named-groups    | Usage-text and named groups or choices
         headings-in-spec-syntax        | Spec-syntax support for headings
         arg-choices-in-usage-text      | Arg.choices in usage-text
@@ -336,16 +337,13 @@ spec-syntax: Spec syntax
 
 spec:
 
-    [first-section]
+    [usage-section]
     [section...]
 
-first-section:
+usage-section:
 
-    [section-title ::]
     [variant...]
     [section-content-elem...]
-
-    - Default section-title: Usage.
 
 section:
 
@@ -5143,6 +5141,28 @@ convenience during argument-parsing. But it seems important to retain the
 ability to impose requirements at the Group level rather than only at the Opt
 level. Finally, because Groups can nest, storing their requirements at the Opt
 level is not immediately straightforward.
+
+--------
+usage-section-spec-syntax: Usage section in the spec-syntax
+--------
+
+Why spec-syntax does not allow a title for the usage-section:
+
+    - An example spec:
+
+        Blort ::
+
+        <path> : Blah blah
+
+    - Ambiguity:
+
+        - Does the configuration to apply to usage-section?
+        - Or the first regular section?
+
+        - The spec-syntax provides no way to convey that.
+        - One could add more syntactic elements.
+        - But the most recent spec redesign tried to simplify the syntax (eg
+          eliminating prog from the spec).
 
 --------
 usage-text-and-named-groups: Usage-text and named groups or choices
