@@ -5,56 +5,18 @@ r'''
 Parsing the new spec-syntax
 ----
 
-Which parsing functions having early "overlap"?
+Implementation notes:
 
-    - Example of overlap:
+    - staging plan:
 
-        - Text with four tokens: T1 T2 T3 T4.
-        - Two parsing functions: pf1() and pf2()
-            - They both can consume T1 and T2.
-            - But pf1() will fail upon T3.
-            - While pf2() can consume all four.
+        - Moves and copies: grammar.py and test_grammar.py:
+            git mv OLD => NEW
+            cp NEW OLD
 
-    - Ways to address the problem:
+        - Edit NEW files, while keeping OLD runnable.
+        - When ready, swap back.
 
-        - Try the functions in the correct order.
-            - In the example, try pf2() first.
-            - This can work if there is an unambiguously correct order.
-
-        - In cases where such overlap can occur:
-            - Try pf1().
-            - Reset lexer position.
-            - Try pf2().
-            - Could work, but is more complex than relying on ordering.
-
-    - Function with potential overlap:
-
-        - Overlap 1: variant and opt-spec.
-
-            - This is a known overlap with a lot of planning behind it.
-            - Anything that parses as a variant is interpreted that way.
-
-            - The overlap can consist of several tokens:
-
-            - When parsing a variant fails:
-                - If the failure occurs on Token(colon-marker).
-                - Then the parser have two ways to respond:
-                    - Reset lexer position and try to parse opt-spec instead.
-                    - Forge ahead by somehow using the tokens/elems collected
-                      so far to build an opt-spec rather than a variant.
-
-                - The mechanics of doing this seem awkward.
-                    ...
-
-        - Overlap 2: section-title-spec and opt-spec.
-
-            - The overlap is fairly narrow: both can start with a spec-scope.
-            - Possible resolution:
-                - The spec-scope can be expressed as a single Token.regex.
-                - Create another TokDef: section-scope.
-                    - Same regex.
-                    - Plus the section-title marker (:).
-                - Always try the section-title-spec first.
+    - The variant() parsing function will need reset-lexer-position.
 
 Parsing function hierarchy:
 
@@ -112,72 +74,78 @@ Parsing function hierarchy:
         section-content-elem
 
 ----
-Alternative approaches, ideas, questions
+Notes and questions
 ----
 
-** The ongoing work to build a detailed parsing plan seems to be
-duplicating/modifying the spec-syntax section in notes.txt.
+Which parsing functions having early "overlap"?
 
-    - Perhaps I should shift my efforts into editing that material directly (in
-      notes.txt), based on the details and terminology changes that are
-      in-progress below.
+    - Example of overlap:
 
-** Alternative ideas for SpecParser:
+        - Text with four tokens: T1 T2 T3 T4.
+        - Two parsing functions: pf1() and pf2()
+            - They both can consume T1 and T2.
+            - But pf1() will fail upon T3.
+            - While pf2() can consume all four.
 
-    ** Second thoughts about these ideas:
-        - They are worth considering.
-        - But use caution: don't overdo it and push too many higher-level
-          concerns into the lower-level operations:
-            - lexing: lowest level
-            - parsing
-            - grammar-building: highest level
+    - Ways to address the problem:
 
-    - Parsing functions that can fail and reset the lexer:
+        - Try the functions in the correct order.
+            - In the example, try pf2() first.
+            - This can work if there is an unambiguously correct order.
 
-        - Call a parsing function.
-        - Note the current lexer position: START_POS.
-        - Try to build the desired ParseElem.
-            - Failure scenario:
-                - Consume 0+ tokens successfully.
-                - Hit a roadblock.
-                - Reset the lexer to back to START_POS.
-                - Return None.
-            - Success scenario:
-                - Consume 1+ tokens successfully.
-                - Return ParseElem.
+        - In cases where such overlap can occur:
+            - Try pf1().
+            - If failed, reset lexer position.
+            - Try pf2().
+            - Could work, but is more complex than relying on ordering.
 
-        - My concern about current design:
-            - Parsing functions can partially succeed:
-                - Consume some tokens.
-                - Then fail, without resetting lexer position.
-            - That requires too much care in trying the parsing functions
-              and/or the TokDefs in the correct order.
-                - Some care is unavoidable (eg find quoted material first).
-                - But current design amplifies such needs.
-                - Seems somewhat brittle.
+    - Parsing functions with potential overlap:
 
-    - Always tell lexer the TokDefs to try during get_next_token():
+        - Overlap 1: variant and opt-spec.
 
-        - The current approach has:
-            - lexer.tokdefs: general list, based on mode.
-            - self.menu: specific list, based on last eat() call.
-            - self.taste: contextual validation (indent, first-of-line status).
+            - This is a known overlap with a lot of planning behind it.
+            - Anything that parses as a variant is interpreted that way.
 
-        - Not clear how much benefit comes from lexer.tokdefs.
-            - It's not even clear whether it is truly used or necessary.
-            - The SpecParser never calls:
-                - eat() without supplying TokDefs
-                - get_next_token() outside of eat()
-            - So SpecParser is always looking for something more specific than
-              lexer.tokdefs.
+            - The overlap can consist of several tokens.
 
-        - Current design seems:
-            - Possibly too limiting:
-                - We have modes which involve a broad range of tokdefs.
-                - What if we end up needing more modes or sub-modes?
-            - Possibly too brittle:
-                - Because the tokdefs for a mode are broad, you have
-                  to be careful about ordering.
+            - When parsing a variant fails:
+                - If the failure occurs on Token(colon-marker).
+                - Then the parser has at least two ways to respond:
+                    - Reset lexer position and try to parse opt-spec instead.
+                    - Forge ahead by somehow using the tokens/elems collected
+                      so far to build an opt-spec rather than a variant.
+                - The reset approach seems the simpler of the two.
+
+        - Overlap 2: section-title-spec and opt-spec.
+
+            - The overlap is fairly narrow: both can start with a spec-scope.
+            - Possible resolution:
+                - The spec-scope can be expressed as a single Token.regex.
+                - Add another Rgxs entry: Rgx.spec-scope + Rgxs.section_title
+            - If that approach works (seems likely), a section title (scoped or
+              unscoped) can always be identified in a single token.
+            - Hence no overlap issue.
+
+Why not ask specifically for what is on SpecParser.menu?
+
+    - Parser gives lexer a general list of TokDefs whenever the parsing is set.
+    - But taste() approves only tokens on the menu.
+    - Why bother with the general list in RegexLexer.tokdefs?
+
+        - Allows lexer to handle non-emitted tokens.
+        - Relieves parser of the need to pass them in every time, properly
+          ordered.
+
+        - But that would be easy to handle inside the parser.
+            - Keep the full, ordered list in the parser.
+            - Given tds passed to eat(), build an ordered sub-list
+              to pass to get_next_token().
+
+        - Provides a caching mechanism:
+            - Most parsing modes use most of the tokens.
+            - So the cached token is often used.
+            - Performance gain probably irrelevant for this project.
+            - But caching does seem correct in a textbook way.
 
 ----
 TODOs, issues, questions
@@ -707,46 +675,46 @@ def define_tokdefs():
 
     td_tups = [
         # - Quoted.
-        ('quoted_block',   Modes.s,    wrapped_in(backquote3, captured_guts)),
-        ('quoted_literal', Modes.vos,  wrapped_in(backquote1, captured_guts)),
+        ('quoted_block',   '  s ', wrapped_in(backquote3, captured_guts)),
+        ('quoted_literal', 'vos ', wrapped_in(backquote1, captured_guts)),
         # - Whitespace.
-        ('newline',        Modes.vosh,  r'\n'),
-        ('indent',         Modes.vosh, start_of_line + whitespace1 + not_whitespace),
-        ('whitespace',     Modes.vosh, whitespace1),
+        ('newline',        'vosh', r'\n'),
+        ('indent',         'vosh', start_of_line + whitespace1 + not_whitespace),
+        ('whitespace',     'vosh', whitespace1),
         # - Sections.
-        ('section_name',   Modes.v,    captured(prog) + whitespace0 + section_marker),
-        ('section_title',  Modes.vos,  captured('.*') + section_marker),
+        ('section_name',   'v   ', captured(prog) + whitespace0 + section_marker),
+        ('section_title',  'vos ', captured('.*') + section_marker),
         # - Parens.
-        ('paren_open',     Modes.vos,   r'\('),
-        ('paren_close',    Modes.vos,   r'\)'),
-        ('brack_open',     Modes.vos,   r'\['),
-        ('brack_close',    Modes.vos,   r'\]'),
-        ('angle_open',     Modes.vos,   '<'),
-        ('angle_close',    Modes.vos,   '>'),
+        ('paren_open',     'vos ', r'\('),
+        ('paren_close',    'vos ', r'\)'),
+        ('brack_open',     'vos ', r'\['),
+        ('brack_close',    'vos ', r'\]'),
+        ('angle_open',     'vos ', '<'),
+        ('angle_close',    'vos ', '>'),
         # - Quants.
-        ('quant_range',    Modes.vos,   r'\{' + captured(quant_range_guts) + r'\}'),
-        ('triple_dot',     Modes.vos,  dot * 3),
-        ('question',       Modes.vos,   r'\?'),
+        ('quant_range',    'vos ', r'\{' + captured(quant_range_guts) + r'\}'),
+        ('triple_dot',     'vos ', dot * 3),
+        ('question',       'vos ', r'\?'),
         # - Separators.
-        ('choice_sep',     Modes.vos,   r'\|'),
-        ('assign',         Modes.vos,   '='),
-        ('opt_spec_sep',   Modes.os,    ':'),
+        ('choice_sep',     'vos ', r'\|'),
+        ('assign',         'vos ', '='),
+        ('opt_spec_sep',   ' os ', ':'),
         # - Options.
-        ('long_option',    Modes.vos,  option_prefix + option_prefix + captured_name),
-        ('short_option',   Modes.vos,  option_prefix + captured(r'\w')),
+        ('long_option',    'vos ', option_prefix + option_prefix + captured_name),
+        ('short_option',   'vos ', option_prefix + captured(r'\w')),
         # - Variants.
-        ('partial_def',    Modes.v,    captured_name + '!' + whitespace0 + ':'),
-        ('variant_def',    Modes.v,    captured_name + whitespace0 + ':'),
-        ('partial_usage',  Modes.v,    captured_name + '!'),
+        ('partial_def',    'v   ', captured_name + '!' + whitespace0 + ':'),
+        ('variant_def',    'v   ', captured_name + whitespace0 + ':'),
+        ('partial_usage',  'v   ', captured_name + '!'),
         # - Sym, dest.
-        ('sym_dest',       Modes.vos,  full_sym_dest),
-        ('dot_dest',       Modes.vos,  dot + whitespace0 + captured_name),
-        ('solo_dest',      Modes.vos,  captured_name + whitespace0 + r'(?=[>=])'),
-        ('name',           Modes.vos,  valid_name),
+        ('sym_dest',       'vos ', full_sym_dest),
+        ('dot_dest',       'vos ', dot + whitespace0 + captured_name),
+        ('solo_dest',      'vos ', captured_name + whitespace0 + r'(?=[>=])'),
+        ('name',           'vos ', valid_name),
         # - Special.
-        ('rest_of_line',   Modes.h,     '.+'),
-        ('eof',            Modes.none,  ''),
-        ('err',            Modes.none,  ''),
+        ('rest_of_line',   '   h', '.+'),
+        ('eof',            '    ', ''),
+        ('err',            '    ', ''),
     ]
 
     # Return the TokDefs constants collections.
@@ -755,7 +723,7 @@ def define_tokdefs():
         kind : TokDef(
             kind = kind,
             emit = kind not in NO_EMIT,
-            modes = modes,
+            modes = Modes[modes.replace(' ', '') or 'none'],
             regex = re.compile(pattern),
         )
         for kind, modes, pattern in td_tups
