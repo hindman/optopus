@@ -5,6 +5,12 @@
 Parsing the new spec-syntax
 ----
 
+Top-level sketch:
+
+    parse()
+        elems = usage-section (if any) + section...
+
+
 Implementation notes:
 
     - The variant() parsing function will need reset-lexer-position.
@@ -15,58 +21,62 @@ Implementation notes:
 
 Parsing function hierarchy:
 
-    usage-section
-        variant
-            valid-name
-                python-name
-                usage-name
-            variant-spec
-                variant-elem
-                    option-spec
-                        bare-option
-                        full-parameter-spec
-                            parameter-spec
-                                valid-name
-                                choices
-                                    choice
-                                        valid-name
-                                        quoted-literal
-                            parameter-group
-                                parameter-spec
-                        quantifier
-                            triple-dot
-                            quant-range
-                    positional-spec
-                        valid-name
-                        choices
-                        quantifier
-                    group-spec
-                        valid-name
-                        group
-                            variant-elem
-                        quantifier
-                    quoted-literal
-                    partial-usage
-                        python-name
-        section-content-elem
-            heading
-            block-quote
-            opt-spec
-                spec-scope
-                    query-path
-                        query-elem
-                positional-spec
-                option-alias-spec
-                    bare-option
-                    option-spec
-                opt-help-text
-                    rest-of-line + continuation-lines
-    section
-        section-title-spec
-            spec-scope
-            section-title
-        section-content-elem
+    spec
+        usage-section
+            variant [BELOW]
+            section-content-elem [BELOW]
+        section
+            section-title-spec
+                spec-scope [BELOW]
+                section-title
+            section-content-elem [BELOW]
 
+    variant
+        valid-name
+            python-name
+            usage-name
+        variant-spec
+            variant-elem
+                option-spec
+                    bare-option
+                    full-parameter-spec
+                        parameter-spec
+                            valid-name
+                            choices
+                                choice
+                                    valid-name
+                                    quoted-literal
+                        parameter-group
+                            parameter-spec
+                    quantifier
+                        triple-dot
+                        quant-range
+                positional-spec
+                    valid-name
+                    choices
+                    quantifier
+                group-spec
+                    valid-name
+                    group
+                        variant-elem
+                    quantifier
+                quoted-literal
+                partial-usage
+                    python-name
+
+    section-content-elem
+        heading
+        block-quote
+        opt-spec
+            spec-scope
+                query-path
+                    query-elem
+            positional-spec [ABOVE]
+            option-alias-spec
+                bare-option
+                option-spec [ABOVE]
+            opt-help-text
+                rest-of-line + continuation-lines
 ----
 Notes and questions
 ----

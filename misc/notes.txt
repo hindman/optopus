@@ -95,6 +95,12 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Project names:
+
+    argle
+
+    https://jbusecke.github.io/2022/07/20/renaming/
+
 Spec-parsing:
 
     - Modify code to use the new spec-syntax:
