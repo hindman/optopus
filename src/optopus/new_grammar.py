@@ -5,11 +5,11 @@
 Parsing the new spec-syntax
 ----
 
-Top-level sketch:
+NEXT:
 
-    parse()
-        elems = usage-section (if any) + section...
+    variant()
 
+    section_content_elem()
 
 Implementation notes:
 
@@ -26,8 +26,8 @@ Parsing function hierarchy:
             variant [BELOW]
             section-content-elem [BELOW]
         section
-            section-title-spec
-                spec-scope [BELOW]
+            section-title | scoped-section-title
+                section-scope [BELOW]
                 section-title
             section-content-elem [BELOW]
 
@@ -35,27 +35,27 @@ Parsing function hierarchy:
         valid-name
             python-name
             usage-name
-        variant-spec
+        variant-def
             variant-elem
-                option-spec
+                option
                     bare-option
-                    full-parameter-spec
-                        parameter-spec
+                    any-parameter
+                        parameter
                             valid-name
                             choices
                                 choice
                                     valid-name
                                     quoted-literal
                         parameter-group
-                            parameter-spec
+                            parameter
                     quantifier
                         triple-dot
                         quant-range
-                positional-spec
+                positional
                     valid-name
                     choices
                     quantifier
-                group-spec
+                named-group | group
                     valid-name
                     group
                         variant-elem
@@ -68,13 +68,13 @@ Parsing function hierarchy:
         heading
         block-quote
         opt-spec
-            spec-scope
+            opt-scope
                 query-path
                     query-elem
-            positional-spec [ABOVE]
-            option-alias-spec
+            positional [ABOVE]
+            alias-and-option
                 bare-option
-                option-spec [ABOVE]
+                option [ABOVE]
             opt-help-text
                 rest-of-line + continuation-lines
 ----
@@ -120,12 +120,12 @@ Which parsing functions having early "overlap"?
                       so far to build an opt-spec rather than a variant.
                 - The reset approach seems the simpler of the two.
 
-        - Overlap 2: section-title-spec and opt-spec.
+        - Overlap 2: section-title and opt-spec.
 
-            - The overlap is fairly narrow: both can start with a spec-scope.
+            - The overlap is fairly narrow: both can start with a scope.
             - Possible resolution:
-                - The spec-scope can be expressed as a single Token.regex.
-                - Add another Rgxs entry: Rgx.spec-scope + Rgxs.section_title
+                - The scope can be expressed as a single Token.regex.
+                - Add another Rgxs entry: Rgx.scope + Rgxs.section_title
             - If that approach works (seems likely), a section title (scoped or
               unscoped) can always be identified in a single token.
             - Hence no overlap issue.
@@ -618,13 +618,15 @@ def define_tokdefs():
     not_whitespace = r'(?=\S)'
 
     # Letters, digits, and numbers.
-    alphanum = r'[a-z0-9]'
+    alphanum = r'[A-Za-z0-9]'
     alphanum0 = fr'{alphanum}*'
     alphanum1 = fr'{alphanum}+'
     number = r'\d+'
 
-    # Valid names.
-    valid_name = fr'{alphanum1}(?:[_-]{alphanum1})*'
+    # Names.
+    python_name = fr'{alphanum1}(?:_{alphanum1})*'
+    usage_name  = fr'{alphanum1}(?:-{alphanum1})*'
+    valid_name = fr'{python_name}|{usage_name}'
     captured_name = captured(valid_name)
     prog = fr'{valid_name}(?:\.{alphanum1})?'
     full_sym_dest = captured_name + wrapped_in(whitespace0, captured('[!.]')) + captured_name
@@ -884,26 +886,28 @@ class RegexLexer(object):
         )
 
     def update_location(self, tok):
-        # Update the lexer's position-related info, given that
+        # Updates the lexer's position-related info, given that
         # the parser has accepted the Token.
-        #
-        # New column location when newlines present:
-        #
-        #     tok.text      | tok.width | tok.newlines | self.col
-        #     ---------------------------------------------------
-        #     \n            | 1         | (0,)         | 1
-        #     fubb\n        | 5         | (4,)         | 1
-        #     fubb\nbar     | 8         | (4,)         | 4
-        #     fubb\nbar\n   | 9         | (4,8)        | 1
-        #     fubb\nbar\nxy | 11        | (4,8)        | 3
-        #
 
-        # Character index, line number, column number.
+        # Character index, line number.
         self.pos += tok.width
         self.line += tok.nlines - 1
+
+        # Column number.
         if tok.newlines:
             # Text straddles multiple lines. New column number
-            # is the width of the text on the last line.
+            # is based on the width of the text on the last line.
+            #
+            # Examples:
+            #
+            #     tok.text      | tok.width | tok.newlines | self.col
+            #     ---------------------------------------------------
+            #     \n            | 1         | (0,)         | 1
+            #     fubb\n        | 5         | (4,)         | 1
+            #     fubb\nbar     | 8         | (4,)         | 4
+            #     fubb\nbar\n   | 9         | (4,8)        | 1
+            #     fubb\nbar\nxy | 11        | (4,8)        | 3
+            #
             self.col = tok.width - tok.newlines[-1]
         else:
             # Easy case: just add the token's width.
@@ -1030,9 +1034,30 @@ class SpecParser:
         # to parse a SPEC.
 
         # Setup.
-        lex = self.lexer
-        lex.debug(0)
-        lex.debug(0, mode_check = 'started')
+        self.lexer.debug(0)
+        self.lexer.debug(0, mode_check = 'started')
+
+        # Collect variants.
+        elems = self.parse_some(self.variant)
+
+        # TODO: reset lexer position if we failed on an opt-spec colon-marker.
+        if True:
+            pass
+
+        # Collect section-content elements.
+        elems.extend(self.parse_some(self.section_content_elem))
+
+        # Raise if we did not parse the full text.
+        tok = self.lexer.end
+        if not (tok and tok.isa(TokDefs.eof)):
+            self.error('Failed to parse the full spec')
+
+        # Convert elems to a Grammar.
+        return self.build_grammar(elems)
+
+        ####
+        # OLD_CODE
+        ####
 
         # Determine the parsing mode for the grammar section
         # (opt_spec or variant), and get the program name, if any.
@@ -1053,7 +1078,7 @@ class SpecParser:
             tok = self.eat(TokDefs.name)
             prog = tok.text if tok else None
             allow_second = bool(tok)
-        lex.debug(0, mode = self.mode)
+        self.lexer.debug(0, mode = self.mode)
 
         # Parse everything else in the SPEC into a list of ParseElem.
         elems = list(self.do_parse(allow_second))

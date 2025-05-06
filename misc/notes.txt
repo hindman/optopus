@@ -97,7 +97,27 @@ todos: TODOs
 
 Project names:
 
-    argle
+    https://chatgpt.com/share/6817a2e4-0928-8003-8489-6f5950e69915
+
+    Optopus
+    Argle          # JK
+    Wizcat         # JK
+    Argzilla
+    Bargle
+
+    # Like, but difficult to say.
+    Argvark
+
+    # Already taken in pypi, github, or both.
+    Argonaut
+    Argspec
+    Argyle
+    Cliopt
+    Cmdy
+    Optcat
+    Optix
+    Optoid
+    Specio
 
     https://jbusecke.github.io/2022/07/20/renaming/
 
@@ -353,15 +373,8 @@ usage-section:
 
 section:
 
-    section-title-spec ::
+    [section-title | scoped-section-title] ::
     [section-content-elem...]
-
-section-title-spec:
-
-    [spec-scope >>] section-title ::
-
-    - A spec-scope applied to a section is a shortcut for applying the scope to
-      all opt-specs within the section (details below).
 
 section-title:
 
@@ -369,7 +382,14 @@ section-title:
 
     - Text and marker must be on one line.
 
-spec-scope:
+scoped-section-title:
+
+    section-scope >> section-title ::
+
+    - A section-scope applied to a section is a shortcut for applying the scope to
+      all opt-specs within the section (details below).
+
+section-scope:
 
     query-path >>
 
@@ -413,13 +433,13 @@ block-quote:
 
 variant:
 
-    [valid-name[!] :] variant-spec
+    [valid-name[!] :] variant-def
 
     - Marker (!) means partial-variant.
 
 opt-spec:
 
-    [[spec-scope] >>] (positional-spec | option-alias-spec) [: [opt-help-text]]
+    [[opt-scope] >>] opt-spec-def [: [opt-help-text]]
 
     - If Opts are declared in variants and later in opt-specs, the two
       configurations are merged:
@@ -430,17 +450,28 @@ opt-spec:
         - Opt declared in the grammar can use an abbrievated form (an
           opt-mention), leaving the full configuration to the opt-spec.
 
-    - The spec-scope marker (>>) declares a parent-child relationship.
+    - An opt-scope has the same format as a section-scope. The only difference
+      is that an opt-scope can be empty (marker only).
 
-        - With a spec-scope:
+    - The opt-scope marker (>>) declares a parent-child relationship.
+
+        - With a opt-scope:
             - Parent: Opt from variants.
             - Child: current opt-spec.
             - Declares the Opt to which the opt-spec should be connected.
 
-        - Without a spec-scope:
+        - Empty opt-scope:
             - Parent: preceding (non-scoped) opt-spec.
             - Child: current opt-spec.
             - Child configures an Arg or Choice of the parent.
+
+opt-spec-def:
+
+    [ positional | alias-and-option ]
+
+    - Brackets are optional and function purely as a quantifer. More
+      technically, the opt-spec-def can be enclosed in a unary-group (no name,
+      one variant-elem).
 
 valid-name:
 
@@ -457,16 +488,16 @@ opt-help-text
     - Colon marker without opt-help-text can be used to distinguish opt-spec
       from variant (to avoid ambiguity).
 
-variant-spec:
+variant-def:
 
     variant-elem...
 
 variant-elem:
 
     (
-        option-spec |
-        positional-spec |
-        group-spec |
+        option |
+        positional |
+        any-group |
         quoted-literal |
         partial-usage
     )
@@ -541,18 +572,22 @@ partial-usage:
 
     python-name!
 
-group-spec:
+any-group:
 
-    [ valid-name = ] group
+    named-group | group
+
+named-group:
+
+    valid-name = group
 
 group:
 
     ( variant-elem... )
     [ variant-elem... ]
 
-option-alias-spec:
+alias-and-option:
 
-    [alias...] option-spec
+    [alias...] option
 
     - Where alias = bare-option.
 
@@ -563,15 +598,15 @@ bare-option:
 
     - Where first-char is a valid first character in a python-name.
 
-option-spec:
+option:
 
-    bare-option [full-parameter-spec...]
+    bare-option [any-parameter...]
 
-full-parameter-spec:
+any-parameter:
 
-    parameter-spec | parameter-group
+    parameter | parameter-group
 
-parameter-spec:
+parameter:
 
     < valid-name >
     < valid-name = choices >
@@ -588,10 +623,10 @@ choice:
 
 parameter-group:
 
-    ( parameter-spec... )
-    [ parameter-spec... ]
+    ( parameter... )
+    [ parameter... ]
 
-positional-spec:
+positional:
 
     < valid-name >
     < valid-name = choices >
@@ -610,7 +645,7 @@ var-input:
 
     - Variable input provided by the user.
     - Primarily an internal term, not user-facing.
-    - Forms: positional-spec and parameter-spec.
+    - Forms: positional and parameter.
 
 Whitespace rules:
 
@@ -797,14 +832,14 @@ Usage-section:
 Variant:
     - A usage variant, as defined in a spec.
 
-        [name :] variant-spec
+        [name :] variant-def
 
     - Examples:
 
         grep  : <cmd=grep>  <rgx> [-i] [-v]
         split : <cmd=split> [<rgx>] [-n <max>]
 
-Variant-spec:
+Variant-def:
     - The grammatical portion of a variant definition.
     - The stuff after the colon.
 
@@ -2932,7 +2967,7 @@ Policy decisions:
             - The intuitive parts:
                 - Same name.
                 - Same kind: positional or option.
-                - Agreement with the spec-scope (if any).
+                - Agreement with the opt-scope (if any).
 
             - The deeper principle:
                 - The configuration from the opt-spec must be additive.
@@ -3081,7 +3116,7 @@ Querying in the face of repeated names:
             - But the solution addresses only strange use cases.
             - Defer this until known and compelling need arises.
 
-Background for the spec-scope syntax:
+Background for the opt-scope syntax:
 
     - It borrows from CSS syntax for parent-child.
 
@@ -5388,7 +5423,7 @@ Optopus users can achieve various usage-text styles for Groups:
         - Tells Optopus to represent the Group symbolically in usage.
 
     - Fully-explicit style (no inner-Results):
-        - Use an unnamed Group in the main variant-spec.
+        - Use an unnamed Group in the main variant-def.
 
     - Fully-explicit-style (with inner-Results):
         - Use a named group in the spec.
