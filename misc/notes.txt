@@ -95,6 +95,67 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Parsing function hierarchy and checklist:
+
+    - spec: parse()
+        - usage-section
+            - variant [BELOW]
+            - section-content-elem [BELOW]
+        - section
+            - section-title | scoped-section-title
+                - section-scope [BELOW]
+                - section-title
+            - section-content-elem [BELOW]
+
+    - variant
+        - valid-name
+            - python-name
+            - usage-name
+        - variant-def
+            - variant-elem
+                - option
+                    - bare-option
+                    - any-parameter
+                        - parameter
+                            - valid-name
+                            - choices
+                                - choice
+                                    - valid-name
+                                    - quoted-literal
+                        - parameter-group
+                            - parameter
+                    - quantifier
+                        - triple-dot
+                        - quant-range
+                - positional
+                    - valid-name
+                    - choices
+                    - quantifier
+                - any-group => named-group | group
+                    - valid-name
+                    - group
+                        - variant-elem
+                    - quantifier
+                - quoted-literal
+                - partial-usage
+                    - python-name
+                - choice-sep
+
+    - section-content-elem
+        - heading
+        - block-quote
+        - opt-spec
+            - opt-scope
+                - query-path
+                    - query-elem
+            - positional [ABOVE]
+            - alias-and-option
+                - bare-option
+                - option [ABOVE]
+            - opt-help-text
+                - rest-of-line + continuation-lines
+
+
 Project names:
 
     https://chatgpt.com/share/6817a2e4-0928-8003-8489-6f5950e69915
@@ -499,11 +560,14 @@ variant-elem:
         positional |
         any-group |
         quoted-literal |
-        partial-usage
+        partial-usage |
+        choice-sep
     )
 
-    - All take a quantifer except quoted-literal and partial-usage.
-    - The latter because user can wrap partial-usage in a group.
+    - All take a quantifer except:
+        - choice-sep (|)
+        - quoted-literal
+        - partial-usage (user can wrap in a group).
 
 variant-elem: examples with comments:
 

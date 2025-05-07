@@ -7,6 +7,24 @@ Parsing the new spec-syntax
 
 NEXT:
 
+    Determine:
+        
+        - which entities must start on a fresh line.
+            - see marked items below (*)
+
+        - parsing-modes:
+
+          * variant       | start here
+          * section       | section-title, scoped-section-title, section-content-elem
+            opt-help-text | just grabbing lines/continuations
+
+        - current parse() is taking a flawed approach:
+            - mistake to try to build the sections during parsing.
+            - easier to collect AST elements first.
+            - build sections when making the grammar
+            - parsing in section mode requires you to always be checking for
+              the next section start.
+
     variant()
 
     section_content_elem()
@@ -19,64 +37,6 @@ Implementation notes:
         - Edit NEW files, while keeping OLD runnable.
         - When ready, swap back (Git history currently in NEW).
 
-Parsing function hierarchy:
-
-    spec
-        usage-section
-            variant [BELOW]
-            section-content-elem [BELOW]
-        section
-            section-title | scoped-section-title
-                section-scope [BELOW]
-                section-title
-            section-content-elem [BELOW]
-
-    variant
-        valid-name
-            python-name
-            usage-name
-        variant-def
-            variant-elem
-                option
-                    bare-option
-                    any-parameter
-                        parameter
-                            valid-name
-                            choices
-                                choice
-                                    valid-name
-                                    quoted-literal
-                        parameter-group
-                            parameter
-                    quantifier
-                        triple-dot
-                        quant-range
-                positional
-                    valid-name
-                    choices
-                    quantifier
-                named-group | group
-                    valid-name
-                    group
-                        variant-elem
-                    quantifier
-                quoted-literal
-                partial-usage
-                    python-name
-
-    section-content-elem
-        heading
-        block-quote
-        opt-spec
-            opt-scope
-                query-path
-                    query-elem
-            positional [ABOVE]
-            alias-and-option
-                bare-option
-                option [ABOVE]
-            opt-help-text
-                rest-of-line + continuation-lines
 ----
 Notes and questions
 ----
@@ -709,8 +669,8 @@ def define_tokdefs():
         ('long_option',    'vos ', option_prefix + option_prefix + captured_name),
         ('short_option',   'vos ', option_prefix + captured(r'\w')),
         # - Variants.
-        ('partial_def',    'v   ', captured_name + '!' + whitespace0 + ':'),
-        ('variant_def',    'v   ', captured_name + whitespace0 + ':'),
+        # ('partial_def',    'v   ', captured_name + '!' + whitespace0 + ':'),
+        ('variant_def',    'v   ', captured_name + '(!)' + whitespace0 + ':'),
         ('partial_usage',  'v   ', captured_name + '!'),
         # - Sym, dest.
         ('sym_dest',       'vos ', full_sym_dest),
@@ -1029,67 +989,40 @@ class SpecParser:
     # Parse a spec.
     ####
 
-    def parse(self):
-        # This is the method used by the Optopus argument Parser
-        # to parse a SPEC.
-
-        # Setup.
-        self.lexer.debug(0)
-        self.lexer.debug(0, mode_check = 'started')
-
+    def usage_section(self):
         # Collect variants.
-        elems = self.parse_some(self.variant)
+        variants = self.parse_some(self.variant)
 
         # TODO: reset lexer position if we failed on an opt-spec colon-marker.
         if True:
             pass
 
         # Collect section-content elements.
-        elems.extend(self.parse_some(self.section_content_elem))
+        elems = self.parse_some(self.section_content_elem)
+
+        return UsageSection(variants, elems)
+
+    def parse(self):
+        # The method used by Parser.parse(SPEC).
+
+        # Setup.
+        self.lexer.debug(0)
+        self.lexer.debug(0, mode_check = 'started')
+
+        # Get usage-section, if any.
+        u = self.usage_section()
+        sections = [u] if u else []
+
+        # Collect other sections.
+        sections.extend(self.parse_some(self.section))
 
         # Raise if we did not parse the full text.
         tok = self.lexer.end
         if not (tok and tok.isa(TokDefs.eof)):
             self.error('Failed to parse the full spec')
 
-        # Convert elems to a Grammar.
-        return self.build_grammar(elems)
-
-        ####
-        # OLD_CODE
-        ####
-
-        # Determine the parsing mode for the grammar section
-        # (opt_spec or variant), and get the program name, if any.
-        #
-        # Because the first variant can reside on the same line as
-        # the program name, we set the allow_second flag.
-        #
-        # The TokDef used (section_name) is misleading: at this moment,
-        # we are looking for the program name [both use the same regex].
-        #
-        tok = self.eat(TokDefs.section_name)
-        if tok:
-            self.mode = Pmodes.opt_spec
-            prog = tok.m.group(1)
-            allow_second = False
-        else:
-            self.mode = Pmodes.variant
-            tok = self.eat(TokDefs.name)
-            prog = tok.text if tok else None
-            allow_second = bool(tok)
-        self.lexer.debug(0, mode = self.mode)
-
-        # Parse everything else in the SPEC into a list of ParseElem.
-        elems = list(self.do_parse(allow_second))
-
-        # Raise if we did not parse the full text.
-        tok = self.lexer.end
-        if not (tok and tok.isa(TokDefs.eof)):
-            self.error('Failed to parse the full spec')
-
-        # Convert elems to a Grammar.
-        return self.build_grammar(prog, elems)
+        # Convert sections to a Grammar.
+        return self.build_grammar(sections)
 
     def do_parse(self, allow_second):
         # Yields top-level ParseElem (those declared in self.handlers).
@@ -1227,17 +1160,16 @@ class SpecParser:
 
     def variant(self):
         # Get variant/partial name, if any.
-        tds = (TokDefs.variant_def, TokDefs.partial_def)
-        tok = self.eat(*tds)
+        tok = self.eat(TokDefs.variant_def)
         if tok:
-            name = tok.text
-            is_partial = tok.isa(TokDefs.partial_def)
+            name = tok.m.group(1)
+            is_partial = bool(tok.m.group(2))
         else:
             name = None
             is_partial = False
 
         # Collect the ParseElem for the variant.
-        elems = self.elems()
+        elems = self.variant_elems()
         if name is None and not elems:
             return None
         elif elems:
@@ -1285,6 +1217,29 @@ class SpecParser:
     # The elems() helper, which deals with parsing functions
     # shared by variants and opt-specs.
     ####
+
+    def variant_elems(self):
+        elems = []
+        takes_quantifier = (Parenthesized, Bracketed, Positional, Option)
+        while True:
+            e = self.parse_first(
+                self.quoted_literal,
+                self.choice_sep,
+                self.partial_usage,
+                self.any_group,
+                self.positional,
+                self.option,
+            )
+            if e and isinstance(e, takes_quantifier):
+                q = self.quantifier()
+                if q:
+                    e = clone(e, quantifier = q)
+                elems.append(e)
+            elif e:
+                elems.append(e)
+            else:
+                break
+        return elems
 
     def elems(self):
         elems = []
@@ -1446,12 +1401,13 @@ class SpecParser:
         return SymDest(sym, dest, symlit, val, vals)
 
     def quantifier(self):
-        q = self.parse_first(self.triple_dot, self.quantifier_range)
+        q = self.parse_first(self.triple_dot, self.quant_range)
         if q:
             m, n = q
             greedy = not self.eat(TokDefs.question)
             return Quantifier(m, n, greedy)
         elif self.eat(TokDefs.question):
+            # TODO: a bare ? means {0,1} => Quantifier(0, 1, False)
             return Quantifier(None, None, False)
         else:
             return None
@@ -1460,7 +1416,7 @@ class SpecParser:
         tok = self.eat(TokDefs.triple_dot)
         return (1, None) if tok else None
 
-    def quantifier_range(self):
+    def quant_range(self):
         tok = self.eat(TokDefs.quant_range)
         if tok:
             text = TokDefs.whitespace.regex.sub('', tok.m.group(1))
