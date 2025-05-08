@@ -102,7 +102,7 @@ Parsing function hierarchy and checklist:
             - variant [BELOW]
             - section-content-elem [BELOW]
         - section
-            - section-title | scoped-section-title
+            - any-section-title
                 - section-scope [BELOW]
                 - section-title
             - section-content-elem [BELOW]
@@ -434,8 +434,12 @@ usage-section:
 
 section:
 
-    [section-title | scoped-section-title] ::
+    [any-section-title] ::
     [section-content-elem...]
+
+any-section-title:
+
+    section-title | scoped-section-title
 
 section-title:
 

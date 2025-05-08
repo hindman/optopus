@@ -5,29 +5,10 @@
 Parsing the new spec-syntax
 ----
 
-NEXT:
+SpecParser:
 
-    Determine:
-        
-        - which entities must start on a fresh line.
-            - see marked items below (*)
-
-        - parsing-modes:
-
-          * variant       | start here
-          * section       | section-title, scoped-section-title, section-content-elem
-            opt-help-text | just grabbing lines/continuations
-
-        - current parse() is taking a flawed approach:
-            - mistake to try to build the sections during parsing.
-            - easier to collect AST elements first.
-            - build sections when making the grammar
-            - parsing in section mode requires you to always be checking for
-              the next section start.
-
-    variant()
-
-    section_content_elem()
+    - Add self.first_tok
+    - Drop self.line, self.indent
 
 Implementation notes:
 
@@ -40,6 +21,28 @@ Implementation notes:
 ----
 Notes and questions
 ----
+
+Entities that must start on a fresh line.
+    - variant
+    - any-section-title
+    - section-content-elem
+
+Parsing modes:
+    - variant:
+        - initial mode
+    - section:
+        - any-section-title
+        - section-content-elem
+            - if we get opt-spec, switch to opt-help-text mode
+    - opt-help-text
+        - grab rest of line, plus continuations
+        - then switch back to section mode
+
+    - Handlers seem unnecessary:
+        - Set mode = variant.
+        - Try to get variants.
+        - Set mode = section.
+        - Temporary switch modes as needed to collect opt-help-text.
 
 Which parsing functions having early "overlap"?
 
@@ -607,6 +610,11 @@ def define_tokdefs():
     dot = r'\.'
     comma_sep = wrapped_in(whitespace0, ',')
     section_marker = '::' + end_of_line
+    scope_marker = '<<'
+
+    # Scope and section title.
+    scope = captured(query_path) + wrapped_in(whitespace0, scope_marker)
+    section_title = captured('.*') + section_marker
 
     # Stuff inside a quantifier range.
     quant_range_guts  = (
@@ -641,46 +649,45 @@ def define_tokdefs():
 
     td_tups = [
         # - Quoted.
-        ('quoted_block',   '  s ', wrapped_in(backquote3, captured_guts)),
-        ('quoted_literal', 'vos ', wrapped_in(backquote1, captured_guts)),
-        # - Whitespace.
-        ('newline',        'vosh', r'\n'),
-        ('indent',         'vosh', start_of_line + whitespace1 + not_whitespace),
-        ('whitespace',     'vosh', whitespace1),
+        ('quoted_block',          '  s ', wrapped_in(backquote3, captured_guts)),
+        ('quoted_literal',        'vos ', wrapped_in(backquote1, captured_guts)),
+        # - Whitespace.           
+        ('newline',               'vosh', r'\n'),
+        ('indent',                'vosh', start_of_line + whitespace1 + not_whitespace),
+        ('whitespace',            'vosh', whitespace1),
         # - Sections.
-        ('section_name',   'v   ', captured(prog) + whitespace0 + section_marker),
-        ('section_title',  'vos ', captured('.*') + section_marker),
-        # - Parens.
-        ('paren_open',     'vos ', r'\('),
-        ('paren_close',    'vos ', r'\)'),
-        ('brack_open',     'vos ', r'\['),
-        ('brack_close',    'vos ', r'\]'),
-        ('angle_open',     'vos ', '<'),
-        ('angle_close',    'vos ', '>'),
-        # - Quants.
-        ('quant_range',    'vos ', r'\{' + captured(quant_range_guts) + r'\}'),
-        ('triple_dot',     'vos ', dot * 3),
-        ('question',       'vos ', r'\?'),
-        # - Separators.
-        ('choice_sep',     'vos ', r'\|'),
-        ('assign',         'vos ', '='),
-        ('opt_spec_sep',   ' os ', ':'),
-        # - Options.
-        ('long_option',    'vos ', option_prefix + option_prefix + captured_name),
-        ('short_option',   'vos ', option_prefix + captured(r'\w')),
-        # - Variants.
-        # ('partial_def',    'v   ', captured_name + '!' + whitespace0 + ':'),
-        ('variant_def',    'v   ', captured_name + '(!)' + whitespace0 + ':'),
-        ('partial_usage',  'v   ', captured_name + '!'),
-        # - Sym, dest.
-        ('sym_dest',       'vos ', full_sym_dest),
-        ('dot_dest',       'vos ', dot + whitespace0 + captured_name),
-        ('solo_dest',      'vos ', captured_name + whitespace0 + r'(?=[>=])'),
-        ('name',           'vos ', valid_name),
-        # - Special.
-        ('rest_of_line',   '   h', '.+'),
-        ('eof',            '    ', ''),
-        ('err',            '    ', ''),
+        ('scoped_section_title',  'vos ', scope + section_title),
+        ('section_title',         'vos ', section_title),
+        # - Parens.               
+        ('paren_open',            'vos ', r'\('),
+        ('paren_close',           'vos ', r'\)'),
+        ('brack_open',            'vos ', r'\['),
+        ('brack_close',           'vos ', r'\]'),
+        ('angle_open',            'vos ', '<'),
+        ('angle_close',           'vos ', '>'),
+        # - Quants.               
+        ('quant_range',           'vos ', r'\{' + captured(quant_range_guts) + r'\}'),
+        ('triple_dot',            'vos ', dot * 3),
+        ('question',              'vos ', r'\?'),
+        # - Separators.           
+        ('choice_sep',            'vos ', r'\|'),
+        ('assign',                'vos ', '='),
+        ('opt_spec_sep',          ' os ', ':'),
+        # - Options.              
+        ('long_option',           'vos ', option_prefix + option_prefix + captured_name),
+        ('short_option',          'vos ', option_prefix + captured(r'\w')),
+        # - Variants.             
+        ('variant_def',           'v   ', captured_name + '(!)' + whitespace0 + ':'),
+        ('partial_usage',         'v   ', captured_name + '!'),
+        # - Sym, dest.            
+        ('sym_dest',              'vos ', full_sym_dest),
+        ('dot_dest',              'vos ', dot + whitespace0 + captured_name),
+        ('solo_dest',             'vos ', captured_name + whitespace0 + r'(?=[>=])'),
+        ('name',                  'vos ', valid_name),
+        # - Special.              
+        ('rest_of_line',          '   h', '.+'),
+        ('eof',                   '    ', ''),
+        ('err',                   '    ', ''),
     ]
 
     # Return the TokDefs constants collections.
@@ -989,19 +996,6 @@ class SpecParser:
     # Parse a spec.
     ####
 
-    def usage_section(self):
-        # Collect variants.
-        variants = self.parse_some(self.variant)
-
-        # TODO: reset lexer position if we failed on an opt-spec colon-marker.
-        if True:
-            pass
-
-        # Collect section-content elements.
-        elems = self.parse_some(self.section_content_elem)
-
-        return UsageSection(variants, elems)
-
     def parse(self):
         # The method used by Parser.parse(SPEC).
 
@@ -1009,23 +1003,46 @@ class SpecParser:
         self.lexer.debug(0)
         self.lexer.debug(0, mode_check = 'started')
 
-        # Get usage-section, if any.
-        u = self.usage_section()
-        sections = [u] if u else []
+        # Collect variants.
+        self.mode = Pmodes.variant
+        elems = self.parse_some(self.variant)
 
-        # Collect other sections.
-        sections.extend(self.parse_some(self.section))
+        # TODO: reset lexer position if we failed on an opt-spec colon-marker.
+        if True:
+            pass
+
+        # Collect all other elements.
+        self.mode = Pmodes.section
+        elems.extend(self.collect_section_elem)
 
         # Raise if we did not parse the full text.
         tok = self.lexer.end
         if not (tok and tok.isa(TokDefs.eof)):
             self.error('Failed to parse the full spec')
 
-        # Convert sections to a Grammar.
-        return self.build_grammar(sections)
+        # Convert the elements to a Grammar.
+        return self.build_grammar(elems)
 
-    def do_parse(self, allow_second):
-        # Yields top-level ParseElem (those declared in self.handlers).
+    def require_isfirst_token(self):
+        # Resets the parser's indent-related attributes, which will
+        # cause self.taste() to reject the next token unless it is
+        # the first on its line (aside from any ident).
+        self.indent = None
+        self.line = None
+
+    def collect_section_elem(self):
+        # Yields top-level elements that must be the first
+
+        while True:
+            self.require_isfirst_token()
+            e = self.parse_first(
+                self.any_section_title,
+                self.section_content_elem,
+            )
+            if not e:
+                break
+
+        return
 
         # The first OptSpec or SectionTitle must start on new line.
         # That differs from the first Variant, which is allowed
@@ -1118,7 +1135,7 @@ class SpecParser:
         # top-level ParseElem and thus expect a first-of-line Token.
         # If so, we remember that token's indent and line.
         if self.indent is None:
-            if tok.isfirst or self.allow_second:
+            if tok.isfirst:
                 self.lexer.debug(2, isfirst = True)
                 self.indent = tok.indent
                 self.line = tok.line
@@ -1127,31 +1144,25 @@ class SpecParser:
                 self.lexer.debug(2, isfirst = False)
                 return False
 
+        def do_debug(ok):
+            self.lexer.debug(
+                2,
+                indent_ok = ok,
+                self_indent = self.indent,
+                tok_indent = tok.indent,
+            )
+
         # For subsequent tokens in the expression, we expect tokens either from
         # the same line or from a continuation line indented farther than the
         # first line of the expression.
         if self.line == tok.line:
-            self.lexer.debug(
-                2,
-                indent_ok = 'line',
-                line = self.line,
-            )
+            do_debug('line')
             return True
         elif self.indent < tok.indent:
-            self.lexer.debug(
-                2,
-                indent_ok = 'indent',
-                self_indent = self.indent,
-                tok_indent = tok.indent,
-            )
+            do_debug('indent')
             return True
         else:
-            self.lexer.debug(
-                2,
-                indent_ok = False,
-                self_indent = self.indent,
-                tok_indent = tok.indent,
-            )
+            do_debug('NO')
             return False
 
     ####
@@ -1159,6 +1170,8 @@ class SpecParser:
     ####
 
     def variant(self):
+        self.require_isfirst_token()
+
         # Get variant/partial name, if any.
         tok = self.eat(TokDefs.variant_def)
         if tok:
@@ -1199,12 +1212,19 @@ class SpecParser:
         text = Chars.space.join(t for t in texts if t)
         return OptSpec(elems, text)
 
-    def section_title(self):
-        tok = self.eat(TokDefs.section_title, TokDefs.section_name)
+    def any_section_title(self):
+        tok = self.eat(TokDefs.scoped_section_title, TokDefs.section_title)
         if tok:
             return SectionTitle(title = tok.m.group(1).strip())
         else:
             return None
+
+    # def section_title(self):
+    #     tok = self.eat(TokDefs.section_title, TokDefs.section_name)
+    #     if tok:
+    #         return SectionTitle(title = tok.m.group(1).strip())
+    #     else:
+    #         return None
 
     def quoted_block(self):
         tok = self.eat(TokDefs.quoted_block)
