@@ -97,9 +97,12 @@ todos: TODOs
 
 Parsing function hierarchy and checklist:
 
-    - spec: parse()
-        - usage-section
-            - variant [BELOW]
+    Notation:
+        x = first draft done, aside from noted TODO items
+
+    x spec: parse()
+        x usage-section
+            x variant [BELOW]
             - section-content-elem [BELOW]
         - section
             - any-section-title
@@ -108,11 +111,11 @@ Parsing function hierarchy and checklist:
             - section-content-elem [BELOW]
 
     - variant
-        - valid-name
-            - python-name
-            - usage-name
-        - variant-def
-            - variant-elem
+        x valid-name
+            x python-name
+            x usage-name
+        x variant-def
+            . variant-elem
                 - option
                     - bare-option
                     - any-parameter

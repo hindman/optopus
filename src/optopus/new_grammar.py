@@ -5,10 +5,25 @@
 Parsing the new spec-syntax
 ----
 
-SpecParser:
+CURRENT:
 
-    - Add self.first_tok
-    - Drop self.line, self.indent
+    . variant_elems():
+        x quoted_literal()
+        x choice_sep()
+        x partial_usage()
+        - any_group()
+        - positional()
+        - option()
+
+    def enclosed_expression(self, opening_tds, method, empty_ok = False, **kws):
+        - opening_tds: paren, bracket, angle
+        - method: parsing function
+        - empty_ok: used to allow anonymous parameter: <>
+        - kws: hope to drop this
+
+TODO:
+
+    parse(): reset lexer position if variant parsing ends on COLON
 
 Implementation notes:
 
@@ -119,7 +134,6 @@ TODOs, issues, questions
 ----
 
 The elems() method:
-    - Should takes_quantifier be set in each ParseElem class?
 
     - A better name for the method?
 
@@ -405,7 +419,7 @@ class Token:
     # - Indentation of the line, in N of spaces.
     # - Whether Token is the first on the line, other than Token(indent).
     indent: int
-    isfirst: bool
+    is_first: bool
 
     def isa(self, *tds):
         return any(self.kind == td.kind for td in tds)
@@ -677,7 +691,7 @@ def define_tokdefs():
         ('long_option',           'vos ', option_prefix + option_prefix + captured_name),
         ('short_option',          'vos ', option_prefix + captured(r'\w')),
         # - Variants.             
-        ('variant_def',           'v   ', captured_name + '(!)' + whitespace0 + ':'),
+        ('variant_def',           'v   ', captured(valid_name + '!?') + whitespace0 + ':'),
         ('partial_usage',         'v   ', captured_name + '!'),
         # - Sym, dest.            
         ('sym_dest',              'vos ', full_sym_dest),
@@ -755,13 +769,13 @@ class RegexLexer(object):
         # - line: line number
         # - col: column number
         # - indent: width of most recently read Token(indent).
-        # - isfirst: True if next Token is first on line, after any indent.
+        # - is_first: True if next Token is first on line, after any indent.
         self.maxpos = len(self.text) - 1
         self.pos = 0
         self.line = 1
         self.col = 1
         self.indent = 0
-        self.isfirst = True
+        self.is_first = True
 
     @property
     def tokdefs(self):
@@ -791,11 +805,11 @@ class RegexLexer(object):
         # whether to return it or cache it in self.curr.
         # If returned, we update location information.
         if tok:
-            self.debug(2, lexed = tok.kind)
+            self.debug2(lexed = tok.kind)
             if self.validator(tok):
                 self.update_location(tok)
                 self.curr = None
-                self.debug(2, returned = tok.kind)
+                self.debug2(returned = tok.kind)
                 return tok
             else:
                 self.curr = tok
@@ -847,7 +861,7 @@ class RegexLexer(object):
             line = self.line,
             col = self.col,
             nlines = len(newline_indexes) + 1,
-            isfirst = self.isfirst,
+            is_first = self.is_first,
             indent = self.indent,
             newlines = newline_indexes,
         )
@@ -883,14 +897,14 @@ class RegexLexer(object):
         # Update the parser's indent-related info.
         if tok.isa(TokDefs.newline):
             self.indent = 0
-            self.isfirst = True
+            self.is_first = True
         elif tok.isa(TokDefs.indent):
             self.indent = tok.width
-            self.isfirst = True
+            self.is_first = True
         else:
-            self.isfirst = False
+            self.is_first = False
 
-    def debug(self, n_indent, **kws):
+    def debug(self, debug_level = 0, **kws):
         # Decided whether and where to send debug output.
         if self.debug_fh is True:
             fh = sys.stdout
@@ -905,7 +919,7 @@ class RegexLexer(object):
             return
 
         # Otherwise, assemble the message and log it.
-        indent = Chars.space * (n_indent * 4)
+        indent = Chars.space * (debug_level * 4)
         func_name = get_caller_name()
         params = ', '.join(
             f'{k} = {v!r}'
@@ -914,53 +928,36 @@ class RegexLexer(object):
         msg = f'{indent}{func_name}({params})'
         print(msg, file = fh)
 
+    def debug1(self, **kws):
+        self.debug(debug_level = 1, **kws)
+
+    def debug2(self, **kws):
+        self.debug(debug_level = 2, **kws)
+
 ####
 # SpecParser.
 ####
 
-@dataclass
-class Handler:
-    # Data object used by SpecParser to manage transitions
-    # from one parsing mode to the next. Holds a top-level
-    # parsing function and the next mode to advance to if
-    # that function finds a match.
-    method: object
-    next_mode: str
+# @dataclass
+# class Handler:
+#     # Data object used by SpecParser to manage transitions
+#     # from one parsing mode to the next. Holds a top-level
+#     # parsing function and the next mode to advance to if
+#     # that function finds a match.
+#     method: object
+#     next_mode: str
 
 class SpecParser:
 
     def __init__(self, text, debug = False):
-        # The text, whether/where to emit debug output, and the lexer.
+        # The spec text.
         self.text = text
+        
+        # Whether/where to emit debug output.
         self.debug_fh = debug
+
+        # The lexer.
         self.lexer = RegexLexer(text, self.taste, debug = debug)
-
-        # Line and indent from the first Token of the top-level
-        # ParseElem currently under construction by the parser.
-        # And a flag for special indent validation.
-        self.line = None
-        self.indent = None
-        self.allow_second = False
-
-        # Parsing modes. Each mode has 0+ handlers to try. If a handler finds a
-        # match and if the handler has a next-mode, the parser will advance to
-        # the next parsing-mode.
-        self.handlers = {
-            Pmodes.variant: [
-                Handler(self.section_title, Pmodes.section),
-                Handler(self.variant, None),
-            ],
-            Pmodes.opt_spec: [
-                Handler(self.section_title, Pmodes.section),
-                Handler(self.opt_spec, None),
-            ],
-            Pmodes.section: [
-                Handler(self.quoted_block, None),
-                Handler(self.section_title, None),
-                Handler(self.opt_spec, None),
-            ],
-            Pmodes.help_text: [],
-        }
 
         # Set the initial mode, which triggers the setter
         # to tell the RegexLexer which TokDefs to use.
@@ -969,6 +966,9 @@ class SpecParser:
         # TokDefs the parser currently trying to eat: these are a subset of
         # those given to the RegexLexer whenever the parsing mode changes.
         self.menu = None
+
+        # First Token of top-level ParseElem currently under construction.
+        self.first_tok = None
 
         # Tokens the parser has ever eaten.
         self.eaten = []
@@ -1000,8 +1000,8 @@ class SpecParser:
         # The method used by Parser.parse(SPEC).
 
         # Setup.
-        self.lexer.debug(0)
-        self.lexer.debug(0, mode_check = 'started')
+        self.lexer.debug()
+        self.lexer.debug(mode_check = 'started')
 
         # Collect variants.
         self.mode = Pmodes.variant
@@ -1023,59 +1023,23 @@ class SpecParser:
         # Convert the elements to a Grammar.
         return self.build_grammar(elems)
 
-    def require_isfirst_token(self):
+    def require_is_first_token(self):
         # Resets the parser's indent-related attributes, which will
         # cause self.taste() to reject the next token unless it is
-        # the first on its line (aside from any ident).
-        self.indent = None
-        self.line = None
+        # the first on its line (aside from any indent).
+        self.first_tok = None
 
     def collect_section_elem(self):
         # Yields top-level elements that must be the first
 
         while True:
-            self.require_isfirst_token()
+            self.require_is_first_token()
             e = self.parse_first(
                 self.any_section_title,
                 self.section_content_elem,
             )
             if not e:
                 break
-
-        return
-
-        # The first OptSpec or SectionTitle must start on new line.
-        # That differs from the first Variant, which is allowed
-        # to immediately follow the program name, if any.
-        self.indent = None
-        self.line = None
-        self.allow_second = allow_second
-
-        # Emit all top-level ParseElem that we find.
-        elem = True
-        while elem:
-            elem = False
-
-            # Try the handlers until one succeeds.
-            for h in self.handlers[self.mode]:
-                self.lexer.debug(0, handler = h.method.__name__)
-                elem = h.method()
-                if elem:
-                    yield elem
-
-                    # Every subsequent top-level ParseElem must start on a fresh line.
-                    self.indent = None
-                    self.line = None
-                    self.allow_second = False
-
-                    # Advance parser mode, if needed.
-                    if h.next_mode:
-                        self.mode = h.next_mode
-
-                    # If the handler succeeded, we we break from the
-                    # inner-loop but stay in the outer-loop.
-                    # That allows us to try all handlers again (in order).
-                    break
 
     def build_grammar(self, prog, elems):
         # Converts the AST-style data generated during self.parse() into
@@ -1092,7 +1056,7 @@ class SpecParser:
 
         # The caller provides 1+ TokDefs, which are put in self.menu.
         self.menu = tds
-        self.lexer.debug(1, wanted = ','.join(td.kind for td in tds))
+        self.lexer.debug1(wanted = ','.join(td.kind for td in tds))
 
         # Ask the RegexLexer for another Token. That won't succeed unless:
         #
@@ -1110,8 +1074,7 @@ class SpecParser:
         elif tok.isa(TokDefs.eof, TokDefs.err):
             return None
         else:
-            self.lexer.debug(
-                2,
+            self.lexer.debug2(
                 eaten = tok.kind,
                 text = tok.text,
                 pos = tok.pos,
@@ -1134,31 +1097,29 @@ class SpecParser:
         # If SpecParser has no indent yet, we are starting a new
         # top-level ParseElem and thus expect a first-of-line Token.
         # If so, we remember that token's indent and line.
-        if self.indent is None:
-            if tok.isfirst:
-                self.lexer.debug(2, isfirst = True)
-                self.indent = tok.indent
-                self.line = tok.line
+        if self.first_tok is None:
+            if tok.is_first:
+                self.lexer.debug2(is_first = True)
+                self.first_tok = tok
                 return True
             else:
-                self.lexer.debug(2, isfirst = False)
+                self.lexer.debug2(is_first = False)
                 return False
 
         def do_debug(ok):
-            self.lexer.debug(
-                2,
+            self.lexer.debug2(
                 indent_ok = ok,
-                self_indent = self.indent,
+                self_indent = self.first_tok.indent,
                 tok_indent = tok.indent,
             )
 
         # For subsequent tokens in the expression, we expect tokens either from
         # the same line or from a continuation line indented farther than the
         # first line of the expression.
-        if self.line == tok.line:
+        if self.first_tok.line == tok.line:
             do_debug('line')
             return True
-        elif self.indent < tok.indent:
+        elif self.first_tok.indent < tok.indent:
             do_debug('indent')
             return True
         else:
@@ -1170,16 +1131,17 @@ class SpecParser:
     ####
 
     def variant(self):
-        self.require_isfirst_token()
+        self.require_is_first_token()
 
         # Get variant/partial name, if any.
+        name = None
+        is_partial = False
         tok = self.eat(TokDefs.variant_def)
         if tok:
             name = tok.m.group(1)
-            is_partial = bool(tok.m.group(2))
-        else:
-            name = None
-            is_partial = False
+            if name.endswith(Chars.exclamation):
+                name = name[0:-1]
+                is_partial = True
 
         # Collect the ParseElem for the variant.
         elems = self.variant_elems()
@@ -1239,8 +1201,7 @@ class SpecParser:
     ####
 
     def variant_elems(self):
-        elems = []
-        takes_quantifier = (Parenthesized, Bracketed, Positional, Option)
+        TAKES_QUANTIFIER = (Parenthesized, Bracketed, Positional, Option)
         while True:
             e = self.parse_first(
                 self.quoted_literal,
@@ -1250,41 +1211,43 @@ class SpecParser:
                 self.positional,
                 self.option,
             )
-            if e and isinstance(e, takes_quantifier):
-                q = self.quantifier()
-                if q:
-                    e = clone(e, quantifier = q)
-                elems.append(e)
-            elif e:
-                elems.append(e)
+            if e:
+                e = self.with_quantifer(e, TAKES_QUANTIFIER)
+                yield e
             else:
                 break
-        return elems
 
-    def elems(self):
-        elems = []
-        takes_quantifier = (Parenthesized, Bracketed, Positional, Option)
-        while True:
-            e = self.parse_first(
-                self.quoted_literal,
-                self.choice_sep,
-                self.partial_usage,
-                self.paren_expression,
-                self.brack_expression,
-                self.positional,
-                self.long_option,
-                self.short_option,
-            )
-            if e and isinstance(e, takes_quantifier):
-                q = self.quantifier()
-                if q:
-                    e = clone(e, quantifier = q)
-                elems.append(e)
-            elif e:
-                elems.append(e)
-            else:
-                break
-        return elems
+    def with_quantifer(self, e, types):
+        if isinstance(e, types):
+            q = self.quantifier()
+            if q:
+                e.quantifier = q
+        return e
+
+    # def elems(self):
+    #     elems = []
+    #     TAKES_QUANTIFIER = (Parenthesized, Bracketed, Positional, Option)
+    #     while True:
+    #         e = self.parse_first(
+    #             self.quoted_literal,
+    #             self.choice_sep,
+    #             self.partial_usage,
+    #             self.paren_expression,
+    #             self.brack_expression,
+    #             self.positional,
+    #             self.long_option,
+    #             self.short_option,
+    #         )
+    #         if e and isinstance(e, TAKES_QUANTIFIER):
+    #             q = self.quantifier()
+    #             if q:
+    #                 e = clone(e, quantifier = q)
+    #             elems.append(e)
+    #         elif e:
+    #             elems.append(e)
+    #         else:
+    #             break
+    #     return elems
 
     def quoted_literal(self):
         tok = self.eat(TokDefs.quoted_literal)
