@@ -7,20 +7,13 @@ Parsing the new spec-syntax
 
 CURRENT:
 
-    enclosed_expression():
-        - problem: need to get the group name, if any
-        - split into two helpers:
-            - get opening TD and name
-            - get elems inside, raise if no closing TD
-        - or maybe just make enclosed_expression() smarter:
-            - return an intermediate object with what we need:
-            - Enclosed(td, name, elems)
-
     . variant_elems():
         x quoted_literal()
         x choice_sep()
         x partial_usage()
-        - any_group()
+        x any_group()
+            x paren_expression()
+            x brack_expression()
         - positional()
         - option()
 
@@ -479,13 +472,13 @@ class PartialUsage(ParseElem):
 class Parenthesized(ParseElem):
     name: str
     elems: list
-    quantifier: Quantifier
+    quantifier: Quantifier = None
 
 @dataclass
 class Bracketed(ParseElem):
     name: str
     elems: list
-    quantifier: Quantifier
+    quantifier: Quantifier = None
 
 @dataclass
 class SymDest(ParseElem):
@@ -533,6 +526,16 @@ class ParameterVariant(ParseElem):
     dest: str
     symlit: str
     choice: str
+
+####
+# Other intermediate objects.
+####
+
+@dataclass
+class Enclosed():
+    kind: str
+    name: str
+    elems: list
 
 ####
 # Grammar.
@@ -737,12 +740,15 @@ Chars = cons(
 Pmodes = cons('variant opt_spec section help_text')
 
 TokDefs = define_tokdefs()
+TDS = TokDefs
 Rgxs = constants({kind : td.regex for kind, td in TokDefs})
 
-ParenPairs = constants({
-    TokDefs.paren_open.kind: TokDefs.paren_close,
-    TokDefs.brack_open.kind: TokDefs.brack_close,
-    TokDefs.angle_open.kind: TokDefs.angle_close,
+# Bracket kinds.
+BracketKinds = cons('round square angle')
+BracketTriples = constants({
+    BracketKinds.round:  (TDS.paren_open, TDS.paren_close, TDS.paren_open_named),
+    BracketKinds.square: (TDS.brack_open, TDS.brack_close, TDS.brack_open_named),
+    BracketKinds.angle:  (TDS.angle_open, TDS.angle_close, None),
 })
 
 ####
@@ -1235,31 +1241,6 @@ class SpecParser:
                 e.quantifier = q
         return e
 
-    # def elems(self):
-    #     elems = []
-    #     TAKES_QUANTIFIER = (Parenthesized, Bracketed, Positional, Option)
-    #     while True:
-    #         e = self.parse_first(
-    #             self.quoted_literal,
-    #             self.choice_sep,
-    #             self.partial_usage,
-    #             self.paren_expression,
-    #             self.brack_expression,
-    #             self.positional,
-    #             self.long_option,
-    #             self.short_option,
-    #         )
-    #         if e and isinstance(e, TAKES_QUANTIFIER):
-    #             q = self.quantifier()
-    #             if q:
-    #                 e = clone(e, quantifier = q)
-    #             elems.append(e)
-    #         elif e:
-    #             elems.append(e)
-    #         else:
-    #             break
-    #     return elems
-
     def quoted_literal(self):
         tok = self.eat(TokDefs.quoted_literal)
         if tok:
@@ -1282,21 +1263,21 @@ class SpecParser:
             return None
 
     def any_group(self):
-        pass
+        return paren_expression() or brack_expression()
 
     def paren_expression(self):
-        elems = self.parenthesized(TokDefs.paren_open, self.elems)
-        if elems:
-            return Parenthesized(elems, None)
-        else:
-            return None
+        return self.get_bracketed_expression(
+            BracketKinds.round,
+            self.variant_elems,
+            cls = Parenthesized,
+        )
 
     def brack_expression(self):
-        elems = self.parenthesized(TokDefs.brack_open, self.elems)
-        if elems:
-            return Bracketed(elems, None)
-        else:
-            return None
+        return self.get_bracketed_expression(
+            BracketKinds.square,
+            self.variant_elems,
+            cls = Bracketed,
+        )
 
     def positional(self):
         # Try to get a SymDest elem.
@@ -1428,39 +1409,49 @@ class SpecParser:
         else:
             return None
 
-    def parenthesized(self, td_open, method, empty_ok = False, **kws):
-        td_close = ParenPairs[td_open.kind]
-        tok = self.eat(td_open)
-        if tok:
-            elem = method(**kws)
-            if not (elem or empty_ok):
-                self.error('Empty parenthesized expression')
-            elif self.eat(td_close):
-                return elem
-            else:
-                self.error(
-                    msg = 'Failed to find closing paren/bracket',
-                    expected = td_close,
-                )
-        else:
+    def get_bracketed_expression(self, kind, method,
+                                 cls = None,
+                                 named_ok = True, empty_ok = False,
+                                 **kws):
+        # A general helper to consume an expression
+        # inside any brackets: (), [], or <>.
+
+        # Prepare the opening TokDefs we want to consume.
+        td_open, td_close, td_named = BracketTriples[kind]
+        tds = [td_open]
+        if named_ok and td_named:
+            tds.append(td_named)
+
+        # Try to eat the opening bracket.
+        tok = self.eat(*tds)
+        if not tok:
             return None
 
-    def enclosed_expression(self, opening_tds, method, empty_ok = False, **kws):
-        for td_open in opening_tds:
-            td_close = ParenPairs[td_open.kind]
-            tok = self.eat(td_open)
-            if tok:
-                elem = method(**kws)
-                if not (elem or empty_ok):
-                    self.error('Empty parenthesized expression')
-                elif self.eat(td_close):
-                    return elem
-                else:
-                    self.error(
-                        msg = 'Failed to find closing paren/bracket',
-                        expected = td_close,
-                    )
-        return None
+        # Get the name, if any.
+        gs = tok.m.groups()
+        name = gs[0] if gs else None
+
+        # Get the elem(s) inside the brackets.
+        # Raise if we get nothing, unless empty is allowed.
+        elems = method(**kws)
+        if not (elems or empty_ok):
+            self.error(
+                msg = 'Empty bracketed expression',
+                kind = kind,
+            )
+
+        # If we can eat the closing TokDef, return an Enclosed instance.
+        # Otherwise raise an error.
+        if self.eat(td_close):
+            if cls:
+                return cls(kind = kind, elems = elems)
+            else:
+                return Enclosed(kind = kind, name = name, elems = elems)
+        else:
+            self.error(
+                msg = 'Failed to find closing bracket',
+                kind = kind,
+            )
 
     ####
     # Other stuff.
@@ -1508,4 +1499,10 @@ def get_caller_name(offset = 2):
         x = x.f_back
     x = x.f_code.co_name
     return x
+
+def fill_to_length(xs, wanted):
+    # Takes a list and a desired length.
+    # Returns a list of that length (or longer).
+    need = wanted - len(xs)
+    return xs + [None] * need
 
