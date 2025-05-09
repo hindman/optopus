@@ -7,6 +7,11 @@ Parsing the new spec-syntax
 
 CURRENT:
 
+    NEXT:
+        var_input_elems()
+            - rework so that I can use it with get_bracketed_expression()
+            - let the latter handle the angle brackets.
+
     . variant_elems():
         x quoted_literal()
         x choice_sep()
@@ -537,6 +542,11 @@ class Enclosed():
     name: str
     elems: list
 
+@dataclass
+class VarInput():
+    name: str
+    choices: list[str]
+
 ####
 # Grammar.
 ####
@@ -708,6 +718,7 @@ def define_tokdefs():
         ('dot_dest',              'vos ', dot + whitespace0 + captured_name),
         ('solo_dest',             'vos ', captured_name + whitespace0 + r'(?=[>=])'),
         ('name',                  'vos ', valid_name),
+        ('valid_name',            'vos ', valid_name),
         # - Special.              
         ('rest_of_line',          '   h', '.+'),
         ('eof',                   '    ', ''),
@@ -1248,6 +1259,17 @@ class SpecParser:
         else:
             return None
 
+    def next_choice(self, require_sep = True):
+        if require_sep and not self.eat(TokDefs.choice_sep)
+            return None
+
+        e = self.quoted_literal()
+        if e:
+            return e
+
+        tok = self.eat(TokDefs.valid_name)
+        return tok.text if tok else None
+
     def choice_sep(self):
         tok = self.eat(TokDefs.choice_sep)
         if tok:
@@ -1281,7 +1303,13 @@ class SpecParser:
 
     def positional(self):
         # Try to get a SymDest elem.
-        sd = self.parenthesized(TokDefs.angle_open, self.symdest, for_pos = True)
+        return self.get_bracketed_expression(
+            BracketKinds.angle,
+            self.var_input_elems,
+            cls = Bracketed,
+        )
+
+        sd = self.parenthesized(TokDefs.angle_open, self.var_input_elems)
         if not sd:
             return None
 
@@ -1320,63 +1348,54 @@ class SpecParser:
         else:
             return ParameterVariant(*xs, choice = sd.val)
 
-    def symdest(self, for_pos = False):
-        # Try to get sym.dest portion.
-        sym = None
-        dest = None
-        symlit = False
-        tok = self.eat(TokDefs.sym_dest, TokDefs.dot_dest, TokDefs.solo_dest)
+    def var_input_elems(self):
+        # Returns a VarInput holding the guts of a positional or parameter.
+        #
+        # Forms:
+        #   < valid-name >
+        #   < valid-name = choices >
+        #   < choices >
+        #   < >
+        #
+
+        # Try to eat a valid name, whichcould be a name or a choice.
+        tok = self.eat(TokDefs.valid_name)
         if tok:
-            if tok.isa(TokDefs.sym_dest):
-                # Handle <sym.dest> or <sym!dest>.
-                sym = tok.m.group(1)
-                symlit = tok.m.group(2) == Chars.exclamation
-                dest = tok.m.group(3)
-            else:
-                # Handle <.dest>, <dest>, <dest=> or <sym>.
-                txt = tok.m.group(1)
-                if for_pos or tok.isa(TokDefs.dot_dest):
-                    dest = txt
-                else:
-                    sym = txt
-        elif for_pos:
-            self.error('Positionals require at least a dest')
-
-        # Try to get the dest assign equal-sign.
-        # For now, treat this as optional.
-        assign = self.eat(TokDefs.assign)
-
-        # Try to get choice values.
-        vals = []
-        tds = (TokDefs.quoted_literal, TokDefs.name, TokDefs.solo_dest)
-        while True:
-            tok = self.eat(*tds)
-            if not tok:
-                break
-
-            # If we got one, and if we already had a sym or dest,
-            # the assign equal sign becomes required.
-            if (sym or dest) and not assign:
-                self.error('Found choice values without required equal sign')
-
-            # Consume and store.
-            i = 0 if tok.isa(TokDefs.name) else 1
-            vals.append(tok.m.group(i))
-
-            # Continue looping if choice_sep is next.
-            if not self.eat(TokDefs.choice_sep):
-                break
-
-        # Handle single choice value.
-        if len(vals) == 1:
-            val = vals[0]
-            vals = None
+            name_or_choice = tok.text
         else:
-            val = None
-            vals = vals
+            name_or_choice = None
 
-        # Return.
-        return SymDest(sym, dest, symlit, val, vals)
+        # If we get a closing angle-bracket, it was the name for a simple
+        # positional or parameter: eg <foo>.
+        tok = self.eat(TokDefs.angle_close)
+        if tok:
+            return VarInput(name = name_or_choice, choices = [])
+
+        # If we get an equal sign, it was a name, not a choice.
+        # Set up the other state variables we will need.
+        if self.eat(TokDefs.assign):
+            name = name_or_choice
+            choices = []
+            require_sep = False
+        else:
+            name = None
+            choices = [name_or_choice]
+            require_sep = True
+
+        # Collect the rest of the choices.
+        while True:
+            c = self.next_choice(require_sep = require_sep)
+            require_sep = True
+            if c:
+                choices.append(c)
+            else:
+                break
+
+        # Eat closing angle bracket. Then return or raise.
+        if self.eat(TokDefs.angle_close):
+            return VarInput(name = name, choices = choices)
+        else:
+            self.error('Failed to find closing angle bracket')
 
     def quantifier(self):
         q = self.parse_first(self.triple_dot, self.quant_range)
