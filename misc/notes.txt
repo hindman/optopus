@@ -745,6 +745,8 @@ Whitespace rules:
 
         - Between partial name and its exclamation mark.
 
+        - Around equal size for named groups.
+
         - Within a triple-dot quantifier.
 
 --------

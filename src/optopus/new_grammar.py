@@ -7,6 +7,15 @@ Parsing the new spec-syntax
 
 CURRENT:
 
+    enclosed_expression():
+        - problem: need to get the group name, if any
+        - split into two helpers:
+            - get opening TD and name
+            - get elems inside, raise if no closing TD
+        - or maybe just make enclosed_expression() smarter:
+            - return an intermediate object with what we need:
+            - Enclosed(td, name, elems)
+
     . variant_elems():
         x quoted_literal()
         x choice_sep()
@@ -14,12 +23,6 @@ CURRENT:
         - any_group()
         - positional()
         - option()
-
-    def enclosed_expression(self, opening_tds, method, empty_ok = False, **kws):
-        - opening_tds: paren, bracket, angle
-        - method: parsing function
-        - empty_ok: used to allow anonymous parameter: <>
-        - kws: hope to drop this
 
 TODO:
 
@@ -474,11 +477,13 @@ class PartialUsage(ParseElem):
 
 @dataclass
 class Parenthesized(ParseElem):
+    name: str
     elems: list
     quantifier: Quantifier
 
 @dataclass
 class Bracketed(ParseElem):
+    name: str
     elems: list
     quantifier: Quantifier
 
@@ -674,10 +679,12 @@ def define_tokdefs():
         ('section_title',         'vos ', section_title),
         # - Parens.               
         ('paren_open',            'vos ', r'\('),
-        ('paren_close',           'vos ', r'\)'),
         ('brack_open',            'vos ', r'\['),
-        ('brack_close',           'vos ', r'\]'),
         ('angle_open',            'vos ', '<'),
+        ('paren_open_named',      'vos ', captured(valid_name) + r'=\('),
+        ('brack_open_named',      'vos ', captured(valid_name) + r'=\['),
+        ('paren_close',           'vos ', r'\)'),
+        ('brack_close',           'vos ', r'\]'),
         ('angle_close',           'vos ', '>'),
         # - Quants.               
         ('quant_range',           'vos ', r'\{' + captured(quant_range_guts) + r'\}'),
@@ -1030,16 +1037,18 @@ class SpecParser:
         self.first_tok = None
 
     def collect_section_elem(self):
-        # Yields top-level elements that must be the first
-
+        elems = []
         while True:
             self.require_is_first_token()
             e = self.parse_first(
                 self.any_section_title,
                 self.section_content_elem,
             )
-            if not e:
+            if e:
+                elems.append(e)
+            else:
                 break
+        return elems
 
     def build_grammar(self, prog, elems):
         # Converts the AST-style data generated during self.parse() into
@@ -1201,6 +1210,7 @@ class SpecParser:
     ####
 
     def variant_elems(self):
+        elems = []
         TAKES_QUANTIFIER = (Parenthesized, Bracketed, Positional, Option)
         while True:
             e = self.parse_first(
@@ -1213,9 +1223,10 @@ class SpecParser:
             )
             if e:
                 e = self.with_quantifer(e, TAKES_QUANTIFIER)
-                yield e
+                elems.append(e)
             else:
                 break
+        return elems
 
     def with_quantifer(self, e, types):
         if isinstance(e, types):
@@ -1269,6 +1280,9 @@ class SpecParser:
             return PartialUsage(name = tok.m.group(1))
         else:
             return None
+
+    def any_group(self):
+        pass
 
     def paren_expression(self):
         elems = self.parenthesized(TokDefs.paren_open, self.elems)
@@ -1430,6 +1444,23 @@ class SpecParser:
                 )
         else:
             return None
+
+    def enclosed_expression(self, opening_tds, method, empty_ok = False, **kws):
+        for td_open in opening_tds:
+            td_close = ParenPairs[td_open.kind]
+            tok = self.eat(td_open)
+            if tok:
+                elem = method(**kws)
+                if not (elem or empty_ok):
+                    self.error('Empty parenthesized expression')
+                elif self.eat(td_close):
+                    return elem
+                else:
+                    self.error(
+                        msg = 'Failed to find closing paren/bracket',
+                        expected = td_close,
+                    )
+        return None
 
     ####
     # Other stuff.
