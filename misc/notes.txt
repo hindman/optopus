@@ -95,6 +95,10 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Slogan ideas:
+
+    https://chatgpt.com/c/681f862c-f714-8003-a9ed-33242056c155
+
 Parsing function hierarchy and checklist:
 
     Notation:
@@ -159,12 +163,33 @@ Parsing function hierarchy and checklist:
                 - rest-of-line + continuation-lines
 
 
-Project names:
+Change project name:
+
+    - Tag current version.
+    - Rename:
+        - proj dir
+        - vim setup
+        - bash setup
+        - Git repo
+            - Git side
+            - computer side
+            - test push/clone
+        - Files:
+            - rename dirs/files
+            - file content
+    - Create new virtualenv
+    - Check all:
+        - paths
+        - content
+    - Make a release: argle
+        - tag it
+        - test pip-install
+    - pypi: delete optopus
 
     https://chatgpt.com/share/6817a2e4-0928-8003-8489-6f5950e69915
 
     Optopus
-    Argle          # JK
+    Argle          # JK, BJ, MH
     Wizcat         # JK
     Argzilla
     Bargle
