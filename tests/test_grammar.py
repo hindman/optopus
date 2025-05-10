@@ -7,7 +7,7 @@ import io
 from pathlib import Path
 
 from short_con import cons
-from optopus.grammar import (
+from argle.grammar import (
     SpecParser,
     TokDefs,
     Grammar,

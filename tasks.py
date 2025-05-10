@@ -23,7 +23,7 @@ from glob import glob
 from invoke import task
 from pathlib import Path
 
-LIB = 'optopus'
+LIB = 'argle'
 
 @task
 def tags(c):

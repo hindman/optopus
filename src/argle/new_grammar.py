@@ -371,7 +371,7 @@ from collections import Counter
 from dataclasses import dataclass, replace as clone
 from short_con import cons, constants
 
-from .errors import OptopusError
+from .errors import ArgleError
 
 ####
 # Data classes: TokDef and Token.
@@ -1492,7 +1492,7 @@ class SpecParser:
 
     def error(self, msg, **kws):
         # Called when spec-parsing fails.
-        # Raises OptopusError with kws, plus position/token info.
+        # Raises ArgleError with kws, plus position/token info.
         lex = self.lexer
         kws.update(
             msg = msg,
@@ -1501,7 +1501,7 @@ class SpecParser:
             col = lex.col,
             current_token = lex.curr.kind if lex.curr else None,
         )
-        raise OptopusError(**kws)
+        raise ArgleError(**kws)
 
     def parse_first(self, *methods):
         # Takes 1+ parsing functions.

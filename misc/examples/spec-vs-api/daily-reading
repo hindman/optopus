@@ -2,9 +2,9 @@
 
 # Compares different setups for a simple script:
 #
-# - optopus : usage text
-# - optopus : API
-# - optopus : API + simple spec
+# - argle : usage text
+# - argle : API
+# - argle : API + simple spec
 
 ####
 # Usage text.

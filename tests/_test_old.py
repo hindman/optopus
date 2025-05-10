@@ -2,14 +2,14 @@ import pytest
 from six.moves import zip_longest
 from textwrap import dedent
 
-from optopus._old import (
+from argle._old import (
     OptType,
     SimpleSpecParser,
     ExitCode,
     jdump,
     FormatterConfig,
     Opt,
-    OptoPyError,
+    ArgleError,
     Parser,
     Section,
     SectionName,
@@ -91,7 +91,7 @@ def test_simple_spec_parser():
         'foo',
         '-a', 'hi bye',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'unexpected positional' in msg
@@ -114,7 +114,7 @@ def test_simple_spec_parser():
         'phasers',
         'beam',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     assert 'expected option-argument' in str(einfo.value)
 
@@ -129,7 +129,7 @@ def test_simple_spec_parser():
         'beam',
         '--fuzz',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     assert 'unexpected option' in str(einfo.value)
 
@@ -174,7 +174,7 @@ def test_basic_api_usage():
         '--foo',
         '--bar', '11', '12',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'expected N of arguments' in msg
@@ -187,7 +187,7 @@ def test_basic_api_usage():
         '--foo',
         '--bar', '11', '12', '13', '14', '15',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'Did not get expected N of occurrences' in msg
@@ -201,7 +201,7 @@ def test_basic_api_usage():
         '--bar', '11', '12', '13', '14', '15',
         '-n',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'expected N of arguments' in msg
@@ -216,7 +216,7 @@ def test_basic_api_usage():
         '--bar', '11', '12', '13', '14', '15',
         '-n',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'Found repeated option' in msg
@@ -234,7 +234,7 @@ def test_basic_api_usage():
         'phasers',
         '--bar', '11', '12', '13', '14', '15',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'Did not get expected N of occurrences' in msg
@@ -255,7 +255,7 @@ def test_basic_api_usage():
         '--foo',
         '--bar', '11',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'Did not get expected N of arguments' in msg
@@ -271,7 +271,7 @@ def test_basic_api_usage():
         'X',
         '--foo',
     ]
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         popts = p.parse(args, should_exit = False)
     msg = str(einfo.value)
     assert 'Did not get expected N of occurrences' in msg
@@ -458,12 +458,12 @@ def test_simple_spec_parsing():
         assert g == e
 
 def test_parser_validations():
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         p = Parser(Opt('-n'), Opt('--bar'), Opt('-n'))
     assert 'duplicate Opt' in str(einfo.value)
 
 def test_opt_validations():
-    with pytest.raises(OptoPyError) as einfo:
+    with pytest.raises(ArgleError) as einfo:
         Opt('--foo=X'),
     assert 'invalid option_spec' in str(einfo.value)
 

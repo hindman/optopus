@@ -1,17 +1,17 @@
 
 '''
 
-repo: Optopus vs click.
+repo: Argle vs click.
 
 The problems with click noted in the discussion of the naval-fate comparison
 also apply here.
 
 In addition:
 
-    - Optopus provides various views of the help text: summary,
+    - Argle provides various views of the help text: summary,
       command-specific, and complete.
 
-    - Optopus supports nearly all of the extras supplied by the Click API:
+    - Argle supports nearly all of the extras supplied by the Click API:
         - Automatic --version flag.
         - Negating flags: --shallow vs --deep.
         - Environment variables.
@@ -19,13 +19,13 @@ In addition:
         - Helper conversion functions.
 
     - The exceptions:
-        - Unlike Click, Optopus does not focus on dispatching to the degree
+        - Unlike Click, Argle does not focus on dispatching to the degree
           that click does (because it comes with too high of cost).
-        - This mockup does not address whether/how Optopus would support a
+        - This mockup does not address whether/how Argle would support a
           confirmation option like --yes (closely related to dispatching).
 
     - The API and help-text sizes are roughly comparable, but in both cases the
-      Optopus versions are more directly understandable for the user (writing
+      Argle versions are more directly understandable for the user (writing
       the code) and the end-user (running the program).
 
 Size:
@@ -37,7 +37,7 @@ Help size:
 '''
 
 ####
-# Optopus.
+# Argle.
 ####
 
 SPEC = '''
@@ -52,7 +52,7 @@ setuser : general! <command=setuser> [--username] [--email] [--password]
 
 ```
 Repo is a command line tool that showcases how to build complex command line
-interfaces with Optopus.
+interfaces with Argle.
 
 This tool is supposed to look like a distributed version control system to
 show how something like this can be structured.
@@ -135,7 +135,7 @@ This will override the current user config.
     [--password <pw>]   : Login password
 '''
 
-from optopus import Parser, Path
+from argle import Parser, Path
 
 def help_dispatch(opts):
     # Summary help: just usage if no args given.
@@ -187,13 +187,13 @@ p.config('password', password = True)
 # one attribute across multiple Opts.
 p.config(dest = dict(file = 'files', src = 'srcs', dst = 'dsts'))
 
-# One of the Optopus utility convert functions.
+# One of the Argle utility convert functions.
 p.config('files', 'srcs', 'dsts', convert = Path)
 
 opts = p.parse()
 
 ####
-# Optopus help text.
+# Argle help text.
 ####
 
 '''
@@ -207,7 +207,7 @@ Usage:
           [--password <pw>]
 
 Repo is a command line tool that showcases how to build complex command line
-interfaces with Optopus.
+interfaces with Argle.
 
 This tool is supposed to look like a distributed version control system to show
 how something like this can be structured.
@@ -286,7 +286,7 @@ Arguments:
 '''
 
 ####
-# Optopus help for one variant/section.
+# Argle help for one variant/section.
 ####
 
 '''

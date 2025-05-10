@@ -10,7 +10,7 @@ Argparse configuration:
     - Notably heavier and harder to read and scan.
     - Provides less flexible conversion/validation
 
-Optopus help text:
+Argle help text:
     - Cleaner, more aesthetic.
     - Easier to read.
 
@@ -34,7 +34,7 @@ ap.add_argument('--context', '-C', metavar = '<n>', type = int, help = 'Print N 
 ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue'), help = 'Highlight matching text: red, green, blue')
 
 ####
-# Optopus.
+# Argle.
 ####
 
 p = Parser('''
@@ -52,7 +52,7 @@ p.config('path', convert = Path, validate = isfile)
 p.config('max_count', 'context', convert = int, validate = ispositive)
 
 ####
-# Optopus help text.
+# Argle help text.
 ####
 
 '''

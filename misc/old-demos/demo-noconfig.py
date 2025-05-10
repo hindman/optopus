@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from optopus import Parser
+from argle import Parser
 
 p = Parser()
 opts = p.parse()

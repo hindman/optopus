@@ -1,7 +1,7 @@
 import pytest
 from collections import OrderedDict
 
-from optopus import (
+from argle import (
     Parser,
     Result,
 )

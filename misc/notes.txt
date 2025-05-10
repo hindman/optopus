@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
-optopus-notes: Content, tasks, and development notes
+argle-notes: Content, tasks, and development notes
 --------------------------------------------------------------------------------
 
 --------
 toc: Table of contents
 --------
 
-    optopus-notes | Content, tasks, and development notes
+    argle-notes | Content, tasks, and development notes
 
         toc       | Table of contents
         todos     | TODOs
@@ -29,8 +29,8 @@ toc: Table of contents
         other-goals                    | Other goals
         standard-cli-grammar           | Standard command-line grammar
         cli-grammar-vs-regex           | Command-line grammar vs. regex
-        subparsers-not-needed          | Optopus does not need the subparser concept
-        opt-action-not-needed          | Optopus does not need the action concept
+        subparsers-not-needed          | Argle does not need the subparser concept
+        opt-action-not-needed          | Argle does not need the action concept
         explicit-var-input-syntax      | Why explicit syntax is needed for variable inputs
         variable-input-spec            | Spec for variable input
         opts-revised-OO-plan           | Revised OO plan for Opts and child elements
@@ -77,7 +77,7 @@ toc: Table of contents
         degenerate-groups              | Degenerate groups with only one element
         settings-and-opts              | Opts and settings (preferences and environment variables)
         parser-serialization           | Parser serialization
-        man-pages-and-optopus          | Optopus and man-pages
+        man-pages-and-argle            | Argle and man-pages
         readme-next-version            | README for next version
 
     reference | Reference
@@ -98,10 +98,9 @@ todos: TODOs
 
 Change project name:
 
-    https://jbusecke.github.io/2022/07/20/renaming/
-
     x Tag current version.
-    - Rename:
+
+    x Rename:
         x proj dir
         x vim setup
         x bash setup
@@ -110,17 +109,25 @@ Change project name:
             x Git side
             x computer side
             x test push/clone
-        - Files:
+        x Files:
             x rename dirs/files
-            - file content
+            x file content
+
     - Create new virtualenv
+
     - Check all:
         - paths
         - content
+
     - Make a release: argle
         - tag it
         - test pip-install
+
     - pypi: delete optopus
+
+    - Resources:
+
+        https://jbusecke.github.io/2022/07/20/renaming/
 
 Slogan ideas:
 
@@ -380,7 +387,7 @@ Creating a new virtualenv:
     v='3.9.4'
     deactivate
     pyenv shell $v && pyenv versions
-    mkvirtualenv optopus-$v
+    mkvirtualenv argle-$v
     pip install -U pip
     pip install -e .[dev,test] && pip list
 
@@ -388,7 +395,7 @@ Activate and run tests:
 
     - Basic:
 
-        workon optopus-3.9.4
+        workon argle-3.9.4
         pytest -s -v tests/
 
     - With invoke:
@@ -413,7 +420,7 @@ Publish:
 
 Installing from test pypi:
 
-    pip install --index-url https://test.pypi.org/simple/ optopus
+    pip install --index-url https://test.pypi.org/simple/ argle
     pip uninstall short-con
     pip install short-con
 
@@ -759,19 +766,19 @@ syntax-examples: Syntax examples
 
 pgrep: README example-1: EX_README_1
 
-    - See argparse-vs-optopus/pgrep-1-bare-bones
+    - See argparse-vs-argle/pgrep-1-bare-bones
 
 pgrep: README example-2: EX_README_2
 
-    - See argparse-vs-optopus/pgrep-2-basic
+    - See argparse-vs-argle/pgrep-2-basic
 
 pgrep: README example-3: EX_README_3
 
-    - See argparse-vs-optopus/pgrep-3-enhanced
+    - See argparse-vs-argle/pgrep-3-enhanced
 
 pgrep: README example-4: EX_README_4
 
-    - See argparse-vs-optopus/wrangle
+    - See argparse-vs-argle/wrangle
 
 Parser configuration: spec-vs-API: EX_JOB_CLIENT
 
@@ -779,7 +786,7 @@ Parser configuration: spec-vs-API: EX_JOB_CLIENT
 
 blort: EX_BLORT
 
-    - See misc/examples/optopus-mock-ups/blort.py
+    - See misc/examples/argle-mock-ups/blort.py
 
     - A subcommand-style script.
     - Includes a full spec and the resulting usage-text.
@@ -818,18 +825,18 @@ nab: EX_NAB
 
 repo:
 
-    - A comparison of Click and Optopus for a subcommand program.
+    - A comparison of Click and Argle for a subcommand program.
     - Illustrates several API details.
 
     - click-repo.py
-    - optopus-repo.py
+    - argle-repo.py
 
 naval-fate:
 
-    - A comparison of Docopt, Click and Optopus.
+    - A comparison of Docopt, Click and Argle.
 
     - click-naval-fate.py
-    - optopus-naval-fate.py
+    - argle-naval-fate.py
     - docopt-naval-fate
 
 API-driven configuration vs text-driven configuration:
@@ -848,13 +855,13 @@ terminology: Terminology
 --------
 
 Library:
-    - The optopus code base.
+    - The argle code base.
 
 Users:
 
-    user         | Software developer using optopus
+    user         | Software developer using argle
     library-user | Ditto.
-    end-user     | Someone running a program that uses optopus
+    end-user     | Someone running a program that uses argle
 
 Command line arguments:
 
@@ -883,7 +890,7 @@ Help text:
     Help text   | Full output from --help.
     Usage text  | Just the command-line grammar.
     Opt listing | List of Opts and their help text, perhaps in sections.
-    Other text  | Written by user (default: wrapped by optopus).
+    Other text  | Written by user (default: wrapped by argle).
     ------------------------------------------------------------------
     Opt desc    | Help text for a single Opt
 
@@ -898,7 +905,7 @@ Spec-syntax:
 Section:
     - Section of the spec and thus of the help text.
     - Has a title.
-    - Can have text generated by optopus (usage text and opt text) as well as
+    - Can have text generated by argle (usage text and opt text) as well as
       text written by the user.
 
 Usage-section:
@@ -937,7 +944,7 @@ Spec-spope:
 Var-input:
     - Var-input:
         - Stands for variable input.
-        - Mainly for internal use in the Optopus project.
+        - Mainly for internal use in the Argle project.
     - User-facing terms:
         - positional
         - parameter
@@ -963,7 +970,7 @@ Dest:
 
 Block-quote:
     - Triple-quoted literal help text.
-    - With or without wrapping by Optopus.
+    - With or without wrapping by Argle.
 
 --------
 classes-and-attributes: Classes and attributes
@@ -1042,7 +1049,7 @@ Parser:
         grammar: Grammar
         sections: list[Section]
 
-        # Typically inferred by Optopus.
+        # Typically inferred by Argle.
         prog: str
 
         # Parsing mode: regular or no-config [maybe others later].
@@ -1430,7 +1437,7 @@ Two fundamental configuration strategies for argument parsers:
         - This approach is much less common.
         - Examples: docopt.
 
-The optopus library combines the best of both approaches:
+The argle library combines the best of both approaches:
 
     - API-driven.
 
@@ -1511,7 +1518,7 @@ The optopus library combines the best of both approaches:
 
 Configuration via usage syntax is focused on grammar:
 
-    - Optopus keeps that syntax fairly clean, readable, and intutive by
+    - Argle keeps that syntax fairly clean, readable, and intutive by
       focusing it solely on the grammar and naming -- the area where it excels.
       Almost all other details, if any are neeeded, are handled via the API.
 
@@ -1554,7 +1561,7 @@ variants (noted in a previous section).
 Supporting everything from quick-and-dirty scripts to complex, highly
 customized command-line programs:
 
-    - At once extreme, optopus allows you to parse any default-behavior
+    - At once extreme, argle allows you to parse any default-behavior
       command line, with zero configuration. Just import and go. This parser
       won't enforce any rules, but it will tell you what the end-user entered
       -- which is good enough for many types of quick-and-dirty scripts,
@@ -1574,7 +1581,7 @@ Allowing users to control the generated help text in a fine-grained manner.
       text, but not necessarily to write and layout the whole thing
       (text-driven libraries require the latter).
 
-    - Optopus provides many mechanisms for that fine tuning:
+    - Argle provides many mechanisms for that fine tuning:
 
         - Simple top-level configurations to control basic layout,
           capitalization, punctuation, etc.
@@ -1586,7 +1593,7 @@ Allowing users to control the generated help text in a fine-grained manner.
 
         - Ability to control nearly all parameters driving the help text
           contruction process via configuration and, where necessary, through
-          the programmatic hooks. There should be no need to subclass optopus
+          the programmatic hooks. There should be no need to subclass argle
           or delve into the parser's innards.
 
         - Support for common styles: command-line vs man-page.
@@ -1609,7 +1616,7 @@ groups of options and to omit either short or long options.
 
 Allowing users to define arguments/options in ways that encourage modularity.
 
-    - In optopus a user defines/configures options and arguments as atomic
+    - In argle a user defines/configures options and arguments as atomic
       units, separate from the issues of command-line grammar, usage variants,
       and options help text.
 
@@ -1648,7 +1655,7 @@ Easy system for validators to be combined flexibly.
 
 Should easily support different help types: (a) brief usage/synopsis, (b) full
 help or man-page, and (c) extras or examples. Regarding the latter, provide
-utility functions to format/wrap any text blob in the same manner that Optopus
+utility functions to format/wrap any text blob in the same manner that Argle
 would format official sections in the help text: p.format(BLOB) should return
 text consistent with the look and behavior of other help text, based on Parser
 defaults and configuration.
@@ -1759,7 +1766,7 @@ Typical rules of command-line grammar, as commonly understood in Unix tradition:
 cli-grammar-vs-regex: Command-line grammar vs. regex
 --------
 
-Although Optopus usage syntax borrows many concepts from regular expressions,
+Although Argle usage syntax borrows many concepts from regular expressions,
 command-line grammar parsing is not readily amenable to handling via regex
 parsing approaches.
 
@@ -1771,7 +1778,7 @@ it cannot appear again (ignoring repeatables). That means command-line parsing
 is context-sensitive.
 
 --------
-subparsers-not-needed: Optopus does not need the subparser concept
+subparsers-not-needed: Argle does not need the subparser concept
 --------
 
 The subparser concept is much less powerful and less intuitive than the key
@@ -1795,7 +1802,7 @@ majority and two small minorities:
           to use subparsers as a last resort.
 
 --------
-opt-action-not-needed: Optopus does not need the action concept
+opt-action-not-needed: Argle does not need the action concept
 --------
 
 Arguments can be configured in argparse with an 'action' parameter. The
@@ -2202,7 +2209,7 @@ Names of Args:
             - Shared name (copied from parent Positional).
             - Anonymous.
 
-            - Optopus policy: anonymous.
+            - Argle policy: anonymous.
 
         - That policy addresses a querying problem with shared-names:
 
@@ -2832,7 +2839,7 @@ positional has non-static nargs. Two examples:
     <xray>...    <y>...
     --xray {}... <y>...
 
-But that's not a problem, because Optopus can do what regular expression
+But that's not a problem, because Argle can do what regular expression
 engines do: greedy assignment by default, non-greedy by configuration.
 
 --------
@@ -2872,7 +2879,7 @@ But that dichotomy is flawed:
 opt-independence: Opt independence, duplicate names/dest, and opt-spec scope
 --------
 
-How should Optopus handle repetitions of a name/dest within a spec?
+How should Argle handle repetitions of a name/dest within a spec?
 
     - The spec-syntax is very general/flexible.
     - Nothing in the syntax prevents a user from using the same name or dest
@@ -2945,7 +2952,7 @@ Example: a small and plausible sub-command program:
         [--bar <b1> [<b2>]] : Bar parameter or range (inclusive)
         [-x] : Extended mode, with regex
 
-    - How would Optopus know to connect the opt-specs to the correct Opts in
+    - How would Argle know to connect the opt-specs to the correct Opts in
       the usage grammar?
 
         - Natural home for some likely configuration differences is the spec:
@@ -2956,12 +2963,12 @@ Example: a small and plausible sub-command program:
             - So forcing users to rely on the API entirely for ambiguous
               situations seems inferior.
 
-        - Optopus could make the connections via a default policy:
+        - Argle could make the connections via a default policy:
             - It could infer the --bar connections correctly,
               based on parameter differences.
             - Ditto if the Opts sharing a name were of different kinds.
             - But the -x flags differ only in help-text.
-            - Optopus could use a fallback: connect Opts in order.
+            - Argle could use a fallback: connect Opts in order.
 
             - But forcing user to check/fix the connections via API seems awkward.
 
@@ -2987,7 +2994,7 @@ Examples: plausible separator-based grammars:
 Example: arg-variants:
 
     - This type of example was overlooked in prior planning.
-    - Similar example: Optopus naval-fate.
+    - Similar example: Argle naval-fate.
 
     <action=pitch> <action=balk|stop> [--foo]
     <action=catch> [--bar] [--foo]
@@ -3006,7 +3013,7 @@ Key issues:
 
     - Validity of name repetition:
 
-        - Should Optopus disallow repetitions? If so, how widely:
+        - Should Argle disallow repetitions? If so, how widely:
 
         - Across entire spec.
         - Within a variant.
@@ -3020,7 +3027,7 @@ Key issues:
         - Should each Opt implied by spec be distinct?
         - Strict Opt independence.
 
-        - Should Optopus consolidate Opts having the same name/config?
+        - Should Argle consolidate Opts having the same name/config?
         - Limited Opt independence.
 
 Policy decisions:
@@ -3055,7 +3062,7 @@ Policy decisions:
               opt-spec (in the ways just described) will receive the additional
               configuration from the opt-spec.
 
-            - If no opts match, Optopus will raise.
+            - If no opts match, Argle will raise.
 
     - Spec-scopes to disambiguate, via this syntax:
 
@@ -3071,7 +3078,7 @@ Discussion of the policy across various domains:
 
     - Why consolidation of contiguous repetitions is a bad idea:
 
-        - Optopus could consolidate contiguous repetitions.
+        - Argle could consolidate contiguous repetitions.
         - Provided that they had the same configuration.
 
         - But consolidation seems tricky to implement:
@@ -3201,10 +3208,10 @@ Background for the opt-scope syntax:
 
     - Why double the marker?
 
-        - Optopus parent-child differs from CSS:
+        - Argle parent-child differs from CSS:
 
             - CSS: marker means direct parent-child.
-            - Optopus: marker means any hierarchical nesting:
+            - Argle: marker means any hierarchical nesting:
                 - parent to child
                 - any grandparent to child
 
@@ -3314,7 +3321,7 @@ Duplicate dests within a Result:
 
         <x>... [-x] <x> [-x <x>{2}]
 
-    - In such cases, Optopus will add another outer list to the structures
+    - In such cases, Argle will add another outer list to the structures
       documented in the table above.
 
         opts.x = [
@@ -3357,11 +3364,11 @@ API sketch:
     opts = p.parse(ARGS)
 
     # Retrieve contextual information in a declarative fashion.
-    c = opts('context')    # Context provided by Optopus.
+    c = opts('context')    # Context provided by Argle.
     p = opts('parser')     # The configured Parser.
     u = opt('user')        # User-defined Context.
 
-    # Also default support to get Optopus Context (non-declarative).
+    # Also default support to get Argle Context (non-declarative).
     c = opts()
 
     # Other args are delegated to the Context.
@@ -3380,7 +3387,7 @@ The user context:
         p = Parser(SPEC, context = CTX)
 
     - The supplied CTX can be:
-        - Dict (if so, Optopus converts to a Context).
+        - Dict (if so, Argle converts to a Context).
         - Context instance.
         - Other object (left as-is).
 
@@ -3476,7 +3483,7 @@ them, strictly speaking.
 Partial variants are a useful device to express some grammars more
 conveniently.
 
-Usage variants are a good mechanism for the user to help Optopus generate more
+Usage variants are a good mechanism for the user to help Argle generate more
 readable usage text and more relevant portions of it in response to errors.
 
 Variants can provide a low-config mechanism for subcommand-style programs to
@@ -3497,7 +3504,7 @@ to most specific:
 general-name-assignment: General name assignment: needed after all
 --------
 
-Optopus does need general destination assignment. At a minimum, it needs that
+Argle does need general destination assignment. At a minimum, it needs that
 feature not just for Opt, but also for partial variants. And once you go that
 far, you might as well generalize it.
 
@@ -3625,7 +3632,7 @@ Argparse background:
     - The default argparse style is overly restrictive.
     - Greedy parsing already support intermixed-style.
 
-Optopus approach:
+Argle approach:
 
     - Regular-parsing vs noconfig-parsing:
         - Determined by whether the user supplies a spec/grammar.
@@ -3642,7 +3649,7 @@ Optopus approach:
 
 Additional notes on noconfig-parsing:
 
-    - As elsewhere, Optopus will use a greedy policy.
+    - As elsewhere, Argle will use a greedy policy.
 
     - Positionals are not very relevant for no-config use cases:
         - They will be stored in one generic bucket.
@@ -3732,7 +3739,7 @@ API summary:
             - Object where getattr('foo') => FUNC.
         - bool:
             - help:
-                - True: use default Optopus help function.
+                - True: use default Argle help function.
                 - False: disable automatic support for --help.
             - priority:
                 - True: use noop function.
@@ -3799,27 +3806,27 @@ Calling protocol for dispatching:
 
         - help and version:
             - False:
-                - Optopus will do nothing.
+                - Argle will do nothing.
                 - Dispatching continues.
             - Raise HaltDispatch:
-                - Optopus halts dispatching.
+                - Argle halts dispatching.
                 - Program continues.
                 - Details below.
             - Exit:
                 - Program halts.
 
         - help:
-            - True: default Optopus help-text.
-            - text: Optopus will print it.
+            - True: default Argle help-text.
+            - text: Argle will print it.
             - Section(s): help text for specific sections.
             - Two-tuple: (Sections, Variants): ditto, with specific usage-text.
 
         - version:
-            - VER: default Optopus function, using VER as the version string.
+            - VER: default Argle function, using VER as the version string.
 
     - Handling of return values from dispatch functions:
 
-        - Optopus collects them in a returns-Context.
+        - Argle collects them in a returns-Context.
         - Stored under the relevant Opt dests.
 
         # Configure the parser.
@@ -3834,13 +3841,13 @@ Calling protocol for dispatching:
     - How a dispatch function can halt further dispatching:
 
         - Exit program.
-        - Raise HaltDispatch. Optopus will check two attributes:
+        - Raise HaltDispatch. Argle will check two attributes:
             - exit_code:
                 - Default = 0.
                 - User can supply a positive int for unsuccesful exit.
                 - Or None to suppress the exit.
             - msg:
-                - Optopus will print msg.
+                - Argle will print msg.
                 - To stderr if exit_code is a positive int.
 
 Why dispatch operates at the level of Opt, not Arg:
@@ -3906,7 +3913,7 @@ Scepticism about the necessity of dispatch:
         - Users do not write scripts frequently enough to master the API.
         - They end up having to look it up every time.
 
-    - Remember that it does not make sense to compare the Optopus
+    - Remember that it does not make sense to compare the Argle
       ease-of-dispatch to that of Click.
 
         - Click makes dispatch semiautomatic because it forces you to configure
@@ -3914,7 +3921,7 @@ Scepticism about the necessity of dispatch:
 
         - But that approach comes with unacceptable costs and drawbacks.
 
-        - For Optopus the relevant comparison is between a proposed API for
+        - For Argle the relevant comparison is between a proposed API for
           dispatch and the roll-your-own alternatives.
 
 Special support for regular subcommand programs:
@@ -3928,7 +3935,7 @@ Special support for regular subcommand programs:
         - Section selection to drive help-text.
         - Function selection for dispatch.
 
-    - Optopus will support this in two ways:
+    - Argle will support this in two ways:
 
         - Full flexibility: user supplies their own callables:
             - Help and usage text: FUNC returns Sections/Variants.
@@ -3997,7 +4004,7 @@ Motivation for priority dispatch:
             - Do not easily support #2.
             - Fail on #3: they gripe instead of helping.
 
-    - Optopus addresses those problems with two mechanisms:
+    - Argle addresses those problems with two mechanisms:
         - Priority options.
         - Flexible dispatching.
 
@@ -4008,7 +4015,7 @@ Motivation for priority dispatch:
             - Or 'HI' will be interpreted as an invalid <action>.
         - Even item #3 above could be tricky:
             - 'HI' is an invalid <n> and will halt parsing.
-            - How will Optopus know to provide delete-help rather than
+            - How will Argle know to provide delete-help rather than
               general-help?
         - It is not clear how far it is worth it to pursue a super-relaxed form
           of parsing to glean more context for providing help.
@@ -4032,7 +4039,7 @@ Why priority-opts should be restricted to flags or Options:
 
         - Parsing of all ARGS fails.
         - Select variant that did the best (eg, max N ARGS consumed).
-        - Optopus populates a Result up to the ARG that failed.
+        - Argle populates a Result up to the ARG that failed.
         - What happens next?
 
         - If a priority-opt is a flag:
@@ -4043,7 +4050,7 @@ Why priority-opts should be restricted to flags or Options:
 
         - But if a priority-opt were allowed to be more complex:
             - With Args having grammatical/validation requirements.
-            - How would Optopus successfully parse the entity?
+            - How would Argle successfully parse the entity?
             - Parsing has already failed.
             - An Opt could be marked as priority, but that configuration will
               take effect only if the priority Opt appears to the left of the
@@ -4051,7 +4058,7 @@ Why priority-opts should be restricted to flags or Options:
 
     - A possible counter-argument: let users do what the want:
         - If the parse fails.
-        - Optopus selects the best-performing interpretation.
+        - Argle selects the best-performing interpretation.
         - Then populates a Result as best it can.
         - If a priority Opt is set, then invoke its dispatch functions.
 
@@ -4086,7 +4093,7 @@ Examples: username, credentials.
 
     Where PROMPT:
         - True:
-            - Default Optopus prompting.
+            - Default Argle prompting.
         - MSG:
             - Same, but using MSG.
         - callable:
@@ -4112,19 +4119,19 @@ Click supports something called a confirmation option:
         - End-user supplies --yes: no prompting occurs.
         - Otherwise, prompt the user before proceeding with dispatch.
 
-Optopus could support this under the dispatch umbrella:
+Argle could support this under the dispatch umbrella:
 
     p.config('yes', confirm = CONFIRM)
 
     Where CONFIRM:
-        - bool: if True, use default Optopus prompt
+        - bool: if True, use default Argle prompt
         - MSG: same, but with the user-supplied prompt MSG.
         - (MSG1, MSG2): same, with user-supplied prompt-MSG and exit-MSG.
         - callable:
             - Takes opts as parsed Result.
             - Should return True to confirm.
             - If False, program exits.
-            - If HaltDispatch is raised Optopus will check and act accordingly.
+            - If HaltDispatch is raised Argle will check and act accordingly.
 
 --------
 argparse-and-greed: argparse and greediness
@@ -4233,7 +4240,7 @@ Types of errors in precedence order, by failure source:
 converters-validators: Converters and validators
 --------
 
-Optopus supports three concepts to check Arg inputs:
+Argle supports three concepts to check Arg inputs:
 
     - convert:
         - Takes a str direct from ARGS.
@@ -4276,7 +4283,7 @@ Calling protocol:
         - Returns bool to indicate whether the check is OK.
 
     - If convert/validate/check raise:
-        - Optopus will get MSG, if any, from the exception.
+        - Argle will get MSG, if any, from the exception.
         - Build the end-user-facing error message, with MSG at end.
 
         - Other libraries require users to raise specific exceptions:
@@ -4291,7 +4298,7 @@ Support smart-types for convert/validate:
         - Yes the user can write their own convert/validate.
         - But doing the common things well is handy.
         - Opens up support for more informative errors.
-        - Similar in spirit to other Optopus utilities:
+        - Similar in spirit to other Argle utilities:
             - Exiting with proper codes.
             - Printing errors in a consistent style.
 
@@ -4311,7 +4318,7 @@ Support smart-types for convert/validate:
 grammar-querying-api: Grammar querying API
 --------
 
-Why Optopus needs flexible querying:
+Why Argle needs flexible querying:
 
     - A Grammar can be a deep tree structure.
     - Users need to be able to retrieve element(s) of interest:
@@ -4349,7 +4356,7 @@ Querying grammar elements in a Parser:
             - Applied only against name and dest.
 
         - Where KIND:
-            - Optopus type: Opt, Section, Variant, etc.
+            - Argle type: Opt, Section, Variant, etc.
             - Same, as a str.
             - Sequence of such things.
             - Default: None.
@@ -4616,7 +4623,7 @@ And this text-centric approach is flexible in allowing a variety of
 usage patterns:
 
     - It can be treated as literal options text, for those who prefer that
-      approach. Essentialy, Optopus will support a Docopt mode [less certain
+      approach. Essentialy, Argle will support a Docopt mode [less certain
       about this now].
 
     - But treating it as configuration syntax will be easier for many who (1)
@@ -4687,7 +4694,7 @@ help-text-as-format-strings: Help text elements as format-strings
 --------
 
 When writing help-text elements, a user sometimes needs to refer to data that
-is best known to Optopus. Some common and conceivable use cases:
+is best known to Argle. Some common and conceivable use cases:
 
     - Opt help-text:
         - List the choices.
@@ -4696,7 +4703,7 @@ is best known to Optopus. Some common and conceivable use cases:
     - General help-text:
         - List or mention subcommand choices.
         - Document usage variants, in situations where the usage-text generated
-          by Optopus uses a symbolic name (eg, separator based grammars).
+          by Argle uses a symbolic name (eg, separator based grammars).
 
 API overview:
 
@@ -4705,11 +4712,11 @@ API overview:
         p = Parser(SPEC)
         p.config(...)
 
-    - User tells Optopus to format the help-texts.
+    - User tells Argle to format the help-texts.
 
         p.format_help_texts(**kws)
 
-    - What Optopus will do:
+    - What Argle will do:
 
         - Traverse the Grammar.
         - Call str.format(self = self, **kws) on all help-text elements.
@@ -4719,7 +4726,7 @@ API overview:
 
     - Syntax supported in the formatting-braces:
 
-        - Generally: regular Python using the regular Optopus API.
+        - Generally: regular Python using the regular Argle API.
 
         - Plus support for an abbreviated syntax for opt-specs:
 
@@ -4730,7 +4737,7 @@ API overview:
 
                 [--style <s>] : Set style to {OPT.choices_help}
 
-            - During spec-parsing, Optopus will convert the help-text for
+            - During spec-parsing, Argle will convert the help-text for
               that Opt into the following:
 
                 Set style to {self.get('style').choices_help}
@@ -4793,10 +4800,10 @@ A more complex example: documenting partial variants:
 
     - Another approach: unnamed Group, plus an indented usage style:
 
-        - This will cause Optopus to document the full grammar explicitly.
+        - This will cause Argle to document the full grammar explicitly.
         - That will make the usage less readable.
 
-        - But the user could tell Optopus to use an indented style for
+        - But the user could tell Argle to use an indented style for
           the main Variant, producing something like this:
 
             nab [--trace] (
@@ -4826,7 +4833,7 @@ relates to choices:
     Upper     | UPPER       | UPPER       | () [] ? | rsync
     ----------------------------------------------------------------------------
     Docopt    | <> or UPPER | <>          | () [] ? | .
-    Optopus   | <>          | <>          | <>      | .
+    Argle     | <>          | <>          | <>      | .
 
     - Unclear how docopt and rsync handle choices, but I think they use
       parens/brackets.
@@ -4867,7 +4874,7 @@ Angle style: robust due to greed:
     - The conclusion is that variable inputs must be enclosed, making
       case-based solutions either flawed or insufficiently robust.
 
-    - Optopus was drifting toward {param} and <pos> as the enclosures:
+    - Argle was drifting toward {param} and <pos> as the enclosures:
 
         - That would also be an odd combo. The only precedent is docopt,
           which supports it only as an alternative syntax.
@@ -5056,10 +5063,10 @@ The <options> placeholder, opt-descs, and quantifiers:
             # User could write the text.
             Overrides a config key/value pair (repeatable)
 
-            # Optopus could attempt to do so, but this seems fraught.
+            # Argle could attempt to do so, but this seems fraught.
             Overrides a config key/value pair (0+)
 
-        - Or Optopus could include the quantifiers in complex cases:
+        - Or Argle could include the quantifiers in complex cases:
 
             [--config <key> <value>]...   Overrides a config key/value pair
 
@@ -5296,7 +5303,7 @@ Usage text can contain named collections of elements:
 
         <action=walk|run|freeze>
 
-Previous plans envisioned Optopus documenting such things in usage-text:
+Previous plans envisioned Argle documenting such things in usage-text:
 
     - Automatically documenting the named collections of opts or choices.
 
@@ -5366,7 +5373,7 @@ Automatically generated headings for opt-spec listings:
     - Policy:
 
         - If an opt-spec listing has no heading immediately before it.
-        - Then Optopus will generate one.
+        - Then Argle will generate one.
 
         - User can override in two ways:
             - Put their own heading in front of the listing.
@@ -5375,7 +5382,7 @@ Automatically generated headings for opt-spec listings:
     - Common scenarios in a usage-section:
 
         - Just variants and opt-specs (no blocks-quotes).
-        - Optopus should generate default headings for such scenarios.
+        - Argle should generate default headings for such scenarios.
 
             Arguments:
               <foo> : Blah-foo
@@ -5388,7 +5395,7 @@ Automatically generated headings for opt-spec listings:
     - Similar logic in other sections:
         - Will be common for a section to have nothing more than a section
           title, maybe some block-quoted text, and then an opt-spec listing.
-        - Optopus should attach standard headings to those listings.
+        - Argle should attach standard headings to those listings.
 
 Triple vs double colons for headings:
     - Why not triple-colon for sections, since they have higher status?
@@ -5431,7 +5438,7 @@ Why Group needs a dest:
 
     - Example: EX_NAB.
 
-    - Without a Group.dest (commands in this case) Optopus would have no way to
+    - Without a Group.dest (commands in this case) Argle would have no way to
       store the information other than via the Opt dests.
 
        - Data would be organized in a narrowly correct but impractical way.
@@ -5456,7 +5463,7 @@ Why Group needs a dest:
         )
 
         - Even if one could imagine a policy statement like "put data for a
-          Group in an inner-Result", the problem remains that Optopus has no
+          Group in an inner-Result", the problem remains that Argle has no
           attribute name (no dest) to which to allocate the inner-Results.
 
         - Other default policies (eg, invent formulaic dest) seem inelegant.
@@ -5493,11 +5500,11 @@ In early planning work, Group had dest but no name.
     - Namely, that the 'name' is the primary decide to represent the entity
       both in usage-text (directly) and the API (via queries).
 
-Optopus users can achieve various usage-text styles for Groups:
+Argle users can achieve various usage-text styles for Groups:
 
     - Compact, readable style:
         - Use a named group.
-        - Tells Optopus to represent the Group symbolically in usage.
+        - Tells Argle to represent the Group symbolically in usage.
 
     - Fully-explicit style (no inner-Results):
         - Use an unnamed Group in the main variant-def.
@@ -5566,7 +5573,7 @@ Settings are upstream inputs:
 
     - Settings, in effect, are upstream inputs.
 
-Two goals for Optopus related to settings:
+Two goals for Argle related to settings:
 
     - Adjusting parsing requirements based on settings:
 
@@ -5583,7 +5590,7 @@ Two goals for Optopus related to settings:
         - Can be a hassle with argparse (eg mvs).
         - Argparse does not report a value's provenance: default or ARGS.
 
-        - Optopus will:
+        - Argle will:
             - Make the merging unnecessary for most use cases.
             - And provide provenance info to support complex merging that a
               user might need to perform.
@@ -5596,7 +5603,7 @@ Applying settings to the Parser:
         # If needed, user adjusts them to align with Parser names/dests.
         PREFS = ...
 
-        # User configures Parser, telling Optopus about upstream inputs.
+        # User configures Parser, telling Argle about upstream inputs.
         p = Parser(SPEC, prefs = PREFS, envs = ENVS)
 
         # Or user can apply such settings to specific Opts.
@@ -5613,7 +5620,7 @@ Applying settings to the Parser:
     - Where ENVS can be:
 
         - None (the default):
-            - Optopus will do nothing regarding envvars.
+            - Argle will do nothing regarding envvars.
 
         - True:
             - Envvar names must agree with Opt dests.
@@ -5626,7 +5633,7 @@ Applying settings to the Parser:
         - dict:
             - Mapping: Opt PATH => envvar name
 
-        - For each Opt, Optopus will look for the envvar and, if found, set
+        - For each Opt, Argle will look for the envvar and, if found, set
           Opt.envvar accordingly.
 
     - How arg-parsing will operate:
@@ -5639,7 +5646,7 @@ Applying settings to the Parser:
 
         - The Parser will keep track of data provenance.
 
-        - For each Opt, Optopus will use only one source: pref, envar, or ARGS.
+        - For each Opt, Argle will use only one source: pref, envar, or ARGS.
           It will not merge/add their inputs together to satisfy quantifiers.
 
 Merging settings and opts:
@@ -5720,17 +5727,17 @@ Those notes also implied that the data structure should be serializable:
     - Defer this for now.
 
 --------
-man-pages-and-optopus: Optopus and man-pages
+man-pages-and-argle: Argle and man-pages
 --------
 
-Optopus will not generate source-syntax for man-pages.
+Argle will not generate source-syntax for man-pages.
 
 Rationale:
 
     - Spec-syntax could never achieve what troff can do.
 
     - Some users might want help-text mimicking man-page design.
-    - Optopus will aim for approximate mimickry.
+    - Argle will aim for approximate mimickry.
         - Documentation that can look generally like a man-page.
         - Achieve this via sections, headings, indentation policy, formatting
           configuration, and so forth.
@@ -5739,13 +5746,13 @@ Rationale:
 readme-next-version: README for next version
 --------
 
-Check README examples against mockups in examples/argparse-vs-optopus.
+Check README examples against mockups in examples/argparse-vs-argle.
 
 Move most of the discussion elsewhere:
-    - Optopus vs alterantives.
+    - Argle vs alterantives.
     - Motivation.
 
-Optopus vs the competitors:
+Argle vs the competitors:
     - Maybe augment the current README
     - Include Click in a future write-up.
 
@@ -6322,7 +6329,7 @@ Python: Click
         - I did not read carefully and am skeptical that it can do very much.
 
     - Shell completion:
-        - Refer to Click documentation when setting up completion for Optopus.
+        - Refer to Click documentation when setting up completion for Argle.
         - I did not read closely.
         - Completion seems to be supported only for scripts executed via an
           entry point in setuptools.

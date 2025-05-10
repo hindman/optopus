@@ -1,5 +1,5 @@
 '''
-See the optopus implementation for notes.
+See the argle implementation for notes.
 '''
 
 ####

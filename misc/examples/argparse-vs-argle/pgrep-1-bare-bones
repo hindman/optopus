@@ -6,7 +6,7 @@ README example 1: minimal command-line script.
 
 Bare-bones grep-clone so you can use Python regexes.
 
-Compared to Argparse, Optopus is:
+Compared to Argparse, Argle is:
 
     - Shorter, more efficient.
     - More directly readable and intuitive.
@@ -28,7 +28,7 @@ ap.add_argument('rgx')
 ap.add_argument('path')
 
 ####
-# Optopus.
+# Argle.
 ####
 
 p = Parser('[-i] [-v] <rgx> <path>')

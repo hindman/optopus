@@ -1,3 +1,4 @@
+
 import json
 import re
 import sys
@@ -93,7 +94,7 @@ class Parser(object):
             if k not in self.VALID_KWARGS:
                 fmt = 'Parser(): invalid keyword argument: {}'
                 msg = fmt.format(k)
-                raise OptoPyError(msg)
+                raise ArgleError(msg)
 
         self.simple_spec      = kws.get('simple_spec', None)
         self.wildcards        = kws.get('wildcards', None)
@@ -123,7 +124,7 @@ class Parser(object):
                 else:
                     fmt = 'Parser(): invalid Opt: must be Opt or dict: {}'
                     msg = fmt.format(x)
-                    raise OptoPyError(msg)
+                    raise ArgleError(msg)
                 self.opts.append(opt)
 
         if self.add_help:
@@ -136,7 +137,7 @@ class Parser(object):
             if nm in seen:
                 fmt = 'Parser(): duplicate Opt: {}'
                 msg = fmt.format(nm)
-                raise OptoPyError(msg)
+                raise ArgleError(msg)
             else:
                 seen.add(nm)
 
@@ -156,9 +157,9 @@ class Parser(object):
             else:
                 popts = self._do_parse(args)
             if self.add_help and popts['help'].value:
-                raise OptoPyError(HELP)
+                raise ArgleError(HELP)
             return popts
-        except OptoPyError as e:
+        except ArgleError as e:
             if should_exit:
                 if self.add_help and ('-h' in args or '--help' in args):
                     error_msg = HELP
@@ -312,7 +313,7 @@ class Parser(object):
         if invalid:
             fmt = 'Parser.help_text(): invalid sections: {}'
             msg = fmt.format(' '.join(invalid))
-            raise OptoPyError(msg)
+            raise ArgleError(msg)
 
         ####
         # Setup the sections for which we will build help text.
@@ -535,7 +536,7 @@ ExitCode = Enum(
 class RegexLexerError(Exception):
     pass
 
-class OptoPyError(Exception):
+class ArgleError(Exception):
     '''
     '''
     pass
@@ -645,7 +646,7 @@ class Opt(object):
             if otok is None:
                 fmt = 'Opt: invalid option_spec: {}'
                 msg = fmt.format(option_spec)
-                raise OptoPyError(msg)
+                raise ArgleError(msg)
 
             # Assign values from the OptToken to the Opt.
             self.option_spec = otok.option_spec
@@ -665,7 +666,7 @@ class Opt(object):
         # Set self.ntimes.
         if required is not None and ntimes is not None:
             msg = 'Opt: do not set both required and ntimes'
-            raise OptoPyError(msg)
+            raise ArgleError(msg)
         elif ntimes is not None:
             # If ntimes was given, just set it.
             self.ntimes = ntimes
@@ -777,7 +778,7 @@ class Opt(object):
         if any(invalids):
             fmt = 'Invalid {}: {}'
             msg = fmt.format(attr_name, val)
-            raise OptoPyError(msg)
+            raise ArgleError(msg)
         else:
             return tup
 
@@ -858,7 +859,7 @@ class ParsedOpt(object):
             vs.append(val)
         except AssertionError:
             msg = 'ParsedOpt: cannot _add_value() without any occurrences'
-            raise OptoPyError(msg)
+            raise ArgleError(msg)
 
     @property
     def value(self):
@@ -911,7 +912,7 @@ class ParsedOpt(object):
             return ma > n
         else:
             msg = 'ParsedOpt: cannot _requires_args() without any occurrences'
-            raise OptoPyError(msg)
+            raise ArgleError(msg)
 
     @property
     def _can_take_args(self):
@@ -923,7 +924,7 @@ class ParsedOpt(object):
             return n < na
         else:
             msg = 'ParsedOpt: cannot _can_take_args() without any occurrences'
-            raise OptoPyError(msg)
+            raise ArgleError(msg)
 
     def __str__(self):
         fmt = 'ParsedOpt({}, {!r})'
@@ -1007,7 +1008,7 @@ class Phrase(object):
                 if prev_opt and popts[prev_opt]._requires_args:
                     fmt = 'Found option, but expected option-argument: {}'
                     msg = fmt.format(arg)
-                    raise OptoPyError(msg)
+                    raise ArgleError(msg)
 
                 # Try to find a matching Opt.
                 prev_opt = None
@@ -1026,13 +1027,13 @@ class Phrase(object):
                 if prev_opt is None:
                     fmt = 'Found unexpected option: {}'
                     msg = fmt.format(arg)
-                    raise OptoPyError(msg)
+                    raise ArgleError(msg)
 
                 # Found a match, but we've already seen it.
                 if prev_opt in seen:
                     fmt = 'Found repeated option: {}'
                     msg = fmt.format(arg)
-                    raise OptoPyError(msg)
+                    raise ArgleError(msg)
 
                 # Valid Opt.
                 seen.add(prev_opt)
@@ -1067,7 +1068,7 @@ class Phrase(object):
             if not prev_pos:
                 fmt = 'Found unexpected positional argument: {}'
                 msg = fmt.format(arg)
-                raise OptoPyError(msg)
+                raise ArgleError(msg)
 
             # Valid positional.
             po._add_value(arg)
@@ -1086,14 +1087,14 @@ class Phrase(object):
         if problems:
             fmt = 'Did not get expected N of occurrences: {}'
             msg = fmt.format(', '.join(problems))
-            raise OptoPyError(msg)
+            raise ArgleError(msg)
 
         # Check that all Opt instances got the required nargs.
         problems = sorted(po.opt.option for po in popts if po._requires_args)
         if problems:
             fmt = 'Did not get expected N of arguments: {}'
             msg = fmt.format(', '.join(problems))
-            raise OptoPyError(msg)
+            raise ArgleError(msg)
 
         # Return the ParsedOptions.
         return popts

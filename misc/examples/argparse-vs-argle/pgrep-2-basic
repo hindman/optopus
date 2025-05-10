@@ -21,7 +21,7 @@ ap.add_argument('-i', '--ignore-case', action = 'store_true', help = 'Ignore cas
 ap.add_argument('-v', '--invert-match', action = 'store_true', help = 'Select non-matching lines')
 
 ####
-# Optopus.
+# Argle.
 ####
 
 p = Parser('''

@@ -1,5 +1,5 @@
 
-# Optopus
+# Argle
 
 ## Because Python needs a better command-line argument parser
 
@@ -17,16 +17,16 @@ scripts are written in Python using argument parsers that are just OK: they are
 less intuitive, more verbose, and more hemmed in by restrictions than they need
 to be.
 
-Optopus will change that by providing a library that is easy and efficient to
+Argle will change that by providing a library that is easy and efficient to
 configure; powerful when needed for complex, specialized, unusual, or merely
 particular situations; and designed with an eye toward customization and
 flexibility. At every level of program complexity — ranging from throwaway
-scripts to the next-big-thing — Optopus will offer a superior approach to
+scripts to the next-big-thing — Argle will offer a superior approach to
 handling command-line arguments.
 
 The library is under active development and an alpha release has been published.
 The purpose of that release was mainly to reserve the project name in
-[PyPI][pypi_optopus] but it already provides one small bit of useful
+[PyPI][pypi_argle] but it already provides one small bit of useful
 functionality, one not currently available in other libraries — namely,
 no-configuration parsing, which is handy for temporary or experimental scripts
 that require nothing more than open-ended support for options and positionals.
@@ -34,13 +34,13 @@ that require nothing more than open-ended support for options and positionals.
 ```bash
 # Install the library in the usual way.
 
-$ pip install optopus
+$ pip install argle
 ```
 
 ```python
 # Write almost no code to parse arguments.
 
-from optopus import Parser
+from argle import Parser
 
 p = Parser()
 opts = p.parse()
@@ -69,7 +69,7 @@ True
 ('y', 'Y1')
 ```
 
-## Optopus vs. the competition
+## Argle vs. the competition
 
 Rather than starting with my opinions about the state of command-line argument
 parsers in Python, Ruby, and, from an earlier era, Perl, a more compelling case
@@ -101,11 +101,11 @@ ap.add_argument('rgx')
 ap.add_argument('path')
 ```
 
-The equivalent Optopus configuration dispenses with all of that hassle.
+The equivalent Argle configuration dispenses with all of that hassle.
 Instead, it relies on the conventions that most programmers already know
 regarding command-line usage syntax — the same syntax you just read and
 understood a few paragraphs above. That syntax, along with a small number of
-sensible additions, will allow Optopus to reduce developer hassle significantly
+sensible additions, will allow Argle to reduce developer hassle significantly
 while also providing a more powerful and flexible argument parser. The
 difference between the two configurations is striking.
 
@@ -127,10 +127,10 @@ ap.add_argument('rgx', help = 'Python regular expression')
 ap.add_argument('path', nargs = '*', help = 'Path(s) to input')
 ```
 
-The Optopus configuration is more efficient (48% the size of argparse), more
+The Argle configuration is more efficient (48% the size of argparse), more
 readable, and requires less API knowledge. You just type what you want and have
 to remember little more than a mostly already-known syntax. Note that [Example
-1](#example-1) used what Optopus calls a usage-variant syntax: it expressed the
+1](#example-1) used what Argle calls a usage-variant syntax: it expressed the
 full command-line grammar in schematic form. Example 2 uses a closely related
 syntax, called opt-spec syntax. Each line configures a single Opt (a
 configuration object representing a positional argument or option) using the
@@ -166,7 +166,7 @@ ap.add_argument('--context', '-C', metavar = '<n>', type = int, help = 'Print N 
 ap.add_argument('--color', metavar = '<col>', choices = ('red', 'green', 'blue'), help = 'Highlight matching text: red, green, blue')
 ```
 
-By comparison, the Optopus configuration remains compact (67% the size of
+By comparison, the Argle configuration remains compact (67% the size of
 argparse), intuitive, and easy to scan. If you want to spiff it up further you
 can have your editor line everything up on the colon separators. Also notice
 the two phases of configuration: most of the work is done in the text syntax
@@ -175,7 +175,7 @@ is applied via a programmatic API. Notice also that the API emphasizes simple
 conveniences: if any Opts share configuration parameters (options `-m` and `-C`
 in our example), they can be handled jointly in a single `config()` call. The
 last `config()` call is not required, but it helps to clean up the help text,
-which we will examine shortly. In spite of its brevity, the Optopus
+which we will examine shortly. In spite of its brevity, the Argle
 configuration actually does more validation (in the example, `isfile` and
 `ispositive` are assumed to be callables defined by the user).
 
@@ -222,8 +222,8 @@ optional arguments:
   --color <col>         Highlight matching text: red, green, blue
 ```
 
-The Optopus help text is cleaner and easier to read. Those gains mostly come
-from a couple of alternative techniques that Optopus supports but does not
+The Argle help text is cleaner and easier to read. Those gains mostly come
+from a couple of alternative techniques that Argle supports but does not
 require: first, the ability to flexibly summarize groups of options
 symbolically in the usage text (as `[options]` in this example, which was done
 in the last `p.config()` call above); and second, the separation of option help
@@ -295,8 +295,8 @@ sp3.add_argument('rgx', **argconf['rgx'])
 sp3.add_argument('path', **argconf['path'])
 ```
 
-Once again, the comparison with Optopus is striking. Even with subcommands, the
-Optopus configuration remains intuitive and compact (60% the size of argparse).
+Once again, the comparison with Argle is striking. Even with subcommands, the
+Argle configuration remains intuitive and compact (60% the size of argparse).
 The user does have to learn a few additional syntax rules (the double-colon as
 a section marker, and the syntax for positional usage variants like
 `<task=grep>`), but the API burden remains low. A Python programmer unfamiliar
@@ -308,7 +308,7 @@ via their short aliases); followed by another section using opt-spec syntax to
 configure the individual Opts more fully. Finally, notice that this
 configuration does more than the argparse example: it defines the `-d` and `-p`
 options as alternatives (mutually exclusive). That behavior is achievable in
-argparse, at the cost of looking up even more API. Optopus simply builds on a
+argparse, at the cost of looking up even more API. Argle simply builds on a
 usage syntax already known to many developers: a pipe to delimit alternatives.
 
 ```python
@@ -416,7 +416,7 @@ optional arguments:
   --para, -p           Emit capture groups one-per-line, paragraph-style
 ```
 
-The Optopus help text is cleaner, easier to read, and more compact. It is also
+The Argle help text is cleaner, easier to read, and more compact. It is also
 unified rather than separate (everything from a single usage of `--help`). If
 needed, the parser can be easily configured to support use cases that need
 separate help text for different usage variants (many programs do not).
@@ -496,7 +496,7 @@ There is no strong reason not to support them. See [here][grammar_ex10],
 **More complex repetition**. The argparse library can apply quantifiers to
 individual options or positionals, but not to groups (for example, two
 positionals, `<x> <y>`, repeatable in pairs). Sometimes the group that needs to
-be repeated is the full command-line grammar. In fact, after Optopus, my next
+be repeated is the full command-line grammar. In fact, after Argle, my next
 project involves such a program: a Python tool for quick text transformation
 pipelines in the spirit of sed/awk/perl one-liners, but with more intuitive
 usage, a built-in set of core utilities, and an easy mechanism for users to
@@ -504,7 +504,7 @@ define their own. Because the tool is literally a pipeline for text running
 through various conversion and computation stages, it makes sense to model the
 command-line grammar as repeatable. This use case is mostly supportable by
 cobbling together multiple argparse parsers, but it is awkward and requires a
-bit of special logic. Optopus will support a use case like that with almost no
+bit of special logic. Argle will support a use case like that with almost no
 extra API-learning cost for the user. See [here][grammar_ex11],
 [here][grammar_ex12], or [here][grammar_ex13].
 
@@ -529,10 +529,10 @@ parameters), groups, alternatives, usage variants, and quantifiers. At least
 for most developers, those concepts are frequently observed in regular
 expressions and in the related set of conventions observed in technical
 documentation for command-line programs — namely, their usage syntax. By
-resting on these composable ideas, Optopus will be able to achieve both
+resting on these composable ideas, Argle will be able to achieve both
 simplicity and greater power.
 
-In more schematic terms, Optopus supports a wide variety of command-line
+In more schematic terms, Argle supports a wide variety of command-line
 grammars by combining a few core ideas:
 
 - Groups enclosed either by parentheses (if required) or square brackets (if
@@ -545,21 +545,21 @@ grammars by combining a few core ideas:
   variable inputs. There are four main styles relying on different bracketing
   conventions (angle, square, or curly) and different capitalization schemes
   (all uppercase, all lower, or mixed). For a variety of technical and
-  practical reasons, Optopus mimics Git and some other tools in using angle
+  practical reasons, Argle mimics Git and some other tools in using angle
   brackets consistently.
 
 - Pipes to separate alternatives — a ubiquitous convention both in usage text
   and regex.
 
 - Quantifiers that can applied to single elements or groups. This is another
-  one of the crucial missing ingredients in most parsers. Optopus relies
+  one of the crucial missing ingredients in most parsers. Argle relies
   primarily on the quantifiers from usage-syntax conventions: `...` for
   one-or-more and square brackets to convey optionality. To those it adds the
   regex `{m,n}` syntax for quantity ranges.
 
 - Like regular expressions, grammar elements and parsing itself are greedy by
   default. This policy decision is necessary to resolve a variety of parsing
-  ambiguities that can arise. Optopus also follows regex in using `?` as the
+  ambiguities that can arise. Argle also follows regex in using `?` as the
   device to make a quantifier non-greedy.
 
 - The ability to name elements or groups symbolically both for display in usage
@@ -619,15 +619,15 @@ in my view, has unfortunate and signficant limitations, but it is based on some
 compelling ideas. The 2012 PyCon [video][docopt_vid] promoting the library is
 entertaining and wonderfully polemical in the best sense of the word — well
 worth the time of anyone interested in the subject. Watching the video in the
-early 2010s rekindled my interest in the Optopus project and helped me refine
+early 2010s rekindled my interest in the Argle project and helped me refine
 ideas I had been mulling over for a long time.
 
 In spite of those intellectual debts to this alternative tradition in argument
 parsers, my experiments with many libraries convinced me that both approaches
 — API-driven configuration and usage-syntax-driven configuration — have their
-strengths and weaknesses. Optopus aims to build on the strengths of each:
+strengths and weaknesses. Argle aims to build on the strengths of each:
 
-**Usage-syntax to define the core**. Optopus encourages the use of text as the
+**Usage-syntax to define the core**. Argle encourages the use of text as the
 primary mechanism to configure the command-line grammar and the logical
 relationships among the elements, along with the names to be used when
 referring to options, parameters, positionals, groups, and usage variants. It
@@ -643,19 +643,19 @@ when compared against what most API-driven libraries would require of the user
 text-based configuration, most programmers do not want to handcraft the
 end-user-facing usage and help text if a computer program can do it
 consistently and well (not to mention dynamically responding to terminal width
-or to runtime configurations). That is why Optopus takes substantial
+or to runtime configurations). That is why Argle takes substantial
 inspiration from, but does not fully adopt, the ideas motivating the
-text-driven parsers like Getopt::Euclid and docopt. Optopus treats the text
+text-driven parsers like Getopt::Euclid and docopt. Argle treats the text
 primarily as a configuration syntax, not literal usage text. Naturally, it does
 provide an easy mechanism for that syntax to include blocks of literal text.
 
 **Programmatic API for the rest**. To apply other configurations (defaults,
-conversion, validation, and various other details), Optopus builds on the
+conversion, validation, and various other details), Argle builds on the
 strength of the API approach and adds some additional conveniences to keep the
 developer burden low. Although it is theoretically possible to configure some
 of those things via a text syntax, the approach has rapidly diminishing
 returns, because each feature addition requires increasingly baroque syntactic
-elements. Optopus takes a hybrid approach, combining the benefits of each
+elements. Argle takes a hybrid approach, combining the benefits of each
 configuration style.
 
 Finally, it should be noted that all of the library's behaviors will be
@@ -695,7 +695,7 @@ customization generally. Some of its stylistic choices seem non-standard or
 inelegant to my eye and I have never found ways to adjust them without awkward
 hacks. More fundamentally, argparse is not prepared to handle bigger changes,
 ranging from fairly standard needs (for example, help text in man-page format)
-to more innovative approaches. Optopus will offer some of those approaches
+to more innovative approaches. Argle will offer some of those approaches
 directly with the aim of giving programmers the ability to lighten-up and
 improve the readability of help text.
 
@@ -721,7 +721,7 @@ minimum, one a can say that the library does not provide authoritative guidance
 on which classes are amenable to subclassing, if any, and what users should do
 or avoid when doing so.
 
-Optopus will be built with an eye toward flexibility and customization. To the
+Argle will be built with an eye toward flexibility and customization. To the
 extent feasible, all controllable parameters governing the generation of text
 will be adjustable. And for dynamic configuration needs — whether related to
 help text, error text, side effects, or parsing — the library will support
@@ -740,12 +740,12 @@ users can easily understand. Without that, those developers face higher
 short-term and long-term support costs.
 
 The broad theme connecting such matters is to reduce developer hassle as it
-relates to argument handling. Some examples on the Optopus roadmap.
+relates to argument handling. Some examples on the Argle roadmap.
 
 #### Efficient Opt configuration API
 
 When a program needs more than a few Opts, it is not uncommon for some them to
-have similar configuration needs. Optopus includes a simple, minimal-hassle API
+have similar configuration needs. Argle includes a simple, minimal-hassle API
 to query for one or more grammar elements (mainly Opts, but sometimes Variants
 or Groups) and apply supplemental configurations to all elements contained in
 the query result. Those configurations are applied to the Opts in an additive
@@ -765,7 +765,7 @@ output). Even when done well, such utilities need to be reimplemented (or
 copy-pasted) from script to script, because it is not necessarily worth the
 trouble to package them as a separate library.
 
-Optopus is fundamentally an argument parser and will not stray too far from
+Argle is fundamentally an argument parser and will not stray too far from
 that focus, but it will provide commonly needed functionality related to
 argument handling, help text selection and printing, error message creation,
 and proper exiting.
@@ -776,7 +776,7 @@ Argument parsing is very much concerned with the problem of data conversion and
 validation: for example, a command-line grammar can include validation-adjacent
 concepts, such as choices for positionals or option parameters.
 
-Optopus will not attempt to become a data conversion and validation library --
+Argle will not attempt to become a data conversion and validation library --
 that falls beyond the scope of the project. But Opts (and possibly Variants)
 will have `convert` and `validate` attributes that can be set to one or more
 callables. That approach is not a revolutionary idea, of course, but it is an
@@ -791,7 +791,7 @@ Just as argument parsing is closely linked to conversion and validation, its
 ultimate purpose is dispatch: most command-line scripts take arguments, execute
 one or more functions in response, and then exit.
 
-Optopus will include convenient mechanisms to do that type of thing. One
+Argle will include convenient mechanisms to do that type of thing. One
 involves the concept of usage variants. As already discussed, variants provide
 a powerful means of expressing a command-line grammar and conveying its usage
 text. But variants also work well as a dispatch device. Both Opts and Variants
@@ -813,7 +813,7 @@ git diff [options] [<commit>] [<path>...]
 git diff [options] --cached [<commit>] [<path>...]
 ```
 
-Because Optopus treats groups as first-class citizens in command-line grammar,
+Because Argle treats groups as first-class citizens in command-line grammar,
 and because it will also offer flexible query/configuration APIs allowing
 developers to organize options into meaningful arrangements with symbolic
 names, developers working on larger scripts (or really any script that could
@@ -830,13 +830,13 @@ sections or simply interspersing blocks of text or sub-headings in between
 various groupings of the listed options. Argparse mostly supports those needs
 via argument groups — even more API to learn.
 
-Because Optopus configuration rests on a textual foundation, providing users
+Because Argle configuration rests on a textual foundation, providing users
 with more flexibility and control over the structuring of help text is easy to
 accommodate. To illustrate, consider [Example 4](#example-4) (the wrangle
 script) and imagine that the developer wanted to organize the help text by
 subcommand, with various chunks of literal text and sub-headings mixed in. That
 can probably be achieved with argparse using multiple argument groups per
-subparser, but most developers would not bother with the hassle. With Optopus,
+subparser, but most developers would not bother with the hassle. With Argle,
 developers will be able to directly type what is wanted (provided that a few
 simple syntax rules are followed). Here is an illustration of what the grep
 section of that help text might look like. Admittedly, this presentation is too
@@ -873,7 +873,7 @@ ease of organizing help text as needed.
 Finally, to reiterate a point noted above, the configuration syntax is not
 primarily literal help text: for example, the blocks of regular text (marked by
 triple back-quotes above) will still be paragraph-wrapped to proper width by
-Optopus, while preserving the intended indentation level. And of course, that
+Argle, while preserving the intended indentation level. And of course, that
 wrapping behavior can be turned off globally, by section, or at the level of
 individual text blocks, if needed.
 
@@ -888,7 +888,7 @@ rather than helping. Instead of printing relevant help (which should be easy to
 support since `'--help' in sys.argv` is true), they doggedly report the same
 usage error.
 
-Optopus will address that issue via a mechanism call high-precedence options:
+Argle will address that issue via a mechanism call high-precedence options:
 if a high-precedence option is present among the arguments, its dispatch
 behavior will be triggered. Every Opt can have its dispatch attribute set with
 one or more callables that will be invoked when the option is seen. Normally,
@@ -904,7 +904,7 @@ ability to include hidden Opts, meaning that they work but are never mentioned
 in the usage or help text. A related need is for Opts that apply only under
 specific conditions that must be determined at runtime. Although the latter is
 achievable via argparse — just wrap parts of the argparse setup code in the
-needed conditional logic — Optopus will support such behaviors via simple API
+needed conditional logic — Argle will support such behaviors via simple API
 configurations.
 
 #### Relaxed parsing modes
@@ -915,13 +915,13 @@ mode][py_argparse_known] and in Python 3.7 it added a [parse-intermixed
 mode][py_argparse_intermixed], which allows positionals and options to be
 intermixed a bit more flexibly on the command line.
 
-Standard argument parsing in Optopus will be similar to the flexibility
+Standard argument parsing in Argle will be similar to the flexibility
 exhibited by the argparse intermixed mode. That behavior is basically the
 logical result of applying the core concepts defining the grammar syntax, along
 with a default greedy policy as it relates to parsing and the interpretation of
 the syntax itself.
 
-In addition, Optopus will support a feature that allows the user to create a
+In addition, Argle will support a feature that allows the user to create a
 set of related parsing modes that relax one or more requirements. These modes
 can be combined as needed.
 
@@ -939,7 +939,7 @@ providing more specific help.
 
 #### No-configuration parsing
 
-Optopus will support no-configuration parsing that will parse any input based
+Argle will support no-configuration parsing that will parse any input based
 on standard rules. The purpose is to support low-stakes or temporary scripts
 that could benefit from a few command-line options, but are not important
 enough to warrant much configuration work.
@@ -962,7 +962,7 @@ Parser(noconf = '2,')   # 2+ parameters.
 Those examples blur the line between config and no-config, of course, and the
 last two violate the spirit of no-config by imposing some validation
 requirements on the arguments. But they are consistent with the spirit of
-Optopus, which is to make it easy to parse arguments under a variety of
+Argle, which is to make it easy to parse arguments under a variety of
 situations with minimal hassle.
 
 #### Good cooperation with configuration files and environment variables
@@ -983,11 +983,11 @@ to dynamically influence the default values for Opts. Additionally, when an Opt
 acquires an alternative default value from an upstream source, its status can
 change from being required on the command line to optional.
 
-Optopus will not try to support direct integration with configuration parsing
+Argle will not try to support direct integration with configuration parsing
 libraries: the universe of config files types and config parsing libraries is
 too large for that.
 
-Instead, Optopus will allow users to combine configuration data and
+Instead, Argle will allow users to combine configuration data and
 command-line arguments with minimal hassle. There are two key issues here:
 
 - A convenient mechanism to take preferences into account during argument
@@ -1002,13 +1002,13 @@ The API details for this behavior are still under consideration, but this
 example illustrates one approach.
 
 ```python
-from optopus import Parser, defkeys
+from argle import Parser, defkeys
 import os
 
 # User loads their own prefs.
 prefs = load_prefs(...)
 
-# User configures an Optopus Parser in the usual way.
+# User configures an Argle Parser in the usual way.
 p = Parser(...)
 
 # User applies the prefs to the configured Parser.
@@ -1048,7 +1048,7 @@ opts, sources = p.parse(ARGUMENTS, with_sources = True)
 [py_argparse_known]: https://docs.python.org/3/library/argparse.html#partial-parsing
 [py_bugs]: https://bugs.python.org/
 [py_optparse]: https://docs.python.org/3/library/optparse.html
-[pypi_optopus]: https://pypi.org/project/optopus/
+[pypi_argle]: https://pypi.org/project/argle/
 [rb_optparse]: https://ruby-doc.org/stdlib-3.0.1/libdoc/optparse/rdoc/OptionParser.html
 [stack_home]: https://stackoverflow.com/
 

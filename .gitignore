@@ -41,6 +41,6 @@
 # PyCharm .idea settings
 .idea
 
-# Optopus test outputs.
+# Argle test outputs.
 /tests/ex_diff/got/
 

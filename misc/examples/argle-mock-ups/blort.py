@@ -235,7 +235,7 @@ SPEC = '''
 # Parser configuration.
 ####
 
-from optopus import Parser
+from argle import Parser
 
 def help_dispatch(opts):                                                                 ## NOTE_1300
     if opts.task:
@@ -291,7 +291,7 @@ NOTE_420
     - A heading (triple-colon), not a new section (double-colon).
 
 NOTE_440
-    - The spec has no heading before the opt-listing, so Optopus will generate
+    - The spec has no heading before the opt-listing, so Argle will generate
       a default one, in the unified-style: "Arguments".
 
 NOTE_500

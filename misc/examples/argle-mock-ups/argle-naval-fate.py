@@ -2,15 +2,15 @@
 
 '''
 
-naval-fate: Optopus vs docopt vs click.
+naval-fate: Argle vs Docopt vs Click.
 
 Configuration of the parser:
 
-    - Docopt and optopus are both compact and intuitive:
+    - Docopt and Argle are both compact and intuitive:
         - Docopt is slightly better on that front.
         - But at the cost having almost no features beyond the core.
-        - The small increment of added complexity in the optopus configuration
-          exists precisely to rememdy a core weakness of docopt: it's poor
+        - The small increment of added complexity in the Argle configuration
+          exists precisely to rememdy a core weakness of Docopt: it's poor
           structuring of returned data.
 
     - Click configuration:
@@ -24,24 +24,24 @@ Configuration of the parser:
 Help text:
 
     - Readable and intutive:
-        - Yes: optopus and docopt.
-        - No: click.
+        - Yes: Argle and Docopt.
+        - No: Click.
         - Click's help is convoluted:
             - User never gets a complete view.
             - Must invoke --help in several ways to see everything.
 
     - User control over structure, content, details:
-        - High: optopus.
-        - Moderately high, but with a hard cap: docopt.
-        - Very little: click.
+        - High: Argle.
+        - Moderately high, but with a hard cap: Docopt.
+        - Very little: Click.
 
     - Dynamic with terminal:
-        - Yes: optopus and click.
-        - No: docopt: it's static.
+        - Yes: Argle and Click.
+        - No: Docopt: it's static.
 
-    - Only optopus gives both:
-        - High degree of user control [optopus, docopt].
-        - Delegation of help-text convention adherence [optopus, click].
+    - Only Argle gives both:
+        - High degree of user control [Argle, Docopt].
+        - Delegation of help-text convention adherence [Argle, Click].
 
 Parsed data:
 
@@ -53,21 +53,21 @@ Parsed data:
         - Reasonable.
         - But hyper-localized to the values relevant to the current command.
 
-    - Optopus:
+    - Argle:
         - Usable and holistic data out of the gate.
 
 Size: 
-    108% vs docopt
-    44% vs click
+    108% vs Docopt
+    44% vs Click
 
 Help size:
-    127% vs docopt
-    26% vs click
+    127% vs Docopt
+    26% vs Click
 
 '''
 
 ####
-# Optopus.
+# Argle.
 ####
 
 SPEC = '''
@@ -84,14 +84,14 @@ SPEC = '''
 --drifting   : Drifting mine
 '''
 
-from optopus import Parser
+from argle import Parser
 
 p = Parser(SPEC, version = '2.0')
 p.config_help_text(options_summary = False)
 opts = p.parse()
 
 ####
-# Optopus help text.
+# Argle help text.
 ####
 
 '''

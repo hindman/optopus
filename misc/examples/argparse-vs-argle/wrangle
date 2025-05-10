@@ -7,9 +7,9 @@ README example 4: a subcommand-style program.
 The initial pgrep script has been expanded and renamed. It now includes various
 regex-based text processing utilities.
 
-Optopus:
+Argle:
 
-    - Even with subcommands, the Optopus usage remains quite intuitive.
+    - Even with subcommands, the Argle usage remains quite intuitive.
 
     - User must learn a few additional syntax rules (double-colon marker and
       positional variants like <task=grep>), but API burden remains low.
@@ -70,7 +70,7 @@ sp3.add_argument('rgx', **conf['rgx'])
 sp3.add_argument('path', **conf['path'])
 
 ####
-# Optopus.
+# Argle.
 ####
 
 p = Parser('''
@@ -179,7 +179,7 @@ optional arguments:
 '''
 
 ####
-# Optopus help text.
+# Argle help text.
 ####
 
 '''

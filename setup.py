@@ -8,7 +8,7 @@ import sys
 # Basic project info.
 ####
 
-project_name = 'optopus'
+project_name = 'argle'
 package_name = project_name.replace('-', '_')
 repo_name    = project_name
 description  = 'Command line arguments done right'

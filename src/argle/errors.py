@@ -1,6 +1,6 @@
 
 from kwexception import Kwexception
 
-class OptopusError(Kwexception):
+class ArgleError(Kwexception):
     pass
 

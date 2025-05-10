@@ -9,5 +9,5 @@
 ## 0.3.0
 
 - Added temporary code (bargparse) to support using argparse in a
-  better way until the optopus project can be revived.
+  better way until the Argle project can be revived.
 

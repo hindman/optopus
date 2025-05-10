@@ -3,13 +3,13 @@
 import sys
 import json
 
-from optopus import (
+from argle import (
     Parser,
     Opt,
     FormatterConfig,
     Section,
     SectionName,
-    OptoPyError,
+    ArgleError,
     AliasStyle,
 )
 
@@ -74,7 +74,7 @@ args = sys.argv[1:] or DEFAULT_ARGS
 
 try:
     parsed_opts = p.parse(args)
-except OptoPyError as e:
+except ArgleError as e:
     print(p.help_text())
     print(e)
     quit()

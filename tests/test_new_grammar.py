@@ -8,7 +8,7 @@ from short_con import cons
 
 # TODO: uncomment.
 #
-# from optopus.new_grammar import (
+# from argle.new_grammar import (
 #     SpecParser,
 #     TokDefs,
 #     Grammar,
