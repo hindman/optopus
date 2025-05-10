@@ -106,12 +106,12 @@ Change project name:
         x vim setup
         x bash setup
         x dotfiles
-        - Git repo
+        x Git repo
             x Git side
             x computer side
-            - test push/clone
+            x test push/clone
         - Files:
-            - rename dirs/files
+            x rename dirs/files
             - file content
     - Create new virtualenv
     - Check all:
