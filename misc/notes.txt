@@ -102,13 +102,13 @@ Change project name:
 
     x Tag current version.
     - Rename:
-        - proj dir
-        - vim setup
-        - bash setup
-        - dotfiles
+        x proj dir
+        x vim setup
+        x bash setup
+        x dotfiles
         - Git repo
-            - Git side
-            - computer side
+            x Git side
+            x computer side
             - test push/clone
         - Files:
             - rename dirs/files
