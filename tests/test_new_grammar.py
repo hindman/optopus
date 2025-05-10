@@ -5,11 +5,14 @@ import pytest
 from pathlib import Path
 
 from short_con import cons
-from optopus.new_grammar import (
-    SpecParser,
-    TokDefs,
-    Grammar,
-)
+
+# TODO: uncomment.
+#
+# from optopus.new_grammar import (
+#     SpecParser,
+#     TokDefs,
+#     Grammar,
+# )
 
 ####
 # A StringIO you can print directly, without fuss.

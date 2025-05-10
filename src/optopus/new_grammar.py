@@ -8,9 +8,9 @@ Parsing the new spec-syntax
 CURRENT:
 
     NEXT:
-        var_input_elems()
-            - rework so that I can use it with get_bracketed_expression()
-            - let the latter handle the angle brackets.
+
+        Brackets data:
+            - I think I need an independent BKinds.
 
     . variant_elems():
         x quoted_literal()
@@ -683,14 +683,14 @@ def define_tokdefs():
         # - Quoted.
         ('quoted_block',          '  s ', wrapped_in(backquote3, captured_guts)),
         ('quoted_literal',        'vos ', wrapped_in(backquote1, captured_guts)),
-        # - Whitespace.           
+        # - Whitespace.
         ('newline',               'vosh', r'\n'),
         ('indent',                'vosh', start_of_line + whitespace1 + not_whitespace),
         ('whitespace',            'vosh', whitespace1),
         # - Sections.
         ('scoped_section_title',  'vos ', scope + section_title),
         ('section_title',         'vos ', section_title),
-        # - Parens.               
+        # - Parens.
         ('paren_open',            'vos ', r'\('),
         ('brack_open',            'vos ', r'\['),
         ('angle_open',            'vos ', '<'),
@@ -699,27 +699,27 @@ def define_tokdefs():
         ('paren_close',           'vos ', r'\)'),
         ('brack_close',           'vos ', r'\]'),
         ('angle_close',           'vos ', '>'),
-        # - Quants.               
+        # - Quants.
         ('quant_range',           'vos ', r'\{' + captured(quant_range_guts) + r'\}'),
         ('triple_dot',            'vos ', dot * 3),
         ('question',              'vos ', r'\?'),
-        # - Separators.           
+        # - Separators.
         ('choice_sep',            'vos ', r'\|'),
         ('assign',                'vos ', '='),
         ('opt_spec_sep',          ' os ', ':'),
-        # - Options.              
+        # - Options.
         ('long_option',           'vos ', option_prefix + option_prefix + captured_name),
         ('short_option',          'vos ', option_prefix + captured(r'\w')),
-        # - Variants.             
+        # - Variants.
         ('variant_def',           'v   ', captured(valid_name + '!?') + whitespace0 + ':'),
         ('partial_usage',         'v   ', captured_name + '!'),
-        # - Sym, dest.            
+        # - Sym, dest.
         ('sym_dest',              'vos ', full_sym_dest),
         ('dot_dest',              'vos ', dot + whitespace0 + captured_name),
         ('solo_dest',             'vos ', captured_name + whitespace0 + r'(?=[>=])'),
         ('name',                  'vos ', valid_name),
         ('valid_name',            'vos ', valid_name),
-        # - Special.              
+        # - Special.
         ('rest_of_line',          '   h', '.+'),
         ('eof',                   '    ', ''),
         ('err',                   '    ', ''),
@@ -754,13 +754,46 @@ TokDefs = define_tokdefs()
 TDS = TokDefs
 Rgxs = constants({kind : td.regex for kind, td in TokDefs})
 
-# Bracket kinds.
-BracketKinds = cons('round square angle')
-BracketTriples = constants({
-    BracketKinds.round:  (TDS.paren_open, TDS.paren_close, TDS.paren_open_named),
-    BracketKinds.square: (TDS.brack_open, TDS.brack_close, TDS.brack_open_named),
-    BracketKinds.angle:  (TDS.angle_open, TDS.angle_close, None),
-})
+# Bracket data keyed by the kind of bracketed expression.
+
+def create_bracket_data():
+    bs = [
+        cons(
+            kind = 'round',
+            opening = TDS.paren_open,
+            closing = TDS.paren_close,
+            named = TDS.paren_open_named,
+            cls = Parenthesized,
+            method_name = 'variant_elems',
+        ),
+        cons(
+            kind = 'square',
+            opening = TDS.brack_open,
+            closing = TDS.brack_close,
+            named = TDS.brack_open_named,
+            cls = Bracketed,
+            method_name = 'variant_elems',
+        ),
+        cons(
+            kind = 'positional',
+            opening = TDS.angle_open,
+            closing = TDS.angle_close,
+            named = None,
+            cls = Positional,
+            method_name = 'var_input_elems',
+        ),
+        cons(
+            kind = 'parameter',
+            opening = TDS.angle_open,
+            closing = TDS.angle_close,
+            named = None,
+            cls = Parameter,
+            method_name = 'var_input_elems',
+        ),
+    ]
+    return constants({b.kind : b for b in bs})
+
+Brackets = create_bracket_data()
 
 ####
 # Lexer.
@@ -976,7 +1009,7 @@ class SpecParser:
     def __init__(self, text, debug = False):
         # The spec text.
         self.text = text
-        
+
         # Whether/where to emit debug output.
         self.debug_fh = debug
 
@@ -1288,37 +1321,13 @@ class SpecParser:
         return paren_expression() or brack_expression()
 
     def paren_expression(self):
-        return self.get_bracketed_expression(
-            BracketKinds.round,
-            self.variant_elems,
-            cls = Parenthesized,
-        )
+        return self.get_bracketed(Brackets.round, named_ok = True)
 
     def brack_expression(self):
-        return self.get_bracketed_expression(
-            BracketKinds.square,
-            self.variant_elems,
-            cls = Bracketed,
-        )
+        return self.get_bracketed(Brackets.square, named_ok = True)
 
     def positional(self):
-        # Try to get a SymDest elem.
-        return self.get_bracketed_expression(
-            BracketKinds.angle,
-            self.var_input_elems,
-            cls = Bracketed,
-        )
-
-        sd = self.parenthesized(TokDefs.angle_open, self.var_input_elems)
-        if not sd:
-            return None
-
-        # Return Positional or PositionalVariant.
-        xs = (sd.sym, sd.dest, sd.symlit)
-        if sd.val is None:
-            return Positional(*xs, choices = sd.vals, quantifier = None)
-        else:
-            return PositionalVariant(*xs, choice = sd.val)
+        return self.get_bracketed(Brackets.positional, require_name = True)
 
     def long_option(self):
         return self.option(TokDefs.long_option)
@@ -1336,66 +1345,70 @@ class SpecParser:
             return None
 
     def parameter(self):
-        # Try to get a SymDest elem.
-        sd = self.parenthesized(TokDefs.angle_open, self.symdest, empty_ok = True)
-        if not sd:
-            return None
+        return self.get_bracketed(Brackets.parameter, empty_ok = True)
 
-        # Return Parameter or ParameterVariant.
-        xs = (sd.sym, sd.dest, sd.symlit)
-        if sd.val is None:
-            return Parameter(*xs, choices = sd.vals)
-        else:
-            return ParameterVariant(*xs, choice = sd.val)
-
-    def var_input_elems(self):
+    def var_input_elems(self, require_name = False):
         # Returns a VarInput holding the guts of a positional or parameter.
         #
         # Forms:
+        #
         #   < valid-name >
         #   < valid-name = choices >
         #   < choices >
         #   < >
         #
+        # Logic for parameters:
+        #
+        #   - For positionals, noc is required.
+        #
+        #   noc         = name-or-choice
+        #   assign      = bool
+        #   require_sep = not assign
+        #   roc         = rest-of-choices
+        #
+        #   noc | = | roc | Form | Example and error
+        #   -------------------------------------------------------------------------------------
+        #   Y   | Y | Y   | #2   | <foo=x|y>
+        #   Y   | Y | .   | .    | <foo=>        Assign w/o choice(s)
+        #   Y   | . | Y   | #3   | <foo|x|y>    
+        #   Y   | . | .   | #1   | <foo>        
+        #   .   | Y | Y   | .    | <=x|y>        Assign w/o name
+        #   .   | Y | .   | .    | <=>           Ditto
+        #   .   | . | Y   | #3   | <`hi!`|x|y>
+        #   .   | . | .   | #4   | <>
 
-        # Try to eat a valid name, whichcould be a name or a choice.
+        # Try to get a valid name, which could be a name or a choice.
         tok = self.eat(TokDefs.valid_name)
-        if tok:
-            name_or_choice = tok.text
-        else:
-            name_or_choice = None
+        name_or_choice = tok.text if tok else None
 
-        # If we get a closing angle-bracket, it was the name for a simple
-        # positional or parameter: eg <foo>.
-        tok = self.eat(TokDefs.angle_close)
-        if tok:
-            return VarInput(name = name_or_choice, choices = [])
-
-        # If we get an equal sign, it was a name, not a choice.
-        # Set up the other state variables we will need.
-        if self.eat(TokDefs.assign):
-            name = name_or_choice
-            choices = []
-            require_sep = False
-        else:
-            name = None
-            choices = [name_or_choice]
-            require_sep = True
+        # Check for an equal sign.
+        assign = bool(self.eat(TokDefs.assign))
+        require_sep = not assign
 
         # Collect the rest of the choices.
+        rest = []
         while True:
             c = self.next_choice(require_sep = require_sep)
             require_sep = True
             if c:
-                choices.append(c)
+                rest.append(c)
             else:
                 break
 
-        # Eat closing angle bracket. Then return or raise.
-        if self.eat(TokDefs.angle_close):
-            return VarInput(name = name, choices = choices)
-        else:
-            self.error('Failed to find closing angle bracket')
+        # Setup default parameters for VarInput we will return.
+        name = name_or_choice or None
+        choices = rest
+
+        # Check for errors and make adjustments where needed.
+        if require_name and not name:
+            self.error('Var-input: positional requires a name: <>')
+        elif assign and not choices:
+            self.error('Var-input: assign without choices: <foo=>')
+        elif assign and not name:
+            self.error('Var-input: assign without a name: <=x|y')
+        elif name and (not assign) and choices:
+            choices = [name] + choices
+            name = None
 
     def quantifier(self):
         q = self.parse_first(self.triple_dot, self.quant_range)
@@ -1428,12 +1441,9 @@ class SpecParser:
         else:
             return None
 
-    def get_bracketed_expression(self, kind, method,
-                                 cls = None,
-                                 named_ok = True, empty_ok = False,
-                                 **kws):
-        # A general helper to consume an expression
-        # inside any brackets: (), [], or <>.
+    def get_bracketed(self, bracket, named_ok = False, empty_ok = False, **kws):
+        # A general helper to consume an expression (optionally
+        # with a name) enclosed in brackets: (), [], or <>.
 
         # Prepare the opening TokDefs we want to consume.
         td_open, td_close, td_named = BracketTriples[kind]
@@ -1452,6 +1462,7 @@ class SpecParser:
 
         # Get the elem(s) inside the brackets.
         # Raise if we get nothing, unless empty is allowed.
+        method = getattr(self, brackets.method_name)
         elems = method(**kws)
         if not (elems or empty_ok):
             self.error(
@@ -1462,6 +1473,9 @@ class SpecParser:
         # If we can eat the closing TokDef, return an Enclosed instance.
         # Otherwise raise an error.
         if self.eat(td_close):
+
+            if b.kind == b
+
             if cls:
                 return cls(kind = kind, elems = elems)
             else:
