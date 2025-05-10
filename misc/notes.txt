@@ -96,26 +96,13 @@ toc: Table of contents
 todos: TODOs
 --------
 
-Change project name:
-
-    - Make a release: argle
-        - tag it
-        - test pip-install
-
-    - pypi: delete optopus
-
-    - pip install mhutils locally
-
-    - Resources:
-
-        https://jbusecke.github.io/2022/07/20/renaming/
-
 setup.py:
 
-    Please consider removing the following classifiers in favor of a SPDX license expression:
-        License :: OSI Approved :: MIT License
-    See:
-        https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license
+    - Drop.
+    - Move metadata to pyproject.toml
+
+    - See:
+        https://chatgpt.com/c/681fb756-3b08-8003-b89c-c4e070fe87bc
 
 tasks.py:
     - task to create and push a tag
