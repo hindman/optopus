@@ -90,10 +90,37 @@ toc: Table of contents
         problems-scenarios-from-argparse | Problems scenarios from argparse
         example-grammars                 | Example grammars
         argparse-problems                | Examples of problems with argparse
+        project-name                     | Project name: history and alternatives
 
 --------
 todos: TODOs
 --------
+
+Change project name:
+
+    https://jbusecke.github.io/2022/07/20/renaming/
+
+    x Tag current version.
+    - Rename:
+        - proj dir
+        - vim setup
+        - bash setup
+        - dotfiles
+        - Git repo
+            - Git side
+            - computer side
+            - test push/clone
+        - Files:
+            - rename dirs/files
+            - file content
+    - Create new virtualenv
+    - Check all:
+        - paths
+        - content
+    - Make a release: argle
+        - tag it
+        - test pip-install
+    - pypi: delete optopus
 
 Slogan ideas:
 
@@ -161,54 +188,6 @@ Parsing function hierarchy and checklist:
                 - option [ABOVE]
             - opt-help-text
                 - rest-of-line + continuation-lines
-
-
-Change project name:
-
-    - Tag current version.
-    - Rename:
-        - proj dir
-        - vim setup
-        - bash setup
-        - Git repo
-            - Git side
-            - computer side
-            - test push/clone
-        - Files:
-            - rename dirs/files
-            - file content
-    - Create new virtualenv
-    - Check all:
-        - paths
-        - content
-    - Make a release: argle
-        - tag it
-        - test pip-install
-    - pypi: delete optopus
-
-    https://chatgpt.com/share/6817a2e4-0928-8003-8489-6f5950e69915
-
-    Optopus
-    Argle          # JK, BJ, MH
-    Wizcat         # JK
-    Argzilla
-    Bargle
-
-    # Like, but difficult to say.
-    Argvark
-
-    # Already taken in pypi, github, or both.
-    Argonaut
-    Argspec
-    Argyle
-    Cliopt
-    Cmdy
-    Optcat
-    Optix
-    Optoid
-    Specio
-
-    https://jbusecke.github.io/2022/07/20/renaming/
 
 Spec-parsing:
 
@@ -6645,4 +6624,43 @@ Argparse fails with a positional with choices taking 0+ inputs.
     - Possible fix coming in Python 3.14
 
         https://github.com/python/cpython/issues/53834
+
+--------
+project-name: Project name: history and alternatives
+--------
+
+Previous name:
+    - Optopus.
+    - Change to Argle: 2025-05-10
+    - Reason: too frequently mistyped, misspoken, and misremembered.
+
+Names considered:
+
+    - Discussion with ChatGPT:
+
+        https://chatgpt.com/share/6817a2e4-0928-8003-8489-6f5950e69915
+
+    - Top candidates after that process:
+
+        Argle
+        Optopus
+        Wizcat
+        Argzilla
+        Bargle
+
+    - Liked but difficult to say.
+
+        Argvark
+
+    # Liked but already taken in pypi, github, or both.
+
+        Argonaut
+        Argspec
+        Argyle
+        Cliopt
+        Cmdy
+        Optcat
+        Optix
+        Optoid
+        Specio
 
