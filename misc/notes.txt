@@ -98,36 +98,27 @@ todos: TODOs
 
 Change project name:
 
-    x Tag current version.
-
-    x Rename:
-        x proj dir
-        x vim setup
-        x bash setup
-        x dotfiles
-        x Git repo
-            x Git side
-            x computer side
-            x test push/clone
-        x Files:
-            x rename dirs/files
-            x file content
-
-    - Create new virtualenv
-
-    - Check all:
-        - paths
-        - content
-
     - Make a release: argle
         - tag it
         - test pip-install
 
     - pypi: delete optopus
 
+    - pip install mhutils locally
+
     - Resources:
 
         https://jbusecke.github.io/2022/07/20/renaming/
+
+setup.py:
+
+    Please consider removing the following classifiers in favor of a SPDX license expression:
+        License :: OSI Approved :: MIT License
+    See:
+        https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license
+
+tasks.py:
+    - task to create and push a tag
 
 Slogan ideas:
 
@@ -385,9 +376,10 @@ dev-notes: Dev notes
 Creating a new virtualenv:
 
     v='3.9.4'
+    p='argle'
     deactivate
     pyenv shell $v && pyenv versions
-    mkvirtualenv argle-$v
+    mkvirtualenv $p-$v
     pip install -U pip
     pip install -e .[dev,test] && pip list
 

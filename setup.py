@@ -34,8 +34,9 @@ extras = {
         'tox',
     ),
     'dev' : (
+        'build',
         'invoke',
-        'ipython' if sys.version_info.major > 2 else 'ipython<6.0',
+        'ipython',
         'pycodestyle',
         'twine',
         'virtualenv',
