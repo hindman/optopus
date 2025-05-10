@@ -30,8 +30,8 @@ def tags(c):
     '''
     Run mtags for the project
     '''
-    c.run('mtags --recipe .optpy --write w')
-    c.run('mtags --recipe .opttxt --write u --toc order')
+    c.run('mtags --recipe .argpy --write w')
+    c.run('mtags --recipe .argtxt --write u --toc order')
 
 @task
 def test(c, func = None, cov = False):
