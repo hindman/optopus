@@ -96,21 +96,6 @@ toc: Table of contents
 todos: TODOs
 --------
 
-setup.py:
-
-    - Drop.
-    - Move metadata to pyproject.toml
-
-    - See:
-        https://chatgpt.com/c/681fb756-3b08-8003-b89c-c4e070fe87bc
-
-tasks.py:
-    - task to create and push a tag
-
-Slogan ideas:
-
-    https://chatgpt.com/c/681f862c-f714-8003-a9ed-33242056c155
-
 Parsing function hierarchy and checklist:
 
     Notation:
@@ -133,32 +118,33 @@ Parsing function hierarchy and checklist:
         x variant-def
             . variant-elem
                 - option
-                    - bare-option
+                    x bare-option
                     - any-parameter
-                        - parameter
-                            - valid-name
-                            - choices
-                                - choice
-                                    - valid-name
-                                    - quoted-literal
+                        x parameter
+                            x valid-name
+                            x choices
+                                x choice
+                                    x valid-name
+                                    x quoted-literal
                         - parameter-group
                             - parameter
-                    - quantifier
-                        - triple-dot
-                        - quant-range
-                - positional
-                    - valid-name
-                    - choices
-                    - quantifier
-                - any-group => named-group | group
-                    - valid-name
-                    - group
-                        - variant-elem
-                    - quantifier
-                - quoted-literal
-                - partial-usage
-                    - python-name
-                - choice-sep
+                    x quantifier
+                        x triple-dot
+                        x quant-range
+                        x question
+                x positional
+                    x valid-name
+                    x choices
+                    x quantifier
+                x any-group => named-group | group
+                    x valid-name
+                    x group
+                        x variant-elem
+                    x quantifier
+                x quoted-literal
+                x partial-usage
+                    x python-name
+                x choice-sep
 
     - section-content-elem
         - heading
@@ -204,6 +190,17 @@ Generate basic usage and help text.
 Docs: proper README [see readme-next-version].
 
 Upgrade classifers to beta.
+
+setup.py:
+    - Drop.
+    - Move metadata to pyproject.toml
+    - See: https://chatgpt.com/c/681fb756-3b08-8003-b89c-c4e070fe87bc
+
+tasks.py:
+    - task to create and push a tag
+
+Slogan ideas:
+    https://chatgpt.com/c/681f862c-f714-8003-a9ed-33242056c155
 
 Release.
     - Maybe drop tox.
