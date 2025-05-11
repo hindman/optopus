@@ -9,6 +9,14 @@ CURRENT:
 
     NEXT:
 
+        - get_bracketed(): clean up using GBCs.
+
+        - Set up config so we can use get_bracketed() for parameter-group.
+
+            - Why we cannot parse a regular group and then validate that its
+              elems are legal parameters: the ParseElem instance have no Token
+              data and thus do not know provenance.
+
     . variant_elems():
         x quoted_literal()
         x choice_sep()
@@ -21,16 +29,6 @@ CURRENT:
         x option()
         - any_parameter()
         - parameter_group()
-
-            # QUESTIONS.
-
-            - Can a parameter-group be named?
-            - When to check for invalid group elem?
-                - Early: Use get_bracketed() with a different parsing function.
-                - Mid: Check group returned by get_bracketed(). Make
-                  sure each elem is a Parameter.
-                    - Problem: Parameter knows nothing about its
-                      provenance: tokdef, line, col, etc.
 
 TODO:
 
@@ -495,18 +493,18 @@ class Bracketed(ParseElem):
     elems: list
     quantifier: Quantifier = None
 
-@dataclass
-class SymDest(ParseElem):
-    sym: str
-    dest: str
-    symlit: str
-    val: str
-    vals: list
+# @dataclass
+# class SymDest(ParseElem):
+#     sym: str
+#     dest: str
+#     symlit: str
+#     val: str
+#     vals: list
 
 @dataclass
 class Positional(ParseElem):
     name: str
-    choices: list
+    elems: list
     quantifier: Quantifier = None
 
 @dataclass
@@ -516,28 +514,28 @@ class Option(ParseElem):
     quantifier: Quantifier = None
 
 @dataclass
-class ChoiceSep(ParseElem):
-    pass
-
-@dataclass
-class PositionalVariant(ParseElem):
-    sym: str
-    dest: str
-    symlit: str
-    choice: str
-
-@dataclass
 class Parameter(ParseElem):
     name: str
-    choices: list
+    elems: list
     quantifier: Quantifier = None
 
 @dataclass
-class ParameterVariant(ParseElem):
-    sym: str
-    dest: str
-    symlit: str
-    choice: str
+class ChoiceSep(ParseElem):
+    pass
+
+# @dataclass
+# class PositionalVariant(ParseElem):
+#     sym: str
+#     dest: str
+#     symlit: str
+#     choice: str
+
+# @dataclass
+# class ParameterVariant(ParseElem):
+#     sym: str
+#     dest: str
+#     symlit: str
+#     choice: str
 
 ####
 # Other intermediate objects.
@@ -762,28 +760,49 @@ Rgxs = constants({kind : td.regex for kind, td in TokDefs})
 
 # Bracket data keyed by the kind of bracketed expression.
 
-BKinds = cons('round square positional parameter')
+@dataclass
+class GetBConfig:
+    kind: str
+    elems_method_name: str
+    opening: TokDef
+    closing: TokDef
+    named_opening: TokDef = None
+    named_bracket_ok: bool = False
+    empty_ok: bool = False
+    require_var_input_name: bool = False
 
-Brackets = constants({
-    BKinds.round: cons(
+GBKinds = cons('round square positional parameter')
+
+GBCs = constants({
+    GBKinds.round: GetBConfig(
+        kind = GBKinds.round,
+        elems_method_name = 'variant_elems',
         opening = TokDefs.paren_open,
         closing = TokDefs.paren_close,
-        named = TokDefs.paren_open_named,
+        named_opening = TokDefs.paren_open_named,
+        named_bracket_ok = True,
     ),
-    BKinds.square: cons(
+    GBKinds.square: GetBConfig(
+        kind = GBKinds.square,
+        elems_method_name = 'variant_elems',
         opening = TokDefs.brack_open,
         closing = TokDefs.brack_close,
-        named = TokDefs.brack_open_named,
+        named_opening = TokDefs.brack_open_named,
+        named_bracket_ok = True,
     ),
-    BKinds.positional: cons(
+    GBKinds.positional: GetBConfig(
+        kind = GBKinds.positional,
+        elems_method_name = 'var_input_elems',
         opening = TokDefs.angle_open,
         closing = TokDefs.angle_close,
-        named = None,
+        require_var_input_name = True,
     ),
-    BKinds.parameter: cons(
+    GBKinds.parameter: GetBConfig(
+        kind = GBKinds.parameter,
+        elems_method_name = 'var_input_elems',
         opening = TokDefs.angle_open,
         closing = TokDefs.angle_close,
-        named = None,
+        empty_ok = True,
     ),
 })
 
@@ -1316,13 +1335,13 @@ class SpecParser:
         e = self.any_group()
 
     def paren_expression(self):
-        return self.get_bracketed(Brackets.round)
+        return self.get_bracketed(GBCs.round)
 
     def brack_expression(self):
-        return self.get_bracketed(Brackets.square)
+        return self.get_bracketed(GBCs.square)
 
     def positional(self):
-        return self.get_bracketed(Brackets.positional)
+        return self.get_bracketed(GBCs.positional)
 
     def option(self):
         tok = self.eat(TokDefs.long_option, TokDefs.short_option)
@@ -1334,7 +1353,7 @@ class SpecParser:
             return None
 
     def parameter(self):
-        return self.get_bracketed(Brackets.parameter)
+        return self.get_bracketed(GBCs.parameter)
 
     def var_input_elems(self, require_name = False):
         # Returns a VarInput holding the guts of a positional or parameter.
@@ -1433,23 +1452,18 @@ class SpecParser:
         else:
             return None
 
-    def get_bracketed(self):
+    def get_bracketed(self, gbc):
         # A general helper to consume an expression (optionally
         # with a name) enclosed in brackets: (), [], or <>.
-
-        ####
-        # TODO: refactor:
-        # - Two types of "name" here:
-        #   - Those attached to the brackets: foo=[...]
-        #   - The name inside a var-input: <bar>
         #
-        # - Should the flags live in Brackets?
-        ####
+        # Takes a GetBConfig instance to govern the logic, the
+        # type of ParseElem returned, and the method used to collect
+        # the elems inside the brackets.
 
         # Set various flags based on bracket kind.
-        is_var_input = kind in (BKinds.positional, BKinds.parameter)
+        is_var_input = kind in (GBKinds.positional, GBKinds.parameter)
         named_ok = not is_var_input
-        empty_ok = kind == BKinds.parameter
+        empty_ok = kind == GBKinds.parameter
 
         # Prepare the opening TokDefs we want to consume.
         b = Brackets[kind]
@@ -1477,7 +1491,7 @@ class SpecParser:
         # For var-inputs, the name is never outside the brackets (above);
         # rather, it comes from inside the brackets.
         if is_var_input:
-            require_name = kind == BKinds.positional
+            require_name = kind == GBKinds.positional
             name, elems = self.var_input_elems(require_name = require_name)
         else:
             elems = self.variant_elems()
@@ -1490,14 +1504,15 @@ class SpecParser:
             )
 
         # Return the ParseElem.
-        if kind == BKinds.round:
-            return Parenthesized(name = name, elems = elems)
-        elif kind == BKinds.square:
-            return Bracketed(name = name, elems = elems)
-        elif kind == BKinds.positional:
-            return Positional(name = name, choices = elems)
-        elif kind == BKinds.parameter:
-            return Parameter(name = name, choices = elems)
+        kws = dict(name = name, elems = elems)
+        if kind == GBKinds.round:
+            return Parenthesized(**kws)
+        elif kind == GBKinds.square:
+            return Bracketed(**kws)
+        elif kind == GBKinds.positional:
+            return Positional(**kws)
+        elif kind == GBKinds.parameter:
+            return Parameter(**kws)
 
     ####
     # Other stuff.

@@ -44,7 +44,7 @@ toc: Table of contents
         ambiguous-grammars             | Ambiguous grammars are not an issue
         opt-choices-vs-choice          | Opt.choices vs Opt.choice
         opt-independence               | Opt independence, duplicate names/dest, and opt-spec scope
-        parsed-data-structure          | Parsed data structuring: nargs, ntimes, and parmeters
+        parsed-data-structure          | Parsed data structure
         parsed-data-with-context       | Including Context with the Result
         eager-attachment-at-bounary    | Eager option attachment at repetition boundaries
         spec-syntax-named-unnamed      | Spec-syntax: named and unnamed arguments
@@ -3202,7 +3202,7 @@ Background for the opt-scope syntax:
         https://chatgpt.com/share/67e1c05f-f654-8003-9c07-c556cea6c368
 
 --------
-parsed-data-structure: Parsed data structuring: nargs, ntimes, and parmeters
+parsed-data-structure: Parsed data structure
 --------
 
 The meaning of nargs and ntimes:
@@ -3307,19 +3307,96 @@ Duplicate dests within a Result:
             [X, X]    # -x <x>{2}
         ]
 
-Parameters and inner-results:
+Parameters:
 
-    - Summary:
-        - If all Parameters have defined and distinct dests, store the Option's
-          data in an inner-result.
-        - Otherwise, use a flat list.
+    - Summary of policy:
 
-    - Examples:
+        - Follow the policy princples outlined above:
+            - An Option with parameters is a subset of the larger
+              topic of how to organized parsed data in a Result.
 
-        --point <x> <y>  # Distinct names => Result(x = X, y = Y)
-        --point <p> <p>  # Shared name    => [X, Y]
-        --point <> <>    # Anonymous      => [X, Y]
-        --point <x> <>   # Mixed          => [X, Y]
+        - No inner-Result if the Option has a single dest for its parameters.
+
+        - Use '_' dest for parameters with unnamed dests.
+
+        - Bundle data when dests are non-unique (as done above).
+
+        - A parameter-group creates an inner-Result for its content.
+
+    - Single dest for all parameters.
+
+        - Default: no inner-Result.
+        - This is the most common use case.
+        - A "single dest" includes the situation when all dests are unnamed.
+
+        --age <yr>
+
+            opts.age = YR
+
+        --nums <n>...
+
+            opts.nums = [N, ...]
+
+        --paths <> <> <>
+
+            opts.paths = [P1, P2, P3]
+
+    - All parameters have uniquely named dests:
+
+        - Default: inner-Result.
+
+        --size <w> <h>
+
+            opts.size = Result(w = W, h = H)
+
+    - Named parameter-group:
+
+        - Default: inner-Result for the Group data.
+
+        --foo <x> bar=(<y> <z>)
+
+            opts.foo = Result(
+                x = X,
+                bar = Result(y = Y, z = Z),
+            )
+
+        --bar xs=(<x1> <x2>) ys=(<y1> <y2>)
+
+            opts.xs = Result(
+                xs = Result(x1 = X1, x2 = X2),
+                ys = Result(y1 = Y1, y2 = Y2),
+            )
+
+    - Named dests, not entirely unique:
+
+        - Default: inner-Result, plus the same bundling approach discussed
+          above to handle non-unique dests.
+
+        --foo <x> <y> <x>
+
+            opts.foo = Result(x = [X1, X2], y = Y)
+
+    - A mixture of named and unnamed dests:
+
+        - Default: store the unnamed data under the '_' attribute.
+
+        --foo <x> <> <> <y> <x>
+
+            opts.foo = Result(x = [X1, X2], y = Y, _ = [V1, V2])
+
+    - Unnamed parameter-group:
+
+        - Default: an extrapolation of the logic so far.
+
+        --bar <b> (<x1> <x2>) (<y1> <y2>)
+
+            opts.bar = Result(
+                b = B,
+                _ = [
+                    Result(x1 = X1, x2 = X2),
+                    Result(y1 = Y1, y2 = Y2),
+                ],
+            )
 
 --------
 parsed-data-with-context: Including Context with the Result
