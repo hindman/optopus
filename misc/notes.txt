@@ -104,30 +104,30 @@ Parsing function hierarchy and checklist:
     x spec: parse()
         x usage-section
             x variant [BELOW]
-            - section-content-elem [BELOW]
+            x section-content-elem [BELOW]
         - section
             - any-section-title
-                - section-scope [BELOW]
+                x section-scope [BELOW]
                 - section-title
-            - section-content-elem [BELOW]
+            x section-content-elem [BELOW]
 
-    - variant
+    x variant
         x valid-name
             x python-name
             x usage-name
         x variant-def
             . variant-elem
-                - option
+                x option
                     x bare-option
-                    - any-parameter
+                    x any-parameter
                         x parameter
                             x valid-name
                             x choices
                                 x choice
                                     x valid-name
                                     x quoted-literal
-                        - parameter-group
-                            - parameter
+                        x parameter-group
+                            x parameter
                     x quantifier
                         x triple-dot
                         x quant-range
