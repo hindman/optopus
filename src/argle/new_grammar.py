@@ -7,21 +7,33 @@ Parsing the new spec-syntax
 
 TODO:
 
-    - section-content-elem
+    x section-content-elem
         - heading
         - block-quote
         - opt-spec
             - opt-scope
                 - query-path
                     - query-elem
-            x positional [ABOVE]
-            - alias-and-option
-                - bare-option
-                x option [ABOVE]
+            - opt-spec-def
+                - opt-spec-group
+                    x opt-spec-elem [BELOW]
+                - opt-spec-elem
+                    x positional [ABOVE]
+                    - aliases-and-option
+                        - bare-option
+                        x option [ABOVE]
             - opt-help-text
                 - rest-of-line + continuation-lines
 
     parse(): reset lexer position if variant parsing ends on COLON
+
+SPEC SUMMARY:
+
+    opt-spec:           [[opt-scope] >>] opt-spec-def [: [opt-help-text]]
+    opt-spec-def:       opt-spec-group | opt-spec-elem
+    opt-spec-group:     (opt-spec-elem) | [opt-spec-elem]
+    opt-spec-elem:      positional | aliases-and-option
+    aliases-and-option: [bare-option...] option
 
 Implementation notes:
 
@@ -1252,6 +1264,13 @@ class SpecParser:
     # The elems() helper, which deals with parsing functions
     # shared by variants and opt-specs.
     ####
+
+    def section_content_elem(self):
+        return self.parse_first(
+            self.heading,
+            self.block_quote,
+            self.opt_spec,
+        )
 
     def variant_elems(self):
         elems = []

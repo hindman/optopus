@@ -105,10 +105,10 @@ Parsing function hierarchy and checklist:
         x usage-section
             x variant [BELOW]
             x section-content-elem [BELOW]
-        - section
-            - any-section-title
+        x section
+            x any-section-title
                 x section-scope [BELOW]
-                - section-title
+                x section-title
             x section-content-elem [BELOW]
 
     x variant
@@ -154,7 +154,7 @@ Parsing function hierarchy and checklist:
                 - query-path
                     - query-elem
             - positional [ABOVE]
-            - alias-and-option
+            - aliases-and-option
                 - bare-option
                 - option [ABOVE]
             - opt-help-text
@@ -522,11 +522,19 @@ opt-spec:
 
 opt-spec-def:
 
-    [ positional | alias-and-option ]
+    opt-spec-group | opt-spec-elem
 
-    - Brackets are optional and function purely as a quantifer. More
-      technically, the opt-spec-def can be enclosed in a unary-group (no name,
-      one variant-elem).
+opt-spec-elem:
+
+    positional | aliases-and-option
+
+opt-spec-group:
+
+    (opt-spec-elem)
+    [opt-spec-elem]
+
+    - The group cannot be named.
+    - It only function to support a quantifer.
 
 valid-name:
 
@@ -643,7 +651,7 @@ group:
     ( variant-elem... )
     [ variant-elem... ]
 
-alias-and-option:
+aliases-and-option:
 
     [alias...] option
 
