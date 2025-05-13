@@ -8,8 +8,8 @@ Parsing the new spec-syntax
 TODO:
 
     x section-content-elem
-        - heading
-        - block-quote
+        x heading
+        x block-quote
         - opt-spec
             - opt-scope
                 - query-path
@@ -430,14 +430,23 @@ class Variant(ParseElem):
 class OptSpec(ParseElem):
     elems: list[str]
     text: str
+    token: Token
 
 @dataclass
 class SectionTitle(ParseElem):
+    scope_path = str
     title: str
+    token: Token
+
+@dataclass
+class Heading(ParseElem):
+    title: str
+    token: Token
 
 @dataclass
 class QuotedBlock(ParseElem):
     text: str
+    token: Token
 
 @dataclass
 class QuotedLiteral(ParseElem):
@@ -619,11 +628,13 @@ def define_tokdefs():
     dot = r'\.'
     comma_sep = wrapped_in(whitespace0, ',')
     section_marker = '::' + end_of_line
+    heading_marker = ':::' + end_of_line
     scope_marker = '<<'
 
     # Scope and section title.
     scope = captured(query_path) + wrapped_in(whitespace0, scope_marker)
     section_title = captured('.*') + section_marker
+    heading = captured('.*') + heading_marker
 
     # Stuff inside a quantifier range.
     quant_range_guts  = (
@@ -667,6 +678,7 @@ def define_tokdefs():
         # - Sections.
         ('scoped_section_title',  'vos ', scope + section_title),
         ('section_title',         'vos ', section_title),
+        ('heading',               'vos ', heading),
         # - Parens.
         ('paren_open',            'vos ', r'\('),
         ('brack_open',            'vos ', r'\['),
@@ -1033,8 +1045,11 @@ class SpecParser:
         # First Token of top-level ParseElem currently under construction.
         self.first_tok = None
 
-        # Tokens the parser has ever eaten.
+        # Tokens the parser has eaten:
+        # - For the entire spec.
+        # - Since the last reset_meal() call.
         self.eaten = []
+        self.meal = []
 
     ####
     # Setting the parser mode.
@@ -1147,7 +1162,11 @@ class SpecParser:
                 col = tok.col,
             )
             self.eaten.append(tok)
+            self.meal.append(tok)
             return tok
+
+    def reset_meal(self):
+        self.meal = []
 
     def taste(self, tok):
         # This is the Token validator function used by RegexLexer. It checks
@@ -1218,6 +1237,12 @@ class SpecParser:
             self.error('A Variant cannot be empty')
 
     def opt_spec(self):
+        # TODO
+        # - Need to keep the first Token.
+
+        # If we get an opt-spec, we need its first Token.
+        self.reset_meal()
+
         # Try to get elements.
         elems = self.elems()
         if not elems:
@@ -1237,26 +1262,36 @@ class SpecParser:
 
         # Join text parts and return.
         text = Chars.space.join(t for t in texts if t)
-        return OptSpec(elems, text)
+        return OptSpec(
+            elems = elems,
+            text = text,
+            token = self.meal[0],
+        )
 
     def any_section_title(self):
         tok = self.eat(TokDefs.scoped_section_title, TokDefs.section_title)
         if tok:
-            return SectionTitle(title = tok.m.group(1).strip())
+            if tok.isa(TokDefs.scoped_section_title):
+                scope_path = tok.m.groups(1)
+                title = tok.m.groups(2)
+            else:
+                scope_path = None
+                title = tok.m.groups(1)
+            return SectionTitle(
+                title = title,
+                scope_path = scope_path,
+                token = tok,
+            )
         else:
             return None
-
-    # def section_title(self):
-    #     tok = self.eat(TokDefs.section_title, TokDefs.section_name)
-    #     if tok:
-    #         return SectionTitle(title = tok.m.group(1).strip())
-    #     else:
-    #         return None
 
     def quoted_block(self):
         tok = self.eat(TokDefs.quoted_block)
         if tok:
-            return QuotedBlock(text = tok.m.group(1))
+            return QuotedBlock(
+                text = tok.m.group(1),
+                token = tok,
+            )
         else:
             return None
 
@@ -1264,6 +1299,16 @@ class SpecParser:
     # The elems() helper, which deals with parsing functions
     # shared by variants and opt-specs.
     ####
+
+    def heading(self):
+        tok = self.eat(TokDefs.heading)
+        if tok:
+            return Heading(
+                title = tok.m.group(1).strip(),
+                token = tok,
+            )
+        else:
+            return None
 
     def section_content_elem(self):
         return self.parse_first(
