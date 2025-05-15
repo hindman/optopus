@@ -11,9 +11,9 @@ TODO:
         x heading
         x block-quote
         - opt-spec
-            - opt-scope
-                - query-path
-                    - query-elem
+            x opt-scope
+                x query-path
+                    x query-elem
             - opt-spec-def
                 - opt-spec-group
                     x opt-spec-elem [BELOW]
@@ -275,7 +275,7 @@ Partition elems on the first SectionTitle:
 Convert selems into groups, one per section:
 
     SectionTitle
-    0+ QuotedBlock
+    0+ BlockQuote
     0+ OptSpec        # Can be full or mere references.
 
 At this point, we will have:
@@ -305,13 +305,13 @@ Processing a sequence of elems:
 
 Sections:
     - An ordered list of section-elems.
-    - Where each section-elem is: QuotedBlock or Opt-reference.
+    - Where each section-elem is: BlockQuote or Opt-reference.
 
 ParseElem: top-level:
     Variant: name is_partial elems
     OptSpec: elems text
     SectionTitle: title
-    QuotedBlock: text
+    BlockQuote: text
 
 ParseElem: elems:
     ChoiceSep:
@@ -427,14 +427,19 @@ class Variant(ParseElem):
     elems: list
 
 @dataclass
+class Scope(ParseElem):
+    query_path = str
+
+@dataclass
 class OptSpec(ParseElem):
+    scope = Scope
     elems: list[str]
     text: str
     token: Token
 
 @dataclass
 class SectionTitle(ParseElem):
-    scope_path = str
+    scope = Scope
     title: str
     token: Token
 
@@ -444,7 +449,7 @@ class Heading(ParseElem):
     token: Token
 
 @dataclass
-class QuotedBlock(ParseElem):
+class BlockQuote(ParseElem):
     text: str
     token: Token
 
@@ -599,7 +604,9 @@ def define_tokdefs():
     not_whitespace = r'(?=\S)'
 
     # Letters, digits, and numbers.
+    alpha = r'[A-Za-z]'
     alphanum = r'[A-Za-z0-9]'
+    glob_char = r'[A-Za-z0-9?*_-]'
     alphanum0 = fr'{alphanum}*'
     alphanum1 = fr'{alphanum}+'
     number = r'\d+'
@@ -629,10 +636,15 @@ def define_tokdefs():
     comma_sep = wrapped_in(whitespace0, ',')
     section_marker = '::' + end_of_line
     heading_marker = ':::' + end_of_line
-    scope_marker = '<<'
 
-    # Scope and section title.
-    scope = captured(query_path) + wrapped_in(whitespace0, scope_marker)
+    # Scopes.
+    scope_marker = '<<'
+    query_elem = fr'{glob_char}+'
+    query_path = fr'{query_elem}(?:\.{query_elem})*'
+    scope0 = scope_marker
+    scope1 = captured(query_path) + wrapped_in(whitespace0, scope_marker)
+
+    # Section title, heading.
     section_title = captured('.*') + section_marker
     heading = captured('.*') + heading_marker
 
@@ -676,9 +688,12 @@ def define_tokdefs():
         ('indent',                'vosh', start_of_line + whitespace1 + not_whitespace),
         ('whitespace',            'vosh', whitespace1),
         # - Sections.
-        ('scoped_section_title',  'vos ', scope + section_title),
+        ('scoped_section_title',  'vos ', scope1 + section_title),
         ('section_title',         'vos ', section_title),
         ('heading',               'vos ', heading),
+        # - Opt-spec scopes.
+        ('opt_spec_scope',        'vos ', scope1),
+        ('opt_spec_scope_empty',  'vos ', scope0),
         # - Parens.
         ('paren_open',            'vos ', r'\('),
         ('brack_open',            'vos ', r'\['),
@@ -1236,12 +1251,68 @@ class SpecParser:
         else:
             self.error('A Variant cannot be empty')
 
-    def opt_spec(self):
-        # TODO
-        # - Need to keep the first Token.
+    def opt_scope(self):
+        tok = self.eat(TokDefs.opt_spec_scope, TokDefs.opt_spec_scope_empty)
+        if tok:
+            query_path = get(tok.m.groups(), 0)
+            return Scope(query_path)
+        else:
+            return None
 
-        # If we get an opt-spec, we need its first Token.
+    def opt_spec_def(self):
+        return (
+            self.opt_spec_group() or
+            self.opt_spec_elem()
+        )
+
+    def opt_spec_group(self):
+        # TODO
+        pass
+
+    def opt_spec_elem(self):
+        return (
+            self.positional() or
+            self.aliases_and_option()
+        )
+
+    def aliases_and_option(self):
+        # TODO
+        pass
+
+    def opt_spec(self):
+
+        '''
+
+        . opt-spec
+            x opt-scope
+                x query-path
+                    x query-elem
+            - opt-spec-def
+                - opt-spec-group                    # HERE_______
+                    x opt-spec-elem [BELOW]
+                - opt-spec-elem
+                    x positional [ABOVE]
+                    - aliases-and-option
+                        - bare-option
+                        x option [ABOVE]
+            - opt-help-text
+                - rest-of-line + continuation-lines
+
+        opt-spec:           [[opt-scope] >>] opt-spec-def [: [opt-help-text]]
+        opt-spec-def:       opt-spec-group | opt-spec-elem
+        opt-spec-group:     (opt-spec-elem) | [opt-spec-elem]
+        opt-spec-elem:      positional | aliases-and-option
+        aliases-and-option: [bare-option...] option
+
+        '''
+
+
+
+        # If succeed in getting an opt-spec, we will need
+        # access to its first Token.
         self.reset_meal()
+
+        ######################################################
 
         # Try to get elements.
         elems = self.elems()
@@ -1272,24 +1343,14 @@ class SpecParser:
         tok = self.eat(TokDefs.scoped_section_title, TokDefs.section_title)
         if tok:
             if tok.isa(TokDefs.scoped_section_title):
-                scope_path = tok.m.groups(1)
+                scope = Scope(tok.m.groups(1))
                 title = tok.m.groups(2)
             else:
-                scope_path = None
+                scope = None
                 title = tok.m.groups(1)
             return SectionTitle(
                 title = title,
-                scope_path = scope_path,
-                token = tok,
-            )
-        else:
-            return None
-
-    def quoted_block(self):
-        tok = self.eat(TokDefs.quoted_block)
-        if tok:
-            return QuotedBlock(
-                text = tok.m.group(1),
+                scope = scope,
                 token = tok,
             )
         else:
@@ -1305,6 +1366,16 @@ class SpecParser:
         if tok:
             return Heading(
                 title = tok.m.group(1).strip(),
+                token = tok,
+            )
+        else:
+            return None
+
+    def block_quote(self):
+        tok = self.eat(TokDefs.quoted_block)
+        if tok:
+            return BlockQuote(
+                text = tok.m.group(1),
                 token = tok,
             )
         else:
@@ -1430,8 +1501,8 @@ class SpecParser:
         #   -------------------------------------------------------------------------------------
         #   Y   | Y | Y   | #2   | <foo=x|y>
         #   Y   | Y | .   | .    | <foo=>        Assign w/o choice(s)
-        #   Y   | . | Y   | #3   | <foo|x|y>    
-        #   Y   | . | .   | #1   | <foo>        
+        #   Y   | . | Y   | #3   | <foo|x|y>
+        #   Y   | . | .   | #1   | <foo>
         #   .   | Y | Y   | .    | <=x|y>        Assign w/o name
         #   .   | Y | .   | .    | <=>           Ditto
         #   .   | . | Y   | #3   | <`hi!`|x|y>
@@ -1604,4 +1675,10 @@ def fill_to_length(xs, wanted):
     # Returns a list of that length (or longer).
     need = wanted - len(xs)
     return xs + [None] * need
+
+def get(xs, i, default = None):
+    try:
+        return xs[i]
+    except (IndexError, KeyError) as e:
+        return default
 
