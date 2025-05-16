@@ -116,7 +116,7 @@ Parsing function hierarchy and checklist:
             x python-name
             x usage-name
         x variant-def
-            . variant-elem
+            x variant-elem
                 x option
                     x bare-option
                     x any-parameter
@@ -146,19 +146,19 @@ Parsing function hierarchy and checklist:
                     x python-name
                 x choice-sep
 
-    - section-content-elem
-        - heading
-        - block-quote
-        - opt-spec
-            - opt-scope
-                - query-path
-                    - query-elem
-            - positional [ABOVE]
-            - aliases-and-option
-                - bare-option
-                - option [ABOVE]
-            - opt-help-text
-                - rest-of-line + continuation-lines
+    x section-content-elem
+        x heading
+        x block-quote
+        x opt-spec
+            x opt-scope
+                x query-path
+                    x query-elem
+            x positional [ABOVE]
+            x aliases-and-option
+                x bare-option
+                x option [ABOVE]
+            x opt-help-text
+                x rest-of-line + continuation-lines
 
 Spec-parsing:
 

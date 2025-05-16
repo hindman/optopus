@@ -7,24 +7,6 @@ Parsing the new spec-syntax
 
 TODO:
 
-    x section-content-elem
-        x heading
-        x block-quote
-        - opt-spec
-            x opt-scope
-                x query-path
-                    x query-elem
-            - opt-spec-def
-                - opt-spec-group
-                    x opt-spec-elem [BELOW]
-                - opt-spec-elem
-                    x positional [ABOVE]
-                    - aliases-and-option
-                        - bare-option
-                        x option [ABOVE]
-            - opt-help-text
-                - rest-of-line + continuation-lines
-
     parse(): reset lexer position if variant parsing ends on COLON
 
 SPEC SUMMARY:
@@ -498,6 +480,7 @@ class Option(ParseElem):
     name: str
     params: list
     quantifier: Quantifier = None
+    aliases: list[str] = field(default_factory = list)
 
 @dataclass
 class Parameter(ParseElem):
@@ -666,13 +649,12 @@ def define_tokdefs():
     ####
 
     Modes = cons(
-        vosh = list(Pmodes.values()),
-        vos  = [Pmodes.variant, Pmodes.opt_spec, Pmodes.section],
-        os   = [Pmodes.opt_spec, Pmodes.section],
+        none = [],
         v    = [Pmodes.variant],
         s    = [Pmodes.section],
         h    = [Pmodes.help_text],
-        none = [],
+        vs   = [Pmodes.variant, Pmodes.section],
+        vsh  = list(Pmodes.values()),
     )
 
     ####
@@ -681,52 +663,52 @@ def define_tokdefs():
 
     td_tups = [
         # - Quoted.
-        ('quoted_block',          '  s ', wrapped_in(backquote3, captured_guts)),
-        ('quoted_literal',        'vos ', wrapped_in(backquote1, captured_guts)),
+        ('quoted_block',          ' s ', wrapped_in(backquote3, captured_guts)),
+        ('quoted_literal',        'vs ', wrapped_in(backquote1, captured_guts)),
         # - Whitespace.
-        ('newline',               'vosh', r'\n'),
-        ('indent',                'vosh', start_of_line + whitespace1 + not_whitespace),
-        ('whitespace',            'vosh', whitespace1),
+        ('newline',               'vsh', r'\n'),
+        ('indent',                'vsh', start_of_line + whitespace1 + not_whitespace),
+        ('whitespace',            'vsh', whitespace1),
         # - Sections.
-        ('scoped_section_title',  'vos ', scope1 + section_title),
-        ('section_title',         'vos ', section_title),
-        ('heading',               'vos ', heading),
+        ('scoped_section_title',  'vs ', scope1 + section_title),
+        ('section_title',         'vs ', section_title),
+        ('heading',               'vs ', heading),
         # - Opt-spec scopes.
-        ('opt_spec_scope',        'vos ', scope1),
-        ('opt_spec_scope_empty',  'vos ', scope0),
+        ('opt_spec_scope',        'vs ', scope1),
+        ('opt_spec_scope_empty',  'vs ', scope0),
         # - Parens.
-        ('paren_open',            'vos ', r'\('),
-        ('brack_open',            'vos ', r'\['),
-        ('angle_open',            'vos ', '<'),
-        ('paren_open_named',      'vos ', captured(valid_name) + r'=\('),
-        ('brack_open_named',      'vos ', captured(valid_name) + r'=\['),
-        ('paren_close',           'vos ', r'\)'),
-        ('brack_close',           'vos ', r'\]'),
-        ('angle_close',           'vos ', '>'),
+        ('paren_open',            'vs ', r'\('),
+        ('brack_open',            'vs ', r'\['),
+        ('angle_open',            'vs ', '<'),
+        ('paren_open_named',      'vs ', captured(valid_name) + r'=\('),
+        ('brack_open_named',      'vs ', captured(valid_name) + r'=\['),
+        ('paren_close',           'vs ', r'\)'),
+        ('brack_close',           'vs ', r'\]'),
+        ('angle_close',           'vs ', '>'),
         # - Quants.
-        ('quant_range',           'vos ', r'\{' + captured(quant_range_guts) + r'\}'),
-        ('triple_dot',            'vos ', dot * 3),
-        ('question',              'vos ', r'\?'),
+        ('quant_range',           'vs ', r'\{' + captured(quant_range_guts) + r'\}'),
+        ('triple_dot',            'vs ', dot * 3),
+        ('question',              'vs ', r'\?'),
         # - Separators.
-        ('choice_sep',            'vos ', r'\|'),
-        ('assign',                'vos ', '='),
-        ('opt_spec_sep',          ' os ', ':'),
+        ('choice_sep',            'vs ', r'\|'),
+        ('assign',                'vs ', '='),
+        ('opt_spec_sep',          ' s ', ':'),
         # - Options.
-        ('long_option',           'vos ', option_prefix + option_prefix + captured_name),
-        ('short_option',          'vos ', option_prefix + captured(r'\w')),
+        ('long_option',           'vs ', option_prefix + option_prefix + captured_name),
+        ('short_option',          'vs ', option_prefix + captured(r'\w')),
         # - Variants.
-        ('variant_def',           'v   ', captured(valid_name + '!?') + whitespace0 + ':'),
-        ('partial_usage',         'v   ', captured_name + '!'),
+        ('variant_def',           'v  ', captured(valid_name + '!?') + whitespace0 + ':'),
+        ('partial_usage',         'v  ', captured_name + '!'),
         # - Sym, dest.
-        ('sym_dest',              'vos ', full_sym_dest),
-        ('dot_dest',              'vos ', dot + whitespace0 + captured_name),
-        ('solo_dest',             'vos ', captured_name + whitespace0 + r'(?=[>=])'),
-        ('name',                  'vos ', valid_name),
-        ('valid_name',            'vos ', valid_name),
+        ('sym_dest',              'vs ', full_sym_dest),
+        ('dot_dest',              'vs ', dot + whitespace0 + captured_name),
+        ('solo_dest',             'vs ', captured_name + whitespace0 + r'(?=[>=])'),
+        ('name',                  'vs ', valid_name),
+        ('valid_name',            'vs ', valid_name),
         # - Special.
-        ('rest_of_line',          '   h', '.+'),
-        ('eof',                   '    ', ''),
-        ('err',                   '    ', ''),
+        ('rest_of_line',          '  h', '.+'),
+        ('eof',                   '   ', ''),
+        ('err',                   '   ', ''),
     ]
 
     # Return the TokDefs constants collections.
@@ -752,7 +734,7 @@ Chars = cons(
     comma = ',',
 )
 
-Pmodes = cons('variant opt_spec section help_text')
+Pmodes = cons('variant section help_text')
 
 TokDefs = define_tokdefs()
 Rgxs = constants({kind : td.regex for kind, td in TokDefs})
@@ -778,6 +760,9 @@ GBKinds = cons(
     # Parameter-groups.
     'round_pg',
     'square_pg',
+    # Opt-spec-groups.
+    'round_os',
+    'square_os',
     # Var-inputs.
     'positional',
     'parameter',
@@ -805,8 +790,22 @@ def create_gbcs():
     return constants({
         GBKinds.round: gbc_round,
         GBKinds.square: gbc_square,
-        GBKinds.round_pg: clone(gbc_round, elems_method_name = 'any_parameter'),
-        GBKinds.square_pg: clone(gbc_square, elems_method_name = 'any_parameter'),
+        GBKinds.round_pg: clone(
+            gbc_round,
+            elems_method_name = 'any_parameter',
+        ),
+        GBKinds.square_pg: clone(
+            gbc_square,
+            elems_method_name = 'any_parameter',
+        ),
+        GBKinds.round_os: clone(
+            gbc_round,
+            elems_method_name = 'opt_spec_elem',
+        ),
+        GBKinds.square_os: clone(
+            gbc_square,
+            elems_method_name = 'opt_spec_elem',
+        ),
         GBKinds.positional: GetBConfig(
             kind = GBKinds.positional,
             parse_elem_cls = Positional,
@@ -1266,8 +1265,10 @@ class SpecParser:
         )
 
     def opt_spec_group(self):
-        # TODO
-        pass
+        return (
+            self.get_bracketed(GBCs.round_os) or
+            self.get_bracketed(GBCs.square_os)
+        )
 
     def opt_spec_elem(self):
         return (
@@ -1276,64 +1277,54 @@ class SpecParser:
         )
 
     def aliases_and_option(self):
-        # TODO
-        pass
+        aliases = self.parse_some(self.bare_option)
+        if aliases:
+            name = aliases.pop()
+            params = self.parse_some(self.any_parameter)
+            return Option(
+                name = name,
+                params = params,
+                aliases = aliases,
+            )
+        else:
+            return None
+
+    def rest_of_line(self):
+        tok = self.eat(TokDefs.rest_of_line)
+        if tok:
+            return tok.text.strip()
+        else:
+            return None
+
+    def opt_help_text(self):
+        # Try to get the help text and any continuation lines.
+        if self.eat(TokDefs.opt_spec_sep):
+            prev_mode = self.mode
+            self.mode = Pmodes.help_text
+            texts = self.parse_some(self.rest_of_line)
+            self.mode = prev_mode
+            return Chars.space.join(t for t in texts if t)
+        else:
+            return None
 
     def opt_spec(self):
-
-        '''
-
-        . opt-spec
-            x opt-scope
-                x query-path
-                    x query-elem
-            - opt-spec-def
-                - opt-spec-group                    # HERE_______
-                    x opt-spec-elem [BELOW]
-                - opt-spec-elem
-                    x positional [ABOVE]
-                    - aliases-and-option
-                        - bare-option
-                        x option [ABOVE]
-            - opt-help-text
-                - rest-of-line + continuation-lines
-
-        opt-spec:           [[opt-scope] >>] opt-spec-def [: [opt-help-text]]
-        opt-spec-def:       opt-spec-group | opt-spec-elem
-        opt-spec-group:     (opt-spec-elem) | [opt-spec-elem]
-        opt-spec-elem:      positional | aliases-and-option
-        aliases-and-option: [bare-option...] option
-
-        '''
-
-
-
-        # If succeed in getting an opt-spec, we will need
-        # access to its first Token.
+        # If we do get an opt-spec, we will need access to its first Token.
         self.reset_meal()
 
-        ######################################################
+        # Get the Scope, if any.
+        scope = self.opt_spec_scope()
 
-        # Try to get elements.
-        elems = self.elems()
+        # Get the Opt definition.
+        elems = self.opt_spec_def()
         if not elems:
             return None
 
-        # Try to get the help text and any continuation lines.
-        texts = []
-        if self.eat(TokDefs.opt_spec_sep):
-            self.mode = Pmodes.help_text
-            while True:
-                tok = self.eat(TokDefs.rest_of_line)
-                if tok:
-                    texts.append(tok.text.strip())
-                else:
-                    break
-            self.mode = Pmodes.opt_spec
+        # Get the opt-spec help text, if any.
+        text = self.opt_help_text()
 
-        # Join text parts and return.
-        text = Chars.space.join(t for t in texts if t)
+        # Boom.
         return OptSpec(
+            scope = scope,
             elems = elems,
             text = text,
             token = self.meal[0],
@@ -1467,13 +1458,16 @@ class SpecParser:
         return self.get_bracketed(GBCs.positional)
 
     def option(self):
-        tok = self.eat(TokDefs.long_option, TokDefs.short_option)
-        if tok:
-            name = tok.m.group(1)
-            params = self.parse_some(self.parameter)
+        name = self.bare_option()
+        if name:
+            params = self.parse_some(self.any_parameter)
             return Option(name, params, None)
         else:
             return None
+
+    def bare_option(self):
+        tok = self.eat(TokDefs.long_option, TokDefs.short_option)
+        return tok.m.group(1) if tok else None
 
     def parameter(self):
         return self.get_bracketed(GBCs.parameter)
@@ -1656,10 +1650,10 @@ class SpecParser:
         elems = []
         while True:
             e = method()
-            if e:
-                elems.append(e)
-            else:
+            if e is None or e == []:
                 break
+            else:
+                elems.append(e)
         return elems
 
 def get_caller_name(offset = 2):
