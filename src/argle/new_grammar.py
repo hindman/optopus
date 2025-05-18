@@ -7,6 +7,12 @@ Parsing the new spec-syntax
 
 TODO:
 
+    test_ex1()
+        - debug offsets are ... off
+        - get running
+        - get pp
+        - make sure grammer looks good
+
     parse(): reset lexer position if variant parsing ends on COLON
 
 SPEC SUMMARY:
@@ -330,7 +336,7 @@ import re
 import sys
 
 from collections import Counter
-from dataclasses import dataclass, replace as clone
+from dataclasses import dataclass, field, replace as clone
 from short_con import cons, constants
 
 from .errors import ArgleError
@@ -476,17 +482,17 @@ class Positional(ParseElem):
     quantifier: Quantifier = None
 
 @dataclass
-class Option(ParseElem):
-    name: str
-    params: list
-    quantifier: Quantifier = None
-    aliases: list[str] = field(default_factory = list)
-
-@dataclass
 class Parameter(ParseElem):
     name: str
     elems: list
     quantifier: Quantifier = None
+
+@dataclass
+class Option(ParseElem):
+    name: str
+    params: list[Parameter]
+    quantifier: Quantifier = None
+    aliases: list[str] = field(default_factory = list)
 
 @dataclass
 class ChoiceSep(ParseElem):
@@ -541,6 +547,10 @@ class Grammar:
         indent1 = '    ' * level
         indent2 = '    ' * (level + 1)
         has_child_elems = ('elems', 'params')
+
+        # print(elem)
+        # if isinstance(elem, str):
+        #     raise ValueError(elem)
 
         # Start with the class of the current element.
         yield f'{indent1}{cls_name}('
@@ -700,10 +710,10 @@ def define_tokdefs():
         ('variant_def',           'v  ', captured(valid_name + '!?') + whitespace0 + ':'),
         ('partial_usage',         'v  ', captured_name + '!'),
         # - Sym, dest.
-        ('sym_dest',              'vs ', full_sym_dest),
-        ('dot_dest',              'vs ', dot + whitespace0 + captured_name),
-        ('solo_dest',             'vs ', captured_name + whitespace0 + r'(?=[>=])'),
-        ('name',                  'vs ', valid_name),
+        # ('sym_dest',              'vs ', full_sym_dest),
+        # ('dot_dest',              'vs ', dot + whitespace0 + captured_name),
+        # ('solo_dest',             'vs ', captured_name + whitespace0 + r'(?=[>=])'),
+        # ('name',                  'vs ', valid_name),
         ('valid_name',            'vs ', valid_name),
         # - Special.
         ('rest_of_line',          '  h', '.+'),
@@ -993,7 +1003,7 @@ class RegexLexer(object):
         else:
             self.is_first = False
 
-    def debug(self, debug_level = 0, **kws):
+    def debug(self, debug_level = 0, offset = 0, **kws):
         # Decided whether and where to send debug output.
         if self.debug_fh is True:
             fh = sys.stdout
@@ -1009,7 +1019,7 @@ class RegexLexer(object):
 
         # Otherwise, assemble the message and log it.
         indent = Chars.space * (debug_level * 4)
-        func_name = get_caller_name()
+        func_name = get_caller_name(offset = 2 + offset)
         params = ', '.join(
             f'{k} = {v!r}'
             for k, v in kws.items()
@@ -1018,10 +1028,12 @@ class RegexLexer(object):
         print(msg, file = fh)
 
     def debug1(self, **kws):
-        self.debug(debug_level = 1, **kws)
+        offset = 1 + kws.pop('offset', 0)
+        self.debug(debug_level = 1, offset = offset, **kws)
 
     def debug2(self, **kws):
-        self.debug(debug_level = 2, **kws)
+        offset = 2 + kws.pop('offset', 0)
+        self.debug(debug_level = 2, offset = offset, **kws)
 
 ####
 # SpecParser.
@@ -1105,7 +1117,7 @@ class SpecParser:
 
         # Collect all other elements.
         self.mode = Pmodes.section
-        elems.extend(self.collect_section_elem)
+        elems.extend(self.collect_section_elem())
 
         # Raise if we did not parse the full text.
         tok = self.lexer.end
@@ -1135,7 +1147,7 @@ class SpecParser:
                 break
         return elems
 
-    def build_grammar(self, prog, elems):
+    def build_grammar(self, elems):
         # Converts the AST-style data generated during self.parse() into
         # a proper Grammar instance.
         g = Grammar(elems)
@@ -1209,6 +1221,7 @@ class SpecParser:
                 indent_ok = ok,
                 self_indent = self.first_tok.indent,
                 tok_indent = tok.indent,
+                offset = 2,
             )
 
         # For subsequent tokens in the expression, we expect tokens either from
@@ -1250,7 +1263,7 @@ class SpecParser:
         else:
             self.error('A Variant cannot be empty')
 
-    def opt_scope(self):
+    def opt_spec_scope(self):
         tok = self.eat(TokDefs.opt_spec_scope, TokDefs.opt_spec_scope_empty)
         if tok:
             query_path = get(tok.m.groups(), 0)
@@ -1412,7 +1425,7 @@ class SpecParser:
             return None
 
     def next_choice(self, require_sep = True):
-        if require_sep and not self.eat(TokDefs.choice_sep)
+        if require_sep and not self.eat(TokDefs.choice_sep):
             return None
 
         e = self.quoted_literal()
@@ -1595,7 +1608,7 @@ class SpecParser:
 
         # Get the elem(s) from inside the brackets.
         method = getattr(self, gbc.elems_method_name)
-        if method is self.var_input_elems:
+        if gbc.elems_method_name == 'var_input_elems':
             name, elems = method(require_name = gbc.require_var_input_name)
         else:
             elems = method()
@@ -1604,14 +1617,14 @@ class SpecParser:
         if not (elems or gbc.empty_ok):
             self.error(
                 msg = 'Empty bracketed expression',
-                kind = kind,
+                kind = gbc.kind,
             )
 
         # Raise if we cannot get the closing TokDef.
         if not self.eat(gbc.closing):
             self.error(
                 msg = 'Failed to find closing bracket',
-                kind = kind,
+                kind = gbc.kind,
             )
 
         # Return the ParseElem.
@@ -1656,7 +1669,7 @@ class SpecParser:
                 elems.append(e)
         return elems
 
-def get_caller_name(offset = 2):
+def get_caller_name(offset):
     # Get the name of a calling function.
     x = inspect.currentframe()
     for _ in range(offset):

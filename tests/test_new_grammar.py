@@ -7,12 +7,12 @@ from pathlib import Path
 from short_con import cons
 
 # TODO: uncomment.
-#
-# from argle.new_grammar import (
-#     SpecParser,
-#     TokDefs,
-#     Grammar,
-# )
+
+from argle.new_grammar import (
+    SpecParser,
+    TokDefs,
+    Grammar,
+)
 
 ####
 # A StringIO you can print directly, without fuss.
@@ -30,7 +30,7 @@ class Sio(io.StringIO):
 SPECS = {}
 
 SPECS['ex01'] = '''
-pgrep [-i] [-v] <rgx> <path>
+[-i] [-v] <rgx> <path>
 '''
 
 SPECS['ex02'] = '''
@@ -123,11 +123,14 @@ foo bar fubb.
           lines
 '''
 
-@pytest.mark.skip(reason = 'spec-parsing-overhaul')
+# @pytest.mark.skip(reason = 'spec-parsing-overhaul')
 def test_ex1(tr):
+    # [-i] [-v] <rgx> <path>
+    debug = True
     spec = SPECS['ex01'].strip() + '{1,3}'
-    sp = SpecParser(spec, debug = False)
+    sp = SpecParser(spec, debug = debug)
     g = sp.parse()
+    # tr.dump(g.pp)
 
 @pytest.mark.skip(reason = 'spec-parsing-overhaul')
 def test_examples(tr):
