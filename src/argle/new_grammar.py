@@ -7,11 +7,7 @@ Parsing the new spec-syntax
 
 TODO:
 
-    x test_ex1()
-        x debug offsets are ... off
-        x get running
-        x get pp
-        x make sure grammer looks good
+    x debug: use decorator to manage indent/outdent
 
     - Test each EX in test_new_grammar:
         x test_ex1()
@@ -32,15 +28,6 @@ Implementation notes:
     - staging plan:
         - Edit NEW files, while keeping OLD runnable.
         - When ready, swap back via git-mv (Git history resides in NEW).
-
-Debug levels:
-
-    0 parse()
-    1   PARSING-FUNC()
-    2     eat(): start
-    3       get_next_token()
-    3       taste()
-    3       eat(): finish
 
 ----
 Notes and questions
@@ -854,8 +841,9 @@ class RegexLexer(object):
         # Text to be lexed.
         self.text = text
 
-        # File handle for debug output.
+        # Debugging: file handle and indent-level.
         self.debug_fh = debug
+        self.debug_indent = 0
 
         # TokDefs currently of interest. Modal parsers can change
         # them when the parsing mode changes.
@@ -911,11 +899,11 @@ class RegexLexer(object):
         # whether to return it or cache it in self.curr.
         # If returned, we update location information.
         if tok:
-            self.debug(3, lexed = tok.kind)
+            self.debug(lexed = tok.kind)
             if self.validator(tok):
                 self.update_location(tok)
                 self.curr = None
-                self.debug(3, returned = tok.kind)
+                self.debug(returned = tok.kind)
                 return tok
             else:
                 self.curr = tok
@@ -1010,8 +998,8 @@ class RegexLexer(object):
         else:
             self.is_first = False
 
-    def debug(self, debug_level, offset = 0, **kws):
-        # Decided whether and where to send debug output.
+    def debug(self, caller_name = None, caller_offset = 0, msg_prefix = '', **kws):
+        # Decided whether and where to emit debug output.
         if self.debug_fh is True:
             fh = sys.stdout
         elif self.debug_fh:
@@ -1019,19 +1007,23 @@ class RegexLexer(object):
         else:
             return
 
-        # Log a blank line if no kws.
-        if not kws:
-            print(file = fh)
-            return
+        # Indentation.
+        indent = Chars.space * (self.debug_indent * 2)
 
-        # Otherwise, assemble the message and log it.
-        indent = Chars.space * (debug_level * 4)
-        func_name = get_caller_name(offset = 2 + offset)
-        params = ', '.join(
-            f'{k} = {v!r}'
-            for k, v in kws.items()
-        )
-        msg = f'{indent}{func_name}({params})'
+        # Name of the method calling debug().
+        caller_name = caller_name or get_caller_name(caller_offset + 2)
+
+        # The params-portion of the debug message.
+        if kws:
+            params = ', '.join(
+                f'{k} = {v!r}'
+                for k, v in kws.items()
+            )
+        else:
+            params = ''
+
+        # Print the message.
+        msg = f'{msg_prefix}{indent}{caller_name}({params})'
         print(msg, file = fh)
 
 ####
@@ -1043,9 +1035,6 @@ class SpecParser:
     def __init__(self, text, debug = False):
         # The spec text.
         self.text = text
-
-        # Whether/where to emit debug output.
-        self.debug_fh = debug
 
         # The lexer.
         self.lexer = RegexLexer(text, self.taste, debug = debug)
@@ -1066,6 +1055,34 @@ class SpecParser:
         # - Since the last reset_meal() call.
         self.eaten = []
         self.meal = []
+
+    ####
+    # Debug decorator.
+    ####
+
+    def debug_indent(old_method):
+        # Setup based on the name of the method being decorated.
+        NAME = old_method.__name__
+        MSG_PREFIX = '\n' if NAME == 'parse' else ''
+
+        def new_method(self, *xs, **kws):
+            # Call debug() to emit the method name.
+            lex = self.lexer
+            lex.debug(caller_name = NAME, msg_prefix = MSG_PREFIX)
+
+            # Within a higher indent level:
+            # - Call the method.
+            # - Call debug() to summarize the result.
+            lex.debug_indent += 1
+            elem = old_method(self, *xs, **kws)
+            result = ('∅' if elem in (None, []) else type(elem).__name__)
+            lex.debug(caller_name = NAME, RESULT = result)
+
+            # Return to previous indent level and return.
+            lex.debug_indent -= 1
+            return elem
+
+        return new_method
 
     ####
     # Setting the parser mode.
@@ -1090,12 +1107,9 @@ class SpecParser:
     # Parse a spec.
     ####
 
+    @debug_indent
     def parse(self):
         # The method used by Parser.parse(SPEC).
-
-        # Setup.
-        self.lexer.debug(0)
-        self.lexer.debug(0, mode_check = 'started')
 
         # Collect variants.
         self.mode = Pmodes.variant
@@ -1123,8 +1137,8 @@ class SpecParser:
         # the first on its line (aside from any indent).
         self.first_tok = None
 
+    @debug_indent
     def collect_section_elem(self):
-        self.lexer.debug(1, wanted = True)
         elems = []
         while True:
             self.require_is_first_token()
@@ -1153,7 +1167,7 @@ class SpecParser:
 
         # The caller provides 1+ TokDefs, which are put in self.menu.
         self.menu = tds
-        self.lexer.debug(2, wanted = ','.join(td.kind for td in tds))
+        self.lexer.debug(wanted = '|'.join(td.kind for td in tds))
 
         # Ask the RegexLexer for another Token. That won't succeed unless:
         #
@@ -1172,7 +1186,6 @@ class SpecParser:
             return None
         else:
             self.lexer.debug(
-                3,
                 eaten = tok.kind,
                 text = tok.text,
                 pos = tok.pos,
@@ -1201,20 +1214,20 @@ class SpecParser:
         # If so, we remember that token's indent and line.
         if self.first_tok is None:
             if tok.is_first:
-                self.lexer.debug(3, is_first = True)
+                self.lexer.debug(ok = True, is_first = True)
                 self.first_tok = tok
                 return True
             else:
-                self.lexer.debug(3, is_first = False)
+                self.lexer.debug(ok = True, is_first = False)
                 return False
 
-        def do_debug(ok):
+        def do_debug(reason):
             self.lexer.debug(
-                3,
-                indent_ok = ok,
+                ok = bool(reason),
+                indent_reason = reason,
                 self_indent = self.first_tok.indent,
                 tok_indent = tok.indent,
-                offset = 1,
+                caller_offset = 1,
             )
 
         # For subsequent tokens in the expression, we expect tokens either from
@@ -1227,15 +1240,15 @@ class SpecParser:
             do_debug('indent')
             return True
         else:
-            do_debug('NO')
+            do_debug(False)
             return False
 
     ####
     # Top-level parsing functions.
     ####
 
+    @debug_indent
     def variant(self):
-        self.lexer.debug(1, wanted = True)
         self.require_is_first_token()
 
         # Get variant/partial name, if any.
@@ -1257,8 +1270,8 @@ class SpecParser:
         else:
             self.error('A Variant cannot be empty')
 
+    @debug_indent
     def opt_spec_scope(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.opt_spec_scope, TokDefs.opt_spec_scope_empty)
         if tok:
             query_path = get(tok.m.groups(), 0)
@@ -1266,29 +1279,29 @@ class SpecParser:
         else:
             return None
 
+    @debug_indent
     def opt_spec_def(self):
-        self.lexer.debug(1, wanted = True)
         return (
             self.opt_spec_group() or
             self.opt_spec_elem()
         )
 
+    @debug_indent
     def opt_spec_group(self):
-        self.lexer.debug(1, wanted = True)
         return (
             self.get_bracketed(GBCs.round_os) or
             self.get_bracketed(GBCs.square_os)
         )
 
+    @debug_indent
     def opt_spec_elem(self):
-        self.lexer.debug(1, wanted = True)
         return (
             self.positional() or
             self.aliases_and_option()
         )
 
+    @debug_indent
     def aliases_and_option(self):
-        self.lexer.debug(1, wanted = True)
         aliases = self.parse_some(self.bare_option)
         if aliases:
             name = aliases.pop()
@@ -1301,16 +1314,16 @@ class SpecParser:
         else:
             return None
 
+    @debug_indent
     def rest_of_line(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.rest_of_line)
         if tok:
             return tok.text.strip()
         else:
             return None
 
+    @debug_indent
     def opt_help_text(self):
-        self.lexer.debug(1, wanted = True)
         # Try to get the help text and any continuation lines.
         if self.eat(TokDefs.opt_spec_sep):
             prev_mode = self.mode
@@ -1321,8 +1334,8 @@ class SpecParser:
         else:
             return None
 
+    @debug_indent
     def opt_spec(self):
-        self.lexer.debug(1, wanted = True)
         # If we do get an opt-spec, we will need access to its first Token.
         self.reset_meal()
 
@@ -1345,8 +1358,8 @@ class SpecParser:
             token = self.meal[0],
         )
 
+    @debug_indent
     def any_section_title(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.scoped_section_title, TokDefs.section_title)
         if tok:
             if tok.isa(TokDefs.scoped_section_title):
@@ -1368,8 +1381,8 @@ class SpecParser:
     # shared by variants and opt-specs.
     ####
 
+    @debug_indent
     def heading(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.heading)
         if tok:
             return Heading(
@@ -1379,8 +1392,8 @@ class SpecParser:
         else:
             return None
 
+    @debug_indent
     def block_quote(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.quoted_block)
         if tok:
             return BlockQuote(
@@ -1390,16 +1403,16 @@ class SpecParser:
         else:
             return None
 
+    @debug_indent
     def section_content_elem(self):
-        self.lexer.debug(1, wanted = True)
         return self.parse_first(
             self.heading,
             self.block_quote,
             self.opt_spec,
         )
 
+    @debug_indent
     def variant_elems(self):
-        self.lexer.debug(1, wanted = True)
         elems = []
         TAKES_QUANTIFIER = (Parenthesized, Bracketed, Positional, Option)
         while True:
@@ -1418,23 +1431,23 @@ class SpecParser:
                 break
         return elems
 
+    @debug_indent
     def add_quantifer_to(self, e, types):
-        self.lexer.debug(1, wanted = True)
         if isinstance(e, types):
             q = self.quantifier()
             if q:
                 e.quantifier = q
 
+    @debug_indent
     def quoted_literal(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.quoted_literal)
         if tok:
             return QuotedLiteral(text = tok.m.group(1))
         else:
             return None
 
+    @debug_indent
     def next_choice(self, require_sep = True):
-        self.lexer.debug(1, wanted = True)
         if require_sep and not self.eat(TokDefs.choice_sep):
             return None
 
@@ -1445,49 +1458,49 @@ class SpecParser:
         tok = self.eat(TokDefs.valid_name)
         return tok.text if tok else None
 
+    @debug_indent
     def choice_sep(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.choice_sep)
         if tok:
             return ChoiceSep()
         else:
             return None
 
+    @debug_indent
     def partial_usage(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.partial_usage)
         if tok:
             return PartialUsage(name = tok.m.group(1))
         else:
             return None
 
+    @debug_indent
     def any_group(self):
-        self.lexer.debug(1, wanted = True)
         return (
             self.get_bracketed(GBCs.round) or
             self.get_bracketed(GBCs.square)
         )
 
+    @debug_indent
     def parameter_group(self):
-        self.lexer.debug(1, wanted = True)
         return (
             self.get_bracketed(GBCs.round_pg) or
             self.get_bracketed(GBCs.square_pg)
         )
 
+    @debug_indent
     def any_parameter(self):
-        self.lexer.debug(1, wanted = True)
         return (
             self.parameter() or
             self.parameter_group()
         )
 
+    @debug_indent
     def positional(self):
-        self.lexer.debug(1, wanted = True)
         return self.get_bracketed(GBCs.positional)
 
+    @debug_indent
     def option(self):
-        self.lexer.debug(1, wanted = True)
         name = self.bare_option()
         if name:
             params = self.parse_some(self.any_parameter)
@@ -1495,15 +1508,16 @@ class SpecParser:
         else:
             return None
 
+    @debug_indent
     def bare_option(self):
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.long_option, TokDefs.short_option)
         return tok.m.group(1) if tok else None
 
+    @debug_indent
     def parameter(self):
-        self.lexer.debug(1, wanted = True)
         return self.get_bracketed(GBCs.parameter)
 
+    @debug_indent
     def var_input_elems(self, require_name = False):
         # Returns a VarInput holding the guts of a positional or parameter.
     
@@ -1535,7 +1549,6 @@ class SpecParser:
         #   .   | . | .   | #4   | <>
 
         # Try to get a valid name, which could be a name or a choice.
-        self.lexer.debug(1, wanted = True)
         tok = self.eat(TokDefs.valid_name)
         name_or_choice = tok.text if tok else None
 
@@ -1571,8 +1584,8 @@ class SpecParser:
         # Return the elems.
         return (name, choices)
 
+    @debug_indent
     def quantifier(self):
-        self.lexer.debug(1, wanted = True)
         q = self.parse_first(self.triple_dot, self.quant_range)
         if q:
             m, n = q
@@ -1642,7 +1655,6 @@ class SpecParser:
             )
 
         # Raise if we cannot get the closing TokDef.
-        self.lexer.debug(1, need = 'closing-bracket')
         if not self.eat(gbc.closing):
             self.error(
                 msg = 'Failed to find closing bracket',
@@ -1691,10 +1703,10 @@ class SpecParser:
                 elems.append(e)
         return elems
 
-def get_caller_name(offset):
+def get_caller_name(caller_offset):
     # Get the name of a calling function.
     x = inspect.currentframe()
-    for _ in range(offset):
+    for _ in range(caller_offset):
         x = x.f_back
     x = x.f_code.co_name
     return x

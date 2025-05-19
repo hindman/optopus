@@ -114,7 +114,7 @@ foo bar fubb.
 
 def test_ex1(tr):
     spec = SPECS.ex01
-    sp = SpecParser(spec, debug = False)
+    sp = SpecParser(spec, debug = True)
     g = sp.parse()
     # tr.dump(g.pp, label = 'ex01')
 
