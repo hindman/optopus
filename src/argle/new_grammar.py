@@ -9,17 +9,55 @@ TODO:
 
     x debug: use decorator to manage indent/outdent
 
-    - Parsing functions should manage their own quantifiers:
+    - Parsing functions should manage their own quantifiers.
 
-        - Methods:
-            - any_group()
-            - positional()
-            - option()
-            - opt_spec_group()
-            - aliases_and_option()
-            - parameter()
-            - parameter_group()
-            - any_group()
+        - Relevant parsing functions:
+
+            - These notes currently show:
+                - Where the parsing function is called.
+                - Whether a quantifier is allowed in that context.
+                - The answer appears to be yes in all cases, but with some
+                  special logic for options: an Option can directly have a
+                  quantifier (ie ntimes) only if it is a flag.
+
+            - self.positional()
+                self.opt_spec_elem()
+                self.variant_elems()
+
+            - self.option()
+                self.variant_elems()
+
+                - How an option takes quantifiers:
+
+                    Via an enclosing-group | (--foo <a> <b>)...
+                    Via its params         | --foo <a> <b>...
+                    Directly (flags only)  | --foo...
+
+                    - Not supported: an option ntimes quantifier inferred
+                      from the fact that the preceding parameter already
+                      has a quantifier.
+
+                        --foo <a>... {2}    # Not valid.
+                        (--foo <a>...){2}   # Valid.
+
+                - Look for a quantifier only if no parameters were found.
+
+            - self.aliases_and_option()
+                self.opt_spec_elem()
+
+                - Look for a quantifier only if no parameters were found.
+
+            - self.parameter()
+                self.any_parameter()
+
+            - self.parameter_group()
+                self.any_parameter()
+
+            - self.opt_spec_group()
+                self.opt_spec_def()
+
+            - self.any_group()
+                self.variant_elems()
 
         - Then modify variant_elems():
             - Drop TAKES_QUANTIFIER and related logic.

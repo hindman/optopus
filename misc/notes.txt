@@ -744,6 +744,10 @@ Whitespace rules:
 
         - Within a triple-dot quantifier.
 
+    - Whitespace is allowed:
+
+        - Between an element and its quantifier (looks odd, but still valid).
+
 --------
 syntax-examples: Syntax examples
 --------
