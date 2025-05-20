@@ -9,6 +9,21 @@ TODO:
 
     x debug: use decorator to manage indent/outdent
 
+    - Parsing functions should manage their own quantifiers:
+
+        - Methods:
+            - any_group()
+            - positional()
+            - option()
+            - opt_spec_group()
+            - aliases_and_option()
+            - parameter()
+            - parameter_group()
+            - any_group()
+
+        - Then modify variant_elems():
+            - Drop TAKES_QUANTIFIER and related logic.
+
     - Test each EX in test_new_grammar:
         x test_ex1()
         - test_ex2()
@@ -420,7 +435,7 @@ class Scope(ParseElem):
 
 @dataclass
 class OptSpec(ParseElem):
-    scope = Scope
+    scope: Scope
     elems: list[str]
     text: str
     token: Token
@@ -875,11 +890,26 @@ class RegexLexer(object):
     def tokdefs(self):
         return self._tokdefs
 
+    POSITION_ATTRS = cons('pos line col indent is_first')
+
     @tokdefs.setter
     def tokdefs(self, tokdefs):
         # If TokDefs are changed, clear any cached Token.
         self._tokdefs = tokdefs
         self.curr = None
+
+    @property
+    def position(self):
+        return constants({
+            a : getattr(self, a)
+            for a in self.POSITION_ATTRS.keys()
+        })
+
+    @position.setter
+    def position(self, p):
+        self.curr = None
+        for a in self.POSITION_ATTRS.keys():
+            setattr(self, a, getattr(p, a))
 
     def get_next_token(self):
         # This is the method used by the parser during the parsing process.
@@ -1075,7 +1105,7 @@ class SpecParser:
             # - Call debug() to summarize the result.
             lex.debug_indent += 1
             elem = old_method(self, *xs, **kws)
-            result = ('∅' if elem in (None, []) else type(elem).__name__)
+            result = type(elem).__name__ if elem else '∅'
             lex.debug(caller_name = NAME, RESULT = result)
 
             # Return to previous indent level and return.
@@ -1142,9 +1172,9 @@ class SpecParser:
         elems = []
         while True:
             self.require_is_first_token()
-            e = self.parse_first(
-                self.any_section_title,
-                self.section_content_elem,
+            e = (
+                self.any_section_title() or
+                self.section_content_elem()
             )
             if e:
                 elems.append(e)
@@ -1249,7 +1279,9 @@ class SpecParser:
 
     @debug_indent
     def variant(self):
+        lex = self.lexer
         self.require_is_first_token()
+        orig_pos = lex.position
 
         # Get variant/partial name, if any.
         name = None
@@ -1263,12 +1295,24 @@ class SpecParser:
 
         # Collect the ParseElem for the variant.
         elems = self.variant_elems()
-        if name is None and not elems:
-            return None
-        elif elems:
-            return Variant(name, is_partial, elems)
+
+        # Return, raise, or reset lexer position.
+        if elems:
+            if lex.curr and lex.curr.isa(TokDefs.opt_spec_sep):
+                # If we got elems but halted on an opt-spec separator, return
+                # empty after resetting the lexer position. We do this so we
+                # can try to re-parse as an opt-spec rather than as a variant.
+                lex.position = orig_pos
+                return None
+            else:
+                # Otherwise, return the Variant.
+                return Variant(name, is_partial, elems)
         else:
-            self.error('A Variant cannot be empty')
+            # If we got no elems, the situation is simple.
+            if name:
+                self.error('A Variant cannot be empty')
+            else:
+                return None
 
     @debug_indent
     def opt_spec_scope(self):
@@ -1405,10 +1449,10 @@ class SpecParser:
 
     @debug_indent
     def section_content_elem(self):
-        return self.parse_first(
-            self.heading,
-            self.block_quote,
-            self.opt_spec,
+        return (
+            self.heading() or
+            self.block_quote() or
+            self.opt_spec()
         )
 
     @debug_indent
@@ -1416,13 +1460,13 @@ class SpecParser:
         elems = []
         TAKES_QUANTIFIER = (Parenthesized, Bracketed, Positional, Option)
         while True:
-            e = self.parse_first(
-                self.quoted_literal,
-                self.choice_sep,
-                self.partial_usage,
-                self.any_group,
-                self.positional,
-                self.option,
+            e = (
+                self.quoted_literal() or
+                self.choice_sep() or
+                self.partial_usage() or
+                self.any_group() or
+                self.positional() or
+                self.option()
             )
             if e:
                 self.add_quantifer_to(e, TAKES_QUANTIFIER)
@@ -1586,7 +1630,7 @@ class SpecParser:
 
     @debug_indent
     def quantifier(self):
-        q = self.parse_first(self.triple_dot, self.quant_range)
+        q = self.triple_dot() or self.quant_range()
         if q:
             m, n = q
             greedy = not self.eat(TokDefs.question)
@@ -1681,22 +1725,22 @@ class SpecParser:
         )
         raise ArgleError(**kws)
 
-    def parse_first(self, *methods):
-        # Takes 1+ parsing functions.
-        # Returns the elem from the first that succeeds.
-        elem = None
-        for m in methods:
-            elem = m()
-            if elem:
-                break
-        return elem
+    # def parse_first(self, *methods):
+    #     # Takes 1+ parsing functions.
+    #     # Returns the elem from the first that succeeds.
+    #     elem = None
+    #     for m in methods:
+    #         elem = m()
+    #         if elem:
+    #             break
+    #     return elem
 
-    def parse_some(self, method):
+    def parse_some(self, method, **kws):
         # Takes a parsing function.
         # Collects as many elems as possible and returns them.
         elems = []
         while True:
-            e = method()
+            e = method(**kws)
             if e is None or e == []:
                 break
             else:
