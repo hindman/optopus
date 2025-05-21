@@ -9,65 +9,29 @@ TODO:
 
     x debug: use decorator to manage indent/outdent
 
-    - Parsing functions should manage their own quantifiers.
+    x reset lexer-pos if variant() halts on opt_spec_sep
 
-        - Relevant parsing functions:
+    x name regexes: fix and simplify:
 
-            - These notes currently show:
-                - Where the parsing function is called.
-                - Whether a quantifier is allowed in that context.
-                - The answer appears to be yes in all cases, but with some
-                  special logic for options: an Option can directly have a
-                  quantifier (ie ntimes) only if it is a flag.
+    x Parsing functions should manage their own quantifiers.
 
-            - self.positional()
-                self.opt_spec_elem()
-                self.variant_elems()
+    x Parsing functions should return ParseElem, not primitives:
 
-            - self.option()
-                self.variant_elems()
+    - get_bracketed()
 
-                - How an option takes quantifiers:
+        - Handle case where these return nothing:
+            var_input_elems()   # Either raises or returns VarInput()
+            variant_elems()     # I added a quick fix
 
-                    Via an enclosing-group | (--foo <a> <b>)...
-                    Via its params         | --foo <a> <b>...
-                    Directly (flags only)  | --foo...
-
-                    - Not supported: an option ntimes quantifier inferred
-                      from the fact that the preceding parameter already
-                      has a quantifier.
-
-                        --foo <a>... {2}    # Not valid.
-                        (--foo <a>...){2}   # Valid.
-
-                - Look for a quantifier only if no parameters were found.
-
-            - self.aliases_and_option()
-                self.opt_spec_elem()
-
-                - Look for a quantifier only if no parameters were found.
-
-            - self.parameter()
-                self.any_parameter()
-
-            - self.parameter_group()
-                self.any_parameter()
-
-            - self.opt_spec_group()
-                self.opt_spec_def()
-
-            - self.any_group()
-                self.variant_elems()
-
-        - Then modify variant_elems():
-            - Drop TAKES_QUANTIFIER and related logic.
+        - This method is getting out of hand...
 
     - Test each EX in test_new_grammar:
         x test_ex1()
-        - test_ex2()
-            parse(): reset lexer-pos if variant() halts on opt_spec_sep
+        x test_ex2()
 
-        - test_ex3()
+        . test_ex3()
+            - runs but need to check the dumped Grammar
+
         - test_ex4()
         - test_ex5()
         - test_ex6()
@@ -474,7 +438,7 @@ class Scope(ParseElem):
 @dataclass
 class OptSpec(ParseElem):
     scope: Scope
-    elems: list[str]
+    opt: ParseElem
     text: str
     token: Token
 
@@ -497,6 +461,23 @@ class BlockQuote(ParseElem):
 @dataclass
 class QuotedLiteral(ParseElem):
     text: str
+
+@dataclass
+class Choice(ParseElem):
+    text: str
+
+@dataclass
+class SectionElems(ParseElem):
+    elems: list[ParseElem]
+
+@dataclass
+class VariantElems(ParseElem):
+    elems: list[ParseElem]
+
+@dataclass
+class VarInput(ParseElem):
+    name: str
+    elems: list[Choice]
 
 @dataclass
 class Quantifier(ParseElem):
@@ -531,21 +512,33 @@ class Bracketed(ParseElem):
 @dataclass
 class Positional(ParseElem):
     name: str
-    elems: list
+    elems: list    # choices
     quantifier: Quantifier = None
 
 @dataclass
 class Parameter(ParseElem):
     name: str
-    elems: list
+    elems: list    # choices
     quantifier: Quantifier = None
+
+@dataclass
+class RestOfLine(ParseElem):
+    text: str
+
+@dataclass
+class OptHelpText(ParseElem):
+    text: str
+
+@dataclass
+class BareOption(ParseElem):
+    name: str
 
 @dataclass
 class Option(ParseElem):
     name: str
     params: list[Parameter]
     quantifier: Quantifier = None
-    aliases: list[str] = field(default_factory = list)
+    aliases: list[BareOption] = field(default_factory = list)
 
 @dataclass
 class ChoiceSep(ParseElem):
@@ -564,21 +557,6 @@ class ChoiceSep(ParseElem):
 #     dest: str
 #     symlit: str
 #     choice: str
-
-####
-# Other intermediate objects.
-####
-
-# @dataclass
-# class Enclosed():
-#     kind: str
-#     name: str
-#     elems: list
-
-# @dataclass
-# class VarInput():
-#     name: str
-#     choices: list[str]
 
 ####
 # Grammar.
@@ -650,20 +628,14 @@ def define_tokdefs():
     not_whitespace = r'(?=\S)'
 
     # Letters, digits, and numbers.
-    alpha = r'[A-Za-z]'
-    alphanum = r'[A-Za-z0-9]'
+    letter_under = r'[A-Za-z_]'
+    name_char = r'[A-Za-z0-9_-]'
     glob_char = r'[A-Za-z0-9?*_-]'
-    alphanum0 = fr'{alphanum}*'
-    alphanum1 = fr'{alphanum}+'
     number = r'\d+'
 
     # Names.
-    python_name = fr'{alphanum1}(?:_{alphanum1})*'
-    usage_name  = fr'{alphanum1}(?:-{alphanum1})*'
-    valid_name = fr'{python_name}|{usage_name}'
+    valid_name = fr'{letter_under}{name_char}*'
     captured_name = captured(valid_name)
-    prog = fr'{valid_name}(?:\.{alphanum1})?'
-    full_sym_dest = captured_name + wrapped_in(whitespace0, captured('[!.]')) + captured_name
 
     # Start and end of line.
     start_of_line = '(?m)^'
@@ -789,6 +761,7 @@ Chars = cons(
     newline = '\n',
     exclamation = '!',
     comma = ',',
+    empty_set = '∅',
 )
 
 Pmodes = cons('variant section help_text')
@@ -845,24 +818,32 @@ def create_gbcs():
         named_bracket_ok = True,
     )
     return constants({
+        # Regular groups: () []
         GBKinds.round: gbc_round,
         GBKinds.square: gbc_square,
+        # Parameter groups: () []
         GBKinds.round_pg: clone(
             gbc_round,
+            kind = GBKinds.round_pg,
             elems_method_name = 'any_parameter',
         ),
         GBKinds.square_pg: clone(
             gbc_square,
+            kind = GBKinds.square_pg,
             elems_method_name = 'any_parameter',
         ),
+        # Opt-spec group: () []
         GBKinds.round_os: clone(
             gbc_round,
+            kind = GBKinds.round_os,
             elems_method_name = 'opt_spec_elem',
         ),
         GBKinds.square_os: clone(
             gbc_square,
+            kind = GBKinds.square_os,
             elems_method_name = 'opt_spec_elem',
         ),
+        # Positional: <>
         GBKinds.positional: GetBConfig(
             kind = GBKinds.positional,
             parse_elem_cls = Positional,
@@ -871,6 +852,7 @@ def create_gbcs():
             closing = TokDefs.angle_close,
             require_var_input_name = True,
         ),
+        # Parameter: <>
         GBKinds.parameter: GetBConfig(
             kind = GBKinds.parameter,
             parse_elem_cls = Parameter,
@@ -1066,7 +1048,12 @@ class RegexLexer(object):
         else:
             self.is_first = False
 
-    def debug(self, caller_name = None, caller_offset = 0, msg_prefix = '', **kws):
+    def debug(self,
+              caller_name = None,
+              caller_offset = 0,
+              msg_prefix = '',
+              RESULT = None,
+              **kws):
         # Decided whether and where to emit debug output.
         if self.debug_fh is True:
             fh = sys.stdout
@@ -1082,7 +1069,9 @@ class RegexLexer(object):
         caller_name = caller_name or get_caller_name(caller_offset + 2)
 
         # The params-portion of the debug message.
-        if kws:
+        if RESULT is not None:
+            params = f'RESULT = {RESULT}' if RESULT else Chars.empty_set
+        elif kws:
             params = ', '.join(
                 f'{k} = {v!r}'
                 for k, v in kws.items()
@@ -1143,7 +1132,7 @@ class SpecParser:
             # - Call debug() to summarize the result.
             lex.debug_indent += 1
             elem = old_method(self, *xs, **kws)
-            result = type(elem).__name__ if elem else '∅'
+            result = type(elem).__name__ if elem else False
             lex.debug(caller_name = NAME, RESULT = result)
 
             # Return to previous indent level and return.
@@ -1189,7 +1178,9 @@ class SpecParser:
 
         # Collect all other elements.
         self.mode = Pmodes.section
-        elems.extend(self.collect_section_elem())
+        se = self.collect_section_elems()
+        if se:
+            elems.extend(se.elems)
 
         # Raise if we did not parse the full text.
         tok = self.lexer.end
@@ -1206,7 +1197,7 @@ class SpecParser:
         self.first_tok = None
 
     @debug_indent
-    def collect_section_elem(self):
+    def collect_section_elems(self):
         elems = []
         while True:
             self.require_is_first_token()
@@ -1218,7 +1209,10 @@ class SpecParser:
                 elems.append(e)
             else:
                 break
-        return elems
+        if elems:
+            return SectionElems(elems = elems)
+        else:
+            return None
 
     def build_grammar(self, elems):
         # Converts the AST-style data generated during self.parse() into
@@ -1332,10 +1326,10 @@ class SpecParser:
                 is_partial = True
 
         # Collect the ParseElem for the variant.
-        elems = self.variant_elems()
+        ve = self.variant_elems()
 
         # Return, raise, or reset lexer position.
-        if elems:
+        if ve:
             if lex.curr and lex.curr.isa(TokDefs.opt_spec_sep):
                 # If we got elems but halted on an opt-spec separator, return
                 # empty after resetting the lexer position. We do this so we
@@ -1344,7 +1338,11 @@ class SpecParser:
                 return None
             else:
                 # Otherwise, return the Variant.
-                return Variant(name, is_partial, elems)
+                return Variant(
+                    name = name,
+                    is_partial = is_partial,
+                    elems = ve.elems,
+                )
         else:
             # If we got no elems, the situation is simple.
             if name:
@@ -1370,7 +1368,7 @@ class SpecParser:
 
     @debug_indent
     def opt_spec_group(self):
-        return (
+        return self.with_quantifer(
             self.get_bracketed(GBCs.round_os) or
             self.get_bracketed(GBCs.square_os)
         )
@@ -1386,13 +1384,17 @@ class SpecParser:
     def aliases_and_option(self):
         aliases = self.parse_some(self.bare_option)
         if aliases:
-            name = aliases.pop()
+            b = aliases.pop()
             params = self.parse_some(self.any_parameter)
-            return Option(
-                name = name,
+            e = Option(
+                name = b.name,
                 params = params,
                 aliases = aliases,
             )
+            if params:
+                return e
+            else:
+                return self.with_quantifer(e)
         else:
             return None
 
@@ -1400,21 +1402,27 @@ class SpecParser:
     def rest_of_line(self):
         tok = self.eat(TokDefs.rest_of_line)
         if tok:
-            return tok.text.strip()
-        else:
-            return None
+            text = tok.text.strip()
+            if text:
+                return RestOfLine(text = text)
+        return None
 
     @debug_indent
     def opt_help_text(self):
         # Try to get the help text and any continuation lines.
         if self.eat(TokDefs.opt_spec_sep):
+            # Change parsing mode while collected opt-spec help text.
             prev_mode = self.mode
             self.mode = Pmodes.help_text
-            texts = self.parse_some(self.rest_of_line)
+            elems = self.parse_some(self.rest_of_line)
             self.mode = prev_mode
-            return Chars.space.join(t for t in texts if t)
-        else:
-            return None
+
+            # If we got any, assemble and return an OptHelpText.
+            if elems:
+                text = Chars.space.join(e.text for e in elems)
+                return OptHelpText(text = text)
+
+        return None
 
     @debug_indent
     def opt_spec(self):
@@ -1425,18 +1433,18 @@ class SpecParser:
         scope = self.opt_spec_scope()
 
         # Get the Opt definition.
-        elems = self.opt_spec_def()
-        if not elems:
+        e = self.opt_spec_def()
+        if not e:
             return None
 
-        # Get the opt-spec help text, if any.
-        text = self.opt_help_text()
+        # Get the OptHelpText, if any.
+        t = self.opt_help_text()
 
         # Boom.
         return OptSpec(
             scope = scope,
-            elems = elems,
-            text = text,
+            opt = e,
+            text = t.text if t else None,
             token = self.meal[0],
         )
 
@@ -1496,7 +1504,6 @@ class SpecParser:
     @debug_indent
     def variant_elems(self):
         elems = []
-        TAKES_QUANTIFIER = (Parenthesized, Bracketed, Positional, Option)
         while True:
             e = (
                 self.quoted_literal() or
@@ -1507,18 +1514,21 @@ class SpecParser:
                 self.option()
             )
             if e:
-                self.add_quantifer_to(e, TAKES_QUANTIFIER)
                 elems.append(e)
             else:
                 break
-        return elems
+        if elems:
+            return VariantElems(elems = elems)
+        else:
+            return None
 
     @debug_indent
-    def add_quantifer_to(self, e, types):
-        if isinstance(e, types):
+    def with_quantifer(self, e):
+        if e:
             q = self.quantifier()
             if q:
                 e.quantifier = q
+        return e
 
     @debug_indent
     def quoted_literal(self):
@@ -1535,10 +1545,13 @@ class SpecParser:
 
         e = self.quoted_literal()
         if e:
-            return e
+            return Choice(text = e.text)
 
         tok = self.eat(TokDefs.valid_name)
-        return tok.text if tok else None
+        if tok:
+            return Choice(text = tok.text)
+        else:
+            return None
 
     @debug_indent
     def choice_sep(self):
@@ -1558,14 +1571,14 @@ class SpecParser:
 
     @debug_indent
     def any_group(self):
-        return (
+        return self.with_quantifer(
             self.get_bracketed(GBCs.round) or
             self.get_bracketed(GBCs.square)
         )
 
     @debug_indent
     def parameter_group(self):
-        return (
+        return self.with_quantifer(
             self.get_bracketed(GBCs.round_pg) or
             self.get_bracketed(GBCs.square_pg)
         )
@@ -1579,30 +1592,43 @@ class SpecParser:
 
     @debug_indent
     def positional(self):
-        return self.get_bracketed(GBCs.positional)
+        return self.with_quantifer(
+            self.with_quantifer(
+                self.get_bracketed(GBCs.positional)
+            )
+        )
 
     @debug_indent
     def option(self):
-        name = self.bare_option()
-        if name:
+        b = self.bare_option()
+        if b:
             params = self.parse_some(self.any_parameter)
-            return Option(name, params, None)
+            e = Option(b.name, params, None)
+            if params:
+                return e
+            else:
+                return self.with_quantifer(e)
         else:
             return None
 
     @debug_indent
     def bare_option(self):
         tok = self.eat(TokDefs.long_option, TokDefs.short_option)
-        return tok.m.group(1) if tok else None
+        if tok:
+            return BareOption(name = tok.m.group(1))
+        else:
+            return None
 
     @debug_indent
     def parameter(self):
-        return self.get_bracketed(GBCs.parameter)
+        return self.with_quantifer(
+            self.get_bracketed(GBCs.parameter)
+        )
 
     @debug_indent
     def var_input_elems(self, require_name = False):
         # Returns a VarInput holding the guts of a positional or parameter.
-    
+
         # Forms:
         #
         #   < valid-name >
@@ -1660,28 +1686,33 @@ class SpecParser:
         elif assign and not name:
             self.error('Var-input: assign without a name: <=x|y')
         elif name and (not assign) and choices:
-            choices = [name] + choices
+            # Occurs when Parameter has choices, but no name: <a|b|c>
+            choices = [Choice(text = name)] + choices
             name = None
 
         # Return the elems.
-        return (name, choices)
+        return VarInput(name = name, elems = choices)
 
     @debug_indent
     def quantifier(self):
         q = self.triple_dot() or self.quant_range()
         if q:
-            m, n = q
-            greedy = not self.eat(TokDefs.question)
-            return Quantifier(m, n, greedy)
+            q.greedy = not self.eat(TokDefs.question)
+            return q
         elif self.eat(TokDefs.question):
-            return Quantifier(0, 1, False)
+            return Quantifier(m = 0, n = 1, greedy = False)
         else:
             return None
 
+    @debug_indent
     def triple_dot(self):
         tok = self.eat(TokDefs.triple_dot)
-        return (1, None) if tok else None
+        if tok:
+            return Quantifier(m = 1, n = None, greedy = False)
+        else:
+            return None
 
+    @debug_indent
     def quant_range(self):
         tok = self.eat(TokDefs.quant_range)
         if tok:
@@ -1690,10 +1721,11 @@ class SpecParser:
                 None if x == '' else int(x)
                 for x in text.split(Chars.comma)
             ]
-            if len(xs) == 1:
-                return (xs[0], xs[0])
-            else:
-                return (xs[0], xs[1])
+            return Quantifier(
+                m = xs[0],
+                n = xs[1] if len(xs) > 1 else xs[0],
+                greedy = False,
+            )
         else:
             return None
 
@@ -1723,11 +1755,25 @@ class SpecParser:
             name = None
 
         # Get the elem(s) from inside the brackets.
-        method = getattr(self, gbc.elems_method_name)
-        if gbc.elems_method_name == 'var_input_elems':
-            name, elems = method(require_name = gbc.require_var_input_name)
-        else:
+        mnm = gbc.elems_method_name
+        method = getattr(self, mnm)
+        if mnm == 'var_input_elems':
+            # Positional & Parameter
+            vi = method(require_name = gbc.require_var_input_name)
+            name = vi.name
+            elems = vi.elems
+        elif mnm == 'variant_elems':
+            # Parenthesized & Bracketed [regular]
+            ve = method()
+            elems = ve.elems if ve else []
+        elif mnm == 'any_parameter':
+            # Parenthesized & Bracketed [as parameter]
             elems = method()
+        elif mnm == 'opt_spec_elem':
+            # Parenthesized & Bracketed [as an opt-spec]
+            elems = method()
+        else:
+            assert False, f'Unexpected GBC method: {mnm}'
 
         # Raise if we get nothing, unless empty is allowed.
         if not (name or elems or gbc.empty_ok):
@@ -1793,11 +1839,11 @@ def get_caller_name(caller_offset):
     x = x.f_code.co_name
     return x
 
-def fill_to_length(xs, wanted):
+def fill_to_len(xs, n):
     # Takes a list and a desired length.
-    # Returns a list of that length (or longer).
-    need = wanted - len(xs)
-    return xs + [None] * need
+    # Returns a list at least that long.
+    filler = [None] * (n - len(xs))
+    return xs + filler
 
 def get(xs, i, default = None):
     try:

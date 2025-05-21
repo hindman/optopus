@@ -119,16 +119,23 @@ def test_ex1(tr):
     g = sp.parse()
     # tr.dump(g.pp, label = 'ex01')
 
-@pytest.mark.skip(reason = 'spec-parsing-overhaul')
+# @pytest.mark.skip(reason = 'spec-parsing-overhaul')
 def test_ex2(tr):
     # <rgx> : Python regular expression
     # [<path>...] : Path(s) to input
     # [-i --ignore-case] : Ignore case
     # [-v --invert-match] : Select non-matching lines
     spec = SPECS.ex02
-    sp = SpecParser(spec, debug = True)
+    sp = SpecParser(spec, debug = False)
     g = sp.parse()
-    tr.dump(g.pp, label = 'ex02')
+    # tr.dump(g.pp, label = 'ex02')
+
+# @pytest.mark.skip(reason = 'spec-parsing-overhaul')
+def test_ex3(tr):
+    spec = SPECS.ex03
+    sp = SpecParser(spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp, label = 'ex03')
 
 @pytest.mark.skip(reason = 'spec-parsing-overhaul')
 def test_examples(tr):

@@ -114,7 +114,6 @@ Parsing function hierarchy and checklist:
     x variant
         x valid-name
             x python-name
-            x usage-name
         x variant-def
             x variant-elem
                 x option
@@ -457,7 +456,7 @@ query-elem:
     glob-char... | digit...
 
     - Can be a name/dest glob pattern or a positive integer.
-    - Glob pattern uses: python-name characters; and wildcards (? and *).
+    - Glob pattern uses: valid-name characters; and wildcards (? and *).
 
 section-content-elem:
 
@@ -536,14 +535,20 @@ opt-spec-group:
     - The group cannot be named.
     - It only function to support a quantifer.
 
-valid-name:
+python-name:
 
-    python-name | usage-name
+    first-char char...
 
     - Where:
+        first-char | letter, underscore
+        char       | letter, underscore, digit
 
-        python-name | Valid Python name
-        usage-name  | Same, with hyphens => underscores
+valid-name:
+
+    - Just like python-name, but char can also be a hyphen.
+
+    - Consistent with argparse, hyphen and underscore can be combined,
+      adjacent, at the end. Insane but valid: --__foo-_-fubb-_
 
 opt-help-text
 
@@ -636,7 +641,7 @@ quoted-literal:
 
 partial-usage:
 
-    python-name!
+    valid-name!
 
 any-group:
 
@@ -660,9 +665,9 @@ aliases-and-option:
 bare-option:
 
     - first-char
-    -- python-name
+    -- valid-name
 
-    - Where first-char is a valid first character in a python-name.
+    - Where first-char is a valid first character in a valid-name.
 
 option:
 
