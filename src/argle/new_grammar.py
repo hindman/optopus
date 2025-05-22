@@ -7,36 +7,29 @@ Parsing the new spec-syntax
 
 TODO:
 
-    x debug: use decorator to manage indent/outdent
-
-    x reset lexer-pos if variant() halts on opt_spec_sep
-
-    x name regexes: fix and simplify:
-
-    x Parsing functions should manage their own quantifiers.
-
-    x Parsing functions should return ParseElem, not primitives:
-
     - get_bracketed()
 
-        - Handle case where these return nothing:
-            var_input_elems()   # Either raises or returns VarInput()
-            variant_elems()     # I added a quick fix
+        - Move the cls-specific logic into helpers?
 
-        - This method is getting out of hand...
+        - Are GBConfig instances still necessary?
+            - it has boiled down to : KIND => TDS
+            GBTds = cons(...)
+
+        - Any more simplification?
 
     - Test each EX in test_new_grammar:
-        x test_ex1()
-        x test_ex2()
 
-        . test_ex3()
-            - runs but need to check the dumped Grammar
+        # Running: but recheck the Grammar.
+        - test_ex1()
+        - test_ex2()
+        - test_ex3()
 
+        # Then continue.
         - test_ex4()
         - test_ex5()
         - test_ex6()
 
-    Pmodes: maybe only 2 modes:
+    - Pmodes: maybe only 2 modes:
         - default
         - help-text
 
@@ -299,7 +292,7 @@ If no variants:
 
 Processing a sequence of elems:
 
-    - Applies to Variant, Parenthesized, Bracketed.
+    - Applies to Variant, Group.
 
     - Organize into groups, partitioning on ChoiceSep.
     - If multiple groups, we will end up with Group(mutext=True)
@@ -327,9 +320,7 @@ ParseElem: elems:
         - Does that make it like a PositionalVariant with one choice and no dest or sym?
     PartialUsage: name
         - Insert the elems from the Variant(partial=True)
-    Parenthesized: elems quantifier
-        - Convert to Group or quantified Opt.
-    Bracketed: elems quantifier
+    Group: elems quantifier
         - Convert to Group or quantified Opt.
     Option: dest params quantifier
     Positional: sym dest symlit choices quantifier
@@ -378,6 +369,9 @@ class TokDef:
     # Whether the RegexLexer should emit the Token back to the
     # SpecParser (or just consume it and update lexer position).
     emit: bool
+
+    def isa(self, *tds):
+        return any(self.kind == td.kind for td in tds)
 
 @dataclass
 class Token:
@@ -483,31 +477,18 @@ class VarInput(ParseElem):
 class Quantifier(ParseElem):
     m: int
     n: int
-    greedy: bool
+    greedy: bool = True
 
 @dataclass
 class PartialUsage(ParseElem):
     text: str
 
 @dataclass
-class Parenthesized(ParseElem):
+class Group(ParseElem):
     name: str
     elems: list
     quantifier: Quantifier = None
-
-@dataclass
-class Bracketed(ParseElem):
-    name: str
-    elems: list
-    quantifier: Quantifier = None
-
-# @dataclass
-# class SymDest(ParseElem):
-#     sym: str
-#     dest: str
-#     symlit: str
-#     val: str
-#     vals: list
+    required: bool = True
 
 @dataclass
 class Positional(ParseElem):
@@ -771,98 +752,64 @@ Rgxs = constants({kind : td.regex for kind, td in TokDefs})
 
 # Bracket data keyed by the kind of bracketed expression.
 
+BPairs = constants({
+    TokDefs.paren_open.kind:       TokDefs.paren_close,
+    TokDefs.paren_open_named.kind: TokDefs.paren_close,
+    TokDefs.brack_open.kind:       TokDefs.brack_close,
+    TokDefs.brack_open_named.kind: TokDefs.brack_close,
+    TokDefs.angle_open.kind:       TokDefs.angle_close,
+})
+
 @dataclass
-class GetBConfig:
+class GBConfig:
     kind: str
-    parse_elem_cls: type
-    elems_method_name: str
-    opening: TokDef
-    closing: TokDef
-    named_opening: TokDef = None
-    named_bracket_ok: bool = False
-    empty_ok: bool = False
-    require_var_input_name: bool = False
+    opening: list[TokDef]
 
 GBKinds = cons(
     # Groups.
-    'round',
-    'square',
-    # Parameter-groups.
-    'round_pg',
-    'square_pg',
-    # Opt-spec-groups.
-    'round_os',
-    'square_os',
+    'group',
+    'parameter_group',
+    'opt_spec_group',
     # Var-inputs.
     'positional',
     'parameter',
 )
 
 def create_gbcs():
-    gbc_round = GetBConfig(
-        kind = GBKinds.round,
-        parse_elem_cls = Parenthesized,
-        elems_method_name = 'variant_elems',
-        opening = TokDefs.paren_open,
-        closing = TokDefs.paren_close,
-        named_opening = TokDefs.paren_open_named,
-        named_bracket_ok = True,
-    )
-    gbc_square = GetBConfig(
-        kind = GBKinds.square,
-        parse_elem_cls = Bracketed,
-        elems_method_name = 'variant_elems',
-        opening = TokDefs.brack_open,
-        closing = TokDefs.brack_close,
-        named_opening = TokDefs.brack_open_named,
-        named_bracket_ok = True,
-    )
-    return constants({
-        # Regular groups: () []
-        GBKinds.round: gbc_round,
-        GBKinds.square: gbc_square,
-        # Parameter groups: () []
-        GBKinds.round_pg: clone(
-            gbc_round,
-            kind = GBKinds.round_pg,
-            elems_method_name = 'any_parameter',
-        ),
-        GBKinds.square_pg: clone(
-            gbc_square,
-            kind = GBKinds.square_pg,
-            elems_method_name = 'any_parameter',
-        ),
-        # Opt-spec group: () []
-        GBKinds.round_os: clone(
-            gbc_round,
-            kind = GBKinds.round_os,
-            elems_method_name = 'opt_spec_elem',
-        ),
-        GBKinds.square_os: clone(
-            gbc_square,
-            kind = GBKinds.square_os,
-            elems_method_name = 'opt_spec_elem',
-        ),
-        # Positional: <>
-        GBKinds.positional: GetBConfig(
-            kind = GBKinds.positional,
-            parse_elem_cls = Positional,
-            elems_method_name = 'var_input_elems',
-            opening = TokDefs.angle_open,
-            closing = TokDefs.angle_close,
-            require_var_input_name = True,
-        ),
-        # Parameter: <>
-        GBKinds.parameter: GetBConfig(
-            kind = GBKinds.parameter,
-            parse_elem_cls = Parameter,
-            elems_method_name = 'var_input_elems',
-            opening = TokDefs.angle_open,
-            closing = TokDefs.angle_close,
-            empty_ok = True,
-        ),
-    })
+    # TokDefs for groups.
+    GROUP_TDS = [
+        TokDefs.paren_open,
+        TokDefs.paren_open_named,
+        TokDefs.brack_open,
+        TokDefs.brack_open_named,
+    ]
 
+    # The GBConfig instances.
+    gs = [
+        GBConfig(
+            kind = GBKinds.group,
+            opening = GROUP_TDS,
+        ),
+        GBConfig(
+            kind = GBKinds.parameter_group,
+            opening = GROUP_TDS,
+        ),
+        GBConfig(
+            kind = GBKinds.opt_spec_group,
+            opening = GROUP_TDS,
+        ),
+        GBConfig(
+            kind = GBKinds.positional,
+            opening = [TokDefs.angle_open],
+        ),
+        GBConfig(
+            kind = GBKinds.parameter,
+            opening = [TokDefs.angle_open],
+        ),
+    ]
+
+    # Return them in a constants collection.
+    return constants({g.kind : g for g in gs})
 
 GBCs = create_gbcs()
 
@@ -991,7 +938,7 @@ class RegexLexer(object):
 
     def create_token(self, tokdef, m = None):
         # Helper to create Token from a TokDef and a regex Match.
-        text = m.group(0) if m else ''
+        text = m[0] if m else ''
         newline_indexes = [
             i for i, c in enumerate(text)
             if c == Chars.newline
@@ -1320,7 +1267,7 @@ class SpecParser:
         is_partial = False
         tok = self.eat(TokDefs.variant_def)
         if tok:
-            name = tok.m.group(1)
+            name = tok.m[1]
             if name.endswith(Chars.exclamation):
                 name = name[0:-1]
                 is_partial = True
@@ -1354,7 +1301,7 @@ class SpecParser:
     def opt_spec_scope(self):
         tok = self.eat(TokDefs.opt_spec_scope, TokDefs.opt_spec_scope_empty)
         if tok:
-            query_path = get(tok.m.groups(), 0)
+            query_path = get(tok.m, 0)
             return Scope(query_path)
         else:
             return None
@@ -1369,8 +1316,7 @@ class SpecParser:
     @debug_indent
     def opt_spec_group(self):
         return self.with_quantifer(
-            self.get_bracketed(GBCs.round_os) or
-            self.get_bracketed(GBCs.square_os)
+            self.get_bracketed(GBCs.opt_spec_group)
         )
 
     @debug_indent
@@ -1453,11 +1399,11 @@ class SpecParser:
         tok = self.eat(TokDefs.scoped_section_title, TokDefs.section_title)
         if tok:
             if tok.isa(TokDefs.scoped_section_title):
-                scope = Scope(tok.m.groups(1))
-                title = tok.m.groups(2)
+                scope = Scope(tok.m[1])
+                title = tok.m[2]
             else:
                 scope = None
-                title = tok.m.groups(1)
+                title = tok.m[1]
             return SectionTitle(
                 title = title,
                 scope = scope,
@@ -1476,7 +1422,7 @@ class SpecParser:
         tok = self.eat(TokDefs.heading)
         if tok:
             return Heading(
-                title = tok.m.group(1).strip(),
+                title = tok.m[1].strip(),
                 token = tok,
             )
         else:
@@ -1487,7 +1433,7 @@ class SpecParser:
         tok = self.eat(TokDefs.quoted_block)
         if tok:
             return BlockQuote(
-                text = tok.m.group(1),
+                text = tok.m[1],
                 token = tok,
             )
         else:
@@ -1534,7 +1480,7 @@ class SpecParser:
     def quoted_literal(self):
         tok = self.eat(TokDefs.quoted_literal)
         if tok:
-            return QuotedLiteral(text = tok.m.group(1))
+            return QuotedLiteral(text = tok.m[1])
         else:
             return None
 
@@ -1565,22 +1511,20 @@ class SpecParser:
     def partial_usage(self):
         tok = self.eat(TokDefs.partial_usage)
         if tok:
-            return PartialUsage(name = tok.m.group(1))
+            return PartialUsage(name = tok.m[1])
         else:
             return None
 
     @debug_indent
     def any_group(self):
         return self.with_quantifer(
-            self.get_bracketed(GBCs.round) or
-            self.get_bracketed(GBCs.square)
+            self.get_bracketed(GBCs.group)
         )
 
     @debug_indent
     def parameter_group(self):
         return self.with_quantifer(
-            self.get_bracketed(GBCs.round_pg) or
-            self.get_bracketed(GBCs.square_pg)
+            self.get_bracketed(GBCs.parameter_group)
         )
 
     @debug_indent
@@ -1615,7 +1559,7 @@ class SpecParser:
     def bare_option(self):
         tok = self.eat(TokDefs.long_option, TokDefs.short_option)
         if tok:
-            return BareOption(name = tok.m.group(1))
+            return BareOption(name = tok.m[1])
         else:
             return None
 
@@ -1700,7 +1644,7 @@ class SpecParser:
             q.greedy = not self.eat(TokDefs.question)
             return q
         elif self.eat(TokDefs.question):
-            return Quantifier(m = 0, n = 1, greedy = False)
+            return Quantifier(m = 0, n = 1)
         else:
             return None
 
@@ -1708,7 +1652,7 @@ class SpecParser:
     def triple_dot(self):
         tok = self.eat(TokDefs.triple_dot)
         if tok:
-            return Quantifier(m = 1, n = None, greedy = False)
+            return Quantifier(m = 1, n = None)
         else:
             return None
 
@@ -1716,16 +1660,14 @@ class SpecParser:
     def quant_range(self):
         tok = self.eat(TokDefs.quant_range)
         if tok:
-            text = TokDefs.whitespace.regex.sub('', tok.m.group(1))
+            text = TokDefs.whitespace.regex.sub('', tok.m[1])
             xs = [
                 None if x == '' else int(x)
                 for x in text.split(Chars.comma)
             ]
-            return Quantifier(
-                m = xs[0],
-                n = xs[1] if len(xs) > 1 else xs[0],
-                greedy = False,
-            )
+            m = xs[0]
+            n = get(xs, 1, default = m)
+            return Quantifier(m = m, n = n)
         else:
             return None
 
@@ -1733,64 +1675,65 @@ class SpecParser:
         # A helper to consume an expression (optionally with a name)
         # enclosed in brackets: (), [], or <>.
         #
-        # Takes a GetBConfig instance to govern the logic, the
+        # Takes a GBConfig instance to govern the logic, the
         # type of ParseElem returned, and the method used to collect
         # the elems inside the brackets.
 
-        # Prepare the opening TokDefs we want to consume.
-        tds = [gbc.opening]
-        if gbc.named_bracket_ok:
-            tds.append(gbc.named_opening)
-
         # Try to eat the opening bracket.
-        tok = self.eat(*tds)
+        tok = self.eat(*gbc.opening)
         if not tok:
             return None
 
-        # Get name attached to opening bracket. Applies only to () and []
-        # groups. For <> brackets, name comes from inside the brackets (below).
-        if gbc.named_bracket_ok:
-            name = tok.m.groups(0) or None
-        else:
-            name = None
+        # Determine the closing bracket TokDef.
+        closing_td = BPairs[tok.kind]
 
-        # Get the elem(s) from inside the brackets.
-        mnm = gbc.elems_method_name
-        method = getattr(self, mnm)
-        if mnm == 'var_input_elems':
-            # Positional & Parameter
-            vi = method(require_name = gbc.require_var_input_name)
-            name = vi.name
-            elems = vi.elems
-        elif mnm == 'variant_elems':
-            # Parenthesized & Bracketed [regular]
-            ve = method()
+        # Get group name attached to opening bracket, if any.
+        group_name = get(tok.m, 1)
+
+        # Parse the guts of the bracketed expression and
+        # assemble the resulting ParseElem.
+        if gbc.kind == GBKinds.positional:
+            vi = self.var_input_elems(require_name = True)
+            e = Positional(name = vi.name, elems = vi.elems)
+
+        elif gbc.kind == GBKinds.parameter:
+            vi = self.var_input_elems()
+            e = Parameter(name = vi.name, elems = vi.elems)
+
+        elif gbc.kind == GBKinds.group:
+            ve = self.variant_elems()
             elems = ve.elems if ve else []
-        elif mnm == 'any_parameter':
-            # Parenthesized & Bracketed [as parameter]
-            elems = method()
-        elif mnm == 'opt_spec_elem':
-            # Parenthesized & Bracketed [as an opt-spec]
-            elems = method()
-        else:
-            assert False, f'Unexpected GBC method: {mnm}'
+            e = Group(name = group_name, elems = elems)
 
-        # Raise if we get nothing, unless empty is allowed.
-        if not (name or elems or gbc.empty_ok):
-            self.error(
-                msg = 'Empty bracketed expression',
-                kind = gbc.kind,
-            )
+        elif gbc.kind == GBKinds.parameter_group:
+            elems = self.parse_some(self.any_parameter)
+            e = Group(name = group_name, elems = elems)
+
+        elif gbc.kind == GBKinds.opt_spec_group:
+            ose = self.opt_spec_elem()
+            elems = [ose] if ose else []
+            e = Group(name = group_name, elems = elems)
+
+        else:
+            self.error(msg = 'Unexpected GBConfig', gbc = gbc)
+
+        # Raise if Group is empty.
+        if isinstance(e, Group) and not e.elems:
+            self.error(msg = 'Empty Group', kind = gbc.kind)
+
+        # For [] groups, make them non-required.
+        if closing_td.isa(TokDefs.brack_close):
+            e.required = False
 
         # Raise if we cannot get the closing TokDef.
-        if not self.eat(gbc.closing):
+        if not self.eat(closing_td):
             self.error(
                 msg = 'Failed to find closing bracket',
                 kind = gbc.kind,
             )
 
         # Return the ParseElem.
-        return gbc.parse_elem_cls(name = name, elems = elems)
+        return e
 
     ####
     # Other stuff.
