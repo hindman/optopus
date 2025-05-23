@@ -7,16 +7,6 @@ Parsing the new spec-syntax
 
 TODO:
 
-    - get_bracketed()
-
-        - Move the cls-specific logic into helpers?
-
-        - Are GBConfig instances still necessary?
-            - it has boiled down to : KIND => TDS
-            GBTds = cons(...)
-
-        - Any more simplification?
-
     - Test each EX in test_new_grammar:
 
         # Running: but recheck the Grammar.
@@ -345,6 +335,8 @@ import sys
 
 from collections import Counter
 from dataclasses import dataclass, field, replace as clone
+from functools import wraps
+
 from short_con import cons, constants
 
 from .errors import ArgleError
@@ -760,11 +752,6 @@ BPairs = constants({
     TokDefs.angle_open.kind:       TokDefs.angle_close,
 })
 
-@dataclass
-class GBConfig:
-    kind: str
-    opening: list[TokDef]
-
 GBKinds = cons(
     # Groups.
     'group',
@@ -775,43 +762,23 @@ GBKinds = cons(
     'parameter',
 )
 
-def create_gbcs():
-    # TokDefs for groups.
-    GROUP_TDS = [
+OpeningTDs = cons(
+    group = [
         TokDefs.paren_open,
         TokDefs.paren_open_named,
         TokDefs.brack_open,
         TokDefs.brack_open_named,
-    ]
+    ],
+    var_input = [TokDefs.angle_open],
+)
 
-    # The GBConfig instances.
-    gs = [
-        GBConfig(
-            kind = GBKinds.group,
-            opening = GROUP_TDS,
-        ),
-        GBConfig(
-            kind = GBKinds.parameter_group,
-            opening = GROUP_TDS,
-        ),
-        GBConfig(
-            kind = GBKinds.opt_spec_group,
-            opening = GROUP_TDS,
-        ),
-        GBConfig(
-            kind = GBKinds.positional,
-            opening = [TokDefs.angle_open],
-        ),
-        GBConfig(
-            kind = GBKinds.parameter,
-            opening = [TokDefs.angle_open],
-        ),
-    ]
-
-    # Return them in a constants collection.
-    return constants({g.kind : g for g in gs})
-
-GBCs = create_gbcs()
+GBTDs = constants({
+    GBKinds.group:           OpeningTDs.group,
+    GBKinds.parameter_group: OpeningTDs.group,
+    GBKinds.opt_spec_group:  OpeningTDs.group,
+    GBKinds.positional:      OpeningTDs.var_input,
+    GBKinds.parameter:       OpeningTDs.var_input,
+})
 
 ####
 # Lexer.
@@ -1069,6 +1036,7 @@ class SpecParser:
         NAME = old_method.__name__
         MSG_PREFIX = '\n' if NAME == 'parse' else ''
 
+        @wraps(old_method)
         def new_method(self, *xs, **kws):
             # Call debug() to emit the method name.
             lex = self.lexer
@@ -1316,7 +1284,7 @@ class SpecParser:
     @debug_indent
     def opt_spec_group(self):
         return self.with_quantifer(
-            self.get_bracketed(GBCs.opt_spec_group)
+            self.get_bracketed(GBKinds.opt_spec_group)
         )
 
     @debug_indent
@@ -1518,13 +1486,13 @@ class SpecParser:
     @debug_indent
     def any_group(self):
         return self.with_quantifer(
-            self.get_bracketed(GBCs.group)
+            self.get_bracketed(GBKinds.group)
         )
 
     @debug_indent
     def parameter_group(self):
         return self.with_quantifer(
-            self.get_bracketed(GBCs.parameter_group)
+            self.get_bracketed(GBKinds.parameter_group)
         )
 
     @debug_indent
@@ -1538,7 +1506,7 @@ class SpecParser:
     def positional(self):
         return self.with_quantifer(
             self.with_quantifer(
-                self.get_bracketed(GBCs.positional)
+                self.get_bracketed(GBKinds.positional)
             )
         )
 
@@ -1566,7 +1534,7 @@ class SpecParser:
     @debug_indent
     def parameter(self):
         return self.with_quantifer(
-            self.get_bracketed(GBCs.parameter)
+            self.get_bracketed(GBKinds.parameter)
         )
 
     @debug_indent
@@ -1671,69 +1639,87 @@ class SpecParser:
         else:
             return None
 
-    def get_bracketed(self, gbc):
-        # A helper to consume an expression (optionally with a name)
-        # enclosed in brackets: (), [], or <>.
+    ####
+    # Helper to parse a bracketed-expression: () [] <>.
+    #
+    # Plus its helper functions to manage the details for
+    # each kind of expression.
+    ####
+
+    def get_bracketed(self, kind):
+        # Takes a GBKinds value indicating the kind of bracketed expression is
+        # should try to parse. Does one of the follow:
         #
-        # Takes a GBConfig instance to govern the logic, the
-        # type of ParseElem returned, and the method used to collect
-        # the elems inside the brackets.
+        # - Returns a ParseElem (success).
+        # - Returns None (no opening bracket to get started)
+        # - Raises an error (parses an expression partially, then must halt).
+        #
 
         # Try to eat the opening bracket.
-        tok = self.eat(*gbc.opening)
+        tds = GBTDs[kind]
+        tok = self.eat(*tds)
         if not tok:
             return None
 
-        # Determine the closing bracket TokDef.
+        # Based on the Token we got, determine closing bracket TokDef.
         closing_td = BPairs[tok.kind]
 
         # Get group name attached to opening bracket, if any.
         group_name = get(tok.m, 1)
 
-        # Parse the guts of the bracketed expression and
-        # assemble the resulting ParseElem.
-        if gbc.kind == GBKinds.positional:
-            vi = self.var_input_elems(require_name = True)
-            e = Positional(name = vi.name, elems = vi.elems)
-
-        elif gbc.kind == GBKinds.parameter:
-            vi = self.var_input_elems()
-            e = Parameter(name = vi.name, elems = vi.elems)
-
-        elif gbc.kind == GBKinds.group:
-            ve = self.variant_elems()
-            elems = ve.elems if ve else []
-            e = Group(name = group_name, elems = elems)
-
-        elif gbc.kind == GBKinds.parameter_group:
-            elems = self.parse_some(self.any_parameter)
-            e = Group(name = group_name, elems = elems)
-
-        elif gbc.kind == GBKinds.opt_spec_group:
-            ose = self.opt_spec_elem()
-            elems = [ose] if ose else []
-            e = Group(name = group_name, elems = elems)
-
+        # Parse the guts of the bracketed expression, using the helper
+        # correspondng to the kind of expression.
+        #
+        # For groups, the helper has to be called with group-name, and the
+        # returned Group has to be adjusted for square brackets.
+        method = getattr(self, f'gb_guts_{kind}')
+        if tds == OpeningTDs.group:
+            e = method(group_name = group_name)
+            if e and closing_td.isa(TokDefs.brack_close):
+                e.required = False
         else:
-            self.error(msg = 'Unexpected GBConfig', gbc = gbc)
-
-        # Raise if Group is empty.
-        if isinstance(e, Group) and not e.elems:
-            self.error(msg = 'Empty Group', kind = gbc.kind)
-
-        # For [] groups, make them non-required.
-        if closing_td.isa(TokDefs.brack_close):
-            e.required = False
+            e = method()
 
         # Raise if we cannot get the closing TokDef.
         if not self.eat(closing_td):
             self.error(
                 msg = 'Failed to find closing bracket',
-                kind = gbc.kind,
+                kind = kind,
             )
 
         # Return the ParseElem.
         return e
+
+    def gb_guts_positional(self):
+        vi = self.var_input_elems(require_name = True)
+        return Positional(name = vi.name, elems = vi.elems)
+
+    def gb_guts_parameter(self):
+        vi = self.var_input_elems()
+        return Parameter(name = vi.name, elems = vi.elems)
+
+    def gb_guts_group(self, group_name):
+        ve = self.variant_elems()
+        elems = ve.elems if ve else []
+        g = Group(name = group_name, elems = elems)
+        return self.require_elems(g)
+
+    def gb_guts_parameter_group(self, group_name):
+        elems = self.parse_some(self.any_parameter)
+        g = Group(name = group_name, elems = elems)
+        return self.require_elems(g)
+
+    def gb_guts_opt_spec_group(self, group_name):
+        ose = self.opt_spec_elem()
+        elems = [ose] if ose else []
+        g = Group(name = group_name, elems = elems)
+        return self.require_elems(g)
+
+    def require_elems(self, e):
+        if e.elems:
+            return e
+        else:
+            self.error(msg = 'Empty Group', e = e)
 
     ####
     # Other stuff.
