@@ -7,23 +7,13 @@ Parsing the new spec-syntax
 
 TODO:
 
-    - Test each EX in test_new_grammar:
-
-        # Running: but recheck the Grammar.
-        - test_ex1()
-        - test_ex2()
-        - test_ex3()
-
-        # Then continue.
-        - test_ex4()
-        - test_ex5()
-        - test_ex6()
+    x Test each EX in test_new_grammar:
 
     - Pmodes: maybe only 2 modes:
         - default
         - help-text
 
-Implementation notes:
+    - What is next?
 
     - staging plan:
         - Edit NEW files, while keeping OLD runnable.
@@ -396,6 +386,14 @@ class Token:
     def isa(self, *tds):
         return any(self.kind == td.kind for td in tds)
 
+    @property
+    def brief(self):
+        params = ', '.join(
+            f'{attr} = {getattr(self, attr)!r}'
+            for attr in 'kind text pos line col indent is_first'.split()
+        )
+        return f'Token({params})'
+
 ####
 #
 # Data classes: ParseElems.
@@ -430,7 +428,7 @@ class OptSpec(ParseElem):
 
 @dataclass
 class SectionTitle(ParseElem):
-    scope = Scope
+    scope: Scope
     title: str
     token: Token
 
@@ -545,29 +543,34 @@ class Grammar:
         return '\n'.join(Grammar.pp_gen(self))
 
     @staticmethod
-    def pp_gen(elem, level = 0):
+    def pp_gen(elem, level = 0, prefix = ''):
         # Setup.
         cls_name = elem.__class__.__name__
         indent1 = '    ' * level
         indent2 = '    ' * (level + 1)
-        has_child_elems = ('elems', 'params')
-
-        # print(elem)
-        # if isinstance(elem, str):
-        #     raise ValueError(elem)
+        child_elems = ('elems', 'params', 'opt')
 
         # Start with the class of the current element.
-        yield f'{indent1}{cls_name}('
+        yield f'{indent1}{prefix}{cls_name}('
 
         # Then basic attributes.
         for attr, v in elem.__dict__.items():
-            if attr not in has_child_elems:
-                yield f'{indent2}{attr} = {v!r}'
+            if attr not in child_elems:
+                v = f'{v.brief}' if isinstance(v, Token) else f'{v!r}'
+                yield f'{indent2}{attr} = {v}'
 
         # Then recurse to child elements.
-        for attr in has_child_elems:
-            for child in getattr(elem, attr, []):
-                yield from Grammar.pp_gen(child, level + 1)
+        for attr in child_elems:
+            children = getattr(elem, attr, [])
+            if not isinstance(children, list):
+                children = [children]
+
+            for child in children:
+                # yield f'{indent2}{attr} ='
+                yield from Grammar.pp_gen(
+                    child,
+                    level + 1,
+                )
 
 ####
 # Functions to return constants collections.
@@ -1647,8 +1650,8 @@ class SpecParser:
     ####
 
     def get_bracketed(self, kind):
-        # Takes a GBKinds value indicating the kind of bracketed expression is
-        # should try to parse. Does one of the follow:
+        # Takes a GBKinds value indicating the kind of bracketed expression
+        # to parse. Does one of the follow:
         #
         # - Returns a ParseElem (success).
         # - Returns None (no opening bracket to get started)
@@ -1672,13 +1675,13 @@ class SpecParser:
         #
         # For groups, the helper has to be called with group-name, and the
         # returned Group has to be adjusted for square brackets.
-        method = getattr(self, f'gb_guts_{kind}')
+        helper_method = getattr(self, f'gb_guts_{kind}')
         if tds == OpeningTDs.group:
-            e = method(group_name = group_name)
+            e = helper_method(group_name = group_name)
             if e and closing_td.isa(TokDefs.brack_close):
                 e.required = False
         else:
-            e = method()
+            e = helper_method()
 
         # Raise if we cannot get the closing TokDef.
         if not self.eat(closing_td):
@@ -1737,16 +1740,6 @@ class SpecParser:
             current_token = lex.curr.kind if lex.curr else None,
         )
         raise ArgleError(**kws)
-
-    # def parse_first(self, *methods):
-    #     # Takes 1+ parsing functions.
-    #     # Returns the elem from the first that succeeds.
-    #     elem = None
-    #     for m in methods:
-    #         elem = m()
-    #         if elem:
-    #             break
-    #     return elem
 
     def parse_some(self, method, **kws):
         # Takes a parsing function.
