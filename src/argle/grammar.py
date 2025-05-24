@@ -1,166 +1,9 @@
 
 '''
 
-----
-Parsing the new spec-syntax
-----
-
 TODO:
 
-    - Remaining test:
-        - Currently skipped.
-        - Assess and decide how to proceed.
-
-    - Basic editing pass:
-        - Code organization/ordering and related comments.
-        - Notes etc: decide what to keep, edit, move.
-
-    - Convert spec-syntax AST into a proper Grammar.
-
-----
-Notes and questions
-----
-
-Entities that must start on a fresh line.
-    - variant
-    - any-section-title
-    - section-content-elem
-
-Parsing modes:
-    - grammar: default
-    - help_text: for opt-spec (rest of line plus continuations)
-
-Which parsing functions having early "overlap"?
-
-    - Example of overlap:
-
-        - Text with four tokens: T1 T2 T3 T4.
-        - Two parsing functions: pf1() and pf2()
-            - They both can consume T1 and T2.
-            - But pf1() will fail upon T3.
-            - While pf2() can consume all four.
-
-    - Ways to address the problem:
-
-        - Try the functions in the correct order.
-            - In the example, try pf2() first.
-            - This can work if there is an unambiguously correct order.
-
-        - In cases where such overlap can occur:
-            - Try pf1().
-            - If failed, reset lexer position.
-            - Try pf2().
-            - Could work, but is more complex than relying on ordering.
-
-    - Parsing functions with potential overlap:
-
-        - Overlap 1: variant and opt-spec.
-
-            - This is a known overlap with a lot of planning behind it.
-            - Anything that parses as a variant is interpreted that way.
-
-            - The overlap can consist of several tokens.
-
-            - When parsing a variant fails:
-                - If the failure occurs on Token(colon-marker).
-                - Then the parser has at least two ways to respond:
-                    - Reset lexer position and try to parse opt-spec instead.
-                    - Forge ahead by somehow using the tokens/elems collected
-                      so far to build an opt-spec rather than a variant.
-                - The reset approach seems the simpler of the two.
-
-        - Overlap 2: section-title and opt-spec.
-
-            - The overlap is fairly narrow: both can start with a scope.
-            - Possible resolution:
-                - The scope can be expressed as a single Token.regex.
-                - Add another Rgxs entry: Rgx.scope + Rgxs.section_title
-            - If that approach works (seems likely), a section title (scoped or
-              unscoped) can always be identified in a single token.
-            - Hence no overlap issue.
-
-Why not ask specifically for what is on SpecParser.menu?
-
-    - Parser gives lexer a general list of TokDefs whenever the parsing is set.
-    - But taste() approves only tokens on the menu.
-    - Why bother with the general list in RegexLexer.tokdefs?
-
-        - Allows lexer to handle non-emitted tokens.
-        - Relieves parser of the need to pass them in every time, properly
-          ordered.
-
-        - But that would be easy to handle inside the parser.
-            - Keep the full, ordered list in the parser.
-            - Given tds passed to eat(), build an ordered sub-list
-              to pass to get_next_token().
-
-        - Provides a caching mechanism:
-            - Most parsing modes use most of the tokens.
-            - So the cached token is often used.
-            - Performance gain probably irrelevant for this project.
-            - But caching does seem correct in a textbook way.
-
-----
-Parsing function hierarchy
-----
-
-    - spec: parse()
-        - usage-section
-            - variant [BELOW]
-            - section-content-elem [BELOW]
-        - section
-            - any-section-title
-                - section-scope [BELOW]
-                - section-title
-            - section-content-elem [BELOW]
-
-    - variant
-        - valid-name
-            - python-name
-        - variant-def
-            - variant-elem
-                - option
-                    - bare-option
-                    - any-parameter
-                        - parameter
-                            - valid-name
-                            - choices
-                                - choice
-                                    - valid-name
-                                    - quoted-literal
-                        - parameter-group
-                            - parameter
-                    - quantifier
-                        - triple-dot
-                        - quant-range
-                        - question
-                - positional
-                    - valid-name
-                    - choices
-                    - quantifier
-                - any-group => named-group | group
-                    - valid-name
-                    - group
-                        - variant-elem
-                    - quantifier
-                - quoted-literal
-                - partial-usage
-                    - python-name
-                - choice-sep
-
-    - section-content-elem
-        - heading
-        - block-quote
-        - opt-spec
-            - opt-scope
-                - query-path
-                    - query-elem
-            - positional [ABOVE]
-            - aliases-and-option
-                - bare-option
-                - option [ABOVE]
-            - opt-help-text
-                - rest-of-line + continuation-lines
+    - build_grammar()
 
 ----
 Spec-parsing overview
@@ -179,7 +22,7 @@ TokDefs and Tokens:
         brack_close  | ]
 
     - TokDef:
-        - Has a kind attribute a regex.
+        - Has a kind attribute and a regex.
         - Used by RegexLexer to hunt for tokens of interest.
 
     - Token:
@@ -210,16 +53,22 @@ SpecParser and RegexLexer: overview:
 
         - The spec-syntax requires contextual parsing:
             - The SpecParser uses a mode attribute to manage context.
-            - When the mode changes:
-                - The parser tells the lexer which TokDefs to search for.
-                - The parser changes which parsing functions to call.
+            - When the mode changes, the parser tells the lexer which TokDefs
+              to search for.
 
-            - The parser uses self.handlers to manage contextual parsing:
-                - It is a dict mapping each parsing mode to one or more Handler
-                  instances.
-                - Each Handler holds a parsing function to try and, optionally,
-                  and parsing mode to advance to next if that parsing function
-                  finds a match.
+            - The initial implementation of this code had 4 modes, but after
+              the spec-syntax was simplified, we now only have two modes:
+                - grammar:
+                    - The default.
+                    - Regular spec-syntax grammar.
+                - help-text:
+                    - Collects opt-spec help text, plus continuation lines.
+                    - Get triggered after we hit the opt-spec separator (:).
+                    - The mode uses very few TokDefs: if a continutation line
+                      satisfies the line/indent requirements, the entire
+                      rest_of_line is slurped up as help text.
+                    - After an opt-spec help text is parsed, we toggle back to
+                      the default parsing mode.
 
 Spec-parsing: the process:
 
@@ -234,19 +83,16 @@ Spec-parsing: the process:
 
         - That invocation occurs in two context:
             - Unit tests for SpecParser.
-            - By a user: p = Parser(SPEC)
+            - By a user: opts = Parser(SPEC).parse()
 
-        - The parse() method:
-            - Does some preliminary work.
-            - Then it calls do_parse().
-
-        - The do_parse() method:
-            - This method orchestates the contextual parsing process.
-            - It tries relevant Handlers [details below].
-            - And it switches parsing mode as needed if a Handler is matched.
-
-    - When do_parse() tries a Handler:
-        - It calls the Handler's parsing function.
+        - The parse() function:
+            - Works with top-level parsing functions.
+            - Those functions then rely on lower level functions.
+            - When no more elements can be parsed, the parse() function:
+                - Raises if we failed to consume the entire spec.
+                - Assembles the parsed elements into a Grammar.
+                - The Grammar becomes the basis for a Parser to parse
+                  command-line arguments, generate help text, etc.
 
     - When a parsing function is called:
         - It calls eat(), passing in 1+ TokDefs.
@@ -256,9 +102,16 @@ Spec-parsing: the process:
         - Then it calls RegexLexer.get_next_token().
 
     - When get_next_token() is called:
-        - The lexer tries each TokDef in self.tokdefs.
-        - When it finds a match:
-            - It creates a Token.
+
+        - The lexer uses its match_token() method to try to match each TokDef
+          in self.tokdefs.
+            - It tries them in order until it gets a match.
+            - If the matched TokDef has emit=False:
+                - The lexer updates its position information.
+                - Then it goes through the self.tokdefs again, from the start.
+            - Otherwise, it creates a Token and returns it.
+
+        - When get_next_token() receives such a Token:
             - It calls self.validator() with that Token.
             - In effect, it says to the SpecParser:
                 - I found a Token relevant for the current parsing mode.
@@ -288,77 +141,65 @@ Spec-parsing: the process:
           returns the relevant ParseElem.
         - Otherwise it returns None.
 
+Why not ask specifically for what is on SpecParser.menu?
+
+    - The SpecParser gives RegexLexer a general list of TokDefs whenever the
+      parsing mode is set.
+    - But taste() approves only tokens on the menu.
+    - Why bother with the general list in RegexLexer.tokdefs?
+
+        - It allows lexer to handle non-emitted tokens.
+        - Relieves parser of the need to pass them in every time, properly
+          ordered.
+
+        - But that would be easy to handle inside the parser.
+            - Keep the full, ordered list in the parser.
+            - Given tds passed to eat(), build an ordered sub-list
+              to pass to get_next_token().
+
+        - Provides a caching mechanism:
+            - Most parsing modes use most of the tokens.
+            - So the cached token is often used.
+            - Performance gain probably irrelevant for this project.
+            - But caching does seem correct in a textbook way.
+
 ----
-My old notes on converting the AST to a proper Grammar
+VarInput forms
 ----
 
-Partition elems on the first SectionTitle:
+A VarInput for a positional or parameter can take various forms:
 
-    gelems : grammar section (all Variant or OptSpec)
-    selems : other
+    < valid-name >              #1
+    < valid-name = choices >    #2
+    < choices >                 #3
+    < >                         #4
 
-Convert selems into groups, one per section:
+Parsing complexity comes from two issues:
+    - Positional require a name; parameters do not.
+    - A valid-name and a choice look the same, so the parser does not know how
+      to interpret the first valid-name until it parses farther.
 
-    SectionTitle
-    0+ BlockQuote
-    0+ OptSpec        # Can be full or mere references.
+Parsing components/flags:
 
-At this point, we will have:
+    - Notation used in the table:
 
-    prog : name or None
-    variants : 0+
-    optspecs : 0+
-    sections : 0+
+        noc  | True if the first valid-name or choice is present.
+        =    | True if an equal sign is present.
+        oc   | True if any other choices are present.
+        form | The var-input form (as listed above).
 
-If no variants:
-    If no optspecs:
-        - No-config parsing?
-        - Or raise?
-    Else:
-        - Create one Variant from the optspecs.
+    - Table listing all possible situations:
 
-Processing a sequence of elems:
-
-    - Applies to Variant, Group.
-
-    - Organize into groups, partitioning on ChoiceSep.
-    - If multiple groups, we will end up with Group(mutext=True)
-
-    ...
-
-
-
-Sections:
-    - An ordered list of section-elems.
-    - Where each section-elem is: BlockQuote or Opt-reference.
-
-ParseElem: top-level:
-    Variant: name is_partial elems
-    OptSpec: elems text
-    SectionTitle: title
-    BlockQuote: text
-
-ParseElem: elems:
-    ChoiceSep:
-    QuotedLiteral: text
-        - Becomes an Opt.
-        - But has no dest.
-        - Essentially requires the variant to include a positional constant.
-        - Does that make it like a PositionalVariant with one choice and no dest or sym?
-    PartialUsage: name
-        - Insert the elems from the Variant(partial=True)
-    Group: elems quantifier
-        - Convert to Group or quantified Opt.
-    Option: dest params quantifier
-    Positional: sym dest symlit choices quantifier
-    PositionalVariant: sym dest symlit choice
-    Parameter: sym dest symlit choices
-    ParameterVariant: sym dest symlit choice
-
-ParseElem: subcomponents:
-    SymDest: sym dest symlit val vals
-    Quantifier: m n greedy
-    QuotedLiteral: text
+        noc | = | oc | form | Example and error
+        --------------------------------------------------------
+        Y   | Y | Y  | #2   | <foo=x|y>
+        Y   | Y | .  | .    | <foo=>        Assign w/o choice(s)
+        Y   | . | Y  | #3   | <foo|x|y>
+        Y   | . | .  | #1   | <foo>
+        .   | Y | Y  | .    | <=x|y>        Assign w/o name
+        .   | Y | .  | .    | <=>           Ditto
+        .   | . | Y  | #3   | <`hi!`|x|y>
+        .   | . | .  | #4   | <>
 
 '''
 
@@ -370,13 +211,28 @@ import inspect
 import re
 import sys
 
-from collections import Counter
-from dataclasses import dataclass, field, replace as clone
+from dataclasses import dataclass, field
 from functools import wraps
 
 from short_con import cons, constants
 
 from .errors import ArgleError
+
+####
+# Simple constants.
+####
+
+# Parsing modes.
+Pmodes = cons('grammar help_text')
+
+# Characters used in parsing.
+Chars = cons(
+    space = ' ',
+    newline = '\n',
+    exclamation = '!',
+    comma = ',',
+    empty_set = '∅',
+)
 
 ####
 # Data classes: TokDef and Token.
@@ -419,7 +275,7 @@ class Token:
 
     # Position of the matched text within the larger corpus.
     # - character index (0-based)
-    # - line and column number (1-based)
+    # - line and column number (1-based; user-facing)
     pos: int
     line: int
     col: int
@@ -442,19 +298,95 @@ class Token:
         return f'Token({params})'
 
 ####
-#
 # Data classes: ParseElems.
 #
 # These are intermediate objects used during spec-parsing.
 # They are not user-facing and they do not end up as elements
 # within the ultimate Grammar returned by SpecParser.parser().
-#
 ####
 
 @dataclass
 class ParseElem:
-    # Just a base class, mostly as a device for terminology.
-    pass
+    # A base class, mostly as a device for terminology.
+    #
+    # Also a home for some utilities to represent ParseElem
+    # as pretty-printable text.
+    #
+
+    # ParseElem attributes that should be expanded hierarchically
+    # by pp_gen(), rather than being shown simply via repr().
+    PP_CHILDREN = ('elems', 'params', 'opt')
+
+    @property
+    def pp(self):
+        # Return the ParseElem as pretty-printable text.
+        return '\n'.join(self.pp_gen(0))
+
+    def pp_gen(self, level = 0):
+        # Recursive helper used by pp().
+        # Yields lines for the pretty-printable text.
+
+        # Setup.
+        cls_name = self.__class__.__name__
+        indent = ' ' * 4
+        indent1 = indent * level
+        indent2 = indent * (level + 1)
+
+        # Start with the class of the current element.
+        yield f'{indent1}{cls_name}('
+
+        # Then basic attributes.
+        for attr, v in self.__dict__.items():
+            if attr not in self.PP_CHILDREN:
+                v = f'{v.brief}' if isinstance(v, Token) else f'{v!r}'
+                yield f'{indent2}{attr} = {v}'
+
+        # Then recurse to child elements.
+        for attr in self.PP_CHILDREN:
+            # Get the element, putting it inside a list if needed.
+            children = getattr(self, attr, [])
+            if not isinstance(children, list):
+                children = [children]
+
+            # Process each element.
+            for child in children:
+                yield from child.pp_gen(level + 1)
+
+@dataclass
+class SpecAST(ParseElem):
+    # The top-level container for a parsed spec.
+    # It is an AST-style container of entire spec.
+    # Used to build the ultimate Grammar.
+    elems: list[ParseElem]
+
+@dataclass
+class VariantElems(ParseElem):
+    # A top-level container for elements parsed when we are looking for stuff
+    # (1) inside a variant or (b) stuff inside a () or [] group.
+    elems: list[ParseElem]
+
+@dataclass
+class SectionElems(ParseElem):
+    # A top-level container for elements parsed after we are no longer
+    # looking for variants.
+    elems: list[ParseElem]
+
+@dataclass
+class Scope(ParseElem):
+    # A scope attached to either a SectionTitle or OptSpec.
+    query_path = str
+
+@dataclass
+class Quantifier(ParseElem):
+    # A quantifier attached to various ParseElem.
+    m: int
+    n: int
+    greedy: bool = True
+
+@dataclass
+class Choice(ParseElem):
+    # A choice attached to a VarInput (positional or parameter).
+    text: str
 
 @dataclass
 class Variant(ParseElem):
@@ -463,8 +395,64 @@ class Variant(ParseElem):
     elems: list
 
 @dataclass
-class Scope(ParseElem):
-    query_path = str
+class PartialUsage(ParseElem):
+    # When a partial-variant is used inside another variant.
+    name: str
+
+@dataclass
+class Group(ParseElem):
+    # A group: () or [].
+    # If the latter, required=False.
+    name: str
+    elems: list
+    quantifier: Quantifier = None
+    required: bool = True
+
+@dataclass
+class ChoiceSep(ParseElem):
+    # Used to represent the choice separator inside a Group.
+    pass
+
+@dataclass
+class VarInput(ParseElem):
+    # An intermediate object used when parsing Positional or Parameter.
+    name: str
+    elems: list[Choice]
+
+@dataclass
+class Positional(ParseElem):
+    name: str
+    elems: list[Choice]
+    quantifier: Quantifier = None
+
+@dataclass
+class Parameter(ParseElem):
+    name: str
+    elems: list[Choice]
+    quantifier: Quantifier = None
+
+@dataclass
+class BareOption(ParseElem):
+    # An intermediate object used when parsing (a) an option,
+    # or (b) aliases in an opt-spec.
+    name: str
+
+@dataclass
+class Option(ParseElem):
+    name: str
+    params: list[Parameter]
+    quantifier: Quantifier = None
+    aliases: list[BareOption] = field(default_factory = list)
+
+@dataclass
+class OptHelpText(ParseElem):
+    # An intermediate object used to parse help-text for an OptSpec.
+    text: str
+
+@dataclass
+class RestOfLine(ParseElem):
+    # An intermediate object used to parse help-text for an OptSpec.
+    text: str
 
 @dataclass
 class OptSpec(ParseElem):
@@ -491,126 +479,16 @@ class BlockQuote(ParseElem):
 
 @dataclass
 class QuotedLiteral(ParseElem):
+    # Used (a) to represent a literal in a command-line grammar, or (b)
+    # as an intermediate object when parsing choices in a var-input.
     text: str
-
-@dataclass
-class Choice(ParseElem):
-    text: str
-
-@dataclass
-class SectionElems(ParseElem):
-    elems: list[ParseElem]
-
-@dataclass
-class VariantElems(ParseElem):
-    elems: list[ParseElem]
-
-@dataclass
-class VarInput(ParseElem):
-    name: str
-    elems: list[Choice]
-
-@dataclass
-class Quantifier(ParseElem):
-    m: int
-    n: int
-    greedy: bool = True
-
-@dataclass
-class PartialUsage(ParseElem):
-    text: str
-
-@dataclass
-class Group(ParseElem):
-    name: str
-    elems: list
-    quantifier: Quantifier = None
-    required: bool = True
-
-@dataclass
-class Positional(ParseElem):
-    name: str
-    elems: list    # choices
-    quantifier: Quantifier = None
-
-@dataclass
-class Parameter(ParseElem):
-    name: str
-    elems: list    # choices
-    quantifier: Quantifier = None
-
-@dataclass
-class RestOfLine(ParseElem):
-    text: str
-
-@dataclass
-class OptHelpText(ParseElem):
-    text: str
-
-@dataclass
-class BareOption(ParseElem):
-    name: str
-
-@dataclass
-class Option(ParseElem):
-    name: str
-    params: list[Parameter]
-    quantifier: Quantifier = None
-    aliases: list[BareOption] = field(default_factory = list)
-
-@dataclass
-class ChoiceSep(ParseElem):
-    pass
 
 ####
-# Grammar.
-####
-
-@dataclass
-class Grammar:
-    elems: list
-
-    @property
-    def pp(self):
-        # Return the Grammar as pretty-printable text.
-        return '\n'.join(Grammar.pp_gen(self))
-
-    @staticmethod
-    def pp_gen(elem, level = 0, prefix = ''):
-        # Setup.
-        cls_name = elem.__class__.__name__
-        indent1 = '    ' * level
-        indent2 = '    ' * (level + 1)
-        child_elems = ('elems', 'params', 'opt')
-
-        # Start with the class of the current element.
-        yield f'{indent1}{prefix}{cls_name}('
-
-        # Then basic attributes.
-        for attr, v in elem.__dict__.items():
-            if attr not in child_elems:
-                v = f'{v.brief}' if isinstance(v, Token) else f'{v!r}'
-                yield f'{indent2}{attr} = {v}'
-
-        # Then recurse to child elements.
-        for attr in child_elems:
-            children = getattr(elem, attr, [])
-            if not isinstance(children, list):
-                children = [children]
-
-            for child in children:
-                # yield f'{indent2}{attr} ='
-                yield from Grammar.pp_gen(
-                    child,
-                    level + 1,
-                )
-
-####
-# Functions to return constants collections.
+# Regular expression patterns and TokDef defintions.
 ####
 
 def define_tokdefs():
-    # Returns a constants collections of TokDef instances keyed, by kind.
+    # Returns a constants collections of TokDef instances, keyed by kind.
 
     ####
     # Python regex notes/reminders:
@@ -749,55 +627,51 @@ def define_tokdefs():
         ('err',                   '  ', ''),
     ]
 
-    # Return the TokDefs constants collections.
+    ####
+    # Create the TokDef instances, then return them
+    # as a constants collection.
+    ####
+
     NO_EMIT = ('newline', 'indent', 'whitespace', 'eof', 'err')
-    return constants({
-        kind : TokDef(
+
+    tds = [
+        TokDef(
             kind = kind,
             emit = kind not in NO_EMIT,
             modes = Modes[modes.replace(' ', '') or 'none'],
             regex = re.compile(pattern),
         )
         for kind, modes, pattern in td_tups
-    })
+    ]
 
-####
-# Parsing and grammar constants.
-####
+    return constants({td.kind : td for td in tds})
 
-Chars = cons(
-    space = ' ',
-    newline = '\n',
-    exclamation = '!',
-    comma = ',',
-    empty_set = '∅',
-)
-
-Pmodes = cons('grammar help_text')
+# Create module globals hold the TokDefs and their regexes.
 
 TokDefs = define_tokdefs()
+
 Rgxs = constants({kind : td.regex for kind, td in TokDefs})
 
-# Bracket data keyed by the kind of bracketed expression.
+####
+# Constants used when parsing bracketed expressions: () [] <>.
+#
+# Such parsing occurs within the get_bracketed() method
+# and its helper methods.
+####
 
-BPairs = constants({
-    TokDefs.paren_open.kind:       TokDefs.paren_close,
-    TokDefs.paren_open_named.kind: TokDefs.paren_close,
-    TokDefs.brack_open.kind:       TokDefs.brack_close,
-    TokDefs.brack_open_named.kind: TokDefs.brack_close,
-    TokDefs.angle_open.kind:       TokDefs.angle_close,
-})
-
+# Kinds of bracketed expressions.
+# Callers of get_bracketed() pass in one of these values.
 GBKinds = cons(
-    # Groups.
+    # Groups: () or []
     'group',
     'parameter_group',
     'opt_spec_group',
-    # Var-inputs.
+    # Var-inputs: <>
     'positional',
     'parameter',
 )
 
+# Sets of opening-TokDefs to use when looking for such expressions.
 OpeningTDs = cons(
     group = [
         TokDefs.paren_open,
@@ -805,9 +679,12 @@ OpeningTDs = cons(
         TokDefs.brack_open,
         TokDefs.brack_open_named,
     ],
-    var_input = [TokDefs.angle_open],
+    var_input = [
+        TokDefs.angle_open,
+    ],
 )
 
+# A map connecting the two: bracketed-expression-kind => opening-TokDefs
 GBTDs = constants({
     GBKinds.group:           OpeningTDs.group,
     GBKinds.parameter_group: OpeningTDs.group,
@@ -816,11 +693,27 @@ GBTDs = constants({
     GBKinds.parameter:       OpeningTDs.var_input,
 })
 
+# Bracket pairs: opening-TokDef-kind => closing-TokDef.
+BPairs = constants({
+    TokDefs.paren_open.kind:       TokDefs.paren_close,
+    TokDefs.paren_open_named.kind: TokDefs.paren_close,
+    TokDefs.brack_open.kind:       TokDefs.brack_close,
+    TokDefs.brack_open_named.kind: TokDefs.brack_close,
+    TokDefs.angle_open.kind:       TokDefs.angle_close,
+})
+
 ####
 # Lexer.
 ####
 
 class RegexLexer(object):
+
+    # Attributes holding position information.
+    POSITION_ATTRS = cons('pos line col indent is_first')
+
+    ####
+    # Setup.
+    ####
 
     def __init__(self, text, validator, tokdefs = None, debug = False):
         # Text to be lexed.
@@ -856,11 +749,14 @@ class RegexLexer(object):
         self.indent = 0
         self.is_first = True
 
+    ####
+    # Properties allowing the SpecParser to change the tokdefs
+    # of interest or to reset the lexer position.
+    ####
+
     @property
     def tokdefs(self):
         return self._tokdefs
-
-    POSITION_ATTRS = cons('pos line col indent is_first')
 
     @tokdefs.setter
     def tokdefs(self, tokdefs):
@@ -881,9 +777,17 @@ class RegexLexer(object):
         for a in self.POSITION_ATTRS.keys():
             setattr(self, a, getattr(p, a))
 
-    def get_next_token(self):
-        # This is the method used by the parser during the parsing process.
+    ####
+    # Getting the next token.
+    #
+    # - get_next_token(): used by SpecParser during its parsing process.
+    #
+    # - match_token(): used by RegexLexer to try the tokdefs in order
+    #   until it matches a TokDef with a token that should be emitted.
+    #
+    ####
 
+    def get_next_token(self):
         # Return if we are already done lexing.
         if self.end:
             return self.end
@@ -925,6 +829,7 @@ class RegexLexer(object):
         # For non-emitted tokens, we break out of the for-loop, but enter the
         # while-loop again. This allows the lexer to be able to ignore 0+
         # non-emitted tokens on each call of the function.
+        #
         tok = True
         while tok:
             tok = None
@@ -938,6 +843,10 @@ class RegexLexer(object):
                         self.update_location(tok)
                         break
         return None
+
+    ####
+    # Helpers used when getting the next token.
+    ####
 
     def create_token(self, tokdef, m = None):
         # Helper to create Token from a TokDef and a regex Match.
@@ -977,11 +886,11 @@ class RegexLexer(object):
             #
             #     tok.text      | tok.width | tok.newlines | self.col
             #     ---------------------------------------------------
-            #     \n            | 1         | (0,)         | 1
-            #     fubb\n        | 5         | (4,)         | 1
-            #     fubb\nbar     | 8         | (4,)         | 4
-            #     fubb\nbar\n   | 9         | (4,8)        | 1
-            #     fubb\nbar\nxy | 11        | (4,8)        | 3
+            #     \n            | 1         | [0]          | 1
+            #     fubb\n        | 5         | [4]          | 1
+            #     fubb\nbar     | 8         | [4]          | 4
+            #     fubb\nbar\n   | 9         | [4, 8]       | 1
+            #     fubb\nbar\nxy | 11        | [4, 8]       | 3
             #
             self.col = tok.width - tok.newlines[-1]
         else:
@@ -998,12 +907,17 @@ class RegexLexer(object):
         else:
             self.is_first = False
 
+    ####
+    # Helpers to print debugging information.
+    ####
+
     def debug(self,
               caller_name = None,
               caller_offset = 0,
               msg_prefix = '',
               RESULT = None,
               **kws):
+
         # Decided whether and where to emit debug output.
         if self.debug_fh is True:
             fh = sys.stdout
@@ -1019,14 +933,21 @@ class RegexLexer(object):
         caller_name = caller_name or get_caller_name(caller_offset + 2)
 
         # The params-portion of the debug message.
-        if RESULT is not None:
-            params = f'RESULT = {RESULT}' if RESULT else Chars.empty_set
+        if RESULT is False:
+            # A parsing-function completed without success.
+            params = Chars.empty_set
+        elif RESULT:
+            # A parsing-function suceeded: RESULT holds ParseElem class name.
+            params = f'RESULT = {RESULT}'
         elif kws:
+            # An informational debug() call.
             params = ', '.join(
                 f'{k} = {v!r}'
                 for k, v in kws.items()
             )
         else:
+            # The same, but no kws, so the caller just wanted
+            # the caller_name printed.
             params = ''
 
         # Print the message.
@@ -1044,7 +965,8 @@ class SpecParser:
         self.text = text
 
         # The lexer.
-        self.lexer = RegexLexer(text, self.taste, debug = debug)
+        self.debug = debug
+        self.lexer = RegexLexer(text, self.taste, debug = self.debug)
 
         # Set the initial mode, which triggers the setter
         # to tell the RegexLexer which TokDefs to use.
@@ -1065,6 +987,9 @@ class SpecParser:
 
     ####
     # Debug decorator.
+    #
+    # Manages the indentation levels needed for debugging output
+    # as we traverse the hierarchy of parsing-function calls.
     ####
 
     def debug_indent(old_method):
@@ -1113,11 +1038,14 @@ class SpecParser:
 
     ####
     # Parse a spec.
+    #
+    # This is the method used by Parser to convert the spec
+    # it is given into a Grammar that it will ultimately
+    # use to parse arguments and generate help text.
     ####
 
     @debug_indent
     def parse(self):
-        # The method used by Parser.parse(SPEC).
 
         # Collect variants.
         elems = self.parse_some(self.variant)
@@ -1133,129 +1061,22 @@ class SpecParser:
             self.error('Failed to parse the full spec')
 
         # Convert the elements to a Grammar.
-        return self.build_grammar(elems)
-
-    def require_is_first_token(self):
-        # Resets the parser's indent-related attributes, which will
-        # cause self.taste() to reject the next token unless it is
-        # the first on its line (aside from any indent).
-        self.first_tok = None
-
-    @debug_indent
-    def collect_section_elems(self):
-        elems = []
-        while True:
-            self.require_is_first_token()
-            e = (
-                self.any_section_title() or
-                self.section_content_elem()
-            )
-            if e:
-                elems.append(e)
-            else:
-                break
-        if elems:
-            return SectionElems(elems = elems)
-        else:
-            return None
-
-    def build_grammar(self, elems):
-        # Converts the AST-style data generated during self.parse() into
-        # a proper Grammar instance.
-        g = Grammar(elems)
+        sa = SpecAST(elems)
+        g = self.build_grammar(sa)
         return g
 
     ####
-    # Eat tokens.
-    ####
-
-    def eat(self, *tds):
-        # This is the method used by parsing functions to get another Token.
-
-        # The caller provides 1+ TokDefs, which are put in self.menu.
-        self.menu = tds
-        self.lexer.debug(wanted = '|'.join(td.kind for td in tds))
-
-        # Ask the RegexLexer for another Token. That won't succeed unless:
-        #
-        # - Token is in list of TokDefs appropriate to the parsing mode.
-        #
-        # - Token is of immediate interest to the parsing function that
-        #   called eat(), and thus is in self.menu.
-        #
-        # - Token satifies other criteria (indentation, etc) checked by
-        #   the Token validator function: see self.taste() below.
-        #
-        tok = self.lexer.get_next_token()
-        if tok is None:
-            return None
-        elif tok.isa(TokDefs.eof, TokDefs.err):
-            return None
-        else:
-            self.lexer.debug(
-                eaten = tok.kind,
-                text = tok.text,
-                pos = tok.pos,
-                line = tok.line,
-                col = tok.col,
-            )
-            self.eaten.append(tok)
-            self.meal.append(tok)
-            return tok
-
-    def reset_meal(self):
-        self.meal = []
-
-    def taste(self, tok):
-        # This is the Token validator function used by RegexLexer. It checks
-        # whether the Token is a kind of immediate interest and whether it
-        # satisifes the rules regarding indentation and start-of-line status.
-
-        # The most recent eat() call set the menu to contain the TokDefs of
-        # immediate interest. Return false if the current Token does not match.
-        if not any(tok.isa(td) for td in self.menu):
-            return False
-
-        # If SpecParser has no indent yet, we are starting a new
-        # top-level ParseElem and thus expect a first-of-line Token.
-        # If so, we remember that token's indent and line.
-        if self.first_tok is None:
-            if tok.is_first:
-                self.lexer.debug(ok = True, is_first = True)
-                self.first_tok = tok
-                return True
-            else:
-                self.lexer.debug(ok = True, is_first = False)
-                return False
-
-        def do_debug(reason):
-            self.lexer.debug(
-                ok = bool(reason),
-                indent_reason = reason,
-                self_indent = self.first_tok.indent,
-                tok_indent = tok.indent,
-                caller_offset = 1,
-            )
-
-        # For subsequent tokens in the expression, we expect tokens either from
-        # the same line or from a continuation line indented farther than the
-        # first line of the expression.
-        if self.first_tok.line == tok.line:
-            do_debug('line')
-            return True
-        elif self.first_tok.indent < tok.indent:
-            do_debug('indent')
-            return True
-        else:
-            do_debug(False)
-            return False
-
-    ####
-    # Top-level parsing functions.
+    # Parsing functions:
+    #
+    # - Top-level elements.
+    # - Or helpers that collect them.
     ####
 
     @debug_indent
     def variant(self):
+        # Setup.
+        # - Variants must begin on a fresh line.
+        # - Get starting position (because we might need to reset).
         lex = self.lexer
         self.require_is_first_token()
         orig_pos = lex.position
@@ -1275,14 +1096,18 @@ class SpecParser:
 
         # Return, raise, or reset lexer position.
         if ve:
+            # If we got elems but halted on an opt-spec separator, return empty
+            # after resetting the lexer position. Otherwise, return a Variant.
+            #
+            # We do the position-reset so we can try to re-parse the material
+            # as an opt-spec rather than as a variant.
+            #
+            # This is a known complexity: a bare-bones opt-spec (ie, with no
+            # help-text) is also a syntactially valid variant.
             if lex.curr and lex.curr.isa(TokDefs.opt_spec_sep):
-                # If we got elems but halted on an opt-spec separator, return
-                # empty after resetting the lexer position. We do this so we
-                # can try to re-parse as an opt-spec rather than as a variant.
                 lex.position = orig_pos
                 return None
             else:
-                # Otherwise, return the Variant.
                 return Variant(
                     name = name,
                     is_partial = is_partial,
@@ -1296,76 +1121,74 @@ class SpecParser:
                 return None
 
     @debug_indent
-    def opt_spec_scope(self):
-        tok = self.eat(TokDefs.opt_spec_scope, TokDefs.opt_spec_scope_empty)
-        if tok:
-            query_path = get(tok.m, 0)
-            return Scope(query_path)
-        else:
-            return None
-
-    @debug_indent
-    def opt_spec_def(self):
-        return (
-            self.opt_spec_group() or
-            self.opt_spec_elem()
-        )
-
-    @debug_indent
-    def opt_spec_group(self):
-        return self.with_quantifer(
-            self.get_bracketed(GBKinds.opt_spec_group)
-        )
-
-    @debug_indent
-    def opt_spec_elem(self):
-        return (
-            self.positional() or
-            self.aliases_and_option()
-        )
-
-    @debug_indent
-    def aliases_and_option(self):
-        aliases = self.parse_some(self.bare_option)
-        if aliases:
-            b = aliases.pop()
-            params = self.parse_some(self.any_parameter)
-            e = Option(
-                name = b.name,
-                params = params,
-                aliases = aliases,
+    def collect_section_elems(self):
+        # A helper used to collect top-level elements.
+        # Like variants, these must also start on their own line.
+        elems = []
+        while True:
+            self.require_is_first_token()
+            e = (
+                self.any_section_title() or
+                self.section_content_elem()
             )
-            if params:
-                return e
+            if e:
+                elems.append(e)
             else:
-                return self.with_quantifer(e)
+                break
+        if elems:
+            return SectionElems(elems = elems)
         else:
             return None
 
     @debug_indent
-    def rest_of_line(self):
-        tok = self.eat(TokDefs.rest_of_line)
+    def any_section_title(self):
+        # A section title: scoped or not.
+        tok = self.eat(TokDefs.scoped_section_title, TokDefs.section_title)
         if tok:
-            text = tok.text.strip()
-            if text:
-                return RestOfLine(text = text)
-        return None
+            if tok.isa(TokDefs.scoped_section_title):
+                scope = Scope(tok.m[1])
+                title = tok.m[2]
+            else:
+                scope = None
+                title = tok.m[1]
+            return SectionTitle(
+                title = title,
+                scope = scope,
+                token = tok,
+            )
+        else:
+            return None
 
     @debug_indent
-    def opt_help_text(self):
-        # Try to get the help text and any continuation lines.
-        if self.eat(TokDefs.opt_spec_sep):
-            # Change parsing mode while collected opt-spec help text.
-            self.mode = Pmodes.help_text
-            elems = self.parse_some(self.rest_of_line)
-            self.mode = Pmodes.grammar
+    def section_content_elem(self):
+        # A helper used to collect top-level elements.
+        return (
+            self.heading() or
+            self.block_quote() or
+            self.opt_spec()
+        )
 
-            # If we got any, assemble and return an OptHelpText.
-            if elems:
-                text = Chars.space.join(e.text for e in elems)
-                return OptHelpText(text = text)
+    @debug_indent
+    def heading(self):
+        tok = self.eat(TokDefs.heading)
+        if tok:
+            return Heading(
+                title = tok.m[1].strip(),
+                token = tok,
+            )
+        else:
+            return None
 
-        return None
+    @debug_indent
+    def block_quote(self):
+        tok = self.eat(TokDefs.quoted_block)
+        if tok:
+            return BlockQuote(
+                text = tok.m[1],
+                token = tok,
+            )
+        else:
+            return None
 
     @debug_indent
     def opt_spec(self):
@@ -1391,61 +1214,15 @@ class SpecParser:
             token = self.meal[0],
         )
 
-    @debug_indent
-    def any_section_title(self):
-        tok = self.eat(TokDefs.scoped_section_title, TokDefs.section_title)
-        if tok:
-            if tok.isa(TokDefs.scoped_section_title):
-                scope = Scope(tok.m[1])
-                title = tok.m[2]
-            else:
-                scope = None
-                title = tok.m[1]
-            return SectionTitle(
-                title = title,
-                scope = scope,
-                token = tok,
-            )
-        else:
-            return None
-
     ####
-    # The elems() helper, which deals with parsing functions
-    # shared by variants and opt-specs.
+    # Parsing functions:
+    #
+    # - Mid-level elements that can appear in a Variant or Group.
     ####
-
-    @debug_indent
-    def heading(self):
-        tok = self.eat(TokDefs.heading)
-        if tok:
-            return Heading(
-                title = tok.m[1].strip(),
-                token = tok,
-            )
-        else:
-            return None
-
-    @debug_indent
-    def block_quote(self):
-        tok = self.eat(TokDefs.quoted_block)
-        if tok:
-            return BlockQuote(
-                text = tok.m[1],
-                token = tok,
-            )
-        else:
-            return None
-
-    @debug_indent
-    def section_content_elem(self):
-        return (
-            self.heading() or
-            self.block_quote() or
-            self.opt_spec()
-        )
 
     @debug_indent
     def variant_elems(self):
+        # A helper to collect elements inside a Variant or a Group.
         elems = []
         while True:
             e = (
@@ -1466,33 +1243,10 @@ class SpecParser:
             return None
 
     @debug_indent
-    def with_quantifer(self, e):
-        if e:
-            q = self.quantifier()
-            if q:
-                e.quantifier = q
-        return e
-
-    @debug_indent
     def quoted_literal(self):
         tok = self.eat(TokDefs.quoted_literal)
         if tok:
             return QuotedLiteral(text = tok.m[1])
-        else:
-            return None
-
-    @debug_indent
-    def next_choice(self, require_sep = True):
-        if require_sep and not self.eat(TokDefs.choice_sep):
-            return None
-
-        e = self.quoted_literal()
-        if e:
-            return Choice(text = e.text)
-
-        tok = self.eat(TokDefs.valid_name)
-        if tok:
-            return Choice(text = tok.text)
         else:
             return None
 
@@ -1519,19 +1273,6 @@ class SpecParser:
         )
 
     @debug_indent
-    def parameter_group(self):
-        return self.with_quantifer(
-            self.get_bracketed(GBKinds.parameter_group)
-        )
-
-    @debug_indent
-    def any_parameter(self):
-        return (
-            self.parameter() or
-            self.parameter_group()
-        )
-
-    @debug_indent
     def positional(self):
         return self.with_quantifer(
             self.with_quantifer(
@@ -1552,13 +1293,112 @@ class SpecParser:
         else:
             return None
 
+    ####
+    # Parsing functions:
+    #
+    # Elements that can appear in an OptSpec.
+    ####
+
+    @debug_indent
+    def opt_spec_scope(self):
+        # An opt-spec scope declaration.
+        tok = self.eat(TokDefs.opt_spec_scope, TokDefs.opt_spec_scope_empty)
+        if tok:
+            query_path = get(tok.m, 0)
+            return Scope(query_path)
+        else:
+            return None
+
+    @debug_indent
+    def opt_spec_def(self):
+        # An opt-spec definition (ie, the stuff between
+        # the scope and the help-text).
+        return (
+            self.opt_spec_group() or
+            self.opt_spec_elem()
+        )
+
+    @debug_indent
+    def opt_spec_group(self):
+        # The enclosing-group around an opt-spec definition.
+        return self.with_quantifer(
+            self.get_bracketed(GBKinds.opt_spec_group)
+        )
+
+    @debug_indent
+    def opt_spec_elem(self):
+        return (
+            self.positional() or
+            self.aliases_and_option()
+        )
+
+    @debug_indent
+    def aliases_and_option(self):
+        # One or more aliases and then the option itself.
+        aliases = self.parse_some(self.bare_option)
+        if aliases:
+            b = aliases.pop()
+            params = self.parse_some(self.any_parameter)
+            e = Option(
+                name = b.name,
+                params = params,
+                aliases = aliases,
+            )
+            if params:
+                return e
+            else:
+                return self.with_quantifer(e)
+        else:
+            return None
+
     @debug_indent
     def bare_option(self):
+        # Parses just the option, eg --foo.
+        # Used when parsing an option in a variant or the
+        # aliases in an opt-spec.
         tok = self.eat(TokDefs.long_option, TokDefs.short_option)
         if tok:
             return BareOption(name = tok.m[1])
         else:
             return None
+
+    @debug_indent
+    def opt_help_text(self):
+        # Try to get the opt-spec help text and any continuation lines.
+        if self.eat(TokDefs.opt_spec_sep):
+            # Change parsing mode while collected opt-spec help text.
+            self.mode = Pmodes.help_text
+            elems = self.parse_some(self.rest_of_line)
+            self.mode = Pmodes.grammar
+
+            # If we got any, assemble and return an OptHelpText.
+            if elems:
+                text = Chars.space.join(e.text for e in elems)
+                return OptHelpText(text = text)
+
+        return None
+
+    @debug_indent
+    def rest_of_line(self):
+        tok = self.eat(TokDefs.rest_of_line)
+        if tok:
+            text = tok.text.strip()
+            if text:
+                return RestOfLine(text = text)
+        return None
+
+    ####
+    # Parsing functions:
+    #
+    # Parameters.
+    ####
+
+    @debug_indent
+    def any_parameter(self):
+        return (
+            self.parameter() or
+            self.parameter_group()
+        )
 
     @debug_indent
     def parameter(self):
@@ -1567,75 +1407,27 @@ class SpecParser:
         )
 
     @debug_indent
-    def var_input_elems(self, require_name = False):
-        # Returns a VarInput holding the guts of a positional or parameter.
+    def parameter_group(self):
+        return self.with_quantifer(
+            self.get_bracketed(GBKinds.parameter_group)
+        )
 
-        # Forms:
-        #
-        #   < valid-name >
-        #   < valid-name = choices >
-        #   < choices >
-        #   < >
-        #
-        # Logic for parameters:
-        #
-        #   - For positionals, noc is required.
-        #
-        #   noc         = name-or-choice
-        #   assign      = bool
-        #   require_sep = not assign
-        #   roc         = rest-of-choices
-        #
-        #   noc | = | roc | Form | Example and error
-        #   -------------------------------------------------------------------------------------
-        #   Y   | Y | Y   | #2   | <foo=x|y>
-        #   Y   | Y | .   | .    | <foo=>        Assign w/o choice(s)
-        #   Y   | . | Y   | #3   | <foo|x|y>
-        #   Y   | . | .   | #1   | <foo>
-        #   .   | Y | Y   | .    | <=x|y>        Assign w/o name
-        #   .   | Y | .   | .    | <=>           Ditto
-        #   .   | . | Y   | #3   | <`hi!`|x|y>
-        #   .   | . | .   | #4   | <>
+    ####
+    # Quantifiers.
+    ####
 
-        # Try to get a valid name, which could be a name or a choice.
-        tok = self.eat(TokDefs.valid_name)
-        name_or_choice = tok.text if tok else None
-
-        # Check for an equal sign.
-        assign = bool(self.eat(TokDefs.assign))
-        require_sep = not assign
-
-        # Collect the rest of the choices.
-        rest = []
-        while True:
-            c = self.next_choice(require_sep = require_sep)
-            require_sep = True
-            if c:
-                rest.append(c)
-            else:
-                break
-
-        # Setup default parameters for VarInput we will return.
-        name = name_or_choice or None
-        choices = rest
-
-        # Check for errors and make adjustments where needed.
-        if require_name and not name:
-            self.error('Var-input: positional requires a name: <>')
-        elif assign and not choices:
-            self.error('Var-input: assign without choices: <foo=>')
-        elif assign and not name:
-            self.error('Var-input: assign without a name: <=x|y')
-        elif name and (not assign) and choices:
-            # Occurs when Parameter has choices, but no name: <a|b|c>
-            choices = [Choice(text = name)] + choices
-            name = None
-
-        # Return the elems.
-        return VarInput(name = name, elems = choices)
+    @debug_indent
+    def with_quantifer(self, e):
+        # A helper to attached a quantifier to a ParseElem.
+        if e:
+            q = self.quantifier()
+            if q:
+                e.quantifier = q
+        return e
 
     @debug_indent
     def quantifier(self):
+        # Parses quantifiers: ... or {m,n} or ?
         q = self.triple_dot() or self.quant_range()
         if q:
             q.greedy = not self.eat(TokDefs.question)
@@ -1669,10 +1461,77 @@ class SpecParser:
             return None
 
     ####
-    # Helper to parse a bracketed-expression: () [] <>.
+    # Parsing functions.
     #
-    # Plus its helper functions to manage the details for
-    # each kind of expression.
+    # Helpers to parse the elements inside a var-input.
+    ####
+
+    @debug_indent
+    def var_input_elems(self, require_name = False):
+        # Returns a VarInput holding the guts of a positional or parameter.
+        # See 'VarInput forms' for details and examples.
+
+        # Try to get a valid name, which could be a name or a choice.
+        tok = self.eat(TokDefs.valid_name)
+        name_or_choice = tok.text if tok else None
+
+        # Check for an equal sign.
+        assign = bool(self.eat(TokDefs.assign))
+
+        # Collect the rest of the choices.
+        rest = []
+        require_sep = not assign
+        while True:
+            c = self.next_choice(require_sep = require_sep)
+            require_sep = True
+            if c:
+                rest.append(c)
+            else:
+                break
+
+        # Setup default parameters for the VarInput we will return.
+        name = name_or_choice or None
+        choices = rest
+
+        # Check for errors and make adjustments where needed.
+        if require_name and not name:
+            self.error('Var-input: positional requires a name: <>')
+        elif assign and not choices:
+            self.error('Var-input: assign without choices: <foo=>')
+        elif assign and not name:
+            self.error('Var-input: assign without a name: <=x|y')
+        elif name and (not assign) and choices:
+            # Occurs when Parameter has choices, but no name: <a|b|c>
+            choices = [Choice(text = name)] + choices
+            name = None
+
+        # Boom.
+        return VarInput(name = name, elems = choices)
+
+    @debug_indent
+    def next_choice(self, require_sep = True):
+        # If needed, make sure there is a choice separator (|).
+        if require_sep and not self.eat(TokDefs.choice_sep):
+            return None
+
+        # First try for a quoted-literal.
+        e = self.quoted_literal()
+        if e:
+            return Choice(text = e.text)
+
+        # Otherwise, the choice must be a valid-name.
+        tok = self.eat(TokDefs.valid_name)
+        if tok:
+            return Choice(text = tok.text)
+        else:
+            return None
+
+    ####
+    # Parsing bracketed expressions: () [] <>.
+    #
+    # - The primary helper: get_bracketed().
+    # - Its helper functions to manage details for each kind of expression.
+    # - A helper used to enforce against empty Groups.
     ####
 
     def get_bracketed(self, kind):
@@ -1721,27 +1580,42 @@ class SpecParser:
 
     def gb_guts_positional(self):
         vi = self.var_input_elems(require_name = True)
-        return Positional(name = vi.name, elems = vi.elems)
+        return Positional(
+            name = vi.name,
+            elems = vi.elems,
+        )
 
     def gb_guts_parameter(self):
         vi = self.var_input_elems()
-        return Parameter(name = vi.name, elems = vi.elems)
+        return Parameter(
+            name = vi.name,
+            elems = vi.elems,
+        )
 
     def gb_guts_group(self, group_name):
         ve = self.variant_elems()
         elems = ve.elems if ve else []
-        g = Group(name = group_name, elems = elems)
+        g = Group(
+            name = group_name,
+            elems = elems,
+        )
         return self.require_elems(g)
 
     def gb_guts_parameter_group(self, group_name):
         elems = self.parse_some(self.any_parameter)
-        g = Group(name = group_name, elems = elems)
+        g = Group(
+            name = group_name,
+            elems = elems,
+        )
         return self.require_elems(g)
 
     def gb_guts_opt_spec_group(self, group_name):
         ose = self.opt_spec_elem()
         elems = [ose] if ose else []
-        g = Group(name = group_name, elems = elems)
+        g = Group(
+            name = group_name,
+            elems = elems,
+        )
         return self.require_elems(g)
 
     def require_elems(self, e):
@@ -1751,8 +1625,124 @@ class SpecParser:
             self.error(msg = 'Empty Group', e = e)
 
     ####
-    # Other stuff.
+    # Eating tokens.
     ####
+
+    def eat(self, *tds):
+        # This is the method used by parsing functions to get another Token.
+
+        # The caller provides 1+ TokDefs, which are put in self.menu.
+        self.menu = tds
+        self.lexer.debug(wanted = '|'.join(td.kind for td in tds))
+
+        # Ask the RegexLexer for another Token. That won't succeed unless:
+        #
+        # - Token is in list of TokDefs appropriate to the parsing mode.
+        #
+        # - Token is of immediate interest to the parsing function that
+        #   called eat(), and thus is in self.menu.
+        #
+        # - Token satifies other criteria (indentation, etc) checked by
+        #   the Token validator function: see self.taste() below.
+        #
+        tok = self.lexer.get_next_token()
+        if tok is None:
+            return None
+        elif tok.isa(TokDefs.eof, TokDefs.err):
+            return None
+        else:
+            self.lexer.debug(
+                eaten = tok.kind,
+                text = tok.text,
+                pos = tok.pos,
+                line = tok.line,
+                col = tok.col,
+            )
+            self.eaten.append(tok)
+            self.meal.append(tok)
+            return tok
+
+    def taste(self, tok):
+        # This is the Token validator function used by RegexLexer. It checks
+        # whether the Token is a kind of immediate interest and whether it
+        # satisifes the rules regarding indentation and start-of-line status.
+
+        # The most recent eat() call set the menu to contain the TokDefs of
+        # immediate interest. Return false if the current Token does not match.
+        if not tok.isa(*self.menu):
+            return False
+
+        # If SpecParser has no indent yet, we are starting a new
+        # top-level ParseElem and thus expect a first-of-line Token.
+        # If so, we remember that token's indent and line.
+        if self.first_tok is None:
+            if tok.is_first:
+                self.lexer.debug(ok = True, is_first = True)
+                self.first_tok = tok
+                return True
+            else:
+                self.lexer.debug(ok = True, is_first = False)
+                return False
+
+        # A helper to call debug() for the remaining scenarios.
+        # The reason explains why the token is OK.
+        def do_debug(reason):
+            self.lexer.debug(
+                ok = bool(reason),
+                indent_reason = reason,
+                self_indent = self.first_tok.indent,
+                tok_indent = tok.indent,
+                caller_offset = 1,
+            )
+
+        # For subsequent tokens in the expression, we expect tokens either from
+        # the same line or from a continuation line indented farther than the
+        # first line of the expression.
+        if self.first_tok.line == tok.line:
+            do_debug('line')
+            return True
+        elif self.first_tok.indent < tok.indent:
+            do_debug('indent')
+            return True
+        else:
+            do_debug(False)
+            return False
+
+    def reset_meal(self):
+        # Used in situations where we need to consume several tokens
+        # to assemble a ParseElem, and we need access to the first token
+        # in that process.
+        self.meal = []
+
+    ####
+    # Converting the SpecAST to a Grammar.
+    ####
+
+    def build_grammar(self, sa):
+        # TODO.
+        return sa
+
+    ####
+    # Other helpers.
+    ####
+
+    def require_is_first_token(self):
+        # Resets the parser's indent-related attributes, which will
+        # cause self.taste() to reject the next token unless it is
+        # the first on its line (aside from any indent).
+        self.first_tok = None
+
+    def parse_some(self, method, **kws):
+        # Takes a parsing function.
+        # Collects as many elems as possible and returns them.
+        elems = []
+        while True:
+            e = method(**kws)
+            if e is None or e == []:
+                break
+            else:
+                elems.append(e)
+        return elems
 
     def error(self, msg, **kws):
         # Called when spec-parsing fails.
@@ -1767,17 +1757,9 @@ class SpecParser:
         )
         raise ArgleError(**kws)
 
-    def parse_some(self, method, **kws):
-        # Takes a parsing function.
-        # Collects as many elems as possible and returns them.
-        elems = []
-        while True:
-            e = method(**kws)
-            if e is None or e == []:
-                break
-            else:
-                elems.append(e)
-        return elems
+####
+# Utility functions.
+####
 
 def get_caller_name(caller_offset):
     # Get the name of a calling function.
@@ -1794,6 +1776,7 @@ def fill_to_len(xs, n):
     return xs + filler
 
 def get(xs, i, default = None):
+    # Like dict.get(), but also works for sequences.
     try:
         return xs[i]
     except (IndexError, KeyError) as e:

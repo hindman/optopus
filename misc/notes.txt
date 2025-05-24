@@ -17,6 +17,7 @@ toc: Table of contents
     specification | Specification
 
         spec-syntax            | Spec syntax
+        spec-syntax-hierarchy  | Spec syntax hierarchy in compact form
         syntax-examples        | Syntax examples
         terminology            | Terminology
         classes-and-attributes | Classes and attributes
@@ -639,16 +640,20 @@ Whitespace rules:
 
     - Line and indentation requirements:
 
-        - Opt-spec must start on its own line.
+        - Entities that must start on a fresh line.
+            - variant
+            - any-section-title (ie scoped or not)
+            - section-content-elem (ie heading, block-quote, opt-spec)
 
-        - Variant must start on its own line.
+        - Opt-spec and variant continuation lines must be indented more than
+          the first line and be contiguous with it.
 
-        - Opt-spec and variant continuation line must be indented more than the
-          first line and be contiguous with it.
-
-        - Section title must be on its own line, ending in marker.
+        - Section titles must entirely on one line, ending in marker.
 
     - Line breaks not allowed:
+
+        * I'm not certain the the SpecParser enforces this. Probably not worth
+          caring about?
 
         - Within an {m,n} quantifier.
 
@@ -662,13 +667,80 @@ Whitespace rules:
 
         - Between partial name and its exclamation mark.
 
-        - Around equal size for named groups.
+        - Around equal sign for named groups.
 
         - Within a triple-dot quantifier.
 
     - Whitespace is allowed:
 
         - Between an element and its quantifier (looks odd, but still valid).
+
+----
+spec-syntax-hierarchy: Spec syntax hierarchy in compact form
+----
+
+This material condenses the material in spec-syntax into a structure that can
+be used for quick-reference or as a checklist when working on the code.
+
+Hierarchy:
+
+    - spec
+        - usage-section
+            - variant [BELOW]
+            - section-content-elem [BELOW]
+        - section
+            - any-section-title
+                - section-scope [BELOW]
+                - section-title
+            - section-content-elem [BELOW]
+
+    - variant
+        - valid-name
+            - python-name
+        - variant-def
+            - variant-elem
+                - option
+                    - bare-option
+                    - any-parameter
+                        - parameter
+                            - valid-name
+                            - choices
+                                - choice
+                                    - valid-name
+                                    - quoted-literal
+                        - parameter-group
+                            - parameter
+                    - quantifier
+                        - triple-dot
+                        - quant-range
+                        - question
+                - positional
+                    - valid-name
+                    - choices
+                    - quantifier
+                - any-group => named-group | group
+                    - valid-name
+                    - group
+                        - variant-elem
+                    - quantifier
+                - quoted-literal
+                - partial-usage
+                    - python-name
+                - choice-sep
+
+    - section-content-elem
+        - heading
+        - block-quote
+        - opt-spec
+            - opt-scope
+                - query-path
+                    - query-elem
+            - positional [ABOVE]
+            - aliases-and-option
+                - bare-option
+                - option [ABOVE]
+            - opt-help-text
+                - rest-of-line + continuation-lines
 
 --------
 syntax-examples: Syntax examples
