@@ -7,9 +7,13 @@ Parsing the new spec-syntax
 
 TODO:
 
-    - staging plan:
-        - Edit NEW files, while keeping OLD runnable.
-        - When ready, swap back via git-mv (Git history resides in NEW).
+    - Remaining test:
+        - Currently skipped.
+        - Assess and decide how to proceed.
+
+    - Basic editing pass:
+        - Code organization/ordering and related comments.
+        - Notes etc: decide what to keep, edit, move.
 
     - Convert spec-syntax AST into a proper Grammar.
 
