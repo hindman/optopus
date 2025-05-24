@@ -7,14 +7,6 @@ Parsing the new spec-syntax
 
 TODO:
 
-    x Test each EX in test_new_grammar:
-
-    - Pmodes: maybe only 2 modes:
-        - default
-        - help-text
-
-    - What is next?
-
     - staging plan:
         - Edit NEW files, while keeping OLD runnable.
         - When ready, swap back via git-mv (Git history resides in NEW).
@@ -29,21 +21,8 @@ Entities that must start on a fresh line.
     - section-content-elem
 
 Parsing modes:
-    - variant:
-        - initial mode
-    - section:
-        - any-section-title
-        - section-content-elem
-            - if we get opt-spec, switch to opt-help-text mode
-    - opt-help-text
-        - grab rest of line, plus continuations
-        - then switch back to section mode
-
-    - Handlers seem unnecessary:
-        - Set mode = variant.
-        - Try to get variants.
-        - Set mode = section.
-        - Temporary switch modes as needed to collect opt-help-text.
+    - grammar: default
+    - help_text: for opt-spec (rest of line plus continuations)
 
 Which parsing functions having early "overlap"?
 
@@ -515,20 +494,6 @@ class Option(ParseElem):
 class ChoiceSep(ParseElem):
     pass
 
-# @dataclass
-# class PositionalVariant(ParseElem):
-#     sym: str
-#     dest: str
-#     symlit: str
-#     choice: str
-
-# @dataclass
-# class ParameterVariant(ParseElem):
-#     sym: str
-#     dest: str
-#     symlit: str
-#     choice: str
-
 ####
 # Grammar.
 ####
@@ -661,9 +626,9 @@ def define_tokdefs():
 
     Modes = cons(
         none = [],
-        h    = [Pmodes.help_text],
-        vs   = [Pmodes.variant, Pmodes.section],
-        vsh  = list(Pmodes.values()),
+        g = [Pmodes.grammar],
+        h = [Pmodes.help_text],
+        gh = list(Pmodes.values()),
     )
 
     ####
@@ -672,48 +637,48 @@ def define_tokdefs():
 
     td_tups = [
         # - Quoted.
-        ('quoted_block',          'vs ', wrapped_in(backquote3, captured_guts)),
-        ('quoted_literal',        'vs ', wrapped_in(backquote1, captured_guts)),
+        ('quoted_block',          'g ', wrapped_in(backquote3, captured_guts)),
+        ('quoted_literal',        'g ', wrapped_in(backquote1, captured_guts)),
         # - Whitespace.
-        ('newline',               'vsh', r'\n'),
-        ('indent',                'vsh', start_of_line + whitespace1 + not_whitespace),
-        ('whitespace',            'vsh', whitespace1),
+        ('newline',               'gh', r'\n'),
+        ('indent',                'gh', start_of_line + whitespace1 + not_whitespace),
+        ('whitespace',            'gh', whitespace1),
         # - Sections.
-        ('scoped_section_title',  'vs ', scope1 + section_title),
-        ('section_title',         'vs ', section_title),
-        ('heading',               'vs ', heading),
+        ('scoped_section_title',  'g ', scope1 + section_title),
+        ('section_title',         'g ', section_title),
+        ('heading',               'g ', heading),
         # - Opt-spec scopes.
-        ('opt_spec_scope',        'vs ', scope1),
-        ('opt_spec_scope_empty',  'vs ', scope0),
+        ('opt_spec_scope',        'g ', scope1),
+        ('opt_spec_scope_empty',  'g ', scope0),
         # - Parens.
-        ('paren_open',            'vs ', r'\('),
-        ('brack_open',            'vs ', r'\['),
-        ('angle_open',            'vs ', '<'),
-        ('paren_open_named',      'vs ', captured(valid_name) + r'=\('),
-        ('brack_open_named',      'vs ', captured(valid_name) + r'=\['),
-        ('paren_close',           'vs ', r'\)'),
-        ('brack_close',           'vs ', r'\]'),
-        ('angle_close',           'vs ', '>'),
+        ('paren_open',            'g ', r'\('),
+        ('brack_open',            'g ', r'\['),
+        ('angle_open',            'g ', '<'),
+        ('paren_open_named',      'g ', captured(valid_name) + r'=\('),
+        ('brack_open_named',      'g ', captured(valid_name) + r'=\['),
+        ('paren_close',           'g ', r'\)'),
+        ('brack_close',           'g ', r'\]'),
+        ('angle_close',           'g ', '>'),
         # - Quants.
-        ('quant_range',           'vs ', r'\{' + captured(quant_range_guts) + r'\}'),
-        ('triple_dot',            'vs ', dot * 3),
-        ('question',              'vs ', r'\?'),
+        ('quant_range',           'g ', r'\{' + captured(quant_range_guts) + r'\}'),
+        ('triple_dot',            'g ', dot * 3),
+        ('question',              'g ', r'\?'),
         # - Separators.
-        ('choice_sep',            'vs ', r'\|'),
-        ('assign',                'vs ', '='),
-        ('opt_spec_sep',          'vs ', ':'),
+        ('choice_sep',            'g ', r'\|'),
+        ('assign',                'g ', '='),
+        ('opt_spec_sep',          'g ', ':'),
         # - Options.
-        ('long_option',           'vs ', option_prefix + option_prefix + captured_name),
-        ('short_option',          'vs ', option_prefix + captured(r'\w')),
+        ('long_option',           'g ', option_prefix + option_prefix + captured_name),
+        ('short_option',          'g ', option_prefix + captured(r'\w')),
         # - Variants.
-        ('variant_def',           'vs ', captured(valid_name + '!?') + whitespace0 + ':'),
-        ('partial_usage',         'vs ', captured_name + '!'),
+        ('variant_def',           'g ', captured(valid_name + '!?') + whitespace0 + ':'),
+        ('partial_usage',         'g ', captured_name + '!'),
         # - Names.
-        ('valid_name',            'vs ', valid_name),
+        ('valid_name',            'g ', valid_name),
         # - Special.
-        ('rest_of_line',          '  h', '.+'),
-        ('eof',                   '   ', ''),
-        ('err',                   '   ', ''),
+        ('rest_of_line',          ' h', '.+'),
+        ('eof',                   '  ', ''),
+        ('err',                   '  ', ''),
     ]
 
     # Return the TokDefs constants collections.
@@ -740,7 +705,7 @@ Chars = cons(
     empty_set = '∅',
 )
 
-Pmodes = cons('variant section help_text')
+Pmodes = cons('grammar help_text')
 
 TokDefs = define_tokdefs()
 Rgxs = constants({kind : td.regex for kind, td in TokDefs})
@@ -1015,7 +980,7 @@ class SpecParser:
 
         # Set the initial mode, which triggers the setter
         # to tell the RegexLexer which TokDefs to use.
-        self.mode = Pmodes.variant
+        self.mode = Pmodes.grammar
 
         # TokDefs the parser currently trying to eat: these are a subset of
         # those given to the RegexLexer whenever the parsing mode changes.
@@ -1087,15 +1052,9 @@ class SpecParser:
         # The method used by Parser.parse(SPEC).
 
         # Collect variants.
-        self.mode = Pmodes.variant
         elems = self.parse_some(self.variant)
 
-        # TODO: reset lexer position if we failed on an opt-spec colon-marker.
-        if True:
-            pass
-
         # Collect all other elements.
-        self.mode = Pmodes.section
         se = self.collect_section_elems()
         if se:
             elems.extend(se.elems)
@@ -1329,10 +1288,9 @@ class SpecParser:
         # Try to get the help text and any continuation lines.
         if self.eat(TokDefs.opt_spec_sep):
             # Change parsing mode while collected opt-spec help text.
-            prev_mode = self.mode
             self.mode = Pmodes.help_text
             elems = self.parse_some(self.rest_of_line)
-            self.mode = prev_mode
+            self.mode = Pmodes.grammar
 
             # If we got any, assemble and return an OptHelpText.
             if elems:
