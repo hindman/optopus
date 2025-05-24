@@ -1,12 +1,11 @@
 
-################################
-# OLD FILE -- DO NOT EDIT
-################################
-
 import io
+import pytest
+
 from pathlib import Path
 
-from short_con import cons
+from short_con import cons, constants
+
 from argle.grammar import (
     SpecParser,
     TokDefs,
@@ -26,31 +25,25 @@ class Sio(io.StringIO):
 # Example specs.
 ####
 
-SPECS = {}
+SPECS = constants('ex01 ex02 ex03 ex04 ex05 ex06', frozen = False)
 
-SPECS['ex01'] = '''
-pgrep [-i] [-v] <rgx> <path>
+SPECS.ex01 = '''
+[-i] [-v] <rgx> <path>
 '''
 
-SPECS['ex02'] = '''
-pgrep ::
-
+SPECS.ex02 = '''
 <rgx> : Python regular expression
 [<path>...] : Path(s) to input
 [-i --ignore-case] : Ignore case
 [-v --invert-match] : Select non-matching lines
 '''
 
-SPECS['ex03'] = '''
-wrangle
-
+SPECS.ex03 = '''
 <task=grep>   [-i] [-v] [-m] [-C]
               [--color <red|green|blue>]
               <rgx> [<path>...]
 <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
 <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
-
-::
 
 <task>             : Task to perform
 <task=grep>        : Emit lines matching pattern
@@ -70,15 +63,13 @@ wrangle
 -p --para          : Emit capture groups one-per-line, paragraph-style
 '''
 
-SPECS['ex04'] = '''
-pgrep
+SPECS.ex04 = '''
 [-i] [-v]
     <rgx> <path>
 [--foo] <blort>
 '''
 
-SPECS['ex05'] = '''
-pgrep ::
+SPECS.ex05 = '''
 <rgx> : Python
         regular
         expression
@@ -90,8 +81,7 @@ pgrep ::
                         lines
 '''
 
-SPECS['ex06'] = '''
-pgrep
+SPECS.ex06 = '''
   [-i]? [-v]...
        <rgx> <path>{1,7}?
   [--foo] <blort>?
@@ -118,15 +108,47 @@ foo bar fubb.
 
     -i  : Ignore case
           during search
-    -v  : Ivert: emit non-matched
+    -v  : Invert: emit non-matched
           lines
 '''
 
 def test_ex1(tr):
-    spec = SPECS['ex01'].strip() + '{1,3}'
+    spec = SPECS.ex01
     sp = SpecParser(spec, debug = False)
     g = sp.parse()
+    # tr.dump(g.pp)
 
+def test_ex2(tr):
+    spec = SPECS.ex02
+    sp = SpecParser(spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex3(tr):
+    spec = SPECS.ex03
+    sp = SpecParser(spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex4(tr):
+    spec = SPECS.ex04
+    sp = SpecParser(spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex5(tr):
+    spec = SPECS.ex05
+    sp = SpecParser(spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex6(tr):
+    spec = SPECS.ex06
+    sp = SpecParser(spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+@pytest.mark.skip(reason = 'spec-parsing-overhaul')
 def test_examples(tr):
 
     for exkey, spec in SPECS.items():
