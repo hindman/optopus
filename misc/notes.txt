@@ -99,6 +99,45 @@ todos: TODOs
 
 Spec-parsing [see grammar.py for todo list].
 
+Quoted-literal and block-quote:
+
+    - block-quote: implement support for no-wrap (```!) and comment (```#).
+
+    - block-quote and quoted-literal: support backslash escapes:
+
+        ```
+        `
+        !
+        #
+        \
+
+    - Best regex, based on chatgpt and my research:
+
+        rgx = r'`((?:\\\\|\\`|[^`])+?)`'
+
+        Captures and matches 1+ (non-greedy) of the following:
+
+            rgx  | matches               | Alternative
+            ------------------------------------------
+            \\\\ | \\  literal-backslash | #1
+            \\`  | \`  literal-backquote | #2
+            [^`] | .   non-backquote     | #3
+
+        Works better than other alternatives.
+
+        ChatGPT says it does not handle edge-case where the quoted-text needs
+        to end with a backslash. I am doubting that.
+
+        Assess this with some tests. I think it will work.
+
+    Two options:
+
+        (1) Simple spec-syntax: bypass all of it. Use API for complex
+        quoted-text.
+
+        (2) Define the TokDefs I need to consume quoted-literal and
+        block-quote. I have a parser: why not use it?
+
 Argument parsing.
     - Read arg-parsing-algo
 
@@ -398,6 +437,7 @@ block-quote:
         ```# | spec-comment
 
         - Triple-quotes can sit on their own line, or not.
+        - The open-quote does need to be first on its line.
 
     - Where quoted-text:
 
@@ -552,10 +592,10 @@ quantifer:
 
 quoted-literal:
 
-    ` text `
+    ` quoted-text `
 
     - Does not support: name, dest, or quantifier.
-    - Use backslash to get a literal backquote.
+    - If quoted-text needs to contain a backquote, it can be backslashed.
 
 partial-usage:
 
@@ -635,6 +675,35 @@ var-input:
     - Variable input provided by the user.
     - Primarily an internal term, not user-facing.
     - Forms: positional and parameter.
+
+Quoting rules:
+
+    - If the special quoting characters are needed literally
+      within the quoted-text, they can be preceded by backslash,
+      in the usual fashion.
+
+        Quote | Situation
+        ------------------------------------------
+        `     | In quoted-literal
+        ```   | In block-quote
+        ```!  | If block-quote needs to start with !
+        ```#  | If block-quote needs to start with #
+
+        Spec              | Resulting quoted-text
+        ---------------------------------------------
+        `\`foo\``         | `foo`
+        ```\```foo\`````` | ```foo```
+
+    - That approach can be taken one final step to handle the truly
+      edge cases like this:
+
+        - Desired quoted-text:
+
+            \`foo\`
+
+        - Spec:
+
+            `\\`foo\\``
 
 Whitespace rules:
 

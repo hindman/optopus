@@ -1,9 +1,13 @@
 
-'''
+r'''
 
 TODO:
 
+    - test for spec: EX_BLORT
+
     - build_grammar()
+
+    - quoting details: see notes.txt (todos).
 
 ----
 Spec-parsing overview
