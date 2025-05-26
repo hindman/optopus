@@ -1,0 +1,29 @@
+  [-i]? [-v]...
+       <rgx> <path>{1,7}?
+  [--foo] <blort>?
+
+Positionals needed ::
+
+```
+Positionals blorty blorty blort blort
+foo bar fubb.
+```
+
+    <rgx> : Regular
+            expression
+    <path> : Path to
+             the
+             file
+
+Options::
+
+```
+Positionals blorty blorty blort blort
+foo bar fubb.
+```
+
+    -i  : Ignore case
+          during search
+    -v  : Invert: emit non-matched
+          lines
+

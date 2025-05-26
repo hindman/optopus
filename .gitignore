@@ -42,5 +42,5 @@
 .idea
 
 # Argle test outputs.
-/tests/ex_diff/got/
+/tests/data/got/
 

@@ -3,11 +3,73 @@ r'''
 
 TODO:
 
-    - test for spec: EX_BLORT
+    - test_ex7: EX_BLORT
 
-    - build_grammar()
+        - Get running
+
+        - Problem #1:
+
+            - Because parameters can be groups, the parser halts with
+              an example like this:
+
+                --user [--indent]
+                       ^
+
+            - It parses Option(--user).
+            - Then is starts parsing a parameter_group():
+                - gets opening bracket
+                - then halts
+
+            - first idea:
+                - if a parameter_group halts after the opening bracket:
+                    - check self.eaten
+                    - even better: check self.meals after a refactoring:
+
+                    - refactoring idea #1 (DOES NOT WORK):
+
+                        self.meals = list[list[TOKEN]]
+                        self.start_meal() => INDEX
+
+                        - Caller of start_meal() uses INDEX to check its meal.
+                        - Each parsing-func manages its own meal: no
+                          clobbering/interference from other parsing-funcs or
+                          even nested calls of the same func
+
+                        - why this fails: eat() does not know what meal to add to
+
+                    - refactoring idea #2:
+
+                        - conceive of a "meal" as a start-index in self.eaten.
+
+        - Problem #2:
+
+            - if you reset the lexer position, don't you also need to reset
+              the SpecParser state in an analogous fashion:
+
+                - Possibly relevant SpecParser state:
+                    mode
+                    first_tok
+                    eaten
+
+        - test_against_baselines(): remove the continue
 
     - quoting details: see notes.txt (todos).
+
+    - better error messages:
+
+        - experiment with the errors currently being generated.
+
+        - see chatgpt discussion of this issue and check the formatting
+          and appearance of their syntax error reporting
+
+        - possible additions to errors:
+            - surrounding text where halt occurred, marking the exact spot
+              in some fashion
+            - recent tokens parse (or at least a simplified display of them)
+            - information about what the parser expected to find, given
+              current context
+
+    - build_grammar()
 
 ----
 Spec-parsing overview

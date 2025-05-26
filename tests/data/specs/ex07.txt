@@ -1,0 +1,115 @@
+
+verbose! : [--verbose] [--log-file]
+
+general! : general-options=(verbose! [--examples] [--help])
+chat!    : chat-options=([--hi] [--bye] [--examples])
+
+configure! : --env --user [--indent] [--person]
+submit!    : -c -r [--start-job] [--person]
+get!       : -j [--json [--indent] | --b64 | --yaml]
+drop!      : <method> <n> [--print]
+
+configure : <task=configure> configure! general!
+submit    : <task=submit> submit! general!
+get       : <task=get> get! general!
+drop      : <task=drop> drop! general!
+
+fubb : <fubb>... (--fast | --slow) [-a] [-b] [-x] chat!
+wizz : triples=(<a> <b> <c> [-z]){2,7} [-x] [-y] chat!
+
+General options :::
+    [--verbose]         : Blah blah
+    [--log-file <path>] : Blah blah
+    [--examples]        : Blah blah
+    [--help]
+
+
+```# ==================================================```
+
+
+configure >> Configure task ::
+
+    The configure task blah blah. Blah blah blah. Blah blah. Blah blah.
+    Blah blah. Blah blah...
+
+        --env <host>      : Blah blah
+        --user <id>       : Blah blah
+        [--indent <n>]    : Blah blah
+        [--person <name>] : Blah blah
+
+
+```# ==================================================```
+
+
+submit >> Submit task ::
+
+    The submit task blah blah. Blah blah blah. Blah blah. Blah blah.
+    Blah blah. Blah blah...
+
+        -c <>                   : Blah blah
+        -r <>                   : Blah blah
+        [--start-job]           : Blah blah
+        [--person <name> <age>] : Blah blah
+
+
+```# ==================================================```
+
+
+get >> Get task ::
+
+    The get task blah blah. Blah blah blah. Blah blah. Blah blah.
+    Blah blah. Blah blah...
+
+        -j <>          : Blah blah
+        [--json]       : Blah blah
+        [--indent <n>] : Blah blah
+        [--b64]        : Blah blah
+        [--yaml]       : Blah blah
+
+
+```# ==================================================```
+
+
+drop >> Drop task ::
+
+    The drop task blah blah. Blah blah blah. Blah blah. Blah blah.
+    Blah blah. Blah blah...
+
+    Methods :::
+        <method=first>  : Blah blah
+        <method=last>   : Blah blah
+        <method=random> : Blah blah
+
+    Options :::
+        <n>       : Blah blah
+        [--print] : Blah blah
+
+
+```# ==================================================```
+
+
+Other usages ::
+
+    Fubb arguments :::
+        <fubb>...    : Blah blah
+        --fast       : Blah blah
+        --slow       : Blah blah
+        [-a]         : Blah blah
+        [-b]         : Blah blah
+        fubb >> [-x] : Blah blah fubbity
+
+    Triple: repeated group of arguments :::
+        <a>  : Blah blah
+        <b>  : Blah blah
+        <c>  : Blah blah
+        [-z] : Blah blah
+
+    Triple: other options :::
+        wizz >> [-x] : Blah blah wizzity
+        [-y]         : Blah blah
+
+    Chat options :::
+        [--hi]  : Blah blah
+        [--bye] : Blah blah
+        [--help]
+

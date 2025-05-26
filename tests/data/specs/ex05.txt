@@ -1,0 +1,10 @@
+<rgx> : Python
+        regular
+        expression
+[<path>...] : Path(s) to
+              input
+[-i --ignore-case] : Ignore case
+[-v
+      --invert-match] : Select non-matching
+                        lines
+

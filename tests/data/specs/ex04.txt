@@ -1,0 +1,4 @@
+[-i] [-v]
+    <rgx> <path>
+[--foo] <blort>
+

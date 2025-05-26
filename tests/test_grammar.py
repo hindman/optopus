@@ -23,97 +23,6 @@ class Sio(io.StringIO):
         return self.getvalue()
 
 ####
-# Example specs.
-####
-
-SPECS = constants('ex01 ex02 ex03 ex04 ex05 ex06', frozen = False)
-
-SPECS.ex01 = dedent('''
-    [-i] [-v] <rgx> <path>
-''')
-
-SPECS.ex02 = dedent('''
-    <rgx> : Python regular expression
-    [<path>...] : Path(s) to input
-    [-i --ignore-case] : Ignore case
-    [-v --invert-match] : Select non-matching lines
-''')
-
-SPECS.ex03 = dedent('''
-    <task=grep>   [-i] [-v] [-m] [-C]
-                  [--color <red|green|blue>]
-                  <rgx> [<path>...]
-    <task=sub>    [-i] [-n] <rgx> <rep> [<path>...]
-    <task=search> [-i] [-g] [-d | -p] <rgx> [<path>...]
-
-    <task>             : Task to perform
-    <task=grep>        : Emit lines matching pattern
-    <task=sub>         : Search for pattern and replace
-    <task=search>      : Emit text matching pattern
-    <rgx>              : Python regular expression
-    <path>             : Path(s) to input
-    <rep>              : Replacement text
-    -i --ignore-case   : Ignore case
-    -v --invert-match  : Select non-matching lines
-    -m --max-count <n> : Stop searching after N matches
-    -C --context <n>   : Print N lines of before/after context
-    --color <>         : Highlight matching text
-    -n --nsubs <n>     : N of substitutions
-    -g --group <n>     : Emit just capture group N [0 for all]
-    -d --delim <s>     : Delimeter for capture groups [tab]
-    -p --para          : Emit capture groups one-per-line, paragraph-style
-''')
-
-SPECS.ex04 = dedent('''
-    [-i] [-v]
-        <rgx> <path>
-    [--foo] <blort>
-''')
-
-SPECS.ex05 = dedent('''
-    <rgx> : Python
-            regular
-            expression
-    [<path>...] : Path(s) to
-                  input
-    [-i --ignore-case] : Ignore case
-    [-v
-          --invert-match] : Select non-matching
-                            lines
-''')
-
-SPECS.ex06 = dedent('''
-      [-i]? [-v]...
-           <rgx> <path>{1,7}?
-      [--foo] <blort>?
-
-    Positionals needed ::
-
-    ```
-    Positionals blorty blorty blort blort
-    foo bar fubb.
-    ```
-
-        <rgx> : Regular
-                expression
-        <path> : Path to
-                 the
-                 file
-
-    Options::
-
-    ```
-    Positionals blorty blorty blort blort
-    foo bar fubb.
-    ```
-
-        -i  : Ignore case
-              during search
-        -v  : Invert: emit non-matched
-              lines
-''')
-
-####
 # Tests to parse each ex00 into a grammar.
 #
 # Current status:
@@ -122,39 +31,39 @@ SPECS.ex06 = dedent('''
 #   - current object returned by parse() is a SpecAST, not Grammar
 ####
 
-def test_ex1(tr):
-    spec = SPECS.ex01
-    sp = SpecParser(spec, debug = False)
+def test_ex01(tr):
+    sp = SpecParser(SPECS.ex01, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex2(tr):
-    spec = SPECS.ex02
-    sp = SpecParser(spec, debug = False)
+def test_ex02(tr):
+    sp = SpecParser(SPECS.ex02, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex3(tr):
-    spec = SPECS.ex03
-    sp = SpecParser(spec, debug = False)
+def test_ex03(tr):
+    sp = SpecParser(SPECS.ex03, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex4(tr):
-    spec = SPECS.ex04
-    sp = SpecParser(spec, debug = False)
+def test_ex04(tr):
+    sp = SpecParser(SPECS.ex04, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex5(tr):
-    spec = SPECS.ex05
-    sp = SpecParser(spec, debug = False)
+def test_ex05(tr):
+    sp = SpecParser(SPECS.ex05, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex6(tr):
-    spec = SPECS.ex06
-    sp = SpecParser(spec, debug = False)
+def test_ex06(tr):
+    sp = SpecParser(SPECS.ex06, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+@pytest.mark.skip
+def test_ex07(tr):
+    sp = SpecParser(SPECS.ex07, debug = True)
     g = sp.parse()
     # tr.dump(g.pp)
 
@@ -172,7 +81,12 @@ def test_ex6(tr):
 ####
 
 def test_against_baselines(tr):
-    for exkey, spec in SPECS:
+    for k, spec in SPECS:
+
+        # TODO: remove
+        if k == 'ex07':
+            continue
+
         # Parse the spec into a grammar, with debug=True.
         sp = SpecParser(spec, debug = Sio())
         g = sp.parse()
@@ -191,7 +105,7 @@ def test_against_baselines(tr):
         ])
 
         # Write the text we got.
-        paths = example_paths(exkey)
+        paths = ex_paths(k)
         write_file(paths.got, got_text)
 
         # Read the text we expect, if it exists.
@@ -210,11 +124,16 @@ def test_against_baselines(tr):
 # Helpers.
 ####
 
-def example_paths(exkey):
+def ex_paths(k):
+    f = f'{k}.txt'
     return cons(
-        got = Path('tests') / 'ex_diff' / 'got' / exkey,
-        exp = Path('tests') / 'ex_diff' / 'exp' / exkey,
+        spec = Path('tests') / 'data' / 'specs' / f,
+        got  = Path('tests') / 'data' / 'got' / f,
+        exp  = Path('tests') / 'data' / 'exp' / f,
     )
+
+def read_spec(k):
+    return read_file(ex_paths(k).spec)
 
 def read_file(path):
     with open(path) as fh:
@@ -223,4 +142,21 @@ def read_file(path):
 def write_file(path, text):
     with open(path, 'w') as fh:
         fh.write(text)
+
+####
+# Example specs.
+####
+
+SPECS = constants({
+    k : read_spec(k)
+    for k in [
+        'ex01',
+        'ex02',
+        'ex03',
+        'ex04',
+        'ex05',
+        'ex06',
+        'ex07',
+    ]
+})
 
