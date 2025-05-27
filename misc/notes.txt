@@ -3400,6 +3400,12 @@ explicit manner. Assume a list of lists, where:
 
 Flattening policy:
 
+    - The guiding princples:
+
+        - Names create dests. Groups do not.
+
+        - Argle prefers to flatten where it makes sense.
+
     - If an Opt does not have both plural nargs and plural ntimes, its data
       will be flattened by default, as shown in the table.
 
@@ -3444,13 +3450,20 @@ Parameters:
 
         - Bundle data when dests are non-unique (as done above).
 
-        - A parameter-group creates an inner-Result for its content.
+        - A parameter-group, if named, creates an inner-Result for its content.
+
+        - But unnamed parameter-groups do not create inner-Results. Instead,
+          their data is stored under the appropriate dest in the structure
+          best-suited to its quantifiers.
 
     - Single dest for all parameters.
 
         - Default: no inner-Result.
         - This is the most common use case.
         - A "single dest" includes the situation when all dests are unnamed.
+        - This is the exception to the general idea that names create dests.
+        - Not separate dest (ie inner-Result) occurs, because flattening helps
+          in these common, simple use cases.
 
         --age <yr>
 
@@ -3509,17 +3522,60 @@ Parameters:
 
     - Unnamed parameter-group:
 
-        - Default: an extrapolation of the logic so far.
+        - Default: no inner-Result due to the group.
 
-        --bar <b> (<x1> <x2>) (<y1> <y2>)
+        --bar <b> [<x1> <x2>]
+
+            opts.bar = Result(
+                b = B,
+                x1 = X1,
+                x2 = X2,
+            )
+
+        --bar <b> (<x1> <x2>)...
+
+            opts.bar = Result(
+                b = B,
+                x1 = [X1, ...],
+                x2 = [X2, ...],
+            )
+
+        --bar <b> (<x1>{2,3} <x2>)...
+
+            opts.bar = Result(
+                b = B,
+                x1 = [[X1, X1, X1] ...],
+                x2 = [X2, ...],
+            )
+
+        --bar <b> (<>{2,3} <>)...
 
             opts.bar = Result(
                 b = B,
                 _ = [
-                    Result(x1 = X1, x2 = X2),
-                    Result(y1 = Y1, y2 = Y2),
+                    [
+                        [V1, V2, V3],    # For <>{2,3}
+                        V9,              # For <>
+                    ],
+                    ...
                 ],
             )
+
+    - Unnamed everything in a perverse combo:
+
+        --bar <> (<>{2,3} <>)...
+
+            opts.bar = [
+                B,                       # For the first <>
+                [                        # For the group
+                    [
+                        [V1, V2, V3],    # For one occurrence of <>{2,3}
+                        V9,              # Ditto, for <>
+                    ],
+                    ...                  # The group's repetition
+                ],
+            ]
+
 
 --------
 parsed-data-with-context: Including Context with the Result

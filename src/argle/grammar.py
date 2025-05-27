@@ -7,58 +7,61 @@ TODO:
 
         - Parser halts with an example like this:
 
-            --user [--indent]
-                    ^
+            - Ex A:
+                --user [--indent]
+                        ^
 
                 - Parses Option(--user).
                 - Starts parameter_group().
                 - Halts after opening bracket.
 
-            --user [<x> --indent]
-                        ^
+            - Ex B:
+                --user [<x> --indent]
+                            ^
 
                 - Parses Option(--user).
                 - Starts parameter_group().
                 - Gets Parameter(<x>)
                 - Halts at --
 
-            --user <name> [<x> --indent]
-                               ^
+            - Ex C:
+                --user <name> [<x> --indent]
+                                   ^
 
                 - Parses Option(--user)
                 - Adds Parameter(<name>)
                 - Starts parameter_group().
                 - Halts at --
 
+            - Ex D:
+                --env [<x> [<y> [<z> --foo]]]
+                                     ^
+
+                - parses Option(--env)
+                - starts parameter_group()             #1 only this one needs position-reset
+                    - gets Parameter(<x>)
+                    - starts parameter_group()         #2
+                        - gets Parameter(<y>)
+                        - starts parameter_group()     #3
+                            - gets Parameter(<z>)
+                            - halts at --foo
+
+                - The inner parameter_group() attempts (#2 and #3)
+                  should not do a position-reset. They are derivative.
+
         - Criteria for position-reset:
 
-            - The issue: overlap of any_group() and parameter_group()
-                - You start parsing it as a parameter_group()
-                - Why: the preceding option is binds greedily to anything that
-                  parses as a parameter.
-                - But if the entity is actually a regular group, the problem
-                  might not be revealed immediately.
-                - In extreme cases, the parser could consume positionals (look
-                  like parameters), groups, nested groups.
+            - Key points:
+                - Position-reset happens only for top-level parameter_group().
+                - The reset logic happens in option(), not parameter_group().
+                    - The derivative calls of parameter_group() are made from
+                      within parameter_group().
+                    - This makes the problem easier to handle.
 
-                - but what happens if the failure occurs after nested groups:
-
-                    --env [<x> [<y> [<z> --foo]]]
-
-                    - parses Option(--env)
-                    - starts parameter_group()             #1
-                        - gets Parameter(<x>)
-                        - starts parameter_group()         #2
-                            - gets Parameter(<y>)
-                            - starts parameter_group()     #3
-                                - gets Parameter(<z>)
-                                - halts at --foo
-
-                    - The inner parameter_group() attempts (#2 and #3)
-                      should not do a position-reset. They are derivative.
-
-                    - Only the top-level parameter_group() should
-                      position-reset on failure.
+                - The reset should occur only in response to certain
+                  kinds of failed parameter_group() attempts:
+                    - empty group (eg Ex A above)
+                    - no closing bracket (eg Ex B-D above)
 
             - any_group() checks for these:
 
@@ -87,12 +90,13 @@ TODO:
               with ever know (or need to know) that groups can be parameters.
 
                 - Consider a simple example:
+
                     --env --user [--indent]
 
-                - User would have to do this:
-                    (--env) (--user) [--indent]
+                - User would have to do this, which seems super annoying
+                  given than parameter groups are fairly exotic:
 
-        - Another wrinkle
+                    (--env) (--user) [--indent]
 
     - test_ex7: EX_BLORT
         - Get running
