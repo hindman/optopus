@@ -3,59 +3,105 @@ r'''
 
 TODO:
 
+    - parameter_group(): needs position-reset:
+
+        - Parser halts with an example like this:
+
+            --user [--indent]
+                    ^
+
+                - Parses Option(--user).
+                - Starts parameter_group().
+                - Halts after opening bracket.
+
+            --user [<x> --indent]
+                        ^
+
+                - Parses Option(--user).
+                - Starts parameter_group().
+                - Gets Parameter(<x>)
+                - Halts at --
+
+            --user <name> [<x> --indent]
+                               ^
+
+                - Parses Option(--user)
+                - Adds Parameter(<name>)
+                - Starts parameter_group().
+                - Halts at --
+
+        - Criteria for position-reset:
+
+            - The issue: overlap of any_group() and parameter_group()
+                - You start parsing it as a parameter_group()
+                - Why: the preceding option is binds greedily to anything that
+                  parses as a parameter.
+                - But if the entity is actually a regular group, the problem
+                  might not be revealed immediately.
+                - In extreme cases, the parser could consume positionals (look
+                  like parameters), groups, nested groups.
+
+                - but what happens if the failure occurs after nested groups:
+
+                    --env [<x> [<y> [<z> --foo]]]
+
+                    - parses Option(--env)
+                    - starts parameter_group()             #1
+                        - gets Parameter(<x>)
+                        - starts parameter_group()         #2
+                            - gets Parameter(<y>)
+                            - starts parameter_group()     #3
+                                - gets Parameter(<z>)
+                                - halts at --foo
+
+                    - The inner parameter_group() attempts (#2 and #3)
+                      should not do a position-reset. They are derivative.
+
+                    - Only the top-level parameter_group() should
+                      position-reset on failure.
+
+            - any_group() checks for these:
+
+                parsing func     | Can also be in parameter_group
+                --------------------------------------------------
+                quoted_literal() | .
+                choice_sep()     | .
+                partial_usage()  | .
+                any_group()      | yes; looks like parameter_group
+                positional()     | yes; looks like parameter
+                option()         | .
+
+            - parameter_group() checks for these:
+
+                parameter()
+                parameter_group()
+
+        - Why it is insufficient to address this via a strict policy:
+
+            - Strict policy:
+                - Options bind greedily to parameters.
+                - If something could be a valid parameter, user much
+                  disambiguate by adding () or [] brackets.
+
+            - While logical, the approach is impractical because very few users
+              with ever know (or need to know) that groups can be parameters.
+
+                - Consider a simple example:
+                    --env --user [--indent]
+
+                - User would have to do this:
+                    (--env) (--user) [--indent]
+
+        - Another wrinkle
+
     - test_ex7: EX_BLORT
-
         - Get running
-
-        - Problem #1:
-
-            - Because parameters can be groups, the parser halts with
-              an example like this:
-
-                --user [--indent]
-                       ^
-
-            - It parses Option(--user).
-            - Then is starts parsing a parameter_group():
-                - gets opening bracket
-                - then halts
-
-            - first idea:
-                - if a parameter_group halts after the opening bracket:
-                    - check self.eaten
-                    - even better: check self.meals after a refactoring:
-
-                    - refactoring idea #1 (DOES NOT WORK):
-
-                        self.meals = list[list[TOKEN]]
-                        self.start_meal() => INDEX
-
-                        - Caller of start_meal() uses INDEX to check its meal.
-                        - Each parsing-func manages its own meal: no
-                          clobbering/interference from other parsing-funcs or
-                          even nested calls of the same func
-
-                        - why this fails: eat() does not know what meal to add to
-
-                    - refactoring idea #2:
-
-                        - conceive of a "meal" as a start-index in self.eaten.
-
-        - Problem #2:
-
-            - if you reset the lexer position, don't you also need to reset
-              the SpecParser state in an analogous fashion:
-
-                - Possibly relevant SpecParser state:
-                    mode
-                    first_tok
-                    eaten
-
         - test_against_baselines(): remove the continue
 
-    - quoting details: see notes.txt (todos).
+    - Quoted strings: refactor to use a parse mode:
+        - See notes.txt (todos).
 
-    - better error messages:
+    - Improved error messages:
 
         - experiment with the errors currently being generated.
 
@@ -774,9 +820,6 @@ BPairs = constants({
 
 class RegexLexer(object):
 
-    # Attributes holding position information.
-    POSITION_ATTRS = cons('pos line col indent is_first')
-
     ####
     # Setup.
     ####
@@ -832,16 +875,19 @@ class RegexLexer(object):
 
     @property
     def position(self):
-        return constants({
-            a : getattr(self, a)
-            for a in self.POSITION_ATTRS.keys()
-        })
+        return cons(
+            pos = self.pos,
+            line = self.line,
+            col = self.col,
+            indent = self.indent,
+            is_first = self.is_first,
+            curr = None,
+        )
 
     @position.setter
-    def position(self, p):
-        self.curr = None
-        for a in self.POSITION_ATTRS.keys():
-            setattr(self, a, getattr(p, a))
+    def position(self, pos):
+        for a, v in pos:
+            setattr(self, a, v)
 
     ####
     # Getting the next token.
@@ -1045,11 +1091,31 @@ class SpecParser:
         # First Token of top-level ParseElem currently under construction.
         self.first_tok = None
 
-        # Tokens the parser has eaten:
-        # - For the entire spec.
-        # - Since the last reset_meal() call.
+        # Tokens the parser has eaten.
         self.eaten = []
-        self.meal = []
+
+    @property
+    def position(self):
+        return cons(
+            lexer_position = self.lexer.position,
+            mode = self.mode,
+            first_tok = self.first_tok,
+            next_token_index = self.next_token_index,
+        )
+
+    @position.setter
+    def position(self, pos):
+        self.lexer.position = pos.lexer_position
+        self.mode = pos.mode
+        self.first_tok = pos.first_tok
+        self.reset_eaten(pos.next_token_index)
+
+    @property
+    def next_token_index(self):
+        return len(self.eaten)
+
+    def reset_eaten(self, next_token_index):
+        self.eaten = self.eaten[0 : next_token_index]
 
     ####
     # Debug decorator.
@@ -1145,7 +1211,7 @@ class SpecParser:
         # - Get starting position (because we might need to reset).
         lex = self.lexer
         self.require_is_first_token()
-        orig_pos = lex.position
+        orig_pos = self.position
 
         # Get variant/partial name, if any.
         name = None
@@ -1160,7 +1226,7 @@ class SpecParser:
         # Collect the ParseElem for the variant.
         ve = self.variant_elems()
 
-        # Return, raise, or reset lexer position.
+        # Return, raise, or reset position.
         if ve:
             # If we got elems but halted on an opt-spec separator, return empty
             # after resetting the lexer position. Otherwise, return a Variant.
@@ -1171,7 +1237,7 @@ class SpecParser:
             # This is a known complexity: a bare-bones opt-spec (ie, with no
             # help-text) is also a syntactially valid variant.
             if lex.curr and lex.curr.isa(TokDefs.opt_spec_sep):
-                lex.position = orig_pos
+                self.position = orig_pos
                 return None
             else:
                 return Variant(
@@ -1259,7 +1325,7 @@ class SpecParser:
     @debug_indent
     def opt_spec(self):
         # If we do get an opt-spec, we will need access to its first Token.
-        self.reset_meal()
+        first_tok_index = self.next_token_index
 
         # Get the Scope, if any.
         scope = self.opt_spec_scope()
@@ -1277,7 +1343,7 @@ class SpecParser:
             scope = scope,
             opt = e,
             text = t.text if t else None,
-            token = self.meal[0],
+            token = self.eaten[first_tok_index],
         )
 
     ####
@@ -1725,7 +1791,6 @@ class SpecParser:
                 col = tok.col,
             )
             self.eaten.append(tok)
-            self.meal.append(tok)
             return tok
 
     def taste(self, tok):
@@ -1773,12 +1838,6 @@ class SpecParser:
         else:
             do_debug(False)
             return False
-
-    def reset_meal(self):
-        # Used in situations where we need to consume several tokens
-        # to assemble a ParseElem, and we need access to the first token
-        # in that process.
-        self.meal = []
 
     ####
     # Converting the SpecAST to a Grammar.
