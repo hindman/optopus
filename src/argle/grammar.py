@@ -3,100 +3,20 @@ r'''
 
 TODO:
 
+    - Create ErrorKinds:
+
+        incomplete_spec_parse    | Failed to parse the full spec
+        empty_variant            | A Variant cannot be empty
+        unnamed_positional       | Var-input: positional requires a name: <>
+        assign_without_choices   | Var-input: assign without choices: <foo=>
+        assign_without_name      | Var-input: assign without a name: <=x | y
+        expected_closing_bracket | Failed to find closing bracket
+        empty_variant            | Empty Group
+
     - parameter_group(): needs position-reset:
-
-        - Parser halts with an example like this:
-
-            - Ex A:
-                --user [--indent]
-                        ^
-
-                - Parses Option(--user).
-                - Starts parameter_group().
-                - Halts after opening bracket.
-
-            - Ex B:
-                --user [<x> --indent]
-                            ^
-
-                - Parses Option(--user).
-                - Starts parameter_group().
-                - Gets Parameter(<x>)
-                - Halts at --
-
-            - Ex C:
-                --user <name> [<x> --indent]
-                                   ^
-
-                - Parses Option(--user)
-                - Adds Parameter(<name>)
-                - Starts parameter_group().
-                - Halts at --
-
-            - Ex D:
-                --env [<x> [<y> [<z> --foo]]]
-                                     ^
-
-                - parses Option(--env)
-                - starts parameter_group()             #1 only this one needs position-reset
-                    - gets Parameter(<x>)
-                    - starts parameter_group()         #2
-                        - gets Parameter(<y>)
-                        - starts parameter_group()     #3
-                            - gets Parameter(<z>)
-                            - halts at --foo
-
-                - The inner parameter_group() attempts (#2 and #3)
-                  should not do a position-reset. They are derivative.
-
-        - Criteria for position-reset:
-
-            - Key points:
-                - Position-reset happens only for top-level parameter_group().
-                - The reset logic happens in option(), not parameter_group().
-                    - The derivative calls of parameter_group() are made from
-                      within parameter_group().
-                    - This makes the problem easier to handle.
-
-                - The reset should occur only in response to certain
-                  kinds of failed parameter_group() attempts:
-                    - empty group (eg Ex A above)
-                    - no closing bracket (eg Ex B-D above)
-
-            - any_group() checks for these:
-
-                parsing func     | Can also be in parameter_group
-                --------------------------------------------------
-                quoted_literal() | .
-                choice_sep()     | .
-                partial_usage()  | .
-                any_group()      | yes; looks like parameter_group
-                positional()     | yes; looks like parameter
-                option()         | .
-
-            - parameter_group() checks for these:
-
-                parameter()
-                parameter_group()
-
-        - Why it is insufficient to address this via a strict policy:
-
-            - Strict policy:
-                - Options bind greedily to parameters.
-                - If something could be a valid parameter, user much
-                  disambiguate by adding () or [] brackets.
-
-            - While logical, the approach is impractical because very few users
-              with ever know (or need to know) that groups can be parameters.
-
-                - Consider a simple example:
-
-                    --env --user [--indent]
-
-                - User would have to do this, which seems super annoying
-                  given than parameter groups are fairly exotic:
-
-                    (--env) (--user) [--indent]
+        - The reset logic happens in option().
+        - Applies only to the top-level parameter_group().
+        - Reset if: empty-group or no-closing-bracket.
 
     - test_ex7: EX_BLORT
         - Get running
@@ -106,6 +26,8 @@ TODO:
         - See notes.txt (todos).
 
     - Improved error messages:
+
+        - Currently, everything happens in error().
 
         - experiment with the errors currently being generated.
 
@@ -316,6 +238,61 @@ Parsing components/flags:
         .   | Y | .  | .    | <=>           Ditto
         .   | . | Y  | #3   | <`hi!`|x|y>
         .   | . | .  | #4   | <>
+
+
+----
+Why parameter_group() needs position-rest and error-catching logic
+----
+
+Because options can have groups as parameters, grammatical overlap occurs:
+
+    - Example A:
+
+        --env --user [--indent]
+                      ^
+
+        - Parses Option(--env).
+        - Starts Option(--user).
+        - Starts parameter_group().
+        - Halts after opening bracket: options cannot be in parameter-groups.
+
+    - Two possible responses here:
+
+        - Strict policy:
+            - Options bind greedily to parameters and parameter-groups.
+            - If the parsing halts, so be.
+            - Let user add the necessary groups to disambiguate.
+
+        - More flexible parsing:
+            - Catch the halt error.
+            - Reset position.
+            - Interpret the option as finished.
+            - Try parsing the non-parameter-group as a regular group.
+
+    - Why strict policy is a step too far:
+
+        - Few users will ever need to know about parameter-groups.
+        - But the strict policy approach would force them to write common
+          scenarios in awkward ways.
+
+        - Example A would have to be rewritten in one of these ways:
+
+            (--env) (--user) [--indent]    # Disambiguate via groups.
+            [--indent] --env --user        # Clever reordering.
+            --env --user ; [--indent]      # New syntax: semicolon as separator.
+
+        - People doing regular things (a sequence of options) would need to
+          reason about a subtle and fairly exotic feature.
+
+    - The halt can occur at any depth in the attempted parameter-group parse:
+
+        --user [<x> --here]
+        --user <name> [<x> --here]
+        --env [<x> [<y> [<z> --here]]]
+
+    - So the policy is:
+        - Greedy parameter binding, as usual.
+        - But failed parameter-group parses will be retried as regular groups.
 
 '''
 
@@ -1134,7 +1111,7 @@ class SpecParser:
         MSG_PREFIX = '\n' if NAME == 'parse' else ''
 
         @wraps(old_method)
-        def new_method(self, *xs, **kws):
+        def parsing_func(self, *xs, **kws):
             # Call debug() to emit the method name.
             lex = self.lexer
             lex.debug(caller_name = NAME, msg_prefix = MSG_PREFIX)
@@ -1151,7 +1128,7 @@ class SpecParser:
             lex.debug_indent -= 1
             return elem
 
-        return new_method
+        return parsing_func
 
     ####
     # Setting the parser mode.
@@ -1879,6 +1856,7 @@ class SpecParser:
         lex = self.lexer
         kws.update(
             msg = msg,
+            mode = self.mode,
             pos = lex.pos,
             line = lex.line,
             col = lex.col,

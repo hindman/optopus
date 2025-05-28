@@ -186,6 +186,12 @@ Quoted-literal and block-quote:
               captured quoted-text.
             - This is easier in the short run.
 
+parsed-data-structure:
+    - Editing pass over this section.
+    - I think the current policy is generally correct.
+    - But try to simplify/clarify the write-up.
+    - Make sure to cover all scenarios.
+
 Argument parsing.
     - Read arg-parsing-algo
 
@@ -2181,9 +2187,10 @@ Rationale based on parsing philosophy:
 
             --help [<topic>]
 
-        - One could add more policy: bracketed, degenerate group with one
+        - One could add more policy: eg, bracketed, degenerate group with one
           paramater can be a paramater.
-        - And that starts to feel finicky.
+
+        - But that starts to feel finicky.
 
 Rationale based on core features:
 
@@ -2191,10 +2198,10 @@ Rationale based on core features:
     - Positionals can reside in groups with rich quantifiers.
     - Parameters should do the same.
 
-    - These plausible and similar use cases:
+    - These are plausible and similar use cases:
 
         scores=(<lo> <hi>)...
-        --scores (<lo> <hi>)...
+        --result scores=(<lo> <hi>)...
 
 --------
 parser-config-api: Parser.config() API
