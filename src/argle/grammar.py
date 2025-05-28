@@ -3,20 +3,14 @@ r'''
 
 TODO:
 
-    - Create ErrorKinds:
+    x Create ErrorKinds.
 
-        incomplete_spec_parse    | Failed to parse the full spec
-        empty_variant            | A Variant cannot be empty
-        unnamed_positional       | Var-input: positional requires a name: <>
-        assign_without_choices   | Var-input: assign without choices: <foo=>
-        assign_without_name      | Var-input: assign without a name: <=x | y
-        expected_closing_bracket | Failed to find closing bracket
-        empty_variant            | Empty Group
+    x any_parameter() and parameter_group(): add top_level
 
-    - parameter_group(): needs position-reset:
-        - The reset logic happens in option().
-        - Applies only to the top-level parameter_group().
-        - Reset if: empty-group or no-closing-bracket.
+    - parameter_group(): add logic for position-reset:
+        - Reset if:
+            - top_level = True
+            - error_kind = empty_group or unclosed_bracketed_expression
 
     - test_ex7: EX_BLORT
         - Get running
@@ -309,7 +303,7 @@ from functools import wraps
 
 from short_con import cons, constants
 
-from .errors import ArgleError
+from .errors import ArgleError, ErrKinds
 
 ####
 # Simple constants.
@@ -348,8 +342,8 @@ class TokDef:
     # SpecParser (or just consume it and update lexer position).
     emit: bool
 
-    def isa(self, *tds):
-        return any(self.kind == td.kind for td in tds)
+    def isa(self, *xs):
+        return any(self.kind == x.kind for x in xs)
 
 @dataclass
 class Token:
@@ -379,8 +373,8 @@ class Token:
     indent: int
     is_first: bool
 
-    def isa(self, *tds):
-        return any(self.kind == td.kind for td in tds)
+    def isa(self, *xs):
+        return any(self.kind == x.kind for x in xs)
 
     @property
     def brief(self):
@@ -1171,7 +1165,7 @@ class SpecParser:
         # Raise if we did not parse the full text.
         tok = self.lexer.end
         if not (tok and tok.isa(TokDefs.eof)):
-            self.error('Failed to parse the full spec')
+            self.error(ErrKinds.incomplete_spec_parse)
 
         # Convert the elements to a Grammar.
         sa = SpecAST(elems)
@@ -1229,7 +1223,7 @@ class SpecParser:
         else:
             # If we got no elems, the situation is simple.
             if name:
-                self.error('A Variant cannot be empty')
+                self.error(ErrKinds.empty_variant)
             else:
                 return None
 
@@ -1397,7 +1391,7 @@ class SpecParser:
     def option(self):
         b = self.bare_option()
         if b:
-            params = self.parse_some(self.any_parameter)
+            params = self.parse_some(self.any_parameter, top_level = True)
             e = Option(b.name, params, None)
             if params:
                 return e
@@ -1451,7 +1445,7 @@ class SpecParser:
         aliases = self.parse_some(self.bare_option)
         if aliases:
             b = aliases.pop()
-            params = self.parse_some(self.any_parameter)
+            params = self.parse_some(self.any_parameter, top_level = True)
             e = Option(
                 name = b.name,
                 params = params,
@@ -1507,10 +1501,10 @@ class SpecParser:
     ####
 
     @debug_indent
-    def any_parameter(self):
+    def any_parameter(self, top_level = True):
         return (
             self.parameter() or
-            self.parameter_group()
+            self.parameter_group(top_level = top_level)
         )
 
     @debug_indent
@@ -1520,7 +1514,9 @@ class SpecParser:
         )
 
     @debug_indent
-    def parameter_group(self):
+    def parameter_group(self, top_level = True):
+        # True: parameter as a direct child of the option.
+        # False: parameter nested inside a parameter-group.
         return self.with_quantifer(
             self.get_bracketed(GBKinds.parameter_group)
         )
@@ -1608,11 +1604,11 @@ class SpecParser:
 
         # Check for errors and make adjustments where needed.
         if require_name and not name:
-            self.error('Var-input: positional requires a name: <>')
+            self.error(ErrKinds.unnamed_positional)
         elif assign and not choices:
-            self.error('Var-input: assign without choices: <foo=>')
+            self.error(ErrKinds.assign_without_choices)
         elif assign and not name:
-            self.error('Var-input: assign without a name: <=x|y')
+            self.error(ErrKinds.assign_without_name)
         elif name and (not assign) and choices:
             # Occurs when Parameter has choices, but no name: <a|b|c>
             choices = [Choice(text = name)] + choices
@@ -1684,8 +1680,8 @@ class SpecParser:
         # Raise if we cannot get the closing TokDef.
         if not self.eat(closing_td):
             self.error(
-                msg = 'Failed to find closing bracket',
-                kind = kind,
+                ErrKinds.unclosed_bracketed_expression,
+                closing_td = closing_td,
             )
 
         # Return the ParseElem.
@@ -1715,7 +1711,7 @@ class SpecParser:
         return self.require_elems(g)
 
     def gb_guts_parameter_group(self, group_name):
-        elems = self.parse_some(self.any_parameter)
+        elems = self.parse_some(self.any_parameter, top_level = False)
         g = Group(
             name = group_name,
             elems = elems,
@@ -1735,7 +1731,7 @@ class SpecParser:
         if e.elems:
             return e
         else:
-            self.error(msg = 'Empty Group', e = e)
+            self.error(ErrKinds.empty_group, element = e)
 
     ####
     # Eating tokens.
@@ -1850,17 +1846,18 @@ class SpecParser:
                 elems.append(e)
         return elems
 
-    def error(self, msg, **kws):
+    def error(self, error_kind, **kws):
         # Called when spec-parsing fails.
         # Raises ArgleError with kws, plus position/token info.
         lex = self.lexer
         kws.update(
-            msg = msg,
+            msg = ErrorKinds[error_kind],
             mode = self.mode,
             pos = lex.pos,
             line = lex.line,
             col = lex.col,
             current_token = lex.curr.kind if lex.curr else None,
+            error_kind = error_kind,
         )
         raise ArgleError(**kws)
 
