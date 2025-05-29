@@ -3,8 +3,6 @@ r'''
 
 TODO:
 
-    - Refactor tests: drop numbers.
-
     - Check Grammar.pp for tests.
 
     - Improved error messages:

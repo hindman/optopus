@@ -27,7 +27,7 @@ class Sio(io.StringIO):
         return self.getvalue()
 
 ####
-# Tests to parse each ex00 into a grammar.
+# Tests to parse each ESpec into a grammar.
 #
 # Current status:
 #   - just exercises code
@@ -35,74 +35,74 @@ class Sio(io.StringIO):
 #   - current object returned by parse() is a SpecAST, not Grammar
 ####
 
-def test_ex01(tr):
-    esp = ESpecs.ex01
+def test_ex_pgrep_1(tr):
+    esp = ESpecs.pgrep_1
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex02(tr):
-    esp = ESpecs.ex02
+def test_ex_pgrep_2(tr):
+    esp = ESpecs.pgrep_2
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex03(tr):
-    esp = ESpecs.ex03
+def test_ex_pgrep_3(tr):
+    esp = ESpecs.pgrep_3
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex04(tr):
-    esp = ESpecs.ex04
+def test_ex_wrangle(tr):
+    esp = ESpecs.wrangle
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex05(tr):
-    esp = ESpecs.ex05
+def test_ex_line_wrap_1(tr):
+    esp = ESpecs.line_wrap_1
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex06(tr):
-    esp = ESpecs.ex06
+def test_ex_line_wrap_2(tr):
+    esp = ESpecs.line_wrap_2
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex07(tr):
-    esp = ESpecs.ex07
+def test_ex_line_wrap_3(tr):
+    esp = ESpecs.line_wrap_3
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex08(tr):
-    esp = ESpecs.ex08
+def test_ex_blort(tr):
+    esp = ESpecs.blort
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex09(tr):
-    esp = ESpecs.ex09
+def test_ex_naval_fate(tr):
+    esp = ESpecs.naval_fate
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex10(tr):
-    esp = ESpecs.ex10
+def test_ex_repo(tr):
+    esp = ESpecs.repo
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex11(tr):
-    esp = ESpecs.ex11
+def test_ex_neck_diagram(tr):
+    esp = ESpecs.neck_diagram
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-def test_ex12(tr):
-    esp = ESpecs.ex12
+def test_ex_nab(tr):
+    esp = ESpecs.nab
     sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
@@ -110,7 +110,7 @@ def test_ex12(tr):
 ####
 # Basline tests to reveal errors as the code spec-parsing code evolves.
 #
-# For each ex00, parses the spec into a grammar, with debug=True.
+# For each ESpec, parses the spec into a grammar, with debug=True.
 # Captures the debug output and the pp-style text representing
 # the grammar and writes them to a text file. That text file
 # becomes a baseline to detect regressions for subsequent runs
@@ -122,6 +122,11 @@ def test_ex12(tr):
 
 def test_against_baselines(tr):
     for k, esp in ESpecs:
+
+        # Skip inactive test cases.
+        if not esp.active:
+            continue
+
         # Parse the spec into a grammar, with debug=True.
         spec = esp.spec
         sp = SpecParser(spec, debug = Sio())
@@ -176,45 +181,43 @@ def write_file(path, text):
 @dataclass
 class ESpec:
     key: str
-    label: str
+    active: bool
     spec: str
     spec_path: Path
     got_path: Path
     exp_path: Path
 
     @classmethod
-    def from_key(cls, key, label):
-        fname = f'{key}.txt'
+    def from_key(cls, key, active):
+        fname = key.replace('_', '-') + '.txt'
         data_path = Path('tests') / 'data'
         spec_path = data_path / 'specs' / fname
         got_path  = data_path / 'got' / fname
         exp_path  = data_path / 'exp' / fname
         return cls(
             key = key,
-            label = label,
+            active = active,
             spec = read_file(spec_path),
             spec_path = spec_path,
             got_path = got_path,
             exp_path = exp_path,
         )
 
-ESpecLabels = cons(
-    ex01 = 'pgrep-1',
-    ex02 = 'pgrep-2',
-    ex12 = 'pgrep-3',
-    ex03 = 'wrangle',
-    ex04 = 'line-wrap-1',
-    ex05 = 'line-wrap-2',
-    ex06 = 'line-wrap-3',
-    ex07 = 'blort',
-    ex08 = 'naval-fate',
-    ex09 = 'repo',
-    ex10 = 'neck-diagram',
-    ex11 = 'nab',
-)
-
 ESpecs = constants({
-    key : ESpec.from_key(key, label)
-    for key, label in ESpecLabels
+    key : ESpec.from_key(key, active)
+    for active, key in [
+        (True, 'pgrep_1'),
+        (True, 'pgrep_2'),
+        (True, 'pgrep_3'),
+        (True, 'wrangle'),
+        (True, 'line_wrap_1'),
+        (True, 'line_wrap_2'),
+        (True, 'line_wrap_3'),
+        (True, 'blort'),
+        (True, 'naval_fate'),
+        (True, 'repo'),
+        (True, 'neck_diagram'),
+        (True, 'nab'),
+    ]
 })
 
