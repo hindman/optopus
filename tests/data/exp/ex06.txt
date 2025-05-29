@@ -1345,35 +1345,35 @@ SpecAST(
     SectionTitle(
         scope = None
         title = 'Positionals needed '
-        token = Token(kind = 'section_title', text = 'Positionals needed ::', pos = 62, line = 5, col = 1, indent = 0, is_first = True)
+        token = Token(kind='section_title', text='Positionals needed ::', pos=62, line=5, col=1, indent=0, is_first=True)
     BlockQuote(
         text = '\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'
-        token = Token(kind = 'quoted_block', text = '```\nPositionals blorty blorty blort blort\nfoo bar fubb.\n```', pos = 85, line = 7, col = 1, indent = 0, is_first = True)
+        token = Token(kind='quoted_block', text='```\nPositionals blorty blorty blort blort\nfoo bar fubb.\n```', pos=85, line=7, col=1, indent=0, is_first=True)
     OptSpec(
         scope = None
         text = 'Regular expression'
-        token = Token(kind = 'angle_open', text = '<', pos = 150, line = 12, col = 5, indent = 4, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=150, line=12, col=5, indent=4, is_first=True)
         Positional(
             name = 'rgx'
             quantifier = None
     OptSpec(
         scope = None
         text = 'Path to the file'
-        token = Token(kind = 'angle_open', text = '<', pos = 193, line = 14, col = 5, indent = 4, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=193, line=14, col=5, indent=4, is_first=True)
         Positional(
             name = 'path'
             quantifier = None
     SectionTitle(
         scope = None
         title = 'Options'
-        token = Token(kind = 'section_title', text = 'Options::', pos = 246, line = 18, col = 1, indent = 0, is_first = True)
+        token = Token(kind='section_title', text='Options::', pos=246, line=18, col=1, indent=0, is_first=True)
     BlockQuote(
         text = '\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'
-        token = Token(kind = 'quoted_block', text = '```\nPositionals blorty blorty blort blort\nfoo bar fubb.\n```', pos = 257, line = 20, col = 1, indent = 0, is_first = True)
+        token = Token(kind='quoted_block', text='```\nPositionals blorty blorty blort blort\nfoo bar fubb.\n```', pos=257, line=20, col=1, indent=0, is_first=True)
     OptSpec(
         scope = None
         text = 'Ignore case during search'
-        token = Token(kind = 'short_option', text = '-i', pos = 322, line = 25, col = 5, indent = 4, is_first = True)
+        token = Token(kind='short_option', text='-i', pos=322, line=25, col=5, indent=4, is_first=True)
         Option(
             name = 'i'
             quantifier = None
@@ -1381,7 +1381,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Invert: emit non-matched lines'
-        token = Token(kind = 'short_option', text = '-v', pos = 368, line = 27, col = 5, indent = 4, is_first = True)
+        token = Token(kind='short_option', text='-v', pos=368, line=27, col=5, indent=4, is_first=True)
         Option(
             name = 'v'
             quantifier = None

@@ -29,8 +29,10 @@ General options :::
 
 configure >> Configure task ::
 
+    ```
     The configure task blah blah. Blah blah blah. Blah blah. Blah blah.
     Blah blah. Blah blah...
+    ```
 
         --env <host>      : Blah blah
         --user <id>       : Blah blah
@@ -43,8 +45,10 @@ configure >> Configure task ::
 
 submit >> Submit task ::
 
+    ```
     The submit task blah blah. Blah blah blah. Blah blah. Blah blah.
     Blah blah. Blah blah...
+    ```
 
         -c <>                   : Blah blah
         -r <>                   : Blah blah
@@ -57,8 +61,10 @@ submit >> Submit task ::
 
 get >> Get task ::
 
+    ```
     The get task blah blah. Blah blah blah. Blah blah. Blah blah.
     Blah blah. Blah blah...
+    ```
 
         -j <>          : Blah blah
         [--json]       : Blah blah
@@ -72,8 +78,10 @@ get >> Get task ::
 
 drop >> Drop task ::
 
+    ```
     The drop task blah blah. Blah blah blah. Blah blah. Blah blah.
     Blah blah. Blah blah...
+    ```
 
     Methods :::
         <method=first>  : Blah blah

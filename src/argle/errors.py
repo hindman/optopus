@@ -1,8 +1,8 @@
 
 from kwexception import Kwexception
-from short_con import cons
+from short_con import cons, constants
 
-ErrKinds = cons(
+ErrMsgs = cons(
     incomplete_spec_parse = 'Failed to parse the full spec',
     empty_variant = 'Variant cannot be empty',
     unnamed_positional = 'Positional requires a name: <>',
@@ -12,8 +12,10 @@ ErrKinds = cons(
     empty_group = 'Group cannot be empty',
 )
 
+ErrKinds = constants(ErrMsgs.keys())
+
 class ArgleError(Kwexception):
 
-    def isa(self, *xs):
-        return any(self.error_kind == x.error_kind for x in xs)
+    def isa(self, *kinds):
+        return self.params['error_kind'] in kinds
 

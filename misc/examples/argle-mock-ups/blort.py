@@ -144,8 +144,10 @@ SPEC = '''
 
     configure >> Configure task ::                                                       ## NOTE_720
 
+        ```
         The configure task blah blah. Blah blah blah. Blah blah. Blah blah.
         Blah blah. Blah blah...
+        ```
 
             --env <host>      : Blah blah                                                ## NOTE_440
             --user <id>       : Blah blah
@@ -158,8 +160,10 @@ SPEC = '''
 
     submit >> Submit task ::
 
+        ```
         The submit task blah blah. Blah blah blah. Blah blah. Blah blah.
         Blah blah. Blah blah...
+        ```
 
             -c <>                   : Blah blah
             -r <>                   : Blah blah
@@ -172,8 +176,10 @@ SPEC = '''
 
     get >> Get task ::
 
+        ```
         The get task blah blah. Blah blah blah. Blah blah. Blah blah.
         Blah blah. Blah blah...
+        ```
 
             -j <>          : Blah blah
             [--json]       : Blah blah
@@ -187,8 +193,10 @@ SPEC = '''
 
     drop >> Drop task ::
 
+        ```
         The drop task blah blah. Blah blah blah. Blah blah. Blah blah.
         Blah blah. Blah blah...
+        ```
 
         Methods :::                                                                      ## NOTE_810
             <method=first>  : Blah blah

@@ -4751,14 +4751,14 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Task to perform'
-        token = Token(kind = 'angle_open', text = '<', pos = 208, line = 7, col = 1, indent = 0, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=208, line=7, col=1, indent=0, is_first=True)
         Positional(
             name = 'task'
             quantifier = None
     OptSpec(
         scope = None
         text = 'Emit lines matching pattern'
-        token = Token(kind = 'angle_open', text = '<', pos = 245, line = 8, col = 1, indent = 0, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=245, line=8, col=1, indent=0, is_first=True)
         Positional(
             name = 'task'
             quantifier = None
@@ -4767,7 +4767,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Search for pattern and replace'
-        token = Token(kind = 'angle_open', text = '<', pos = 294, line = 9, col = 1, indent = 0, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=294, line=9, col=1, indent=0, is_first=True)
         Positional(
             name = 'task'
             quantifier = None
@@ -4776,7 +4776,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Emit text matching pattern'
-        token = Token(kind = 'angle_open', text = '<', pos = 346, line = 10, col = 1, indent = 0, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=346, line=10, col=1, indent=0, is_first=True)
         Positional(
             name = 'task'
             quantifier = None
@@ -4785,28 +4785,28 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Python regular expression'
-        token = Token(kind = 'angle_open', text = '<', pos = 394, line = 11, col = 1, indent = 0, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=394, line=11, col=1, indent=0, is_first=True)
         Positional(
             name = 'rgx'
             quantifier = None
     OptSpec(
         scope = None
         text = 'Path(s) to input'
-        token = Token(kind = 'angle_open', text = '<', pos = 441, line = 12, col = 1, indent = 0, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=441, line=12, col=1, indent=0, is_first=True)
         Positional(
             name = 'path'
             quantifier = None
     OptSpec(
         scope = None
         text = 'Replacement text'
-        token = Token(kind = 'angle_open', text = '<', pos = 479, line = 13, col = 1, indent = 0, is_first = True)
+        token = Token(kind='angle_open', text='<', pos=479, line=13, col=1, indent=0, is_first=True)
         Positional(
             name = 'rep'
             quantifier = None
     OptSpec(
         scope = None
         text = 'Ignore case'
-        token = Token(kind = 'short_option', text = '-i', pos = 517, line = 14, col = 1, indent = 0, is_first = True)
+        token = Token(kind='short_option', text='-i', pos=517, line=14, col=1, indent=0, is_first=True)
         Option(
             name = 'ignore-case'
             quantifier = None
@@ -4814,7 +4814,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Select non-matching lines'
-        token = Token(kind = 'short_option', text = '-v', pos = 550, line = 15, col = 1, indent = 0, is_first = True)
+        token = Token(kind='short_option', text='-v', pos=550, line=15, col=1, indent=0, is_first=True)
         Option(
             name = 'invert-match'
             quantifier = None
@@ -4822,7 +4822,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Stop searching after N matches'
-        token = Token(kind = 'short_option', text = '-m', pos = 597, line = 16, col = 1, indent = 0, is_first = True)
+        token = Token(kind='short_option', text='-m', pos=597, line=16, col=1, indent=0, is_first=True)
         Option(
             name = 'max-count'
             quantifier = None
@@ -4833,7 +4833,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Print N lines of before/after context'
-        token = Token(kind = 'short_option', text = '-C', pos = 649, line = 17, col = 1, indent = 0, is_first = True)
+        token = Token(kind='short_option', text='-C', pos=649, line=17, col=1, indent=0, is_first=True)
         Option(
             name = 'context'
             quantifier = None
@@ -4844,7 +4844,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Highlight matching text'
-        token = Token(kind = 'long_option', text = '--color', pos = 708, line = 18, col = 1, indent = 0, is_first = True)
+        token = Token(kind='long_option', text='--color', pos=708, line=18, col=1, indent=0, is_first=True)
         Option(
             name = 'color'
             quantifier = None
@@ -4855,7 +4855,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'N of substitutions'
-        token = Token(kind = 'short_option', text = '-n', pos = 753, line = 19, col = 1, indent = 0, is_first = True)
+        token = Token(kind='short_option', text='-n', pos=753, line=19, col=1, indent=0, is_first=True)
         Option(
             name = 'nsubs'
             quantifier = None
@@ -4866,7 +4866,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Emit just capture group N [0 for all]'
-        token = Token(kind = 'short_option', text = '-g', pos = 793, line = 20, col = 1, indent = 0, is_first = True)
+        token = Token(kind='short_option', text='-g', pos=793, line=20, col=1, indent=0, is_first=True)
         Option(
             name = 'group'
             quantifier = None
@@ -4877,7 +4877,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Delimeter for capture groups [tab]'
-        token = Token(kind = 'short_option', text = '-d', pos = 852, line = 21, col = 1, indent = 0, is_first = True)
+        token = Token(kind='short_option', text='-d', pos=852, line=21, col=1, indent=0, is_first=True)
         Option(
             name = 'delim'
             quantifier = None
@@ -4888,7 +4888,7 @@ SpecAST(
     OptSpec(
         scope = None
         text = 'Emit capture groups one-per-line, paragraph-style'
-        token = Token(kind = 'short_option', text = '-p', pos = 908, line = 22, col = 1, indent = 0, is_first = True)
+        token = Token(kind='short_option', text='-p', pos=908, line=22, col=1, indent=0, is_first=True)
         Option(
             name = 'para'
             quantifier = None

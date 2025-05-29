@@ -3,17 +3,12 @@ r'''
 
 TODO:
 
-    x Create ErrorKinds.
-
-    x any_parameter() and parameter_group(): add top_level
-
-    - parameter_group(): add logic for position-reset:
-        - Reset if:
-            - top_level = True
-            - error_kind = empty_group or unclosed_bracketed_expression
-
     - test_ex7: EX_BLORT
         - Get running
+
+            # Currently halts here.
+            fubb >> [-x] : Blah blah fubbity
+
         - test_against_baselines(): remove the continue
 
     - Quoted strings: refactor to use a parse mode:
@@ -303,7 +298,7 @@ from functools import wraps
 
 from short_con import cons, constants
 
-from .errors import ArgleError, ErrKinds
+from .errors import ArgleError, ErrKinds, ErrMsgs
 
 ####
 # Simple constants.
@@ -342,8 +337,8 @@ class TokDef:
     # SpecParser (or just consume it and update lexer position).
     emit: bool
 
-    def isa(self, *xs):
-        return any(self.kind == x.kind for x in xs)
+    def isa(self, *tds):
+        return any(self.kind == td.kind for td in tds)
 
 @dataclass
 class Token:
@@ -373,16 +368,22 @@ class Token:
     indent: int
     is_first: bool
 
-    def isa(self, *xs):
-        return any(self.kind == x.kind for x in xs)
+    def isa(self, *ts):
+        return any(self.kind == t.kind for t in ts)
 
     @property
     def brief(self):
-        params = ', '.join(
-            f'{attr} = {getattr(self, attr)!r}'
-            for attr in 'kind text pos line col indent is_first'.split()
-        )
-        return f'Token({params})'
+        ks = 'kind text pos line col indent is_first'.split()
+        return to_repr(self, *ks)
+
+    @property
+    def summary(self):
+        return SummaryToken(self.kind, self.text)
+
+@dataclass
+class SummaryToken:
+    kind: str
+    text: str
 
 ####
 # Data classes: ParseElems.
@@ -1517,9 +1518,37 @@ class SpecParser:
     def parameter_group(self, top_level = True):
         # True: parameter as a direct child of the option.
         # False: parameter nested inside a parameter-group.
-        return self.with_quantifer(
-            self.get_bracketed(GBKinds.parameter_group)
-        )
+
+        # Store the current position-info, in case we need
+        # to reset it. Details below.
+        orig_pos = self.position if top_level else None
+
+        try:
+            # Here we either (a) parse a parameter-group or (b) never
+            # even get started (no opening bracket) and get None.
+            e = self.get_bracketed(GBKinds.parameter_group)
+            return self.with_quantifer(e)
+        except ArgleError as err:
+            # Here we started parsing a parameter-group, but then halted midway
+            # with an error.
+            #
+            # If this parameter_group() call is for a top-level element (direct
+            # child of an Option, not a nested parameter-group) and if the
+            # error is the right kind, we need to reset-position and return
+            # None, rather than letting the error be raised.
+            #
+            # That will tell the currently-pending Option that no more
+            # parameters are forthcoming. The Option will wrap up and the group
+            # that raised the error here will be re-parsed, as a regular group.
+            eks = (
+                ErrKinds.empty_group,
+                ErrKinds.unclosed_bracketed_expression,
+            )
+            if top_level and err.isa(*eks):
+                self.position = orig_pos
+                return None
+            else:
+                raise
 
     ####
     # Quantifiers.
@@ -1851,13 +1880,13 @@ class SpecParser:
         # Raises ArgleError with kws, plus position/token info.
         lex = self.lexer
         kws.update(
-            msg = ErrorKinds[error_kind],
+            msg = ErrMsgs[error_kind],
+            error_kind = error_kind,
             mode = self.mode,
             pos = lex.pos,
             line = lex.line,
             col = lex.col,
-            current_token = lex.curr.kind if lex.curr else None,
-            error_kind = error_kind,
+            current_token = lex.curr.summary if lex.curr else None,
         )
         raise ArgleError(**kws)
 
@@ -1885,4 +1914,18 @@ def get(xs, i, default = None):
         return xs[i]
     except (IndexError, KeyError) as e:
         return default
+
+def to_repr(obj, *ks):
+    # A helper to mimic dataclass repr().
+    cls_name = obj.__class__.__qualname__
+    ks = ks or obj.__dict__.keys()
+    kws = {
+        k : getattr(obj, k)
+        for k in ks
+    }
+    params = ', '.join(
+        f'{k}={v!r}'
+        for k, v in kws.items()
+    )
+    return f'{cls_name}({params})'
 
