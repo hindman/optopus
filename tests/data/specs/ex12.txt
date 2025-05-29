@@ -1,0 +1,8 @@
+<rgx> : Python regular expression
+[<path>...] : Path(s) to input
+[-i --ignore-case] : Ignore case
+[-v --invert-match] : Select non-matching lines
+[-m --max-count <n>] : Stop searching after N matches
+[-C --context <n>] : Print N lines of before/after context
+[--color <red|green|blue>] : Highlight matching text
+

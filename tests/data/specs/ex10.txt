@@ -1,0 +1,11 @@
+cmd! :  command=(
+            <cmd=snum>   <snum>             |
+            <cmd=fnum>   <fnum>             |
+            <cmd=number> <numbering=on|off> |
+            <cmd=tuning> <notes>...         |
+            <cmd=fret>   <syms>...          |
+            <cmd=invert> <syms>...
+            )
+
+main : cmd! [ `/` cmd! ]...
+

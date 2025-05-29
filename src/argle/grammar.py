@@ -3,16 +3,9 @@ r'''
 
 TODO:
 
-    - test_ex7: EX_BLORT
-        - Get running
+    - Refactor tests: drop numbers.
 
-            # Currently halts here.
-            fubb >> [-x] : Blah blah fubbity
-
-        - test_against_baselines(): remove the continue
-
-    - Quoted strings: refactor to use a parse mode:
-        - See notes.txt (todos).
+    - Check Grammar.pp for tests.
 
     - Improved error messages:
 
@@ -29,6 +22,12 @@ TODO:
             - recent tokens parse (or at least a simplified display of them)
             - information about what the parser expected to find, given
               current context
+
+    - Quoted strings: refactor to use a parse mode:
+        - See notes.txt (todos).
+
+    - ex00 tests:
+        - add declarative metadata
 
     - build_grammar()
 
@@ -462,7 +461,7 @@ class SectionElems(ParseElem):
 @dataclass
 class Scope(ParseElem):
     # A scope attached to either a SectionTitle or OptSpec.
-    query_path = str
+    query_path: str
 
 @dataclass
 class Quantifier(ParseElem):
@@ -631,7 +630,7 @@ def define_tokdefs():
     heading_marker = ':::' + end_of_line
 
     # Scopes.
-    scope_marker = '<<'
+    scope_marker = '>>'
     query_elem = fr'{glob_char}+'
     query_path = fr'{query_elem}(?:\.{query_elem})*'
     scope0 = scope_marker
@@ -1070,6 +1069,10 @@ class SpecParser:
         # Tokens the parser has eaten.
         self.eaten = []
 
+        # Current stack of parsing-function names.
+        # Used for error-reporting and debugging.
+        self.parse_stack = []
+
     @property
     def position(self):
         return cons(
@@ -1094,13 +1097,15 @@ class SpecParser:
         self.eaten = self.eaten[0 : next_token_index]
 
     ####
-    # Debug decorator.
+    # Parse-tracking decorator.
     #
     # Manages the indentation levels needed for debugging output
     # as we traverse the hierarchy of parsing-function calls.
+    #
+    # Also TODO ...
     ####
 
-    def debug_indent(old_method):
+    def track_parse(old_method):
         # Setup based on the name of the method being decorated.
         NAME = old_method.__name__
         MSG_PREFIX = '\n' if NAME == 'parse' else ''
@@ -1115,7 +1120,9 @@ class SpecParser:
             # - Call the method.
             # - Call debug() to summarize the result.
             lex.debug_indent += 1
+            self.parse_stack.append(f'{NAME}()')
             elem = old_method(self, *xs, **kws)
+            self.parse_stack.pop()
             result = type(elem).__name__ if elem else False
             lex.debug(caller_name = NAME, RESULT = result)
 
@@ -1152,7 +1159,7 @@ class SpecParser:
     # use to parse arguments and generate help text.
     ####
 
-    @debug_indent
+    @track_parse
     def parse(self):
 
         # Collect variants.
@@ -1180,7 +1187,7 @@ class SpecParser:
     # - Or helpers that collect them.
     ####
 
-    @debug_indent
+    @track_parse
     def variant(self):
         # Setup.
         # - Variants must begin on a fresh line.
@@ -1228,7 +1235,7 @@ class SpecParser:
             else:
                 return None
 
-    @debug_indent
+    @track_parse
     def collect_section_elems(self):
         # A helper used to collect top-level elements.
         # Like variants, these must also start on their own line.
@@ -1248,7 +1255,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def any_section_title(self):
         # A section title: scoped or not.
         tok = self.eat(TokDefs.scoped_section_title, TokDefs.section_title)
@@ -1267,7 +1274,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def section_content_elem(self):
         # A helper used to collect top-level elements.
         return (
@@ -1276,7 +1283,7 @@ class SpecParser:
             self.opt_spec()
         )
 
-    @debug_indent
+    @track_parse
     def heading(self):
         tok = self.eat(TokDefs.heading)
         if tok:
@@ -1287,7 +1294,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def block_quote(self):
         tok = self.eat(TokDefs.quoted_block)
         if tok:
@@ -1298,7 +1305,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def opt_spec(self):
         # If we do get an opt-spec, we will need access to its first Token.
         first_tok_index = self.next_token_index
@@ -1328,7 +1335,7 @@ class SpecParser:
     # - Mid-level elements that can appear in a Variant or Group.
     ####
 
-    @debug_indent
+    @track_parse
     def variant_elems(self):
         # A helper to collect elements inside a Variant or a Group.
         elems = []
@@ -1350,7 +1357,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def quoted_literal(self):
         tok = self.eat(TokDefs.quoted_literal)
         if tok:
@@ -1358,7 +1365,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def choice_sep(self):
         tok = self.eat(TokDefs.choice_sep)
         if tok:
@@ -1366,7 +1373,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def partial_usage(self):
         tok = self.eat(TokDefs.partial_usage)
         if tok:
@@ -1374,13 +1381,13 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def any_group(self):
         return self.with_quantifer(
             self.get_bracketed(GBKinds.group)
         )
 
-    @debug_indent
+    @track_parse
     def positional(self):
         return self.with_quantifer(
             self.with_quantifer(
@@ -1388,7 +1395,7 @@ class SpecParser:
             )
         )
 
-    @debug_indent
+    @track_parse
     def option(self):
         b = self.bare_option()
         if b:
@@ -1407,7 +1414,7 @@ class SpecParser:
     # Elements that can appear in an OptSpec.
     ####
 
-    @debug_indent
+    @track_parse
     def opt_spec_scope(self):
         # An opt-spec scope declaration.
         tok = self.eat(TokDefs.opt_spec_scope, TokDefs.opt_spec_scope_empty)
@@ -1417,7 +1424,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def opt_spec_def(self):
         # An opt-spec definition (ie, the stuff between
         # the scope and the help-text).
@@ -1426,21 +1433,21 @@ class SpecParser:
             self.opt_spec_elem()
         )
 
-    @debug_indent
+    @track_parse
     def opt_spec_group(self):
         # The enclosing-group around an opt-spec definition.
         return self.with_quantifer(
             self.get_bracketed(GBKinds.opt_spec_group)
         )
 
-    @debug_indent
+    @track_parse
     def opt_spec_elem(self):
         return (
             self.positional() or
             self.aliases_and_option()
         )
 
-    @debug_indent
+    @track_parse
     def aliases_and_option(self):
         # One or more aliases and then the option itself.
         aliases = self.parse_some(self.bare_option)
@@ -1459,7 +1466,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def bare_option(self):
         # Parses just the option, eg --foo.
         # Used when parsing an option in a variant or the
@@ -1470,7 +1477,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def opt_help_text(self):
         # Try to get the opt-spec help text and any continuation lines.
         if self.eat(TokDefs.opt_spec_sep):
@@ -1486,7 +1493,7 @@ class SpecParser:
 
         return None
 
-    @debug_indent
+    @track_parse
     def rest_of_line(self):
         tok = self.eat(TokDefs.rest_of_line)
         if tok:
@@ -1501,20 +1508,20 @@ class SpecParser:
     # Parameters.
     ####
 
-    @debug_indent
+    @track_parse
     def any_parameter(self, top_level = True):
         return (
             self.parameter() or
             self.parameter_group(top_level = top_level)
         )
 
-    @debug_indent
+    @track_parse
     def parameter(self):
         return self.with_quantifer(
             self.get_bracketed(GBKinds.parameter)
         )
 
-    @debug_indent
+    @track_parse
     def parameter_group(self, top_level = True):
         # True: parameter as a direct child of the option.
         # False: parameter nested inside a parameter-group.
@@ -1554,7 +1561,7 @@ class SpecParser:
     # Quantifiers.
     ####
 
-    @debug_indent
+    @track_parse
     def with_quantifer(self, e):
         # A helper to attached a quantifier to a ParseElem.
         if e:
@@ -1563,7 +1570,7 @@ class SpecParser:
                 e.quantifier = q
         return e
 
-    @debug_indent
+    @track_parse
     def quantifier(self):
         # Parses quantifiers: ... or {m,n} or ?
         q = self.triple_dot() or self.quant_range()
@@ -1575,7 +1582,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def triple_dot(self):
         tok = self.eat(TokDefs.triple_dot)
         if tok:
@@ -1583,7 +1590,7 @@ class SpecParser:
         else:
             return None
 
-    @debug_indent
+    @track_parse
     def quant_range(self):
         tok = self.eat(TokDefs.quant_range)
         if tok:
@@ -1604,7 +1611,7 @@ class SpecParser:
     # Helpers to parse the elements inside a var-input.
     ####
 
-    @debug_indent
+    @track_parse
     def var_input_elems(self, require_name = False):
         # Returns a VarInput holding the guts of a positional or parameter.
         # See 'VarInput forms' for details and examples.
@@ -1646,7 +1653,7 @@ class SpecParser:
         # Boom.
         return VarInput(name = name, elems = choices)
 
-    @debug_indent
+    @track_parse
     def next_choice(self, require_sep = True):
         # If needed, make sure there is a choice separator (|).
         if require_sep and not self.eat(TokDefs.choice_sep):
@@ -1887,6 +1894,7 @@ class SpecParser:
             line = lex.line,
             col = lex.col,
             current_token = lex.curr.summary if lex.curr else None,
+            parse_stack = self.parse_stack,
         )
         raise ArgleError(**kws)
 

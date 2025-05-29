@@ -1,0 +1,12 @@
+<weapon=ship>        <action=new>        <name>...
+<weapon=ship> <name> <action=move>       <x> <y> [--speed <kn>]
+<weapon=ship>        <action=shoot>      <x> <y>
+<weapon=mine>        <action=set|remove> <x> <y> [--moored | --drifting]
+
+<name>       : Ship name
+<x>          : X coordinate
+<y>          : Y coordinate
+--speed <kn> : Speed in knots [default: 10]
+--moored     : Moored (anchored) mine
+--drifting   : Drifting mine
+

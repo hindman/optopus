@@ -2,6 +2,7 @@
 import io
 import pytest
 
+from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
 
@@ -9,6 +10,9 @@ from short_con import cons, constants
 
 from argle.grammar import (
     SpecParser,
+    Rgxs,
+    TokDefs,
+    Scope,
 )
 
 # @pytest.mark.skip
@@ -32,38 +36,74 @@ class Sio(io.StringIO):
 ####
 
 def test_ex01(tr):
-    sp = SpecParser(SPECS.ex01, debug = False)
+    esp = ESpecs.ex01
+    sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
 def test_ex02(tr):
-    sp = SpecParser(SPECS.ex02, debug = False)
+    esp = ESpecs.ex02
+    sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
 def test_ex03(tr):
-    sp = SpecParser(SPECS.ex03, debug = False)
+    esp = ESpecs.ex03
+    sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
 def test_ex04(tr):
-    sp = SpecParser(SPECS.ex04, debug = False)
+    esp = ESpecs.ex04
+    sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
 def test_ex05(tr):
-    sp = SpecParser(SPECS.ex05, debug = False)
+    esp = ESpecs.ex05
+    sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
 def test_ex06(tr):
-    sp = SpecParser(SPECS.ex06, debug = False)
+    esp = ESpecs.ex06
+    sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
-@pytest.mark.skip
 def test_ex07(tr):
-    sp = SpecParser(SPECS.ex07, debug = True)
+    esp = ESpecs.ex07
+    sp = SpecParser(esp.spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex08(tr):
+    esp = ESpecs.ex08
+    sp = SpecParser(esp.spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex09(tr):
+    esp = ESpecs.ex09
+    sp = SpecParser(esp.spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex10(tr):
+    esp = ESpecs.ex10
+    sp = SpecParser(esp.spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex11(tr):
+    esp = ESpecs.ex11
+    sp = SpecParser(esp.spec, debug = False)
+    g = sp.parse()
+    # tr.dump(g.pp)
+
+def test_ex12(tr):
+    esp = ESpecs.ex12
+    sp = SpecParser(esp.spec, debug = False)
     g = sp.parse()
     # tr.dump(g.pp)
 
@@ -81,13 +121,9 @@ def test_ex07(tr):
 ####
 
 def test_against_baselines(tr):
-    for k, spec in SPECS:
-
-        # TODO: remove
-        if k == 'ex07':
-            continue
-
+    for k, esp in ESpecs:
         # Parse the spec into a grammar, with debug=True.
+        spec = esp.spec
         sp = SpecParser(spec, debug = Sio())
         g = sp.parse()
         parser_debug = str(sp.debug)
@@ -105,35 +141,25 @@ def test_against_baselines(tr):
         ])
 
         # Write the text we got.
-        paths = ex_paths(k)
-        write_file(paths.got, got_text)
+        gpath = esp.got_path
+        epath = esp.exp_path
+        write_file(gpath, got_text)
 
         # Read the text we expect, if it exists.
         # Otherwise, write it for next time.
-        if paths.exp.is_file():
-            exp_text = read_file(paths.exp)
+        if epath.is_file():
+            exp_text = read_file(epath)
         else:
-            write_file(paths.exp, got_text)
+            write_file(epath, got_text)
             exp_text = got_text
 
         # Assert.
         ok = got_text == exp_text
-        assert ok, f'diff {paths.exp} {paths.got}'
+        assert ok, f'diff {epath} {gpath}'
 
 ####
 # Helpers.
 ####
-
-def ex_paths(k):
-    f = f'{k}.txt'
-    return cons(
-        spec = Path('tests') / 'data' / 'specs' / f,
-        got  = Path('tests') / 'data' / 'got' / f,
-        exp  = Path('tests') / 'data' / 'exp' / f,
-    )
-
-def read_spec(k):
-    return read_file(ex_paths(k).spec)
 
 def read_file(path):
     with open(path) as fh:
@@ -147,16 +173,48 @@ def write_file(path, text):
 # Example specs.
 ####
 
-SPECS = constants({
-    k : read_spec(k)
-    for k in [
-        'ex01',
-        'ex02',
-        'ex03',
-        'ex04',
-        'ex05',
-        'ex06',
-        'ex07',
-    ]
+@dataclass
+class ESpec:
+    key: str
+    label: str
+    spec: str
+    spec_path: Path
+    got_path: Path
+    exp_path: Path
+
+    @classmethod
+    def from_key(cls, key, label):
+        fname = f'{key}.txt'
+        data_path = Path('tests') / 'data'
+        spec_path = data_path / 'specs' / fname
+        got_path  = data_path / 'got' / fname
+        exp_path  = data_path / 'exp' / fname
+        return cls(
+            key = key,
+            label = label,
+            spec = read_file(spec_path),
+            spec_path = spec_path,
+            got_path = got_path,
+            exp_path = exp_path,
+        )
+
+ESpecLabels = cons(
+    ex01 = 'pgrep-1',
+    ex02 = 'pgrep-2',
+    ex12 = 'pgrep-3',
+    ex03 = 'wrangle',
+    ex04 = 'line-wrap-1',
+    ex05 = 'line-wrap-2',
+    ex06 = 'line-wrap-3',
+    ex07 = 'blort',
+    ex08 = 'naval-fate',
+    ex09 = 'repo',
+    ex10 = 'neck-diagram',
+    ex11 = 'nab',
+)
+
+ESpecs = constants({
+    key : ESpec.from_key(key, label)
+    for key, label in ESpecLabels
 })
 

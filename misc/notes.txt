@@ -919,11 +919,11 @@ nab: EX_NAB
 
     - Another separator-based grammar.
 
-    chomp!   : / <cmd=chomp>
-    findall! : / <cmd=findall> <rgx> [-a]
-    grep!    : / <cmd=grep> <rgx> [-i] [-v] [-s]
-    range!   : / <cmd=range> <start> <stop> [<step>] [-g]
-    run!     : / <cmd=run> <code> [-g <>] [-a] [-v] [-i]
+    chomp!   : `/` <cmd=chomp>
+    findall! : `/` <cmd=findall> <rgx> [-a]
+    grep!    : `/` <cmd=grep> <rgx> [-i] [-v] [-s]
+    range!   : `/` <cmd=range> <start> <stop> [<step>] [-g]
+    run!     : `/` <cmd=run> <code> [-g <>] [-a] [-v] [-i]
 
     main : [--trace] commands=(chomp! | findall! | grep! | range! | run!)...
     help : --help
