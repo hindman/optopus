@@ -3170,6 +3170,28 @@ Policy decisions:
 
             - If no opts match, Argle will raise.
 
+        - If variant covers the grammar for an opt via its quantifier, does
+          the opt-spec have to include the quantifier too?
+
+            - Example: a variant and its two opt-specs:
+
+                [-i] <path>
+
+                -i --ignore-case : Ignore case
+                <path> : File path
+
+            - How would argle handle Option(-i)?
+
+                Attribute   | Variant | Opt-spec | Note
+                -------------------------------------------
+                alias       | Y       | Y        | Matched based on this
+                option-name | .       | Y        | OK: additive
+                quantifier  | Y       | .        | .
+                help-text   | .       | Y        | OK: additive
+
+            - Verdict: no quantifier required in the opt-spec in a scenario
+              where the variant handles that aspect.
+
     - Spec-scopes to disambiguate, via this syntax:
 
         PARENT >> CHILD

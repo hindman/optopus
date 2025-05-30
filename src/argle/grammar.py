@@ -5,13 +5,26 @@ TODO:
 
     - Check Grammar.pp for tests.
 
+        x pgrep-1.txt
+        x pgrep-2.txt
+        x pgrep-3.txt
+        x wrangle.txt
+        x line-wrap-1.txt
+        x line-wrap-2.txt
+        x line-wrap-3.txt
+        x naval-fate.txt
+        x nab.txt
+        x neck-diagram.txt
+        - repo.txt
+        - blort.txt
+
     - Improved error messages:
 
         - Currently, everything happens in error().
 
         - experiment with the errors currently being generated.
 
-        - see chatgpt discussion of this issue and check the formatting
+        x see chatgpt discussion of this issue and check the formatting
           and appearance of their syntax error reporting
 
         - possible additions to errors:
@@ -20,6 +33,21 @@ TODO:
             - recent tokens parse (or at least a simplified display of them)
             - information about what the parser expected to find, given
               current context
+
+        - lark library:
+            - very similar to argle's usage scenario:
+                - User supplies an EBNF grammar as text.
+                - It is analoguous to a spec in that it relies on a syntax to
+                  define the grammar that the lark-generated parser will
+                  support.
+                - If you supply an EBNF grammar with syntactic errors, the
+                  stack traces:
+                    - Is verbose and not too aesthetic.
+                    - Where applicable, it uses the caret strategy to mark
+                      where parsing halted.
+                    - It also tries to enumerate that the parser was expecting
+                      when the halt occurred (large frames that in terms of
+                      tokens).
 
     - Quoted strings: refactor to use a parse mode:
         - See notes.txt (todos).
