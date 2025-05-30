@@ -1,0 +1,95 @@
+#! /usr/bin/env python
+
+import sys
+import pyperclip
+
+from textwrap import dedent
+from pathlib import Path
+
+from argle import bargparse as bp
+
+from argle.grammar import (
+    SpecParser,
+)
+
+halt = bp.halt
+EXIT = bp.EXIT
+
+DESCRIPTION = dedent(f'''
+    Experiment with Argle spec-parsing.
+''')
+
+ARG_CONFIGS = (
+    dict(
+        name = 'path',
+        nargs = '?',
+        metavar = 'TEXT-OR-PATH',
+        help = 'Get spec from argument or from file path',
+    ),
+    dict(
+        name = f'--clipboard -c',
+        action = 'store_true',
+        help = 'Get spec from clipboard',
+    ),
+    dict(
+        name = f'--spec -s',
+        action = 'store_true',
+        help = 'Print spec and exit',
+    ),
+    dict(
+        name = f'--no-parse -n',
+        action = 'store_true',
+        help = 'Do not try to parse spec',
+    ),
+    dict(
+        name = f'--debug -d',
+        action = 'store_true',
+        help = 'Parse spec with debug=True',
+    ),
+    dict(
+        name = f'--tree -t',
+        action = 'store_true',
+        help = 'Print SpecAST as a tree',
+    ),
+    dict(
+        add_help = True,
+    ),
+)
+
+def main(args):
+    ap, opts = bp.parse_args(
+        args,
+        ARG_CONFIGS,
+        description = DESCRIPTION,
+    )
+
+    if opts.clipboard:
+        spec = pyperclip.paste()
+    elif opts.path:
+        p = opts.path
+        if Path(p).is_file():
+            spec = read_file(opts.path)
+        else:
+            spec = opts.path
+    else:
+        bp.exit_with_usage(ap, 'No spec provided')
+
+    if opts.spec:
+        print(spec.rstrip())
+
+    if not opts.no_parse:
+        sp = SpecParser(spec, debug = opts.debug)
+        g = sp.parse()
+
+        if opts.tree:
+            print(g.pp)
+        else:
+            print('# SPEC-OK')
+
+def read_file(path):
+    with open(path) as fh:
+        return fh.read()
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+

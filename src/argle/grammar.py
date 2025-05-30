@@ -34,26 +34,22 @@ TODO:
             - information about what the parser expected to find, given
               current context
 
+            - define HaltContext()
+
         - lark library:
             - very similar to argle's usage scenario:
                 - User supplies an EBNF grammar as text.
                 - It is analoguous to a spec in that it relies on a syntax to
                   define the grammar that the lark-generated parser will
                   support.
-                - If you supply an EBNF grammar with syntactic errors, the
-                  stack traces:
-                    - Is verbose and not too aesthetic.
-                    - Where applicable, it uses the caret strategy to mark
-                      where parsing halted.
-                    - It also tries to enumerate that the parser was expecting
-                      when the halt occurred (large frames that in terms of
-                      tokens).
+                - If you supply an EBNF grammar with syntactic errors:
+                    - Stack trace is verbose, not pretty (the bar is low).
+                    - If applicable, it uses caret-strategy to mark halt-spot.
+                    - Tries to enumerate what the parser was expecting when the
+                      halt occurred (framed in terms of tokens).
 
     - Quoted strings: refactor to use a parse mode:
         - See notes.txt (todos).
-
-    - ex00 tests:
-        - add declarative metadata
 
     - build_grammar()
 
@@ -321,9 +317,13 @@ import sys
 from dataclasses import dataclass, field
 from functools import wraps
 
-from short_con import cons, constants
+from short_con import cons, constants, dc
 
 from .errors import ArgleError, ErrKinds, ErrMsgs
+
+from rich import traceback as rtb
+
+# rtb.install(show_locals = True, max_frames = 4)
 
 ####
 # Simple constants.
@@ -367,6 +367,7 @@ class TokDef:
 
 @dataclass
 class Token:
+
     # Token kind/name.
     kind: str
 
@@ -400,15 +401,6 @@ class Token:
     def brief(self):
         ks = 'kind text pos line col indent is_first'.split()
         return to_repr(self, *ks)
-
-    @property
-    def summary(self):
-        return SummaryToken(self.kind, self.text)
-
-@dataclass
-class SummaryToken:
-    kind: str
-    text: str
 
 ####
 # Data classes: ParseElems.
@@ -1741,9 +1733,10 @@ class SpecParser:
 
         # Raise if we cannot get the closing TokDef.
         if not self.eat(closing_td):
+            td = closing_td
             self.error(
                 ErrKinds.unclosed_bracketed_expression,
-                closing_td = closing_td,
+                closing_td = distilled(closing_td, 'kind', 'regex'),
             )
 
         # Return the ParseElem.
@@ -1912,17 +1905,32 @@ class SpecParser:
         # Called when spec-parsing fails.
         # Raises ArgleError with kws, plus position/token info.
         lex = self.lexer
-        kws.update(
+        tok = lex.curr
+        if tok:
+            tok = distilled(lex.curr, 'kind', 'text')
+        err_kws = dict(
             msg = ErrMsgs[error_kind],
             error_kind = error_kind,
+        )
+        err_kws.update(kws)
+        err_kws.update(
             mode = self.mode,
             pos = lex.pos,
             line = lex.line,
             col = lex.col,
-            current_token = lex.curr.summary if lex.curr else None,
+            next_token = tok,
             parse_stack = self.parse_stack,
+
+            # TODO:
+            #
+            # A simple string building approach does not work well.
+            # Why? Because ordinary str are handled via repr() in the stacktrace.
+            # Need an object that defines its own repr-behavior so that you
+            # see the line breaks and the caret aligned at the correct spot.
+            #
+            # context = '\nblah blah! blah\n         ^',
         )
-        raise ArgleError(**kws)
+        raise ArgleError(**err_kws)
 
 ####
 # Utility functions.
@@ -1962,4 +1970,13 @@ def to_repr(obj, *ks):
         for k, v in kws.items()
     )
     return f'{cls_name}({params})'
+
+def distilled(obj, *attrs):
+    cls_name = obj.__class__.__qualname__
+    kws = {
+        a : getattr(obj, a)
+        for a in attrs
+    }
+    cls = dc(*kws, cls_name = cls_name)
+    return cls(**kws)
 
