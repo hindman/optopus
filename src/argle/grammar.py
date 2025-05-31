@@ -3,6 +3,8 @@ r'''
 
 TODO:
 
+    x error(): provide contextual text, plus caret marker.
+
     - Check Grammar.pp for tests.
 
         x pgrep-1.txt
@@ -15,43 +17,16 @@ TODO:
         x naval-fate.txt
         x nab.txt
         x neck-diagram.txt
-        - repo.txt
+        x repo.txt
         - blort.txt
-
-    - Improved error messages:
-
-        - Currently, everything happens in error().
-
-        - experiment with the errors currently being generated.
-
-        x see chatgpt discussion of this issue and check the formatting
-          and appearance of their syntax error reporting
-
-        - possible additions to errors:
-            - surrounding text where halt occurred, marking the exact spot
-              in some fashion
-            - recent tokens parse (or at least a simplified display of them)
-            - information about what the parser expected to find, given
-              current context
-
-            - define HaltContext()
-
-        - lark library:
-            - very similar to argle's usage scenario:
-                - User supplies an EBNF grammar as text.
-                - It is analoguous to a spec in that it relies on a syntax to
-                  define the grammar that the lark-generated parser will
-                  support.
-                - If you supply an EBNF grammar with syntactic errors:
-                    - Stack trace is verbose, not pretty (the bar is low).
-                    - If applicable, it uses caret-strategy to mark halt-spot.
-                    - Tries to enumerate what the parser was expecting when the
-                      halt occurred (framed in terms of tokens).
 
     - Quoted strings: refactor to use a parse mode:
         - See notes.txt (todos).
 
     - build_grammar()
+
+    - error(): includes expected-elements:
+        - Probably framed in terms of parsing-functions.
 
 ----
 Spec-parsing overview
@@ -319,7 +294,12 @@ from functools import wraps
 
 from short_con import cons, constants, dc
 
-from .errors import ArgleError, ErrKinds, ErrMsgs
+from .errors import (
+    ArgleError,
+    SpecParseError,
+    ErrKinds,
+    ErrMsgs,
+)
 
 from rich import traceback as rtb
 
@@ -339,6 +319,7 @@ Chars = cons(
     exclamation = '!',
     comma = ',',
     empty_set = '∅',
+    caret = '^',
 )
 
 ####
@@ -589,6 +570,25 @@ class QuotedLiteral(ParseElem):
     text: str
 
 ####
+# Data classes: other.
+####
+
+@dataclass
+class ParseContext():
+    line: str
+    col: int
+
+    @property
+    def for_error(self):
+        if self.line:
+            heading = '# Parse context.'
+            indent = Chars.space * (self.col - 1)
+            caret_line = indent + Chars.caret
+            return f'\n\n{heading}\n{self.line}\n{caret_line}'
+        else:
+            return None
+
+####
 # Regular expression patterns and TokDef defintions.
 ####
 
@@ -655,8 +655,8 @@ def define_tokdefs():
     scope1 = captured(query_path) + wrapped_in(whitespace0, scope_marker)
 
     # Section title, heading.
-    section_title = captured('.*') + section_marker
-    heading = captured('.*') + heading_marker
+    section_title = captured('.*[^:]') + section_marker
+    heading = captured('.*[^:]') + heading_marker
 
     # Stuff inside a quantifier range.
     quant_range_guts  = (
@@ -820,6 +820,7 @@ class RegexLexer(object):
     def __init__(self, text, validator, tokdefs = None, debug = False):
         # Text to be lexed.
         self.text = text
+        self.lines = text.split(Chars.newline)
 
         # Debugging: file handle and indent-level.
         self.debug_fh = debug
@@ -1011,6 +1012,17 @@ class RegexLexer(object):
             self.is_first = True
         else:
             self.is_first = False
+
+    ####
+    # Getting contextual text surround the current position.
+    ####
+
+    def get_context(self):
+        return ParseContext(
+            line = get(self.lines, self.line - 1),
+            col = self.col,
+        )
+
 
     ####
     # Helpers to print debugging information.
@@ -1904,10 +1916,14 @@ class SpecParser:
     def error(self, error_kind, **kws):
         # Called when spec-parsing fails.
         # Raises ArgleError with kws, plus position/token info.
+
+        # Setup.
         lex = self.lexer
         tok = lex.curr
         if tok:
             tok = distilled(lex.curr, 'kind', 'text')
+
+        # Assemble the exception keyword args, in a specific order.
         err_kws = dict(
             msg = ErrMsgs[error_kind],
             error_kind = error_kind,
@@ -1920,17 +1936,12 @@ class SpecParser:
             col = lex.col,
             next_token = tok,
             parse_stack = self.parse_stack,
-
-            # TODO:
-            #
-            # A simple string building approach does not work well.
-            # Why? Because ordinary str are handled via repr() in the stacktrace.
-            # Need an object that defines its own repr-behavior so that you
-            # see the line breaks and the caret aligned at the correct spot.
-            #
-            # context = '\nblah blah! blah\n         ^',
         )
-        raise ArgleError(**err_kws)
+
+        # Create error, attach parse context, and raise.
+        err = SpecParseError(**err_kws)
+        err.parse_context = lex.get_context().for_error
+        raise err
 
 ####
 # Utility functions.

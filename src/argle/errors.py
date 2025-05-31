@@ -19,3 +19,8 @@ class ArgleError(Kwexception):
     def isa(self, *kinds):
         return self.params['error_kind'] in kinds
 
+class SpecParseError(ArgleError):
+
+    def __str__(self):
+        return super().__str__() + self.parse_context
+

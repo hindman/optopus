@@ -3101,11 +3101,17 @@ parse()
       section_content_elem(RESULT = BlockQuote)
     any_section_title()
       eat(wanted = 'scoped_section_title|section_title')
-      get_next_token(lexed = 'section_title')
-      taste(ok = True, is_first = True)
-      get_next_token(returned = 'section_title')
-      eat(eaten = 'section_title', text = 'Commands :::', pos = 621, line = 18, col = 1)
-      any_section_title(RESULT = SectionTitle)
+      get_next_token(lexed = 'heading')
+      any_section_title(∅)
+    section_content_elem()
+      heading()
+        eat(wanted = 'heading')
+        get_next_token(lexed = 'heading')
+        taste(ok = True, is_first = True)
+        get_next_token(returned = 'heading')
+        eat(eaten = 'heading', text = 'Commands :::', pos = 621, line = 18, col = 1)
+        heading(RESULT = Heading)
+      section_content_elem(RESULT = Heading)
     any_section_title()
       eat(wanted = 'scoped_section_title|section_title')
       get_next_token(lexed = 'angle_open')
@@ -3688,11 +3694,17 @@ parse()
       section_content_elem(RESULT = OptSpec)
     any_section_title()
       eat(wanted = 'scoped_section_title|section_title')
-      get_next_token(lexed = 'section_title')
-      taste(ok = True, is_first = True)
-      get_next_token(returned = 'section_title')
-      eat(eaten = 'section_title', text = 'General options :::', pos = 863, line = 25, col = 1)
-      any_section_title(RESULT = SectionTitle)
+      get_next_token(lexed = 'heading')
+      any_section_title(∅)
+    section_content_elem()
+      heading()
+        eat(wanted = 'heading')
+        get_next_token(lexed = 'heading')
+        taste(ok = True, is_first = True)
+        get_next_token(returned = 'heading')
+        eat(eaten = 'heading', text = 'General options :::', pos = 863, line = 25, col = 1)
+        heading(RESULT = Heading)
+      section_content_elem(RESULT = Heading)
     any_section_title()
       eat(wanted = 'scoped_section_title|section_title')
       get_next_token(lexed = 'brack_open')
@@ -6473,10 +6485,9 @@ SpecAST(
     BlockQuote(
         text = '\nRepo is a command line tool that showcases how to build complex command line\ninterfaces with Argle.\n\nThis tool is supposed to look like a distributed version control system to\nshow how something like this can be structured.\n'
         token = Token(kind='quoted_block', text='```\nRepo is a command line tool that showcases how to build complex command line\ninterfaces with Argle.\n\nThis tool is supposed to look like a distributed version control system to\nshow how something like this can be structured.\n```', pos=388, line=10, col=1, indent=0, is_first=True)
-    SectionTitle(
-        scope = None
-        title = 'Commands :'
-        token = Token(kind='section_title', text='Commands :::', pos=621, line=18, col=1, indent=0, is_first=True)
+    Heading(
+        title = 'Commands'
+        token = Token(kind='heading', text='Commands :::', pos=621, line=18, col=1, indent=0, is_first=True)
     OptSpec(
         scope = None
         text = 'Clones a repository'
@@ -6522,10 +6533,9 @@ SpecAST(
             quantifier = None
             Choice(
                 text = 'setuser'
-    SectionTitle(
-        scope = None
-        title = 'General options :'
-        token = Token(kind='section_title', text='General options :::', pos=863, line=25, col=1, indent=0, is_first=True)
+    Heading(
+        title = 'General options'
+        token = Token(kind='heading', text='General options :::', pos=863, line=25, col=1, indent=0, is_first=True)
     OptSpec(
         scope = None
         text = 'Changes the repository folder location'
