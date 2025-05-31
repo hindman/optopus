@@ -10700,7 +10700,7 @@ SpecAST(
                 quantifier = None
                 aliases = []
     OptSpec(
-        scope = Scope(query_path='fubb >> ')
+        scope = Scope(query_path='fubb')
         text = 'Blah blah fubbity'
         token = Token(kind='opt_spec_scope', text='fubb >> ', pos=2543, line=107, col=9, indent=8, is_first=True)
         Group(
@@ -10751,7 +10751,7 @@ SpecAST(
         title = 'Triple: other options'
         token = Token(kind='heading', text='Triple: other options :::', pos=2726, line=115, col=5, indent=4, is_first=True)
     OptSpec(
-        scope = Scope(query_path='wizz >> ')
+        scope = Scope(query_path='wizz')
         text = 'Blah blah wizzity'
         token = Token(kind='opt_spec_scope', text='wizz >> ', pos=2760, line=116, col=9, indent=8, is_first=True)
         Group(

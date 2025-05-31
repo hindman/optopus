@@ -160,7 +160,7 @@ def test_against_baselines(tr):
 
         # Assert.
         ok = got_text == exp_text
-        assert ok, f'diff {epath} {gpath}'
+        assert ok, f'vimdiff {epath} {gpath}'
 
 ####
 # Helpers.

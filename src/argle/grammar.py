@@ -3,27 +3,21 @@ r'''
 
 TODO:
 
-    x error(): provide contextual text, plus caret marker.
+    - Organizational refactor:
 
-    - Check Grammar.pp for tests.
-
-        x pgrep-1.txt
-        x pgrep-2.txt
-        x pgrep-3.txt
-        x wrangle.txt
-        x line-wrap-1.txt
-        x line-wrap-2.txt
-        x line-wrap-3.txt
-        x naval-fate.txt
-        x nab.txt
-        x neck-diagram.txt
-        x repo.txt
-        - blort.txt
+        tokens.py      | Rgxs, Token, TokDef, TokDefs
+        spec_parser.py | SpecParser, ParseElem
+        regex_lexer.py | RegexLexer
+        utils.py       | Helper funcs
+        constants.py   | .
 
     - Quoted strings: refactor to use a parse mode:
         - See notes.txt (todos).
 
     - build_grammar()
+
+        - PartialUsage => replace with actual elems
+        - Group => split elems on ChoiceSep
 
     - error(): includes expected-elements:
         - Probably framed in terms of parsing-functions.
@@ -34,10 +28,8 @@ Spec-parsing overview
 
 TokDefs and Tokens:
 
-    - These are the atomic entitites of the parsing process:
+    - Tokens are the atomic entitites of the parsing process. Examples:
 
-        Kind         | Example text
-        ----------------------------
         long_option  | --foo
         short_option | -x
         newline      | \n
@@ -267,13 +259,13 @@ Because options can have groups as parameters, grammatical overlap occurs:
             --env --user ; [--indent]      # New syntax: semicolon as separator.
 
         - People doing regular things (a sequence of options) would need to
-          reason about a subtle and fairly exotic feature.
+          reason about a subtle and fairly exotic feature (parameter-groups).
 
     - The halt can occur at any depth in the attempted parameter-group parse:
 
-        --user [<x> --here]
-        --user <name> [<x> --here]
-        --env [<x> [<y> [<z> --here]]]
+        --user [<x> --HERE]
+        --user <name> [<x> --HERE]
+        --env [<x> [<y> [<z> --HERE]]]
 
     - So the policy is:
         - Greedy parameter binding, as usual.
@@ -300,10 +292,6 @@ from .errors import (
     ErrKinds,
     ErrMsgs,
 )
-
-from rich import traceback as rtb
-
-# rtb.install(show_locals = True, max_frames = 4)
 
 ####
 # Simple constants.
@@ -1449,7 +1437,7 @@ class SpecParser:
         # An opt-spec scope declaration.
         tok = self.eat(TokDefs.opt_spec_scope, TokDefs.opt_spec_scope_empty)
         if tok:
-            query_path = get(tok.m, 0)
+            query_path = get(tok.m, 1)
             return Scope(query_path)
         else:
             return None
@@ -1983,6 +1971,9 @@ def to_repr(obj, *ks):
     return f'{cls_name}({params})'
 
 def distilled(obj, *attrs):
+    # Takes an object and some attrs.
+    # Returns a new short-con dataclass having the same class name as the
+    # original object, but with just the attributes of interest.
     cls_name = obj.__class__.__qualname__
     kws = {
         a : getattr(obj, a)

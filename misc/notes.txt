@@ -2241,7 +2241,7 @@ Two general styles of config() calls:
         - One or more PATHS are supplied.
         - Each attribute has a simple VAL.
 
-        p.config_B(
+        p.config(
             'PATH_1', 'PATH_2',
             fubb = 3,
             blort = 4

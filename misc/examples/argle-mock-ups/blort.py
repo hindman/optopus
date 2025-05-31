@@ -264,6 +264,11 @@ p.config('triples', name = 'triple')                                            
 # summarizing them with the <options> placeholder
 p.config_help_text(options_summary = False)
 
+# For named-groups in usage text, do not nest the
+# parsed data under an inner-Result.
+p.config('general-options', dest = None)
+p.config('chat-options', dest = None)
+
 ####
 # Notes.
 ####
