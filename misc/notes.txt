@@ -101,17 +101,12 @@ Spec-parsing [see grammar.py for todo list].
 
 Quoted-literal and block-quote:
 
-    - block-quote: implement support for no-wrap (```!) and comment (```#).
+    - Need:
+        - Support no-wrap: ```!
+        - Support comment: ```#
+        - Support backslashed literals: ```   `   !   #   \
 
-    - block-quote and quoted-literal: support backslash escapes:
-
-        ```
-        `
-        !
-        #
-        \
-
-    - document the quoted-text syntax in the spec-syntax section
+    - Add to spec-syntax:
 
         quoted-literal
 
@@ -132,11 +127,26 @@ Quoted-literal and block-quote:
                 literal-backquote | \`
                 non-backquote     | any-other-character
 
-    - Best regex, based on chatgpt and my research:
+    - Two ways to support the quoting described above:
 
-        rgx = r'`((?:\\\\|\\`|[^`])+?)`'
+        - Regex:
+            - Enhanced the regex.
+            - Probably the least work in the short term.
+            - Apply a search-replace to the captured quoted-text to convert
+              backslashed elements.
 
-        Captures and matches 1+ (non-greedy) of the following:
+        - Parse mode:
+            - The mode: quoted-text.
+            - Backslashed-element conversions can happen on the spot.
+            - More robust to future enhancements of quoted-text syntax.
+
+    - Regex: details:
+
+        - Best regex, based on chatgpt and my research:
+
+            rgx = r'`((?:\\\\|\\`|[^`])+?)`'
+
+        - Captures and matches 1+ (non-greedy) of the following:
 
             Pattern | Matched in the spec
             -------------------------------
@@ -144,47 +154,31 @@ Quoted-literal and block-quote:
             \\`     | \`  literal-backquote
             [^`]    | .   non-backquote
 
-        See:
+        - See:
             - https://stackoverflow.com/questions/9519734
             - Including my two comments on the page.
             - https://regex101.com/r/BmB9EG/1
 
-    - Counter-argument:
+    - Parse mode: details:
 
-        - Yes, I have a working regex strategy.
-        - But then I would need to apply another layer of parsing to convert
-          literal-backslash and literal-backquote to the user's desired text.
-        - Option 1:
-            - Handle everything with new parsing modes: quote1 and quote3.
-            - The literal conversions can happen on the spot.
-            - This approach is more robust to future enhancements
-              of the supported syntax within quoted text.
+        - Parsing modes: quote1 and quote3.
 
-            - it also has advantage of focusing attention on the supported
-              syntax inside the quotes (and there will always be some).
+        - Logic:
+            - quote3 mode starts if we get: ```! or ```# or ```
+            - quote1 mode starts if we get: `
+            - collect quoted_char() until we get the terminal TokDef
+              appropriate for the mode.
 
-            - Logic:
-                - quote3 mode starts if we get: ```! or ```# or ```
-                - quote1 mode starts if we get: `
-                - collect quoted_char() until we get the terminal TokDef
-                  appropriate for the mode.
+        - TokDefs:
 
-            - TokDefs:
-
-                Kind              | Modes  | Rgx  | Action
-                -------------------------------------------------------------
-                literal_backslash | both   | \\\\ | emit \
-                literal_backquote | both   | \\`  | emit `
-                non_backquote     | both   | [^`] | emit CHAR
-                -------------------------------------------------------------
-                backquote3        | quote3 | ```  | halt quote3 mode
-                backquote1        | quote1 | `    | halt quote1 mode
-
-        - Option 2:
-            - Capture with a single regex [as shown above]
-            - Then use simple regexes to convert the literals inside the
-              captured quoted-text.
-            - This is easier in the short run.
+            Kind              | Modes  | Rgx  | Action
+            -------------------------------------------------------------
+            literal_backslash | both   | \\\\ | emit \
+            literal_backquote | both   | \\`  | emit `
+            non_backquote     | both   | [^`] | emit CHAR
+            -------------------------------------------------------------
+            backquote3        | quote3 | ```  | halt quote3 mode
+            backquote1        | quote1 | `    | halt quote1 mode
 
 parsed-data-structure:
     - Editing pass over this section.
