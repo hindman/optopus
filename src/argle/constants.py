@@ -7,7 +7,7 @@ r'''
 
 TODO:
 
-    - Unify RGXS (below) and Rgxs (grammar.py).
+    - Unify RGXS (below) and Rgxs (tokens.py).
 
     - Tighten the regexes for options. Don't use \w. Two reasons:
 
@@ -21,6 +21,16 @@ TODO:
           lead to catastrophic backtracking.
 
 '''
+
+# Characters used in parsing.
+Chars = cons(
+    space = ' ',
+    newline = '\n',
+    exclamation = '!',
+    comma = ',',
+    empty_set = '∅',
+    caret = '^',
+)
 
 MODES = cons(
     # Modes for a configured Parser: can be combined.
@@ -39,4 +49,7 @@ RGXS = cons(
     long_option = re.compile(r'^ -- ( [a-z]\w* ([_-]\w+)* ) $', re.X + re.I),
     negative_num = re.compile(r'^ - \d+ $', re.X),
 )
+
+# Parsing modes.
+Pmodes = cons('grammar help_text')
 

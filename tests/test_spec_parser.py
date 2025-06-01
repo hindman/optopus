@@ -8,12 +8,7 @@ from textwrap import dedent
 
 from short_con import cons, constants
 
-from argle.grammar import (
-    SpecParser,
-    Rgxs,
-    TokDefs,
-    Scope,
-)
+from argle.spec_parser import SpecParser
 
 # @pytest.mark.skip
 
