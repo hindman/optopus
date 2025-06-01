@@ -101,44 +101,19 @@ Spec-parsing [see grammar.py for todo list].
 
 Quoted-literal and block-quote:
 
-    - Need:
-        - Support no-wrap: ```!
-        - Support comment: ```#
-        - Support backslashed literals: ```   `   !   #   \
-
-    - Add to spec-syntax:
-
-        quoted-literal
-
-            ` quoted-text `
-
-        block-quote
-
-            ```  quoted-text ```
-            ```! quoted-text ```
-            ```# quoted-text ```
-
-        quoted-text
-
-            (literal-backslash | literal-backquote | non-backquote)...
-
-            Where:
-                literal-backslash | \\
-                literal-backquote | \`
-                non-backquote     | any-other-character
-
     - Two ways to support the quoting described above:
+
+        - Parse mode:
+            - I have decided on this approach.
+            - The mode: quoted-text3 and quoted-text1.
+            - Backslashed-element conversions can happen on the spot.
+            - More robust to future enhancements of quoted-text syntax.
 
         - Regex:
             - Enhanced the regex.
             - Probably the least work in the short term.
             - Apply a search-replace to the captured quoted-text to convert
               backslashed elements.
-
-        - Parse mode:
-            - The mode: quoted-text.
-            - Backslashed-element conversions can happen on the spot.
-            - More robust to future enhancements of quoted-text syntax.
 
     - Regex: details:
 
@@ -158,27 +133,6 @@ Quoted-literal and block-quote:
             - https://stackoverflow.com/questions/9519734
             - Including my two comments on the page.
             - https://regex101.com/r/BmB9EG/1
-
-    - Parse mode: details:
-
-        - Parsing modes: quote1 and quote3.
-
-        - Logic:
-            - quote3 mode starts if we get: ```! or ```# or ```
-            - quote1 mode starts if we get: `
-            - collect quoted_char() until we get the terminal TokDef
-              appropriate for the mode.
-
-        - TokDefs:
-
-            Kind              | Modes  | Rgx  | Action
-            -------------------------------------------------------------
-            literal_backslash | both   | \\\\ | emit \
-            literal_backquote | both   | \\`  | emit `
-            non_backquote     | both   | [^`] | emit CHAR
-            -------------------------------------------------------------
-            backquote3        | quote3 | ```  | halt quote3 mode
-            backquote1        | quote1 | `    | halt quote1 mode
 
 parsed-data-structure:
     - Editing pass over this section.
@@ -476,20 +430,31 @@ heading:
 
 block-quote:
 
-    opening-triple-quote quoted-text ```
+    ```  quoted-text3 ```
+    ```! quoted-text3 ```             # No wrap
+    ```# quoted-text3 ```             # Spec-comment
 
-    - Where opening-triple-quote:
-
-        ```  | .
-        ```! | no wrap
-        ```# | spec-comment
-
+    - Notes:
+        - Opening quote must be first on its line.
         - Triple-quotes can sit on their own line, or not.
-        - The open-quote does need to be first on its line.
+        - Quoted-text3 can span multiple lines.
 
-    - Where quoted-text:
+quoted-literal:
 
-        - Can span multiple lines.
+    ` quoted-text1 `
+
+    - A literal does not support: name, dest, or quantifier.
+
+quoted-text3 and quoted-text1:
+
+    (literal-backslash | literal-backquote | quoted-char3)...
+    (literal-backslash | literal-backquote | quoted-char1)...
+
+    Where:
+        literal-backslash | \\
+        literal-backquote | \`
+        quoted-char3      | Any char except backquote
+        quoted-char1      | Any char except backquote, tab, newline
 
 variant:
 
@@ -637,13 +602,6 @@ quantifer:
     - Where ? marker:
 
         - Makes preceding quantifier non-greedy.
-
-quoted-literal:
-
-    ` quoted-text `
-
-    - Does not support: name, dest, or quantifier.
-    - If quoted-text needs to contain a backquote, it can be backslashed.
 
 partial-usage:
 

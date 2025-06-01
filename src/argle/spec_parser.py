@@ -3,10 +3,32 @@ r'''
 
 TODO:
 
-    x Organizational refactor:
-
     - Quoted strings: refactor to use a parse mode:
-        - See notes.txt (todos).
+        - Support no-wrap: ```!
+        - Support comment: ```#
+        - Support backslashed literals: ```   `   !   #   \
+
+        - Details:
+
+            - Parsing modes: quote1 and quote3.
+
+            - Logic:
+                - quote3 mode starts if we get: ```! or ```# or ```
+                - quote1 mode starts if we get: `
+                - collect quoted_char() until we get the terminal TokDef
+                  appropriate for the mode.
+
+            - TokDefs:
+
+                Kind              | Modes  | Rgx      | Action
+                -------------------------------------------------------------
+                literal_backslash | both   | \\\\     | emit \
+                literal_backquote | both   | \\`      | emit `
+                quoted_char3      | quote3 | [^`]     | emit CHAR
+                quoted_char1      | quote1 | [^`\t\n] | emit CHAR
+                -------------------------------------------------------------
+                backquote3        | quote3 | ```      | halt quote3 mode
+                backquote1        | quote1 | `        | halt quote1 mode
 
     - build_grammar()
 
