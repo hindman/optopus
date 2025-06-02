@@ -115,23 +115,15 @@ def define_tokdefs():
     end_of_line = fr'{whitespace0}(?=\n)'
 
     # Backquotes and the stuff inside of them.
-    # NEW.
     literal_backslash  = r'\\\\'
-    literal_backquote  = r'\\`'
+    literal_backquote1  = r'\\`'
+    literal_backquote3  = r'\\```'
+    backquote1         = r'`'
+    backquote3         = r'```'
     backquote3_no_wrap = r'```!'
     backquote3_comment = r'```#'
-    backquote3         = r'```'
-    backquote1         = r'`'
-    quoted_char3       = r'[^`]'
     quoted_char1       = r'[^`\t\n]'
-
-    # Backquotes and the stuff inside of them.
-    # OLD.
-    not_backslash = r'(?<!\\)'
-    bq = r'`'
-    bq1 = not_backslash + bq
-    bq3 = not_backslash + (bq * 3)
-    captured_guts = captured(r'[\s\S]*?')
+    quoted_char3       = r'[^`]'
 
     # Punctuation.
     option_prefix = '-'
@@ -183,19 +175,15 @@ def define_tokdefs():
 
     td_tups = [
         # - Quoted.
-        # OLD
-        ('quoted_block',          'g  ', wrapped_in(bq3, captured_guts)),
-        ('quoted_literal',        'g  ', wrapped_in(bq1, captured_guts)),
-        # - Quoted.
-        # NEW
         ('backquote3_no_wrap',    'g  ', backquote3_no_wrap),
         ('backquote3_comment',    'g  ', backquote3_comment),
         ('backquote3',            'g Q', backquote3),
         ('backquote1',            'g Q', backquote1),
         ('literal_backslash',     '  Q', literal_backslash),
-        ('literal_backquote',     '  Q', literal_backquote),
-        ('quoted_char3',          '  Q', quoted_char3),
+        ('literal_backquote3',    '  Q', literal_backquote3),
+        ('literal_backquote1',    '  Q', literal_backquote1),
         ('quoted_char1',          '  Q', quoted_char1),
+        ('quoted_char3',          '  Q', quoted_char3),
         # - Whitespace.
         ('newline',               'gh ', r'\n'),
         ('indent',                'gh ', start_of_line + whitespace1 + not_whitespace),

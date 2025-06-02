@@ -3,50 +3,7 @@ r'''
 
 TODO:
 
-    - Quoted strings: refactor to use a parse mode:
-        - Support no-wrap: ```!
-        - Support comment: ```#
-        - Support backslashed literals: ```   `   !   #   \
-
-        - Code sketch:
-
-            block_quote()
-                tds = QuotedTDs.block_quote
-                tok = eat(*tds.opening)
-                if tok:
-                    return BlockQuote(
-                        text = self.quoted_text(tds),
-                        comment = tok.isa(TokDefs.backquote3_comment),
-                        no_wrap = tok.isa(TokDefs.backquote3_no_wrap),
-                    )
-                else:
-                    return None
-
-            quoted_literal()
-                # same general structure
-
-            quoted_text(tds)
-                chars = []
-                SLASH = TokDefs.literal_backslash
-                QUOTE = TokDefs.literal_backquote
-                parse-mode = quoted
-                while True:
-                    tok = eat(*tds.quoted)
-                    if not tok:
-                        error(failed to reach closing quote)
-
-                    if tok.isa(*tds.terminal):
-                        parse-mode = grammar
-                        if chars:
-                            return QuotedText(text = ''.join(chars))
-                        else:
-                            error(empty quoted text)
-
-                    chars.append(
-                        Chars.backslash if tok.isa(SLASH) else
-                        Chars.backquote if tok.isa(QUOTE) else
-                        tok.m.group(0)
-                    )
+    x Quoted strings: refactor support no-wrap, block-comment, backslashing.
 
     - define_tokdefs(): refactor:
         - create local var for every tokdef
@@ -60,7 +17,7 @@ TODO:
         - simplify td_tups to just list[KIND]
             - in the loop, use Kinds for mode-logic.
             - use locals()[KIND] to get the regex pattern
-            
+
         - create NOT_GRAMMAR = tuple[KIND]
 
     - build_grammar()
@@ -515,11 +472,17 @@ class Heading(ParseElem):
 @dataclass
 class BlockQuote(ParseElem):
     text: str
+    comment: bool
+    no_wrap: bool
     token: Token
 
 @dataclass
-class QuotedLiteral(ParseElem):
-    # Used (a) to represent a literal in a command-line grammar, or (b)
+class QuotedText(ParseElem):
+    text: str
+
+@dataclass
+class Literal(ParseElem):
+    # Used to represent a quoted literal in a command-line grammar, or
     # as an intermediate object when parsing choices in a var-input.
     text: str
 
@@ -585,7 +548,7 @@ QuotedTDs = cons(
         ),
         quoted = (
             TokDefs.literal_backslash,
-            TokDefs.literal_backquote,
+            TokDefs.literal_backquote1,
             TokDefs.quoted_char1,
             TokDefs.backquote1,
         ),
@@ -599,8 +562,9 @@ QuotedTDs = cons(
         ),
         quoted = (
             TokDefs.literal_backslash,
-            TokDefs.literal_backquote,
+            TokDefs.literal_backquote3,
             TokDefs.quoted_char3,
+            TokDefs.quoted_char1,
             TokDefs.backquote3,
         ),
     ),
@@ -861,10 +825,13 @@ class SpecParser:
 
     @track_parse
     def block_quote(self):
-        tok = self.eat(TokDefs.quoted_block)
+        tds = QuotedTDs.block_quote
+        tok = self.eat(*tds.opening)
         if tok:
             return BlockQuote(
-                text = tok.m[1],
+                text = self.quoted_text(tds),
+                comment = tok.isa(TokDefs.backquote3_comment),
+                no_wrap = tok.isa(TokDefs.backquote3_no_wrap),
                 token = tok,
             )
         else:
@@ -906,7 +873,7 @@ class SpecParser:
         elems = []
         while True:
             e = (
-                self.quoted_literal() or
+                self.literal() or
                 self.choice_sep() or
                 self.partial_usage() or
                 self.any_group() or
@@ -923,10 +890,11 @@ class SpecParser:
             return None
 
     @track_parse
-    def quoted_literal(self):
-        tok = self.eat(TokDefs.quoted_literal)
+    def literal(self):
+        tds = QuotedTDs.literal
+        tok = self.eat(*tds.opening)
         if tok:
-            return QuotedLiteral(text = tok.m[1])
+            return Literal(text = self.quoted_text(tds))
         else:
             return None
 
@@ -1173,6 +1141,46 @@ class SpecParser:
     ####
     # Parsing functions.
     #
+    # Helpers to collect quoted-text in a literal or block-quote.
+    ####
+
+    @track_parse
+    def quoted_text(self, tds):
+        # Setup.
+        chars = []
+        LIT_SLASH = TokDefs.literal_backslash
+        LIT_QUOTE1 = TokDefs.literal_backquote1
+        LIT_QUOTE3 = TokDefs.literal_backquote3
+        self.mode = Pmodes.quoted
+
+        # Collect characters until we hit the closing backquote.
+        while True:
+            # Get next token, which will either be a quoted character
+            # or the terminal backquote. Raise if nothing.
+            tok = self.eat(*tds.quoted)
+            if not tok:
+                self.error(ErrKinds.unclosed_backquote)
+
+            # If we reach the terminal backquote, switch back to
+            # the regular parsing mode and either return or raise.
+            if tok.isa(tds.terminal):
+                self.mode = Pmodes.grammar
+                if chars:
+                    return QuotedText(text = ''.join(chars))
+                else:
+                    self.error(ErrKinds.empty_quote)
+
+            # Otherwise, just append the appropriate character.
+            chars.append(
+                Chars.backslash if tok.isa(LIT_SLASH) else
+                Chars.backquote1 if tok.isa(LIT_QUOTE1) else
+                Chars.backquote3 if tok.isa(LIT_QUOTE3) else
+                tok.m.group(0)
+            )
+
+    ####
+    # Parsing functions.
+    #
     # Helpers to parse the elements inside a var-input.
     ####
 
@@ -1224,8 +1232,8 @@ class SpecParser:
         if require_sep and not self.eat(TokDefs.choice_sep):
             return None
 
-        # First try for a quoted-literal.
-        e = self.quoted_literal()
+        # First try for a quoted literal.
+        e = self.literal()
         if e:
             return Choice(text = e.text)
 
@@ -1405,10 +1413,15 @@ class SpecParser:
                 caller_offset = 1,
             )
 
-        # For subsequent tokens in the expression, we expect tokens either from
-        # the same line or from a continuation line indented farther than the
-        # first line of the expression.
-        if self.first_tok.line == tok.line:
+        # For subsequent tokens in the expression, we expect:
+        # - Parse mode quoted.
+        # - Token from same line as the first.
+        # - Token from continutation line indented farther than the
+        #   first line of the expression.
+        if self.mode == Pmodes.quoted:
+            do_debug('quoted')
+            return True
+        elif self.first_tok.line == tok.line:
             do_debug('line')
             return True
         elif self.first_tok.indent < tok.indent:
@@ -1477,4 +1490,7 @@ class SpecParser:
         err = SpecParseError(**err_kws)
         err.parse_context = lex.get_context().for_error
         raise err
+
+
+
 

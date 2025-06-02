@@ -8,7 +8,7 @@ from pathlib import Path
 
 from argle import bargparse as bp
 
-from argle.grammar import (
+from argle.spec_parser import (
     SpecParser,
 )
 

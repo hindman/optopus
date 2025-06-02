@@ -9,6 +9,8 @@ ErrMsgs = cons(
     assign_without_choices = 'Var-input assignment without choices: eg <foo=>',
     assign_without_name = 'Var-input assignment without a name: eg, <=x|y>',
     unclosed_bracketed_expression = 'Failed to reach closing bracket of bracketed expression',
+    unclosed_backquote = 'Failed to reach closing backquote or triple-backquote',
+    empty_quote = 'Quoted literal or block quote cannot be empty',
     empty_group = 'Group cannot be empty',
 )
 

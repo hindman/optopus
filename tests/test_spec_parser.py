@@ -153,9 +153,18 @@ def test_against_baselines(tr):
             write_file(epath, got_text)
             exp_text = got_text
 
-        # Assert.
+        # If equal, advance to next test.
         ok = got_text == exp_text
-        assert ok, f'vimdiff {epath} {gpath}'
+        if ok:
+            continue
+
+        # Otherwise, either assert or dump() a vimdiff command.
+        DO_ASSERT = True
+        msg = f'vimdiff {epath} {gpath}'
+        if DO_ASSERT:
+            assert ok, msg
+        else:
+            tr.dump(msg)
 
 ####
 # Helpers.

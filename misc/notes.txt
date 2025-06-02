@@ -99,7 +99,7 @@ todos: TODOs
 
 Spec-parsing [see grammar.py for todo list].
 
-Quoted-literal and block-quote:
+Literal and block-quote:
 
     - Two ways to support the quoting described above:
 
@@ -439,7 +439,7 @@ block-quote:
         - Triple-quotes can sit on their own line, or not.
         - Quoted-text3 can span multiple lines.
 
-quoted-literal:
+literal:
 
     ` quoted-text1 `
 
@@ -537,14 +537,14 @@ variant-elem:
         option |
         positional |
         any-group |
-        quoted-literal |
+        literal |
         partial-usage |
         choice-sep
     )
 
     - All take a quantifer except:
         - choice-sep (|)
-        - quoted-literal
+        - literal
         - partial-usage (user can wrap in a group).
 
 variant-elem: examples with comments:
@@ -561,7 +561,7 @@ variant-elem: examples with comments:
         <bar>          # Single.
         <path>...      # With quantifier.
 
-    - Quoted literals:
+    - Literals:
 
         `hello`        # Becomes a Literal, a limited form of Opt.
 
@@ -654,7 +654,7 @@ choices:
 
 choice:
 
-    valid-name | quoted-literal
+    valid-name | literal
 
 parameter-group:
 
@@ -690,7 +690,7 @@ Quoting rules:
 
         Quote | Situation
         ------------------------------------------
-        `     | In quoted-literal
+        `     | In literal
         ```   | In block-quote
         ```!  | If block-quote needs to start with !
         ```#  | If block-quote needs to start with #
@@ -782,7 +782,7 @@ Hierarchy:
                             - choices
                                 - choice
                                     - valid-name
-                                    - quoted-literal
+                                    - literal
                         - parameter-group
                             - parameter
                     - quantifier
@@ -798,7 +798,7 @@ Hierarchy:
                     - group
                         - variant-elem
                     - quantifier
-                - quoted-literal
+                - literal
                 - partial-usage
                     - python-name
                 - choice-sep
@@ -1026,7 +1026,7 @@ Dest:
     - Attribute name in Result for data from one positional/option.
 
 Block-quote:
-    - Triple-quoted literal help text.
+    - Triple-quoted help text.
     - With or without wrapping by Argle.
 
 --------

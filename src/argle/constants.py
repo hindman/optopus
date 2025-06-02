@@ -30,6 +30,9 @@ Chars = cons(
     comma = ',',
     empty_set = '∅',
     caret = '^',
+    backquote1 = '`',
+    backquote3 = '```',
+    backslash = '\\',
 )
 
 MODES = cons(
