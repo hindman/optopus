@@ -8,27 +8,60 @@ TODO:
         - Support comment: ```#
         - Support backslashed literals: ```   `   !   #   \
 
-        - Details:
+        - Code sketch:
 
-            - Parsing modes: quote1 and quote3.
+            block_quote()
+                tds = QuotedTDs.block_quote
+                tok = eat(*tds.opening)
+                if tok:
+                    return BlockQuote(
+                        text = self.quoted_text(tds),
+                        comment = tok.isa(TokDefs.backquote3_comment),
+                        no_wrap = tok.isa(TokDefs.backquote3_no_wrap),
+                    )
+                else:
+                    return None
 
-            - Logic:
-                - quote3 mode starts if we get: ```! or ```# or ```
-                - quote1 mode starts if we get: `
-                - collect quoted_char() until we get the terminal TokDef
-                  appropriate for the mode.
+            quoted_literal()
+                # same general structure
 
-            - TokDefs:
+            quoted_text(tds)
+                chars = []
+                SLASH = TokDefs.literal_backslash
+                QUOTE = TokDefs.literal_backquote
+                parse-mode = quoted
+                while True:
+                    tok = eat(*tds.quoted)
+                    if not tok:
+                        error(failed to reach closing quote)
 
-                Kind              | Modes  | Rgx      | Action
-                -------------------------------------------------------------
-                literal_backslash | both   | \\\\     | emit \
-                literal_backquote | both   | \\`      | emit `
-                quoted_char3      | quote3 | [^`]     | emit CHAR
-                quoted_char1      | quote1 | [^`\t\n] | emit CHAR
-                -------------------------------------------------------------
-                backquote3        | quote3 | ```      | halt quote3 mode
-                backquote1        | quote1 | `        | halt quote1 mode
+                    if tok.isa(*tds.terminal):
+                        parse-mode = grammar
+                        if chars:
+                            return QuotedText(text = ''.join(chars))
+                        else:
+                            error(empty quoted text)
+
+                    chars.append(
+                        Chars.backslash if tok.isa(SLASH) else
+                        Chars.backquote if tok.isa(QUOTE) else
+                        tok.m.group(0)
+                    )
+
+    - define_tokdefs(): refactor:
+        - create local var for every tokdef
+        - create some KIND collections:
+            Kinds = cons(
+                no_emit     = list[KIND],
+                not_grammar = ...
+                help_text   = ...
+                quoted      = ...
+            )
+        - simplify td_tups to just list[KIND]
+            - in the loop, use Kinds for mode-logic.
+            - use locals()[KIND] to get the regex pattern
+            
+        - create NOT_GRAMMAR = tuple[KIND]
 
     - build_grammar()
 
@@ -510,7 +543,7 @@ GBKinds = cons(
 )
 
 # Sets of opening-TokDefs to use when looking for such expressions.
-OpeningTDs = cons(
+GBOpeningTDs = cons(
     group = [
         TokDefs.paren_open,
         TokDefs.paren_open_named,
@@ -524,11 +557,11 @@ OpeningTDs = cons(
 
 # A map connecting the two: bracketed-expression-kind => opening-TokDefs
 GBTDs = constants({
-    GBKinds.group:           OpeningTDs.group,
-    GBKinds.parameter_group: OpeningTDs.group,
-    GBKinds.opt_spec_group:  OpeningTDs.group,
-    GBKinds.positional:      OpeningTDs.var_input,
-    GBKinds.parameter:       OpeningTDs.var_input,
+    GBKinds.group:           GBOpeningTDs.group,
+    GBKinds.parameter_group: GBOpeningTDs.group,
+    GBKinds.opt_spec_group:  GBOpeningTDs.group,
+    GBKinds.positional:      GBOpeningTDs.var_input,
+    GBKinds.parameter:       GBOpeningTDs.var_input,
 })
 
 # Bracket pairs: opening-TokDef-kind => closing-TokDef.
@@ -539,6 +572,39 @@ BPairs = constants({
     TokDefs.brack_open_named.kind: TokDefs.brack_close,
     TokDefs.angle_open.kind:       TokDefs.angle_close,
 })
+
+####
+# Constants used when parsing quoted text.
+####
+
+QuotedTDs = cons(
+    literal = cons(
+        terminal = TokDefs.backquote1,
+        opening = (
+            TokDefs.backquote1,
+        ),
+        quoted = (
+            TokDefs.literal_backslash,
+            TokDefs.literal_backquote,
+            TokDefs.quoted_char1,
+            TokDefs.backquote1,
+        ),
+    ),
+    block_quote = cons(
+        terminal = TokDefs.backquote3,
+        opening = (
+            TokDefs.backquote3_no_wrap,
+            TokDefs.backquote3_comment,
+            TokDefs.backquote3,
+        ),
+        quoted = (
+            TokDefs.literal_backslash,
+            TokDefs.literal_backquote,
+            TokDefs.quoted_char3,
+            TokDefs.backquote3,
+        ),
+    ),
+)
 
 ####
 # SpecParser.
@@ -1205,7 +1271,7 @@ class SpecParser:
         # For groups, the helper has to be called with group-name, and the
         # returned Group has to be adjusted for square brackets.
         helper_method = getattr(self, f'gb_guts_{kind}')
-        if tds == OpeningTDs.group:
+        if tds == GBOpeningTDs.group:
             e = helper_method(group_name = group_name)
             if e and closing_td.isa(TokDefs.brack_close):
                 e.required = False

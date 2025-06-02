@@ -51,5 +51,9 @@ RGXS = cons(
 )
 
 # Parsing modes.
-Pmodes = cons('grammar help_text')
+Pmodes = cons(
+    'grammar',
+    'help_text',
+    'quoted',
+)
 

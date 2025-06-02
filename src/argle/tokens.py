@@ -115,10 +115,22 @@ def define_tokdefs():
     end_of_line = fr'{whitespace0}(?=\n)'
 
     # Backquotes and the stuff inside of them.
+    # NEW.
+    literal_backslash  = r'\\\\'
+    literal_backquote  = r'\\`'
+    backquote3_no_wrap = r'```!'
+    backquote3_comment = r'```#'
+    backquote3         = r'```'
+    backquote1         = r'`'
+    quoted_char3       = r'[^`]'
+    quoted_char1       = r'[^`\t\n]'
+
+    # Backquotes and the stuff inside of them.
+    # OLD.
     not_backslash = r'(?<!\\)'
-    backquote = r'`'
-    backquote1 = not_backslash + backquote
-    backquote3 = not_backslash + (backquote * 3)
+    bq = r'`'
+    bq1 = not_backslash + bq
+    bq3 = not_backslash + (bq * 3)
     captured_guts = captured(r'[\s\S]*?')
 
     # Punctuation.
@@ -161,6 +173,8 @@ def define_tokdefs():
         g = [Pmodes.grammar],
         h = [Pmodes.help_text],
         gh = list(Pmodes.values()),
+        Q = [Pmodes.quoted],
+        gQ = [Pmodes.grammar, Pmodes.quoted],
     )
 
     ####
@@ -169,48 +183,59 @@ def define_tokdefs():
 
     td_tups = [
         # - Quoted.
-        ('quoted_block',          'g ', wrapped_in(backquote3, captured_guts)),
-        ('quoted_literal',        'g ', wrapped_in(backquote1, captured_guts)),
+        # OLD
+        ('quoted_block',          'g  ', wrapped_in(bq3, captured_guts)),
+        ('quoted_literal',        'g  ', wrapped_in(bq1, captured_guts)),
+        # - Quoted.
+        # NEW
+        ('backquote3_no_wrap',    'g  ', backquote3_no_wrap),
+        ('backquote3_comment',    'g  ', backquote3_comment),
+        ('backquote3',            'g Q', backquote3),
+        ('backquote1',            'g Q', backquote1),
+        ('literal_backslash',     '  Q', literal_backslash),
+        ('literal_backquote',     '  Q', literal_backquote),
+        ('quoted_char3',          '  Q', quoted_char3),
+        ('quoted_char1',          '  Q', quoted_char1),
         # - Whitespace.
-        ('newline',               'gh', r'\n'),
-        ('indent',                'gh', start_of_line + whitespace1 + not_whitespace),
-        ('whitespace',            'gh', whitespace1),
+        ('newline',               'gh ', r'\n'),
+        ('indent',                'gh ', start_of_line + whitespace1 + not_whitespace),
+        ('whitespace',            'gh ', whitespace1),
         # - Sections.
-        ('scoped_section_title',  'g ', scope1 + section_title),
-        ('section_title',         'g ', section_title),
-        ('heading',               'g ', heading),
+        ('scoped_section_title',  'g  ', scope1 + section_title),
+        ('section_title',         'g  ', section_title),
+        ('heading',               'g  ', heading),
         # - Opt-spec scopes.
-        ('opt_spec_scope',        'g ', scope1),
-        ('opt_spec_scope_empty',  'g ', scope0),
+        ('opt_spec_scope',        'g  ', scope1),
+        ('opt_spec_scope_empty',  'g  ', scope0),
         # - Parens.
-        ('paren_open',            'g ', r'\('),
-        ('brack_open',            'g ', r'\['),
-        ('angle_open',            'g ', '<'),
-        ('paren_open_named',      'g ', captured(valid_name) + r'=\('),
-        ('brack_open_named',      'g ', captured(valid_name) + r'=\['),
-        ('paren_close',           'g ', r'\)'),
-        ('brack_close',           'g ', r'\]'),
-        ('angle_close',           'g ', '>'),
+        ('paren_open',            'g  ', r'\('),
+        ('brack_open',            'g  ', r'\['),
+        ('angle_open',            'g  ', '<'),
+        ('paren_open_named',      'g  ', captured(valid_name) + r'=\('),
+        ('brack_open_named',      'g  ', captured(valid_name) + r'=\['),
+        ('paren_close',           'g  ', r'\)'),
+        ('brack_close',           'g  ', r'\]'),
+        ('angle_close',           'g  ', '>'),
         # - Quants.
-        ('quant_range',           'g ', r'\{' + captured(quant_range_guts) + r'\}'),
-        ('triple_dot',            'g ', dot * 3),
-        ('question',              'g ', r'\?'),
+        ('quant_range',           'g  ', r'\{' + captured(quant_range_guts) + r'\}'),
+        ('triple_dot',            'g  ', dot * 3),
+        ('question',              'g  ', r'\?'),
         # - Separators.
-        ('choice_sep',            'g ', r'\|'),
-        ('assign',                'g ', '='),
-        ('opt_spec_sep',          'g ', ':'),
+        ('choice_sep',            'g  ', r'\|'),
+        ('assign',                'g  ', '='),
+        ('opt_spec_sep',          'g  ', ':'),
         # - Options.
-        ('long_option',           'g ', option_prefix + option_prefix + captured_name),
-        ('short_option',          'g ', option_prefix + captured(r'\w')),
+        ('long_option',           'g  ', option_prefix + option_prefix + captured_name),
+        ('short_option',          'g  ', option_prefix + captured(r'\w')),
         # - Variants.
-        ('variant_def',           'g ', captured(valid_name + '!?') + whitespace0 + ':'),
-        ('partial_usage',         'g ', captured_name + '!'),
+        ('variant_def',           'g  ', captured(valid_name + '!?') + whitespace0 + ':'),
+        ('partial_usage',         'g  ', captured_name + '!'),
         # - Names.
-        ('valid_name',            'g ', valid_name),
+        ('valid_name',            'g  ', valid_name),
         # - Special.
-        ('rest_of_line',          ' h', '.+'),
-        ('eof',                   '  ', ''),
-        ('err',                   '  ', ''),
+        ('rest_of_line',          ' h ', '.+'),
+        ('eof',                   '   ', ''),
+        ('err',                   '   ', ''),
     ]
 
     ####
