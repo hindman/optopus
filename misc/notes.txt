@@ -99,41 +99,6 @@ todos: TODOs
 
 Spec-parsing [see grammar.py for todo list].
 
-Literal and block-quote:
-
-    - Two ways to support the quoting described above:
-
-        - Parse mode:
-            - I have decided on this approach.
-            - The mode: quoted-text3 and quoted-text1.
-            - Backslashed-element conversions can happen on the spot.
-            - More robust to future enhancements of quoted-text syntax.
-
-        - Regex:
-            - Enhanced the regex.
-            - Probably the least work in the short term.
-            - Apply a search-replace to the captured quoted-text to convert
-              backslashed elements.
-
-    - Regex: details:
-
-        - Best regex, based on chatgpt and my research:
-
-            rgx = r'`((?:\\\\|\\`|[^`])+?)`'
-
-        - Captures and matches 1+ (non-greedy) of the following:
-
-            Pattern | Matched in the spec
-            -------------------------------
-            \\\\    | \\  literal-backslash
-            \\`     | \`  literal-backquote
-            [^`]    | .   non-backquote
-
-        - See:
-            - https://stackoverflow.com/questions/9519734
-            - Including my two comments on the page.
-            - https://regex101.com/r/BmB9EG/1
-
 parsed-data-structure:
     - Editing pass over this section.
     - I think the current policy is generally correct.

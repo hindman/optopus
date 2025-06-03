@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from short_con import cons, constants
 
-from .constants import Pmodes
+from .constants import Pmodes, Chars
 from .utils import to_repr
 
 ####
@@ -92,13 +92,11 @@ def define_tokdefs():
     wrapped_in = lambda wrap, guts: f'{wrap}{guts}{wrap}'
 
     ####
-    # Building blocks use to assemble larger regex patterns.
+    # Regex patterns.
+    #
+    # Some of these are building blocks in larger patterns.
+    # Others are patterns used to define TokDefs.
     ####
-
-    # Whitespace.
-    whitespace0 = r'[ \t]*'
-    whitespace1 = r'[ \t]+'
-    not_whitespace = r'(?=\S)'
 
     # Letters, digits, and numbers.
     letter_under = r'[A-Za-z_]'
@@ -110,27 +108,55 @@ def define_tokdefs():
     valid_name = fr'{letter_under}{name_char}*'
     captured_name = captured(valid_name)
 
-    # Start and end of line.
+    # Brackets.
+    paren_open = r'\('
+    brack_open = r'\['
+    angle_open = '<'
+    paren_close = r'\)'
+    brack_close = r'\]'
+    angle_close = '>'
+    paren_open_named = captured(valid_name) + r'=\('
+    brack_open_named = captured(valid_name) + r'=\['
+
+    # Whitespace: simple.
+    whitespace0 = r'[ \t]*'
+    whitespace1 = r'[ \t]+'
+    whitespace = whitespace1
+    newline = r'\n'
+
+    # Lines.
     start_of_line = '(?m)^'
     end_of_line = fr'{whitespace0}(?=\n)'
+    rest_of_line = '.+'
+
+    # Whitespace: other.
+    not_whitespace = r'(?=\S)'
+    indent = start_of_line + whitespace1 + not_whitespace
+
+    # Special: end of file and error.
+    eof = ''
+    err = ''
 
     # Backquotes and the stuff inside of them.
-    literal_backslash  = r'\\\\'
-    literal_backquote1  = r'\\`'
-    literal_backquote3  = r'\\```'
-    backquote1         = r'`'
-    backquote3         = r'```'
+    literal_backslash = r'\\\\'
+    literal_backquote1 = r'\\`'
+    literal_backquote3 = r'\\```'
+    backquote1 = r'`'
+    backquote3 = r'```'
     backquote3_no_wrap = r'```!'
     backquote3_comment = r'```#'
-    quoted_char1       = r'[^`\t\n]'
-    quoted_char3       = r'[^`]'
+    quoted_char1 = r'[^`\t\n]'
+    quoted_char3 = r'[^`]'
 
-    # Punctuation.
+    # Var-inputs.
+    choice_sep = r'\|'
+    assign = '='
+
+    # Options and opt-specs.
     option_prefix = '-'
-    dot = r'\.'
-    comma_sep = wrapped_in(whitespace0, ',')
-    section_marker = '::' + end_of_line
-    heading_marker = ':::' + end_of_line
+    long_option  = option_prefix + option_prefix + captured_name
+    short_option = option_prefix + captured(r'\w')
+    opt_spec_sep = ':'
 
     # Scopes.
     scope_marker = '>>'
@@ -138,92 +164,98 @@ def define_tokdefs():
     query_path = fr'{query_elem}(?:\.{query_elem})*'
     scope0 = scope_marker
     scope1 = captured(query_path) + wrapped_in(whitespace0, scope_marker)
+    opt_spec_scope_empty = scope0
+    opt_spec_scope = scope1
 
     # Section title, heading.
-    section_title = captured('.*[^:]') + section_marker
+    section_marker = '::' + end_of_line
+    heading_marker = ':::' + end_of_line
     heading = captured('.*[^:]') + heading_marker
+    section_title = captured('.*[^:]') + section_marker
+    scoped_section_title = scope1 + section_title
 
-    # Stuff inside a quantifier range.
-    quant_range_guts  = (
-        whitespace0 +
-        '|'.join((
-            number + comma_sep + number,
-            number + comma_sep,
-            number,
-            comma_sep + number,
-            comma_sep,
-        )) +
-        whitespace0
+    # Quantifers.
+    triple_dot = r'\.' * 3
+    question = r'\?'
+    comma_sep = wrapped_in(whitespace0, ',')
+    quant_range_guts = wrapped_in(whitespace0, '|'.join((
+        number + comma_sep + number,
+        number + comma_sep,
+        number,
+        comma_sep + number,
+        comma_sep,
+    )))
+    quant_range = r'\{' + captured(quant_range_guts) + r'\}'
+
+    # Variants.
+    variant_def = captured(valid_name + '!?') + whitespace0 + ':'
+    partial_usage = captured_name + '!'
+
+    ####
+    # Tuples to define TokDef instances. Each has:
+    #
+    # - TokDef kind.
+    # - Parse-mode abbreviations.
+    # - Emit flag.
+    ####
+
+    ModeLookup = cons(
+        g = Pmodes.grammar,
+        h = Pmodes.help_text,
+        q = Pmodes.quoted,
     )
-
-    ####
-    # Combos of parsing modes used by the TokDefs.
-    ####
-
-    Modes = cons(
-        none = [],
-        g = [Pmodes.grammar],
-        h = [Pmodes.help_text],
-        gh = list(Pmodes.values()),
-        Q = [Pmodes.quoted],
-        gQ = [Pmodes.grammar, Pmodes.quoted],
-    )
-
-    ####
-    # Tuples to define TokDef instances.
-    ####
 
     td_tups = [
         # - Quoted.
-        ('backquote3_no_wrap',    'g  ', backquote3_no_wrap),
-        ('backquote3_comment',    'g  ', backquote3_comment),
-        ('backquote3',            'g Q', backquote3),
-        ('backquote1',            'g Q', backquote1),
-        ('literal_backslash',     '  Q', literal_backslash),
-        ('literal_backquote3',    '  Q', literal_backquote3),
-        ('literal_backquote1',    '  Q', literal_backquote1),
-        ('quoted_char1',          '  Q', quoted_char1),
-        ('quoted_char3',          '  Q', quoted_char3),
+        ('backquote3_no_wrap',    'g  ', True),
+        ('backquote3_comment',    'g  ', True),
+        ('backquote3',            'g q', True),
+        ('backquote1',            'g q', True),
+        ('literal_backslash',     '  q', True),
+        ('literal_backquote3',    '  q', True),
+        ('literal_backquote1',    '  q', True),
+        ('quoted_char1',          '  q', True),
+        ('quoted_char3',          '  q', True),
         # - Whitespace.
-        ('newline',               'gh ', r'\n'),
-        ('indent',                'gh ', start_of_line + whitespace1 + not_whitespace),
-        ('whitespace',            'gh ', whitespace1),
+        ('newline',               'gh ', False),
+        ('indent',                'gh ', False),
+        ('whitespace',            'gh ', False),
         # - Sections.
-        ('scoped_section_title',  'g  ', scope1 + section_title),
-        ('section_title',         'g  ', section_title),
-        ('heading',               'g  ', heading),
+        ('scoped_section_title',  'g  ', True),
+        ('section_title',         'g  ', True),
+        ('heading',               'g  ', True),
         # - Opt-spec scopes.
-        ('opt_spec_scope',        'g  ', scope1),
-        ('opt_spec_scope_empty',  'g  ', scope0),
+        ('opt_spec_scope',        'g  ', True),
+        ('opt_spec_scope_empty',  'g  ', True),
         # - Parens.
-        ('paren_open',            'g  ', r'\('),
-        ('brack_open',            'g  ', r'\['),
-        ('angle_open',            'g  ', '<'),
-        ('paren_open_named',      'g  ', captured(valid_name) + r'=\('),
-        ('brack_open_named',      'g  ', captured(valid_name) + r'=\['),
-        ('paren_close',           'g  ', r'\)'),
-        ('brack_close',           'g  ', r'\]'),
-        ('angle_close',           'g  ', '>'),
+        ('paren_open',            'g  ', True),
+        ('brack_open',            'g  ', True),
+        ('angle_open',            'g  ', True),
+        ('paren_open_named',      'g  ', True),
+        ('brack_open_named',      'g  ', True),
+        ('paren_close',           'g  ', True),
+        ('brack_close',           'g  ', True),
+        ('angle_close',           'g  ', True),
         # - Quants.
-        ('quant_range',           'g  ', r'\{' + captured(quant_range_guts) + r'\}'),
-        ('triple_dot',            'g  ', dot * 3),
-        ('question',              'g  ', r'\?'),
+        ('quant_range',           'g  ', True),
+        ('triple_dot',            'g  ', True),
+        ('question',              'g  ', True),
         # - Separators.
-        ('choice_sep',            'g  ', r'\|'),
-        ('assign',                'g  ', '='),
-        ('opt_spec_sep',          'g  ', ':'),
+        ('choice_sep',            'g  ', True),
+        ('assign',                'g  ', True),
+        ('opt_spec_sep',          'g  ', True),
         # - Options.
-        ('long_option',           'g  ', option_prefix + option_prefix + captured_name),
-        ('short_option',          'g  ', option_prefix + captured(r'\w')),
+        ('long_option',           'g  ', True),
+        ('short_option',          'g  ', True),
         # - Variants.
-        ('variant_def',           'g  ', captured(valid_name + '!?') + whitespace0 + ':'),
-        ('partial_usage',         'g  ', captured_name + '!'),
+        ('variant_def',           'g  ', True),
+        ('partial_usage',         'g  ', True),
         # - Names.
-        ('valid_name',            'g  ', valid_name),
+        ('valid_name',            'g  ', True),
         # - Special.
-        ('rest_of_line',          ' h ', '.+'),
-        ('eof',                   '   ', ''),
-        ('err',                   '   ', ''),
+        ('rest_of_line',          ' h ', True),
+        ('eof',                   '   ', False),
+        ('err',                   '   ', False),
     ]
 
     ####
@@ -231,18 +263,16 @@ def define_tokdefs():
     # as a constants collection.
     ####
 
-    NO_EMIT = ('newline', 'indent', 'whitespace', 'eof', 'err')
-
+    LOCS = locals()
     tds = [
         TokDef(
             kind = kind,
-            emit = kind not in NO_EMIT,
-            modes = Modes[modes.replace(' ', '') or 'none'],
-            regex = re.compile(pattern),
+            emit = emit,
+            modes = [ModeLookup[a] for a in abbrevs if a.isalpha()],
+            regex = re.compile(LOCS[kind]),
         )
-        for kind, modes, pattern in td_tups
+        for kind, abbrevs, emit in td_tups
     ]
-
     return constants({td.kind : td for td in tds})
 
 ####

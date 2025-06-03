@@ -3,27 +3,49 @@ r'''
 
 TODO:
 
-    x Quoted strings: refactor support no-wrap, block-comment, backslashing.
-
-    - define_tokdefs(): refactor:
-        - create local var for every tokdef
-        - create some KIND collections:
-            Kinds = cons(
-                no_emit     = list[KIND],
-                not_grammar = ...
-                help_text   = ...
-                quoted      = ...
-            )
-        - simplify td_tups to just list[KIND]
-            - in the loop, use Kinds for mode-logic.
-            - use locals()[KIND] to get the regex pattern
-
-        - create NOT_GRAMMAR = tuple[KIND]
-
     - build_grammar()
 
-        - PartialUsage => replace with actual elems
-        - Group => split elems on ChoiceSep
+        - Define the GrammarElem classes:
+
+            Section
+            Grammar
+            Variant
+            Group
+            Opt
+                Positional
+                Option
+                Literal
+            Arg
+                Argument
+                Parameter
+            Choice
+
+        - Transformations needed:
+            - Group and Variant: reorganize into alternatives, based on ChoiceSep.
+            - Variants: split into partial and regular.
+            - PartialUsage: replace with actual elems.
+            - Apply OptSpec configuration to the Opts in the grammar.
+
+        - SpecAST structure
+
+            Variant*
+                [
+                    Option |
+                    Positional |
+                    Literal |
+                    PartialUsage |
+                    ChoiceSep
+                    Group |
+                        etc.
+                ]+
+
+            [
+                SectionTitle |
+                Heading |
+                BlockQuote |
+                OptSpec
+            ]*
+
 
     - error(): includes expected-elements:
         - Probably framed in terms of parsing-functions.
