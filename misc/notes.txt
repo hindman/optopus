@@ -1178,12 +1178,13 @@ Query:
 
 Quantifier:
 
-    - Might be a concept rather than an object.
     - Represents any valid input value for nargs or ntimes.
 
-        N
-        (N, M)
-        (N, None)
+    - Attributes:
+
+        m: int
+        n: int
+        greedy: bool
 
 Variant:
 

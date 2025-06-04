@@ -5,20 +5,7 @@ TODO:
 
     - build_grammar()
 
-        - Define the GrammarElem classes:
-
-            Section
-            Grammar
-            Variant
-            Group
-            Opt
-                Positional
-                Option
-                Literal
-            Arg
-                Argument
-                Parameter
-            Choice
+        x Define the GrammarElem classes:
 
         - Transformations needed:
             - Group and Variant: reorganize into alternatives, based on ChoiceSep.
@@ -315,6 +302,18 @@ from .errors import SpecParseError, ErrKinds, ErrMsgs
 from .regex_lexer import RegexLexer
 from .tokens import Token, TokDefs
 from .utils import get, distilled
+from .grammar import (
+    Grammar,
+    Variant,
+    Group,
+    Positional,
+    Option,
+    Literal,
+    Argument,
+    Parameter,
+    Choice,
+    Quantifier,
+)
 
 ####
 # Data classes: ParseElems.
