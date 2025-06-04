@@ -16,8 +16,10 @@ from .tokens import Token, TokDefs
 from .utils import get, distilled
 
 ####
-# Data classes: __
+# Data classes: GrammarElem.
 ####
+
+VariantElem = Union['Opt', 'Group', 'Alternative']
 
 @dataclass
 class GrammarElem:
@@ -33,17 +35,21 @@ class Grammar(GrammarElem):
 @dataclass
 class Variant(GrammarElem):
     name: str
-    elems: list[Union['Group', 'Opt']]
+    elems: list[VariantElem]
     ntimes: 'Quantifier'
 
 @dataclass
 class Group(GrammarElem):
     name: str
     dest: str
-    elems: list[Union['Group', 'Opt']]
+    elems: list[VariantElem]
     ntimes: 'Quantifier'
     validate: callable
     mutex: bool
+
+@dataclass
+class Alternative(GrammarElem):
+    elems: list[VariantElem]
 
 @dataclass
 class Opt(GrammarElem):
@@ -118,4 +124,34 @@ class Quantifier(Arg):
     m: int = None
     n: int = None
     greedy: bool = True
+
+####
+# Data classes: SectionElem.
+####
+
+@dataclass
+class SectionElem:
+    pass
+
+@dataclass
+class Section(SectionElem):
+    name: str
+    title: str
+    elems: list[SectionElem]
+
+@dataclass
+class Heading(SectionElem):
+    title: str
+
+@dataclass
+class BlockQuote(SectionElem):
+    text: str
+    comment: bool
+    no_wrap: bool
+    token_indent: int
+
+@dataclass
+class OptSpec(SectionElem):
+    # TODO: not sure what this needs.
+    pass
 

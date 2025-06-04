@@ -3,71 +3,37 @@ r'''
 
 TODO:
 
+    . ParseElem:
+        - STATUS: partial progress
+        - make type hints more specific where feasible
+
     - build_grammar()
 
-        x Define the GrammarElem classes:
+        - elems: split into:
+            - variants
+            - elems
 
-        - Define Container(GrammarElem):
-            - Base class for Alternative and Group.
+        - variants (and their inner groups):
+            - If ChoiceSep is among the elems:
+                - Split elems on ChoiceSep.
+                - Put each batch of elems into an Alternative(ParseElem).
 
-        - Define Section and SectionElem:
-            - Section
-            - SectionElem:
-                - Heading
-                - BlockQuote
-                - OptSpec
+        - variants: split into:
+            - variants: list[Variant]
+            - partials: dict[NAME => Variant]
 
-        - Define Alternative(GrammarElem) and Alternative(ParseElem).
-            - Behaves like an Group for the purpose of arg-parsing.
-            - Do Variant/Group elems have to be wrapped in Alternative?
-            - Not generally.
-            - Only when elems has 1+ Alternative.
+        - variants: traverse:
+            - Replace PartialUsage with actual elems.
 
-        - Transformations needed:
+        - variants: traverse:
+            - Convert ParseElem => GrammarElem.
+            - Relevent elems: Option, Positional, Literal, Group.
 
-            - elems: split into:
-                - variants
-                - elems
+        - elems: traverse:
+            - Convert ParseElem => Sections.
+            - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
 
-            - variants (and their inner groups):
-                - Reorganize elems into Alternatives, based on ChoiceSep.
-                - At this point Alternatives are ParseElem, not GrammarElem.
-
-            - variants: split into:
-                - variants: list[Variant]
-                - partials: dict[NAME => Variant]
-
-            - variants: traverse:
-                - Replace PartialUsage with actual elems.
-
-            - variants: traverse:
-                - Convert ParseElem => GrammarElem.
-
-            - elems: traverse:
-                - Convert ParseElem => Sections.
-
-            - opts: unify/reconcile: opt-specs <=> variants.
-
-        - SpecAST structure
-
-            Variant*
-                [
-                    Option |
-                    Positional |
-                    Literal |
-                    PartialUsage |
-                    ChoiceSep
-                    Group |
-                        etc.
-                ]+
-
-            [
-                SectionTitle |
-                Heading |
-                BlockQuote |
-                OptSpec
-            ]*
-
+        - opts: unify/reconcile: opt-specs <=> variants.
 
     - error(): includes expected-elements:
         - Probably framed in terms of parsing-functions.
@@ -329,6 +295,7 @@ Because options can have groups as parameters, grammatical overlap occurs:
 
 from dataclasses import dataclass, field
 from functools import wraps
+from typing import Union
 
 from short_con import cons, constants
 
@@ -405,24 +372,47 @@ class ParseElem:
             for child in children:
                 yield from child.pp_gen(level + 1)
 
+
+VariantElem = Union[
+    'Option',
+    'Positional',
+    'Literal',
+    'PartialUsage',
+    'ChoiceSep',
+    'Group',
+    'Option',
+]
+
+SectionElem = Union[
+    'SectionTitle',
+    'Heading',
+    'BlockQuote',
+    'OptSpec',
+]
+
+SpecElem = Union[
+    VariantElem,
+    SectionElem,
+]
+
 @dataclass
 class SpecAST(ParseElem):
     # The top-level container for a parsed spec.
     # It is an AST-style container of entire spec.
     # Used to build the ultimate Grammar.
-    elems: list[ParseElem]
+    elems: list[SpecElem]
 
 @dataclass
 class VariantElems(ParseElem):
     # A top-level container for elements parsed when we are looking for stuff
     # (1) inside a variant or (b) stuff inside a () or [] group.
-    elems: list[ParseElem]
+    elems: list[VariantElem]
 
 @dataclass
 class SectionElems(ParseElem):
     # A top-level container for elements parsed after we are no longer
     # looking for variants.
-    elems: list[ParseElem]
+    elems: list[SectionElem]
 
 @dataclass
 class Scope(ParseElem):
@@ -445,7 +435,7 @@ class Choice(ParseElem):
 class Variant(ParseElem):
     name: str
     is_partial: bool
-    elems: list
+    elems: list[VariantElem]
 
 @dataclass
 class PartialUsage(ParseElem):
@@ -457,7 +447,7 @@ class Group(ParseElem):
     # A group: () or [].
     # If the latter, required=False.
     name: str
-    elems: list
+    elems: list[VariantElem]
     quantifier: Quantifier = None
     required: bool = True
 
@@ -541,6 +531,12 @@ class Literal(ParseElem):
     # Used to represent a quoted literal in a command-line grammar, or
     # as an intermediate object when parsing choices in a var-input.
     text: str
+
+@dataclass
+class Alternative(ParseElem):
+    # Used as an intermediate object while transforming
+    # the initial SpecAST into a Grammar.
+    elems: list
 
 ####
 # Constants used when parsing bracketed expressions: () [] <>.
