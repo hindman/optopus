@@ -7,11 +7,46 @@ TODO:
 
         x Define the GrammarElem classes:
 
+        - Define Container(GrammarElem):
+            - Base class for Alternative and Group.
+
+        - Define Section and SectionElem:
+            - Section
+            - SectionElem:
+                - Heading
+                - BlockQuote
+                - OptSpec
+
+        - Define Alternative(GrammarElem) and Alternative(ParseElem).
+            - Behaves like an Group for the purpose of arg-parsing.
+            - Do Variant/Group elems have to be wrapped in Alternative?
+            - Not generally.
+            - Only when elems has 1+ Alternative.
+
         - Transformations needed:
-            - Group and Variant: reorganize into alternatives, based on ChoiceSep.
-            - Variants: split into partial and regular.
-            - PartialUsage: replace with actual elems.
-            - Apply OptSpec configuration to the Opts in the grammar.
+
+            - elems: split into:
+                - variants
+                - elems
+
+            - variants (and their inner groups):
+                - Reorganize elems into Alternatives, based on ChoiceSep.
+                - At this point Alternatives are ParseElem, not GrammarElem.
+
+            - variants: split into:
+                - variants: list[Variant]
+                - partials: dict[NAME => Variant]
+
+            - variants: traverse:
+                - Replace PartialUsage with actual elems.
+
+            - variants: traverse:
+                - Convert ParseElem => GrammarElem.
+
+            - elems: traverse:
+                - Convert ParseElem => Sections.
+
+            - opts: unify/reconcile: opt-specs <=> variants.
 
         - SpecAST structure
 
