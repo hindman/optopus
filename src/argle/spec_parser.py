@@ -3,9 +3,139 @@ r'''
 
 TODO:
 
-    . ParseElem:
-        - STATUS: partial progress
-        - make type hints more specific where feasible
+    - TreeElem: base class:
+
+        class TreeElem:
+            
+            def walk(self, level = 0):
+                - Traverse self.
+                - Yield two things:
+                    - WalkElem(
+                        level = N,
+                        elem = E,
+                        closing = str | None,
+                    )
+                    - WalkAttr(
+                        level = N,
+                        attr = A,
+                        val = V,
+                        opening = str | None,
+                        closing = str | None,
+                    )
+
+            @property
+            def pretty(self):
+                return '\n'.join(self.pretty_gen())
+
+            def pretty(self):
+                for w in self.walk():
+
+        ####
+        # Fully explicit.
+        ####
+
+        SpecAST(
+            Variant(
+                name = None
+                is_partial = False
+                elems = [
+                    Group(
+                        name = None
+                        quantifier = None
+                        required = False
+                        elems = [
+                            Option(
+                                name = 'i'
+                                quantifier = None
+                                aliases = []
+                            )
+                        ]
+                    )
+                    Group(
+                        name = None
+                        quantifier = None
+                        required = False
+                        elems = [
+                            Option(
+                                name = 'v'
+                                quantifier = None
+                                aliases = []
+                            )
+                        ]
+                    )
+                    Positional(
+                        name = 'rgx'
+                        quantifier = None
+                    )
+                    Positional(
+                        name = 'path'
+                    )
+                ]
+            )
+        )
+
+        ####
+        # Explicit, but drop all closing brackets
+        ####
+
+        SpecAST(
+            Variant(
+                name = None
+                is_partial = False
+                elems = [
+                    Group(
+                        name = None
+                        quantifier = None
+                        required = False
+                        elems = [
+                            Option(
+                                name = 'i'
+                                quantifier = None
+                                aliases = []
+                    Group(
+                        name = None
+                        quantifier = None
+                        required = False
+                        elems = [
+                            Option(
+                                name = 'v'
+                                quantifier = None
+                                aliases = []
+                    Positional(
+                        name = 'rgx'
+                        quantifier = None
+                    Positional(
+                        name = 'path'
+
+        ####
+        # Drop attribute and indentation for child elems.
+        ####
+
+        SpecAST(
+            Variant(
+                name = None
+                is_partial = False
+                Group(
+                    name = None
+                    quantifier = None
+                    required = False
+                    Option(
+                        name = 'i'
+                        quantifier = None
+                        aliases = []
+                Group(
+                    name = None
+                    quantifier = None
+                    required = False
+                    Option(
+                        name = 'v'
+                        quantifier = None
+                        aliases = []
+                Positional(
+                    name = 'rgx'
+                    quantifier = None
+                Positional(
+                    name = 'path'
 
     - build_grammar()
 
@@ -296,6 +426,7 @@ Because options can have groups as parameters, grammatical overlap occurs:
 from dataclasses import dataclass, field
 from functools import wraps
 from typing import Union
+from copy import deepcopy
 
 from short_con import cons, constants
 
@@ -337,6 +468,31 @@ class ParseElem:
     # by pp_gen(), rather than being shown simply via repr().
     PP_CHILDREN = ('elems', 'params', 'opt')
 
+    def elems_to_alternatives(self):
+        # Applies only to Variants and Groups.
+        if not isinstance(self, (Variant, Group)):
+            return
+
+        # Do nothing if the element contains no ChoiceSep.
+        if not any(isinstance(e, ChoiceSep) for e in self.elems):
+            return
+
+        # Reorganize elems into Alternative instances.
+        alts = []
+        curr = []
+        for e in self.elems:
+            if isinstance(e, ChoiceSep):
+                alts.append(Alternative(elems = curr))
+                curr = []
+            else:
+                curr.append(e)
+
+        # Get the last chunk of elems.
+        alts.append(Alternative(elems = curr))
+
+        # Change elems to the list[Alternative] we assembled.
+        self.elems = alts
+
     @property
     def pp(self):
         # Return the ParseElem as pretty-printable text.
@@ -372,7 +528,6 @@ class ParseElem:
             for child in children:
                 yield from child.pp_gen(level + 1)
 
-
 VariantElem = Union[
     'Option',
     'Positional',
@@ -393,6 +548,12 @@ SectionElem = Union[
 SpecElem = Union[
     VariantElem,
     SectionElem,
+]
+
+OptSpecElem = Union[
+    'Option',
+    'Positional',
+    'Group',
 ]
 
 @dataclass
@@ -500,7 +661,7 @@ class RestOfLine(ParseElem):
 @dataclass
 class OptSpec(ParseElem):
     scope: Scope
-    opt: ParseElem
+    opt: OptSpecElem
     text: str
     token: Token
 
@@ -536,7 +697,7 @@ class Literal(ParseElem):
 class Alternative(ParseElem):
     # Used as an intermediate object while transforming
     # the initial SpecAST into a Grammar.
-    elems: list
+    elems: list[VariantElem]
 
 ####
 # Constants used when parsing bracketed expressions: () [] <>.
@@ -757,8 +918,8 @@ class SpecParser:
             self.error(ErrKinds.incomplete_spec_parse)
 
         # Convert the elements to a Grammar.
-        sa = SpecAST(elems)
-        g = self.build_grammar(sa)
+        ast = SpecAST(elems)
+        g = self.build_grammar(ast)
         return g
 
     ####
@@ -937,7 +1098,10 @@ class SpecParser:
             else:
                 break
         if elems:
-            return VariantElems(elems = elems)
+            if isinstance(elems[-1], ChoiceSep):
+                self.error(ErrKinds.choice_sep_last)
+            else:
+                return VariantElems(elems = elems)
         else:
             return None
 
@@ -1487,9 +1651,70 @@ class SpecParser:
     # Converting the SpecAST to a Grammar.
     ####
 
-    def build_grammar(self, sa):
+    def build_grammar(self, ast):
         # TODO.
-        return sa
+
+        '''
+
+        - variants: split into:
+            - variants: list[Variant]
+            - partials: dict[NAME => Variant]
+
+        - variants: traverse:
+            - Replace PartialUsage with actual elems.
+
+        - variants: traverse:
+            - Convert ParseElem => GrammarElem.
+            - Relevent elems: Option, Positional, Literal, Group.
+
+        - elems: traverse:
+            - Convert ParseElem => Sections.
+            - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
+
+        - opts: unify/reconcile: opt-specs <=> variants.
+
+        - elems inventory at the start:
+
+            # VariantElem
+            Option
+            Positional
+            Literal
+            PartialUsage
+            ChoiceSep
+            Group
+            Option
+
+            # SectionElem
+            SectionTitle
+            Heading
+            BlockQuote
+            OptSpec
+
+        '''
+
+        ast_orig = deepcopy(ast)
+
+        # Split SpecAST.elems into variants and other elems.
+        variants = []
+        elems = []
+        for e in ast.elems:
+            if isinstance(e, Variant):
+                variants.append(e)
+            else:
+                elems.append(e)
+
+        # variants (and their inner groups):
+        #   - If ChoiceSep is among the elems:
+        #       - Split elems on ChoiceSep.
+        #       - Put each batch of elems into an Alternative(ParseElem).
+
+        # curr = variants
+        # for v in variants:
+        #     curr = v
+        #     while True:
+        #         if any(isinstance(e, ChoiceSep) for e in v.elems):
+
+        return ast_orig
 
     ####
     # Other helpers.

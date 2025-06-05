@@ -12,6 +12,7 @@ ErrMsgs = cons(
     unclosed_backquote = 'Failed to reach closing backquote or triple-backquote',
     empty_quote = 'Quoted literal or block quote cannot be empty',
     empty_group = 'Group cannot be empty',
+    choice_sep_last = 'Choice separator (|) cannot be last element in variant or group',
 )
 
 ErrKinds = constants(ErrMsgs.keys())
