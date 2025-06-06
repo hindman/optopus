@@ -3,174 +3,12 @@ r'''
 
 TODO:
 
-    - TreeElem: base class:
+    - TreeElem: base class and walk()
 
-        class WalkElem:
-            level: int
-            kind: str
-            val: object = None
-            attr: str = None
+        - switch code to use TreeElem.walk() and TreeElem.pretty()
 
-            val: object = None
-            children: object = None
-
-        WalkElemKinds = cons(
-            'elem_start',            # Variant(
-            'elem_end',              # ),
-            'attr_val',              # foo = 'bar',
-            'attr_elem_start',       # foo = Bar(
-            'attr_elem_end',         # ),
-            'attr_children_start',   # [
-            'attr_children_end',     # ],
-        )
-
-        class TreeElem:
-
-            def walk(self, level = 0):
-                - Traverse self.
-                - Yield WalkElem
-
-                # The elem itself.
-                yield WalkElem(
-                    level = level,
-                    kind = WEK.elem_start,
-                    val = self,
-                )
-
-                # Basic attributes (non-children).
-                for attr, val in self.__dict__.items():
-                    if attr not in self.PP_CHILDREN:
-                        yield WalkElem(
-                            level = level + 1,
-                            kind = WEK.attr_val,
-                            attr = attr,
-                            val = val,
-                        )
-
-                # Recurse to elements containing children.
-                for attr in self.PP_CHILDREN:
-                    # Get the element, putting it inside a list if needed.
-                    children = getattr(self, attr, [])
-                    if not isinstance(children, list):
-                        children = [children]
-
-                    # Process each element.
-                    for child in children:
-                        yield from child.walk(level + 1)
-
-            @property
-            def pretty(self):
-                return '\n'.join(self.pretty_gen())
-
-            def pretty(self):
-                for w in self.walk():
-
-        ####
-        # Fully explicit.
-        ####
-
-        SpecAST(
-            Variant(
-                name = None
-                is_partial = False
-                elems = [
-                    Group(
-                        name = None
-                        quantifier = None
-                        required = False
-                        elems = [
-                            Option(
-                                name = 'i'
-                                quantifier = None
-                                aliases = []
-                            )
-                        ]
-                    )
-                    Group(
-                        name = None
-                        quantifier = None
-                        required = False
-                        elems = [
-                            Option(
-                                name = 'v'
-                                quantifier = None
-                                aliases = []
-                            )
-                        ]
-                    )
-                    Positional(
-                        name = 'rgx'
-                        quantifier = None
-                    )
-                    Positional(
-                        name = 'path'
-                    )
-                ]
-            )
-        )
-
-        ####
-        # Explicit, but drop all closing brackets
-        ####
-
-        SpecAST(
-            Variant(
-                name = None
-                is_partial = False
-                elems = [
-                    Group(
-                        name = None
-                        quantifier = None
-                        required = False
-                        elems = [
-                            Option(
-                                name = 'i'
-                                quantifier = None
-                                aliases = []
-                    Group(
-                        name = None
-                        quantifier = None
-                        required = False
-                        elems = [
-                            Option(
-                                name = 'v'
-                                quantifier = None
-                                aliases = []
-                    Positional(
-                        name = 'rgx'
-                        quantifier = None
-                    Positional(
-                        name = 'path'
-
-        ####
-        # Drop attribute and indentation for child elems.
-        ####
-
-        SpecAST(
-            Variant(
-                name = None
-                is_partial = False
-                Group(
-                    name = None
-                    quantifier = None
-                    required = False
-                    Option(
-                        name = 'i'
-                        quantifier = None
-                        aliases = []
-                Group(
-                    name = None
-                    quantifier = None
-                    required = False
-                    Option(
-                        name = 'v'
-                        quantifier = None
-                        aliases = []
-                Positional(
-                    name = 'rgx'
-                    quantifier = None
-                Positional(
-                    name = 'path'
+        - spec_parser.py
+        - parse-spec script
 
     - build_grammar()
 
@@ -481,6 +319,7 @@ from .grammar import (
     Parameter,
     Choice,
     Quantifier,
+    TreeElem,
 )
 
 ####
@@ -492,7 +331,7 @@ from .grammar import (
 ####
 
 @dataclass
-class ParseElem:
+class ParseElem(TreeElem):
     # A base class, mostly as a device for terminology.
     #
     # Also a home for some utilities to represent ParseElem
@@ -502,6 +341,7 @@ class ParseElem:
     # ParseElem attributes that should be expanded hierarchically
     # by pp_gen(), rather than being shown simply via repr().
     PP_CHILDREN = ('elems', 'params', 'opt')
+    WALKABLE = ('elems', 'params', 'opt')
 
     def elems_to_alternatives(self):
         # Applies only to Variants and Groups.

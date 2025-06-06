@@ -83,6 +83,7 @@ def main(args):
 
         if opts.tree:
             print(g.pp)
+            # print(g.pretty(omit_end = True, indent_size = 2))
         else:
             print('# SPEC-OK')
 
