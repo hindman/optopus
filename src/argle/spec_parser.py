@@ -5,23 +5,58 @@ TODO:
 
     - TreeElem: base class:
 
+        class WalkElem:
+            level: int
+            kind: str
+            val: object = None
+            attr: str = None
+
+            val: object = None
+            children: object = None
+
+        WalkElemKinds = cons(
+            'elem_start',            # Variant(
+            'elem_end',              # ),
+            'attr_val',              # foo = 'bar',
+            'attr_elem_start',       # foo = Bar(
+            'attr_elem_end',         # ),
+            'attr_children_start',   # [
+            'attr_children_end',     # ],
+        )
+
         class TreeElem:
-            
+
             def walk(self, level = 0):
                 - Traverse self.
-                - Yield two things:
-                    - WalkElem(
-                        level = N,
-                        elem = E,
-                        closing = str | None,
-                    )
-                    - WalkAttr(
-                        level = N,
-                        attr = A,
-                        val = V,
-                        opening = str | None,
-                        closing = str | None,
-                    )
+                - Yield WalkElem
+
+                # The elem itself.
+                yield WalkElem(
+                    level = level,
+                    kind = WEK.elem_start,
+                    val = self,
+                )
+
+                # Basic attributes (non-children).
+                for attr, val in self.__dict__.items():
+                    if attr not in self.PP_CHILDREN:
+                        yield WalkElem(
+                            level = level + 1,
+                            kind = WEK.attr_val,
+                            attr = attr,
+                            val = val,
+                        )
+
+                # Recurse to elements containing children.
+                for attr in self.PP_CHILDREN:
+                    # Get the element, putting it inside a list if needed.
+                    children = getattr(self, attr, [])
+                    if not isinstance(children, list):
+                        children = [children]
+
+                    # Process each element.
+                    for child in children:
+                        yield from child.walk(level + 1)
 
             @property
             def pretty(self):
