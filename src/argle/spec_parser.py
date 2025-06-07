@@ -1531,10 +1531,14 @@ class SpecParser:
 
         # For Variants and Groups with ChoiceSep, 
         # reorganize the elems into Alternatives.
-        # for e in ast.walk_elems():
-        #     e.elems_to_alternatives()
         for v in any_variants:
+            # TODO: pass Variant, Group into the walk_elems() call.
             for e in v.walk_elems():
+                # TODO: reword this method so that it returns
+                # a new list of elems.
+                #
+                # e.elems = e.elems_to_alternatives()
+                #
                 e.elems_to_alternatives()
 
         # Organize variants into a list of regular variants
