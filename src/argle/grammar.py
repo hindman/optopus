@@ -96,9 +96,16 @@ class TreeElem:
         # The elem itself: end.
         yield clone(we_self, is_end = True)
 
-    def walk_elems(self):
+    def walk_elems(self, *types):
+        types = tuple(types or [TreeElem])
         for we in self.walk():
-            if we.kind == TreeElemKinds.elem and not we.is_end:
+            val = we.val
+            emit = (
+                we.kind == TreeElemKinds.elem and
+                isinstance(val, types) and
+                not we.is_end
+            )
+            if emit:
                 yield we.val
 
     def pretty(self, indent_size = 4, omit_end = False):

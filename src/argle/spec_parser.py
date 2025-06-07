@@ -5,11 +5,11 @@ TODO:
 
     - build_grammar()
 
-        - elems: split into:
+        x elems: split into:
             - variants
             - elems
 
-        - variants (and their inner groups):
+        x variants (and their inner groups):
             - If ChoiceSep is among the elems:
                 - Split elems on ChoiceSep.
                 - Put each batch of elems into an Alternative(ParseElem).
@@ -1489,13 +1489,6 @@ class SpecParser:
 
         '''
 
-        - variants: split into:
-            - variants: list[Variant]
-            - partials: dict[NAME => Variant]
-
-        - variants: traverse:
-            - Replace PartialUsage with actual elems.
-
         - variants: traverse:
             - Convert ParseElem => GrammarElem.
             - Relevent elems: Option, Positional, Literal, Group.
@@ -1528,32 +1521,36 @@ class SpecParser:
         ast_orig = deepcopy(ast)
 
         # Split SpecAST.elems into variants and other elems.
-        variants = []
-        elems = []
+        any_variants = []
+        other_elems = []
         for e in ast.elems:
             if isinstance(e, Variant):
-                variants.append(e)
+                any_variants.append(e)
             else:
-                elems.append(e)
+                other_elems.append(e)
 
         # For Variants and Groups with ChoiceSep, 
         # reorganize the elems into Alternatives.
-        for e in ast.walk_elems():
-            e.elems_to_alternatives()
+        # for e in ast.walk_elems():
+        #     e.elems_to_alternatives()
+        for v in any_variants:
+            for e in v.walk_elems():
+                e.elems_to_alternatives()
 
-        # return ast
+        # Organize variants into a list of regular variants
+        # and a dict of partial variants.
+        variants = []
+        partials = {}
+        for v in any_variants:
+            if v.is_partial:
+                partials[v.name] = v
+            else:
+                variants.append(v)
 
-        # variants (and their inner groups):
-        #   - If ChoiceSep is among the elems:
-        #       - Split elems on ChoiceSep.
-        #       - Put each batch of elems into an Alternative(ParseElem).
+        # variants: traverse: replace PartialUsage with actual elems.
+        # TODO: __HERE__
 
-        # curr = variants
-        # for v in variants:
-        #     curr = v
-        #     while True:
-        #         if any(isinstance(e, ChoiceSep) for e in v.elems):
-
+        # Return.
         return ast_orig
 
     ####

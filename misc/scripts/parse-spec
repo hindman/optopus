@@ -10,6 +10,9 @@ from argle import bargparse as bp
 
 from argle.spec_parser import (
     SpecParser,
+    Option,
+    Positional,
+    Variant,
 )
 
 from argle.grammar import (
