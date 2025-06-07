@@ -1118,96 +1118,157 @@ parse()
 
 # GRAMMAR
 SpecAST(
-    OptSpec(
-        scope = None
-        text = 'Python regular expression'
-        token = Token(kind='angle_open', text='<', pos=0, line=1, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'rgx'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Path(s) to input'
-        token = Token(kind='brack_open', text='[', pos=34, line=2, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Positional(
-                name = 'path'
-                quantifier = Quantifier(m=1, n=None, greedy=True)
-    OptSpec(
-        scope = None
-        text = 'Ignore case'
-        token = Token(kind='brack_open', text='[', pos=65, line=3, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'ignore-case'
-                quantifier = None
-                aliases = [BareOption(name='i')]
-    OptSpec(
-        scope = None
-        text = 'Select non-matching lines'
-        token = Token(kind='brack_open', text='[', pos=98, line=4, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'invert-match'
-                quantifier = None
-                aliases = [BareOption(name='v')]
-    OptSpec(
-        scope = None
-        text = 'Stop searching after N matches'
-        token = Token(kind='brack_open', text='[', pos=146, line=5, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'max-count'
-                quantifier = None
-                aliases = [BareOption(name='m')]
-                Parameter(
-                    name = 'n'
-                    quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Print N lines of before/after context'
-        token = Token(kind='brack_open', text='[', pos=200, line=6, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'context'
-                quantifier = None
-                aliases = [BareOption(name='C')]
-                Parameter(
-                    name = 'n'
-                    quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Highlight matching text'
-        token = Token(kind='brack_open', text='[', pos=259, line=7, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'color'
-                quantifier = None
-                aliases = []
-                Parameter(
-                    name = None
-                    quantifier = None
-                    Choice(
-                        text = 'red'
-                    Choice(
-                        text = 'green'
-                    Choice(
-                        text = 'blue'
+    elems = [
+        OptSpec(
+            scope = None,
+            text = 'Python regular expression',
+            token = Token(kind='angle_open', text='<', pos=0, line=1, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'rgx',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Path(s) to input',
+            token = Token(kind='brack_open', text='[', pos=34, line=2, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Positional(
+                        name = 'path',
+                        quantifier = Quantifier(m=1, n=None, greedy=True),
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Ignore case',
+            token = Token(kind='brack_open', text='[', pos=65, line=3, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Option(
+                        name = 'ignore-case',
+                        quantifier = None,
+                        aliases = [BareOption(name='i')],
+                        params = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Select non-matching lines',
+            token = Token(kind='brack_open', text='[', pos=98, line=4, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Option(
+                        name = 'invert-match',
+                        quantifier = None,
+                        aliases = [BareOption(name='v')],
+                        params = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Stop searching after N matches',
+            token = Token(kind='brack_open', text='[', pos=146, line=5, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Option(
+                        name = 'max-count',
+                        quantifier = None,
+                        aliases = [BareOption(name='m')],
+                        params = [
+                            Parameter(
+                                name = 'n',
+                                quantifier = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Print N lines of before/after context',
+            token = Token(kind='brack_open', text='[', pos=200, line=6, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Option(
+                        name = 'context',
+                        quantifier = None,
+                        aliases = [BareOption(name='C')],
+                        params = [
+                            Parameter(
+                                name = 'n',
+                                quantifier = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Highlight matching text',
+            token = Token(kind='brack_open', text='[', pos=259, line=7, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Option(
+                        name = 'color',
+                        quantifier = None,
+                        aliases = [],
+                        params = [
+                            Parameter(
+                                name = None,
+                                quantifier = None,
+                                elems = [
+                                    Choice(
+                                        text = 'red',
+                                    ),
+                                    Choice(
+                                        text = 'green',
+                                    ),
+                                    Choice(
+                                        text = 'blue',
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ),
+    ],
+),

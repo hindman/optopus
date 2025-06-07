@@ -3,13 +3,6 @@ r'''
 
 TODO:
 
-    - TreeElem: base class and walk()
-
-        - switch code to use TreeElem.walk() and TreeElem.pretty()
-
-        - spec_parser.py
-        - parse-spec script
-
     - build_grammar()
 
         - elems: split into:
@@ -367,41 +360,6 @@ class ParseElem(TreeElem):
 
         # Change elems to the list[Alternative] we assembled.
         self.elems = alts
-
-    @property
-    def pp(self):
-        # Return the ParseElem as pretty-printable text.
-        return '\n'.join(self.pp_gen(0))
-
-    def pp_gen(self, level = 0):
-        # Recursive helper used by pp().
-        # Yields lines for the pretty-printable text.
-
-        # Setup.
-        cls_name = self.__class__.__name__
-        indent = ' ' * 4
-        indent1 = indent * level
-        indent2 = indent * (level + 1)
-
-        # Start with the class of the current element.
-        yield f'{indent1}{cls_name}('
-
-        # Then basic attributes.
-        for attr, v in self.__dict__.items():
-            if attr not in self.PP_CHILDREN:
-                v = f'{v.brief}' if isinstance(v, Token) else f'{v!r}'
-                yield f'{indent2}{attr} = {v}'
-
-        # Then recurse to child elements.
-        for attr in self.PP_CHILDREN:
-            # Get the element, putting it inside a list if needed.
-            children = getattr(self, attr, [])
-            if not isinstance(children, list):
-                children = [children]
-
-            # Process each element.
-            for child in children:
-                yield from child.pp_gen(level + 1)
 
 VariantElem = Union[
     'Option',
@@ -1577,6 +1535,13 @@ class SpecParser:
                 variants.append(e)
             else:
                 elems.append(e)
+
+        # For Variants and Groups with ChoiceSep, 
+        # reorganize the elems into Alternatives.
+        for e in ast.walk_elems():
+            e.elems_to_alternatives()
+
+        # return ast
 
         # variants (and their inner groups):
         #   - If ChoiceSep is among the elems:

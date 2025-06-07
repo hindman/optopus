@@ -96,6 +96,11 @@ class TreeElem:
         # The elem itself: end.
         yield clone(we_self, is_end = True)
 
+    def walk_elems(self):
+        for we in self.walk():
+            if we.kind == TreeElemKinds.elem and not we.is_end:
+                yield we.val
+
     def pretty(self, indent_size = 4, omit_end = False):
         lines = []
         for we in self.walk():

@@ -519,28 +519,52 @@ parse()
 
 # GRAMMAR
 SpecAST(
-    Variant(
-        name = None
-        is_partial = False
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'i'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'v'
-                quantifier = None
-                aliases = []
-        Positional(
-            name = 'rgx'
-            quantifier = None
-        Positional(
-            name = 'path'
-            quantifier = None
+    elems = [
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'i',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'v',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'rgx',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Positional(
+                    name = 'path',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+            ],
+        ),
+    ],
+),

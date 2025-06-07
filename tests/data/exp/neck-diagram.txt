@@ -1376,80 +1376,147 @@ parse()
 
 # GRAMMAR
 SpecAST(
-    Variant(
-        name = 'cmd'
-        is_partial = True
-        Group(
-            name = 'command'
-            quantifier = None
-            required = True
-            Positional(
-                name = 'cmd'
-                quantifier = None
-                Choice(
-                    text = 'snum'
-            Positional(
-                name = 'snum'
-                quantifier = None
-            ChoiceSep(
-            Positional(
-                name = 'cmd'
-                quantifier = None
-                Choice(
-                    text = 'fnum'
-            Positional(
-                name = 'fnum'
-                quantifier = None
-            ChoiceSep(
-            Positional(
-                name = 'cmd'
-                quantifier = None
-                Choice(
-                    text = 'number'
-            Positional(
-                name = 'numbering'
-                quantifier = None
-                Choice(
-                    text = 'on'
-                Choice(
-                    text = 'off'
-            ChoiceSep(
-            Positional(
-                name = 'cmd'
-                quantifier = None
-                Choice(
-                    text = 'tuning'
-            Positional(
-                name = 'notes'
-                quantifier = Quantifier(m=1, n=None, greedy=True)
-            ChoiceSep(
-            Positional(
-                name = 'cmd'
-                quantifier = None
-                Choice(
-                    text = 'fret'
-            Positional(
-                name = 'syms'
-                quantifier = Quantifier(m=1, n=None, greedy=True)
-            ChoiceSep(
-            Positional(
-                name = 'cmd'
-                quantifier = None
-                Choice(
-                    text = 'invert'
-            Positional(
-                name = 'syms'
-                quantifier = Quantifier(m=1, n=None, greedy=True)
-    Variant(
-        name = 'main'
-        is_partial = False
-        PartialUsage(
-            name = 'cmd'
-        Group(
-            name = None
-            quantifier = Quantifier(m=1, n=None, greedy=True)
-            required = False
-            Literal(
-                text = QuotedText(text='/')
-            PartialUsage(
-                name = 'cmd'
+    elems = [
+        Variant(
+            name = 'cmd',
+            is_partial = True,
+            elems = [
+                Group(
+                    name = 'command',
+                    quantifier = None,
+                    required = True,
+                    elems = [
+                        Positional(
+                            name = 'cmd',
+                            quantifier = None,
+                            elems = [
+                                Choice(
+                                    text = 'snum',
+                                ),
+                            ],
+                        ),
+                        Positional(
+                            name = 'snum',
+                            quantifier = None,
+                            elems = [
+                            ],
+                        ),
+                        ChoiceSep(
+                        ),
+                        Positional(
+                            name = 'cmd',
+                            quantifier = None,
+                            elems = [
+                                Choice(
+                                    text = 'fnum',
+                                ),
+                            ],
+                        ),
+                        Positional(
+                            name = 'fnum',
+                            quantifier = None,
+                            elems = [
+                            ],
+                        ),
+                        ChoiceSep(
+                        ),
+                        Positional(
+                            name = 'cmd',
+                            quantifier = None,
+                            elems = [
+                                Choice(
+                                    text = 'number',
+                                ),
+                            ],
+                        ),
+                        Positional(
+                            name = 'numbering',
+                            quantifier = None,
+                            elems = [
+                                Choice(
+                                    text = 'on',
+                                ),
+                                Choice(
+                                    text = 'off',
+                                ),
+                            ],
+                        ),
+                        ChoiceSep(
+                        ),
+                        Positional(
+                            name = 'cmd',
+                            quantifier = None,
+                            elems = [
+                                Choice(
+                                    text = 'tuning',
+                                ),
+                            ],
+                        ),
+                        Positional(
+                            name = 'notes',
+                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            elems = [
+                            ],
+                        ),
+                        ChoiceSep(
+                        ),
+                        Positional(
+                            name = 'cmd',
+                            quantifier = None,
+                            elems = [
+                                Choice(
+                                    text = 'fret',
+                                ),
+                            ],
+                        ),
+                        Positional(
+                            name = 'syms',
+                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            elems = [
+                            ],
+                        ),
+                        ChoiceSep(
+                        ),
+                        Positional(
+                            name = 'cmd',
+                            quantifier = None,
+                            elems = [
+                                Choice(
+                                    text = 'invert',
+                                ),
+                            ],
+                        ),
+                        Positional(
+                            name = 'syms',
+                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            elems = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = 'main',
+            is_partial = False,
+            elems = [
+                PartialUsage(
+                    name = 'cmd',
+                ),
+                Group(
+                    name = None,
+                    quantifier = Quantifier(m=1, n=None, greedy=True),
+                    required = False,
+                    elems = [
+                        Literal(
+                            text = QuotedText(text='/'),
+                        ),
+                        PartialUsage(
+                            name = 'cmd',
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    ],
+),

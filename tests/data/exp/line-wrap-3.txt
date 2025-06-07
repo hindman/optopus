@@ -1847,90 +1847,146 @@ parse()
 
 # GRAMMAR
 SpecAST(
-    Variant(
-        name = None
-        is_partial = False
-        Group(
-            name = None
-            quantifier = Quantifier(m=0, n=1, greedy=True)
-            required = False
-            Option(
-                name = 'i'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = Quantifier(m=1, n=None, greedy=True)
-            required = False
-            Option(
-                name = 'v'
-                quantifier = None
-                aliases = []
-        Positional(
-            name = 'rgx'
-            quantifier = None
-        Positional(
-            name = 'path'
-            quantifier = Quantifier(m=1, n=7, greedy=False)
-    Variant(
-        name = None
-        is_partial = False
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'foo'
-                quantifier = None
-                aliases = []
-        Positional(
-            name = 'blort'
-            quantifier = Quantifier(m=0, n=1, greedy=True)
-    SectionTitle(
-        scope = None
-        title = 'Positionals needed '
-        token = Token(kind='section_title', text='Positionals needed ::', pos=62, line=5, col=1, indent=0, is_first=True)
-    BlockQuote(
-        text = QuotedText(text='\nPositionals blorty blorty blort blort\nfoo bar fubb.\n')
-        comment = False
-        no_wrap = False
-        token = Token(kind='backquote3', text='```', pos=85, line=7, col=1, indent=0, is_first=True)
-    OptSpec(
-        scope = None
-        text = 'Regular expression'
-        token = Token(kind='angle_open', text='<', pos=150, line=12, col=5, indent=4, is_first=True)
-        Positional(
-            name = 'rgx'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Path to the file'
-        token = Token(kind='angle_open', text='<', pos=193, line=14, col=5, indent=4, is_first=True)
-        Positional(
-            name = 'path'
-            quantifier = None
-    SectionTitle(
-        scope = None
-        title = 'Options'
-        token = Token(kind='section_title', text='Options::', pos=246, line=18, col=1, indent=0, is_first=True)
-    BlockQuote(
-        text = QuotedText(text='\nPositionals blorty blorty blort blort\nfoo bar fubb.\n')
-        comment = False
-        no_wrap = False
-        token = Token(kind='backquote3', text='```', pos=257, line=20, col=1, indent=0, is_first=True)
-    OptSpec(
-        scope = None
-        text = 'Ignore case during search'
-        token = Token(kind='short_option', text='-i', pos=322, line=25, col=5, indent=4, is_first=True)
-        Option(
-            name = 'i'
-            quantifier = None
-            aliases = []
-    OptSpec(
-        scope = None
-        text = 'Invert: emit non-matched lines'
-        token = Token(kind='short_option', text='-v', pos=368, line=27, col=5, indent=4, is_first=True)
-        Option(
-            name = 'v'
-            quantifier = None
-            aliases = []
+    elems = [
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Group(
+                    name = None,
+                    quantifier = Quantifier(m=0, n=1, greedy=True),
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'i',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = Quantifier(m=1, n=None, greedy=True),
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'v',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'rgx',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Positional(
+                    name = 'path',
+                    quantifier = Quantifier(m=1, n=7, greedy=False),
+                    elems = [
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'foo',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'blort',
+                    quantifier = Quantifier(m=0, n=1, greedy=True),
+                    elems = [
+                    ],
+                ),
+            ],
+        ),
+        SectionTitle(
+            scope = None,
+            title = 'Positionals needed ',
+            token = Token(kind='section_title', text='Positionals needed ::', pos=62, line=5, col=1, indent=0, is_first=True),
+        ),
+        BlockQuote(
+            text = QuotedText(text='\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'),
+            comment = False,
+            no_wrap = False,
+            token = Token(kind='backquote3', text='```', pos=85, line=7, col=1, indent=0, is_first=True),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Regular expression',
+            token = Token(kind='angle_open', text='<', pos=150, line=12, col=5, indent=4, is_first=True),
+            opt = Positional(
+                name = 'rgx',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Path to the file',
+            token = Token(kind='angle_open', text='<', pos=193, line=14, col=5, indent=4, is_first=True),
+            opt = Positional(
+                name = 'path',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        SectionTitle(
+            scope = None,
+            title = 'Options',
+            token = Token(kind='section_title', text='Options::', pos=246, line=18, col=1, indent=0, is_first=True),
+        ),
+        BlockQuote(
+            text = QuotedText(text='\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'),
+            comment = False,
+            no_wrap = False,
+            token = Token(kind='backquote3', text='```', pos=257, line=20, col=1, indent=0, is_first=True),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Ignore case during search',
+            token = Token(kind='short_option', text='-i', pos=322, line=25, col=5, indent=4, is_first=True),
+            opt = Option(
+                name = 'i',
+                quantifier = None,
+                aliases = [],
+                params = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Invert: emit non-matched lines',
+            token = Token(kind='short_option', text='-v', pos=368, line=27, col=5, indent=4, is_first=True),
+            opt = Option(
+                name = 'v',
+                quantifier = None,
+                aliases = [],
+                params = [
+                ],
+            ),
+        ),
+    ],
+),

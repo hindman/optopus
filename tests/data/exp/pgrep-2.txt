@@ -634,45 +634,73 @@ parse()
 
 # GRAMMAR
 SpecAST(
-    OptSpec(
-        scope = None
-        text = 'Python regular expression'
-        token = Token(kind='angle_open', text='<', pos=0, line=1, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'rgx'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Path(s) to input'
-        token = Token(kind='brack_open', text='[', pos=34, line=2, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Positional(
-                name = 'path'
-                quantifier = Quantifier(m=1, n=None, greedy=True)
-    OptSpec(
-        scope = None
-        text = 'Ignore case'
-        token = Token(kind='brack_open', text='[', pos=65, line=3, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'ignore-case'
-                quantifier = None
-                aliases = [BareOption(name='i')]
-    OptSpec(
-        scope = None
-        text = 'Select non-matching lines'
-        token = Token(kind='brack_open', text='[', pos=98, line=4, col=1, indent=0, is_first=True)
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'invert-match'
-                quantifier = None
-                aliases = [BareOption(name='v')]
+    elems = [
+        OptSpec(
+            scope = None,
+            text = 'Python regular expression',
+            token = Token(kind='angle_open', text='<', pos=0, line=1, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'rgx',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Path(s) to input',
+            token = Token(kind='brack_open', text='[', pos=34, line=2, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Positional(
+                        name = 'path',
+                        quantifier = Quantifier(m=1, n=None, greedy=True),
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Ignore case',
+            token = Token(kind='brack_open', text='[', pos=65, line=3, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Option(
+                        name = 'ignore-case',
+                        quantifier = None,
+                        aliases = [BareOption(name='i')],
+                        params = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Select non-matching lines',
+            token = Token(kind='brack_open', text='[', pos=98, line=4, col=1, indent=0, is_first=True),
+            opt = Group(
+                name = None,
+                quantifier = None,
+                required = False,
+                elems = [
+                    Option(
+                        name = 'invert-match',
+                        quantifier = None,
+                        aliases = [BareOption(name='v')],
+                        params = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+    ],
+),

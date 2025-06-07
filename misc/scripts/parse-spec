@@ -12,6 +12,10 @@ from argle.spec_parser import (
     SpecParser,
 )
 
+from argle.grammar import (
+    TreeElemKinds,
+)
+
 halt = bp.halt
 EXIT = bp.EXIT
 
@@ -37,9 +41,9 @@ ARG_CONFIGS = (
         help = 'Print spec and exit',
     ),
     dict(
-        name = f'--no-parse -n',
+        name = f'--parse -p',
         action = 'store_true',
-        help = 'Do not try to parse spec',
+        help = 'Try to parse the spec',
     ),
     dict(
         name = f'--debug -d',
@@ -52,6 +56,11 @@ ARG_CONFIGS = (
         help = 'Print SpecAST as a tree',
     ),
     dict(
+        name = f'--elems -e',
+        action = 'store_true',
+        help = 'Print SpecAST as a sequence of elems',
+    ),
+    dict(
         add_help = True,
     ),
 )
@@ -62,6 +71,8 @@ def main(args):
         ARG_CONFIGS,
         description = DESCRIPTION,
     )
+    if opts.debug or opts.tree or opts.elems:
+        opts.parse = True
 
     if opts.clipboard:
         spec = pyperclip.paste()
@@ -75,17 +86,26 @@ def main(args):
         bp.exit_with_usage(ap, 'No spec provided')
 
     if opts.spec:
+        print('# SPEC')
         print(spec.rstrip())
 
-    if not opts.no_parse:
+    g = None
+    if opts.parse:
         sp = SpecParser(spec, debug = opts.debug)
         g = sp.parse()
+        print('# SPEC-OK')
 
-        if opts.tree:
-            print(g.pp)
-            # print(g.pretty(omit_end = True, indent_size = 2))
-        else:
-            print('# SPEC-OK')
+    if g and opts.tree:
+        msg = g.pretty(omit_end = True, indent_size = 2)
+        print('# TREE')
+        print(msg)
+
+    if g and opts.elems:
+        print('# ELEMS')
+        for e in g.walk_elems():
+            cls = e.__class__.__name__
+            name = getattr(e, 'name', None)
+            print(f'{cls}(name = {name!r})')
 
 def read_file(path):
     with open(path) as fh:

@@ -4597,299 +4597,508 @@ parse()
 
 # GRAMMAR
 SpecAST(
-    Variant(
-        name = None
-        is_partial = False
-        Positional(
-            name = 'task'
-            quantifier = None
-            Choice(
-                text = 'grep'
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'i'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'v'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'm'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'C'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'color'
-                quantifier = None
-                aliases = []
-                Parameter(
-                    name = None
-                    quantifier = None
+    elems = [
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Positional(
+                    name = 'task',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'grep',
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'i',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'v',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'm',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'C',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'color',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                                Parameter(
+                                    name = None,
+                                    quantifier = None,
+                                    elems = [
+                                        Choice(
+                                            text = 'red',
+                                        ),
+                                        Choice(
+                                            text = 'green',
+                                        ),
+                                        Choice(
+                                            text = 'blue',
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'rgx',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Positional(
+                            name = 'path',
+                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            elems = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Positional(
+                    name = 'task',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'sub',
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'i',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'n',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'rgx',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Positional(
+                    name = 'rep',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Positional(
+                            name = 'path',
+                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            elems = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Positional(
+                    name = 'task',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'search',
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'i',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'g',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'd',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                        ChoiceSep(
+                        ),
+                        Option(
+                            name = 'p',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'rgx',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Positional(
+                            name = 'path',
+                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            elems = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Task to perform',
+            token = Token(kind='angle_open', text='<', pos=208, line=7, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'task',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Emit lines matching pattern',
+            token = Token(kind='angle_open', text='<', pos=245, line=8, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'task',
+                quantifier = None,
+                elems = [
                     Choice(
-                        text = 'red'
+                        text = 'grep',
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Search for pattern and replace',
+            token = Token(kind='angle_open', text='<', pos=294, line=9, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'task',
+                quantifier = None,
+                elems = [
                     Choice(
-                        text = 'green'
+                        text = 'sub',
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Emit text matching pattern',
+            token = Token(kind='angle_open', text='<', pos=346, line=10, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'task',
+                quantifier = None,
+                elems = [
                     Choice(
-                        text = 'blue'
-        Positional(
-            name = 'rgx'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Positional(
-                name = 'path'
-                quantifier = Quantifier(m=1, n=None, greedy=True)
-    Variant(
-        name = None
-        is_partial = False
-        Positional(
-            name = 'task'
-            quantifier = None
-            Choice(
-                text = 'sub'
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'i'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'n'
-                quantifier = None
-                aliases = []
-        Positional(
-            name = 'rgx'
-            quantifier = None
-        Positional(
-            name = 'rep'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Positional(
-                name = 'path'
-                quantifier = Quantifier(m=1, n=None, greedy=True)
-    Variant(
-        name = None
-        is_partial = False
-        Positional(
-            name = 'task'
-            quantifier = None
-            Choice(
-                text = 'search'
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'i'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'g'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'd'
-                quantifier = None
-                aliases = []
-            ChoiceSep(
-            Option(
-                name = 'p'
-                quantifier = None
-                aliases = []
-        Positional(
-            name = 'rgx'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Positional(
-                name = 'path'
-                quantifier = Quantifier(m=1, n=None, greedy=True)
-    OptSpec(
-        scope = None
-        text = 'Task to perform'
-        token = Token(kind='angle_open', text='<', pos=208, line=7, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'task'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Emit lines matching pattern'
-        token = Token(kind='angle_open', text='<', pos=245, line=8, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'task'
-            quantifier = None
-            Choice(
-                text = 'grep'
-    OptSpec(
-        scope = None
-        text = 'Search for pattern and replace'
-        token = Token(kind='angle_open', text='<', pos=294, line=9, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'task'
-            quantifier = None
-            Choice(
-                text = 'sub'
-    OptSpec(
-        scope = None
-        text = 'Emit text matching pattern'
-        token = Token(kind='angle_open', text='<', pos=346, line=10, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'task'
-            quantifier = None
-            Choice(
-                text = 'search'
-    OptSpec(
-        scope = None
-        text = 'Python regular expression'
-        token = Token(kind='angle_open', text='<', pos=394, line=11, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'rgx'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Path(s) to input'
-        token = Token(kind='angle_open', text='<', pos=441, line=12, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'path'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Replacement text'
-        token = Token(kind='angle_open', text='<', pos=479, line=13, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'rep'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Ignore case'
-        token = Token(kind='short_option', text='-i', pos=517, line=14, col=1, indent=0, is_first=True)
-        Option(
-            name = 'ignore-case'
-            quantifier = None
-            aliases = [BareOption(name='i')]
-    OptSpec(
-        scope = None
-        text = 'Select non-matching lines'
-        token = Token(kind='short_option', text='-v', pos=550, line=15, col=1, indent=0, is_first=True)
-        Option(
-            name = 'invert-match'
-            quantifier = None
-            aliases = [BareOption(name='v')]
-    OptSpec(
-        scope = None
-        text = 'Stop searching after N matches'
-        token = Token(kind='short_option', text='-m', pos=597, line=16, col=1, indent=0, is_first=True)
-        Option(
-            name = 'max-count'
-            quantifier = None
-            aliases = [BareOption(name='m')]
-            Parameter(
-                name = 'n'
-                quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Print N lines of before/after context'
-        token = Token(kind='short_option', text='-C', pos=649, line=17, col=1, indent=0, is_first=True)
-        Option(
-            name = 'context'
-            quantifier = None
-            aliases = [BareOption(name='C')]
-            Parameter(
-                name = 'n'
-                quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Highlight matching text'
-        token = Token(kind='long_option', text='--color', pos=708, line=18, col=1, indent=0, is_first=True)
-        Option(
-            name = 'color'
-            quantifier = None
-            aliases = []
-            Parameter(
-                name = None
-                quantifier = None
-    OptSpec(
-        scope = None
-        text = 'N of substitutions'
-        token = Token(kind='short_option', text='-n', pos=753, line=19, col=1, indent=0, is_first=True)
-        Option(
-            name = 'nsubs'
-            quantifier = None
-            aliases = [BareOption(name='n')]
-            Parameter(
-                name = 'n'
-                quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Emit just capture group N [0 for all]'
-        token = Token(kind='short_option', text='-g', pos=793, line=20, col=1, indent=0, is_first=True)
-        Option(
-            name = 'group'
-            quantifier = None
-            aliases = [BareOption(name='g')]
-            Parameter(
-                name = 'n'
-                quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Delimeter for capture groups [tab]'
-        token = Token(kind='short_option', text='-d', pos=852, line=21, col=1, indent=0, is_first=True)
-        Option(
-            name = 'delim'
-            quantifier = None
-            aliases = [BareOption(name='d')]
-            Parameter(
-                name = 's'
-                quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Emit capture groups one-per-line, paragraph-style'
-        token = Token(kind='short_option', text='-p', pos=908, line=22, col=1, indent=0, is_first=True)
-        Option(
-            name = 'para'
-            quantifier = None
-            aliases = [BareOption(name='p')]
+                        text = 'search',
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Python regular expression',
+            token = Token(kind='angle_open', text='<', pos=394, line=11, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'rgx',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Path(s) to input',
+            token = Token(kind='angle_open', text='<', pos=441, line=12, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'path',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Replacement text',
+            token = Token(kind='angle_open', text='<', pos=479, line=13, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'rep',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Ignore case',
+            token = Token(kind='short_option', text='-i', pos=517, line=14, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'ignore-case',
+                quantifier = None,
+                aliases = [BareOption(name='i')],
+                params = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Select non-matching lines',
+            token = Token(kind='short_option', text='-v', pos=550, line=15, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'invert-match',
+                quantifier = None,
+                aliases = [BareOption(name='v')],
+                params = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Stop searching after N matches',
+            token = Token(kind='short_option', text='-m', pos=597, line=16, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'max-count',
+                quantifier = None,
+                aliases = [BareOption(name='m')],
+                params = [
+                    Parameter(
+                        name = 'n',
+                        quantifier = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Print N lines of before/after context',
+            token = Token(kind='short_option', text='-C', pos=649, line=17, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'context',
+                quantifier = None,
+                aliases = [BareOption(name='C')],
+                params = [
+                    Parameter(
+                        name = 'n',
+                        quantifier = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Highlight matching text',
+            token = Token(kind='long_option', text='--color', pos=708, line=18, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'color',
+                quantifier = None,
+                aliases = [],
+                params = [
+                    Parameter(
+                        name = None,
+                        quantifier = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'N of substitutions',
+            token = Token(kind='short_option', text='-n', pos=753, line=19, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'nsubs',
+                quantifier = None,
+                aliases = [BareOption(name='n')],
+                params = [
+                    Parameter(
+                        name = 'n',
+                        quantifier = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Emit just capture group N [0 for all]',
+            token = Token(kind='short_option', text='-g', pos=793, line=20, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'group',
+                quantifier = None,
+                aliases = [BareOption(name='g')],
+                params = [
+                    Parameter(
+                        name = 'n',
+                        quantifier = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Delimeter for capture groups [tab]',
+            token = Token(kind='short_option', text='-d', pos=852, line=21, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'delim',
+                quantifier = None,
+                aliases = [BareOption(name='d')],
+                params = [
+                    Parameter(
+                        name = 's',
+                        quantifier = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Emit capture groups one-per-line, paragraph-style',
+            token = Token(kind='short_option', text='-p', pos=908, line=22, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'para',
+                quantifier = None,
+                aliases = [BareOption(name='p')],
+                params = [
+                ],
+            ),
+        ),
+    ],
+),

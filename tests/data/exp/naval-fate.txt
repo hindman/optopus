@@ -2585,153 +2585,271 @@ parse()
 
 # GRAMMAR
 SpecAST(
-    Variant(
-        name = None
-        is_partial = False
-        Positional(
-            name = 'weapon'
-            quantifier = None
-            Choice(
-                text = 'ship'
-        Positional(
-            name = 'action'
-            quantifier = None
-            Choice(
-                text = 'new'
-        Positional(
-            name = 'name'
-            quantifier = Quantifier(m=1, n=None, greedy=True)
-    Variant(
-        name = None
-        is_partial = False
-        Positional(
-            name = 'weapon'
-            quantifier = None
-            Choice(
-                text = 'ship'
-        Positional(
-            name = 'name'
-            quantifier = None
-        Positional(
-            name = 'action'
-            quantifier = None
-            Choice(
-                text = 'move'
-        Positional(
-            name = 'x'
-            quantifier = None
-        Positional(
-            name = 'y'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'speed'
-                quantifier = None
-                aliases = []
-                Parameter(
-                    name = 'kn'
-                    quantifier = None
-    Variant(
-        name = None
-        is_partial = False
-        Positional(
-            name = 'weapon'
-            quantifier = None
-            Choice(
-                text = 'ship'
-        Positional(
-            name = 'action'
-            quantifier = None
-            Choice(
-                text = 'shoot'
-        Positional(
-            name = 'x'
-            quantifier = None
-        Positional(
-            name = 'y'
-            quantifier = None
-    Variant(
-        name = None
-        is_partial = False
-        Positional(
-            name = 'weapon'
-            quantifier = None
-            Choice(
-                text = 'mine'
-        Positional(
-            name = 'action'
-            quantifier = None
-            Choice(
-                text = 'set'
-            Choice(
-                text = 'remove'
-        Positional(
-            name = 'x'
-            quantifier = None
-        Positional(
-            name = 'y'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'moored'
-                quantifier = None
-                aliases = []
-            ChoiceSep(
-            Option(
-                name = 'drifting'
-                quantifier = None
-                aliases = []
-    OptSpec(
-        scope = None
-        text = 'Ship name'
-        token = Token(kind='angle_open', text='<', pos=238, line=6, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'name'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'X coordinate'
-        token = Token(kind='angle_open', text='<', pos=263, line=7, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'x'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Y coordinate'
-        token = Token(kind='angle_open', text='<', pos=291, line=8, col=1, indent=0, is_first=True)
-        Positional(
-            name = 'y'
-            quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Speed in knots [default: 10]'
-        token = Token(kind='long_option', text='--speed', pos=319, line=9, col=1, indent=0, is_first=True)
-        Option(
-            name = 'speed'
-            quantifier = None
-            aliases = []
-            Parameter(
-                name = 'kn'
-                quantifier = None
-    OptSpec(
-        scope = None
-        text = 'Moored (anchored) mine'
-        token = Token(kind='long_option', text='--moored', pos=363, line=10, col=1, indent=0, is_first=True)
-        Option(
-            name = 'moored'
-            quantifier = None
-            aliases = []
-    OptSpec(
-        scope = None
-        text = 'Drifting mine'
-        token = Token(kind='long_option', text='--drifting', pos=401, line=11, col=1, indent=0, is_first=True)
-        Option(
-            name = 'drifting'
-            quantifier = None
-            aliases = []
+    elems = [
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Positional(
+                    name = 'weapon',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'ship',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'action',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'new',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'name',
+                    quantifier = Quantifier(m=1, n=None, greedy=True),
+                    elems = [
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Positional(
+                    name = 'weapon',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'ship',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'name',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Positional(
+                    name = 'action',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'move',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'x',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Positional(
+                    name = 'y',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'speed',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                                Parameter(
+                                    name = 'kn',
+                                    quantifier = None,
+                                    elems = [
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Positional(
+                    name = 'weapon',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'ship',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'action',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'shoot',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'x',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Positional(
+                    name = 'y',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = None,
+            is_partial = False,
+            elems = [
+                Positional(
+                    name = 'weapon',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'mine',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'action',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'set',
+                        ),
+                        Choice(
+                            text = 'remove',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'x',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Positional(
+                    name = 'y',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'moored',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                        ChoiceSep(
+                        ),
+                        Option(
+                            name = 'drifting',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Ship name',
+            token = Token(kind='angle_open', text='<', pos=238, line=6, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'name',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'X coordinate',
+            token = Token(kind='angle_open', text='<', pos=263, line=7, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'x',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Y coordinate',
+            token = Token(kind='angle_open', text='<', pos=291, line=8, col=1, indent=0, is_first=True),
+            opt = Positional(
+                name = 'y',
+                quantifier = None,
+                elems = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Speed in knots [default: 10]',
+            token = Token(kind='long_option', text='--speed', pos=319, line=9, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'speed',
+                quantifier = None,
+                aliases = [],
+                params = [
+                    Parameter(
+                        name = 'kn',
+                        quantifier = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Moored (anchored) mine',
+            token = Token(kind='long_option', text='--moored', pos=363, line=10, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'moored',
+                quantifier = None,
+                aliases = [],
+                params = [
+                ],
+            ),
+        ),
+        OptSpec(
+            scope = None,
+            text = 'Drifting mine',
+            token = Token(kind='long_option', text='--drifting', pos=401, line=11, col=1, indent=0, is_first=True),
+            opt = Option(
+                name = 'drifting',
+                quantifier = None,
+                aliases = [],
+                params = [
+                ],
+            ),
+        ),
+    ],
+),

@@ -3010,186 +3010,334 @@ parse()
 
 # GRAMMAR
 SpecAST(
-    Variant(
-        name = 'chomp'
-        is_partial = True
-        Literal(
-            text = QuotedText(text='/')
-        Positional(
-            name = 'cmd'
-            quantifier = None
-            Choice(
-                text = 'chomp'
-    Variant(
-        name = 'findall'
-        is_partial = True
-        Literal(
-            text = QuotedText(text='/')
-        Positional(
-            name = 'cmd'
-            quantifier = None
-            Choice(
-                text = 'findall'
-        Positional(
-            name = 'rgx'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'a'
-                quantifier = None
-                aliases = []
-    Variant(
-        name = 'grep'
-        is_partial = True
-        Literal(
-            text = QuotedText(text='/')
-        Positional(
-            name = 'cmd'
-            quantifier = None
-            Choice(
-                text = 'grep'
-        Positional(
-            name = 'rgx'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'i'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'v'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 's'
-                quantifier = None
-                aliases = []
-    Variant(
-        name = 'range'
-        is_partial = True
-        Literal(
-            text = QuotedText(text='/')
-        Positional(
-            name = 'cmd'
-            quantifier = None
-            Choice(
-                text = 'range'
-        Positional(
-            name = 'start'
-            quantifier = None
-        Positional(
-            name = 'stop'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Positional(
-                name = 'step'
-                quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'g'
-                quantifier = None
-                aliases = []
-    Variant(
-        name = 'run'
-        is_partial = True
-        Literal(
-            text = QuotedText(text='/')
-        Positional(
-            name = 'cmd'
-            quantifier = None
-            Choice(
-                text = 'run'
-        Positional(
-            name = 'code'
-            quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'g'
-                quantifier = None
-                aliases = []
-                Parameter(
-                    name = None
-                    quantifier = None
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'a'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'v'
-                quantifier = None
-                aliases = []
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'i'
-                quantifier = None
-                aliases = []
-    Variant(
-        name = 'main'
-        is_partial = False
-        Group(
-            name = None
-            quantifier = None
-            required = False
-            Option(
-                name = 'trace'
-                quantifier = None
-                aliases = []
-        Group(
-            name = 'commands'
-            quantifier = Quantifier(m=1, n=None, greedy=True)
-            required = True
-            PartialUsage(
-                name = 'chomp'
-            ChoiceSep(
-            PartialUsage(
-                name = 'findall'
-            ChoiceSep(
-            PartialUsage(
-                name = 'grep'
-            ChoiceSep(
-            PartialUsage(
-                name = 'range'
-            ChoiceSep(
-            PartialUsage(
-                name = 'run'
-    Variant(
-        name = 'help'
-        is_partial = False
-        Option(
-            name = 'help'
-            quantifier = None
-            aliases = []
+    elems = [
+        Variant(
+            name = 'chomp',
+            is_partial = True,
+            elems = [
+                Literal(
+                    text = QuotedText(text='/'),
+                ),
+                Positional(
+                    name = 'cmd',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'chomp',
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = 'findall',
+            is_partial = True,
+            elems = [
+                Literal(
+                    text = QuotedText(text='/'),
+                ),
+                Positional(
+                    name = 'cmd',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'findall',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'rgx',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'a',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = 'grep',
+            is_partial = True,
+            elems = [
+                Literal(
+                    text = QuotedText(text='/'),
+                ),
+                Positional(
+                    name = 'cmd',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'grep',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'rgx',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'i',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'v',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 's',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = 'range',
+            is_partial = True,
+            elems = [
+                Literal(
+                    text = QuotedText(text='/'),
+                ),
+                Positional(
+                    name = 'cmd',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'range',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'start',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Positional(
+                    name = 'stop',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Positional(
+                            name = 'step',
+                            quantifier = None,
+                            elems = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'g',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = 'run',
+            is_partial = True,
+            elems = [
+                Literal(
+                    text = QuotedText(text='/'),
+                ),
+                Positional(
+                    name = 'cmd',
+                    quantifier = None,
+                    elems = [
+                        Choice(
+                            text = 'run',
+                        ),
+                    ],
+                ),
+                Positional(
+                    name = 'code',
+                    quantifier = None,
+                    elems = [
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'g',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                                Parameter(
+                                    name = None,
+                                    quantifier = None,
+                                    elems = [
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'a',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'v',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'i',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = 'main',
+            is_partial = False,
+            elems = [
+                Group(
+                    name = None,
+                    quantifier = None,
+                    required = False,
+                    elems = [
+                        Option(
+                            name = 'trace',
+                            quantifier = None,
+                            aliases = [],
+                            params = [
+                            ],
+                        ),
+                    ],
+                ),
+                Group(
+                    name = 'commands',
+                    quantifier = Quantifier(m=1, n=None, greedy=True),
+                    required = True,
+                    elems = [
+                        PartialUsage(
+                            name = 'chomp',
+                        ),
+                        ChoiceSep(
+                        ),
+                        PartialUsage(
+                            name = 'findall',
+                        ),
+                        ChoiceSep(
+                        ),
+                        PartialUsage(
+                            name = 'grep',
+                        ),
+                        ChoiceSep(
+                        ),
+                        PartialUsage(
+                            name = 'range',
+                        ),
+                        ChoiceSep(
+                        ),
+                        PartialUsage(
+                            name = 'run',
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        Variant(
+            name = 'help',
+            is_partial = False,
+            elems = [
+                Option(
+                    name = 'help',
+                    quantifier = None,
+                    aliases = [],
+                    params = [
+                    ],
+                ),
+            ],
+        ),
+    ],
+),
