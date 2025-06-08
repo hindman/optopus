@@ -710,7 +710,7 @@ SpecAST(
                         name = 'ignore-case',
                         quantifier = None,
                         aliases = [BareOption(name='i')],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],
@@ -729,7 +729,7 @@ SpecAST(
                         name = 'invert-match',
                         quantifier = None,
                         aliases = [BareOption(name='v')],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],

@@ -4620,7 +4620,7 @@ SpecAST(
                             name = 'i',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4634,7 +4634,7 @@ SpecAST(
                             name = 'v',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4648,7 +4648,7 @@ SpecAST(
                             name = 'm',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4662,7 +4662,7 @@ SpecAST(
                             name = 'C',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4676,7 +4676,7 @@ SpecAST(
                             name = 'color',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                                 Parameter(
                                     name = None,
                                     quantifier = None,
@@ -4739,7 +4739,7 @@ SpecAST(
                             name = 'i',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4753,7 +4753,7 @@ SpecAST(
                             name = 'n',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4807,7 +4807,7 @@ SpecAST(
                             name = 'i',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4821,7 +4821,7 @@ SpecAST(
                             name = 'g',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4835,7 +4835,7 @@ SpecAST(
                             name = 'd',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                         ChoiceSep(
@@ -4844,7 +4844,7 @@ SpecAST(
                             name = 'p',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -4964,7 +4964,7 @@ SpecAST(
                 name = 'ignore-case',
                 quantifier = None,
                 aliases = [BareOption(name='i')],
-                params = [
+                elems = [
                 ],
             ),
         ),
@@ -4976,7 +4976,7 @@ SpecAST(
                 name = 'invert-match',
                 quantifier = None,
                 aliases = [BareOption(name='v')],
-                params = [
+                elems = [
                 ],
             ),
         ),
@@ -4988,7 +4988,7 @@ SpecAST(
                 name = 'max-count',
                 quantifier = None,
                 aliases = [BareOption(name='m')],
-                params = [
+                elems = [
                     Parameter(
                         name = 'n',
                         quantifier = None,
@@ -5006,7 +5006,7 @@ SpecAST(
                 name = 'context',
                 quantifier = None,
                 aliases = [BareOption(name='C')],
-                params = [
+                elems = [
                     Parameter(
                         name = 'n',
                         quantifier = None,
@@ -5024,7 +5024,7 @@ SpecAST(
                 name = 'color',
                 quantifier = None,
                 aliases = [],
-                params = [
+                elems = [
                     Parameter(
                         name = None,
                         quantifier = None,
@@ -5042,7 +5042,7 @@ SpecAST(
                 name = 'nsubs',
                 quantifier = None,
                 aliases = [BareOption(name='n')],
-                params = [
+                elems = [
                     Parameter(
                         name = 'n',
                         quantifier = None,
@@ -5060,7 +5060,7 @@ SpecAST(
                 name = 'group',
                 quantifier = None,
                 aliases = [BareOption(name='g')],
-                params = [
+                elems = [
                     Parameter(
                         name = 'n',
                         quantifier = None,
@@ -5078,7 +5078,7 @@ SpecAST(
                 name = 'delim',
                 quantifier = None,
                 aliases = [BareOption(name='d')],
-                params = [
+                elems = [
                     Parameter(
                         name = 's',
                         quantifier = None,
@@ -5096,7 +5096,7 @@ SpecAST(
                 name = 'para',
                 quantifier = None,
                 aliases = [BareOption(name='p')],
-                params = [
+                elems = [
                 ],
             ),
         ),

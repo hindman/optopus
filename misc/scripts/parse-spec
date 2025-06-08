@@ -13,6 +13,7 @@ from argle.spec_parser import (
     Option,
     Positional,
     Variant,
+    Group,
 )
 
 from argle.grammar import (

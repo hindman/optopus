@@ -781,7 +781,7 @@ SpecAST(
                             name = 'i',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -795,7 +795,7 @@ SpecAST(
                             name = 'v',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -827,7 +827,7 @@ SpecAST(
                             name = 'foo',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],

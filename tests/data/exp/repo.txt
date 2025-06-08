@@ -10786,7 +10786,7 @@ SpecAST(
                                     name = 'repo-home',
                                     quantifier = None,
                                     aliases = [],
-                                    params = [
+                                    elems = [
                                     ],
                                 ),
                             ],
@@ -10800,7 +10800,7 @@ SpecAST(
                                     name = 'config',
                                     quantifier = None,
                                     aliases = [],
-                                    params = [
+                                    elems = [
                                     ],
                                 ),
                             ],
@@ -10814,7 +10814,7 @@ SpecAST(
                                     name = 'verbose',
                                     quantifier = None,
                                     aliases = [],
-                                    params = [
+                                    elems = [
                                     ],
                                 ),
                             ],
@@ -10867,7 +10867,7 @@ SpecAST(
                             name = 'shallow',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                         ChoiceSep(
@@ -10876,7 +10876,7 @@ SpecAST(
                             name = 'deep',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -10890,7 +10890,7 @@ SpecAST(
                             name = 'rev',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -10935,7 +10935,7 @@ SpecAST(
                             name = 'message',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -10986,7 +10986,7 @@ SpecAST(
                             name = 'force',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -11018,7 +11018,7 @@ SpecAST(
                             name = 'yes',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -11050,7 +11050,7 @@ SpecAST(
                             name = 'username',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -11064,7 +11064,7 @@ SpecAST(
                             name = 'email',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -11078,7 +11078,7 @@ SpecAST(
                             name = 'password',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -11182,7 +11182,7 @@ SpecAST(
                         name = 'repo-home',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                             Parameter(
                                 name = 'path',
                                 quantifier = None,
@@ -11207,7 +11207,7 @@ SpecAST(
                         name = 'config',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                             Parameter(
                                 name = 'key',
                                 quantifier = None,
@@ -11238,7 +11238,7 @@ SpecAST(
                         name = 'verbose',
                         quantifier = None,
                         aliases = [BareOption(name='v')],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],
@@ -11257,7 +11257,7 @@ SpecAST(
                         name = 'version',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],
@@ -11276,7 +11276,7 @@ SpecAST(
                         name = 'help',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],
@@ -11335,7 +11335,7 @@ SpecAST(
                         name = 'deep',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],
@@ -11354,7 +11354,7 @@ SpecAST(
                         name = 'shallow',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],
@@ -11373,7 +11373,7 @@ SpecAST(
                         name = 'rev',
                         quantifier = None,
                         aliases = [BareOption(name='r')],
-                        params = [
+                        elems = [
                             Parameter(
                                 name = 'commit',
                                 quantifier = None,
@@ -11427,7 +11427,7 @@ SpecAST(
                         name = 'message',
                         quantifier = None,
                         aliases = [BareOption(name='m')],
-                        params = [
+                        elems = [
                             Parameter(
                                 name = 'text',
                                 quantifier = None,
@@ -11492,7 +11492,7 @@ SpecAST(
                         name = 'force',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],
@@ -11522,7 +11522,7 @@ SpecAST(
                         name = 'yes',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                         ],
                     ),
                 ],
@@ -11552,7 +11552,7 @@ SpecAST(
                         name = 'username',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                             Parameter(
                                 name = 'user',
                                 quantifier = None,
@@ -11577,7 +11577,7 @@ SpecAST(
                         name = 'email',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                             Parameter(
                                 name = 'address',
                                 quantifier = None,
@@ -11602,7 +11602,7 @@ SpecAST(
                         name = 'password',
                         quantifier = None,
                         aliases = [],
-                        params = [
+                        elems = [
                             Parameter(
                                 name = 'pw',
                                 quantifier = None,

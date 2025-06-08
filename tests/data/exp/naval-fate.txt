@@ -2665,7 +2665,7 @@ SpecAST(
                             name = 'speed',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                                 Parameter(
                                     name = 'kn',
                                     quantifier = None,
@@ -2760,7 +2760,7 @@ SpecAST(
                             name = 'moored',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                         ChoiceSep(
@@ -2769,7 +2769,7 @@ SpecAST(
                             name = 'drifting',
                             quantifier = None,
                             aliases = [],
-                            params = [
+                            elems = [
                             ],
                         ),
                     ],
@@ -2817,7 +2817,7 @@ SpecAST(
                 name = 'speed',
                 quantifier = None,
                 aliases = [],
-                params = [
+                elems = [
                     Parameter(
                         name = 'kn',
                         quantifier = None,
@@ -2835,7 +2835,7 @@ SpecAST(
                 name = 'moored',
                 quantifier = None,
                 aliases = [],
-                params = [
+                elems = [
                 ],
             ),
         ),
@@ -2847,7 +2847,7 @@ SpecAST(
                 name = 'drifting',
                 quantifier = None,
                 aliases = [],
-                params = [
+                elems = [
                 ],
             ),
         ),

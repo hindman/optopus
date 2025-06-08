@@ -54,3 +54,10 @@ def distilled(obj, *attrs):
     cls = dc(*kws, cls_name = cls_name)
     return cls(**kws)
 
+def partition(xs, predicate = bool):
+    d = {True: [], False: []}
+    for x in xs:
+        result = bool(predicate(x))
+        d[result].append(x)
+    return (d[True], d[False])
+

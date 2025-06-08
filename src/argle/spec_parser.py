@@ -3,6 +3,25 @@ r'''
 
 TODO:
 
+    - define base class: Container.
+
+    - for_grammar(): define for these:
+
+        - Simple elems:
+            - Quantifier
+            - Choice
+
+        - Core elems, some with simple child elems:
+            - Option
+            - Parameter
+            - Positional
+            - Literal
+
+        - Container elems:
+            - Variant
+            - Alternative
+            - Group
+
     - build_grammar()
 
         x elems: split into:
@@ -31,7 +50,14 @@ TODO:
 
         - opts: unify/reconcile: opt-specs <=> variants.
 
-    - error(): includes expected-elements:
+    - spec-parsing errors: add a new checks:
+        - Unknown partial:
+            - Keep track of partial names.
+            - Raise if a PartialUsage has an unknown name.
+        - Variant names:
+            - enforce unique
+
+    - error(): include expected-elements:
         - Probably framed in terms of parsing-functions.
 
 ----
@@ -300,7 +326,7 @@ from .constants import Chars, Pmodes
 from .errors import SpecParseError, ErrKinds, ErrMsgs
 from .regex_lexer import RegexLexer
 from .tokens import Token, TokDefs
-from .utils import get, distilled
+from .utils import get, distilled, partition
 from .grammar import (
     Grammar,
     Variant,
@@ -333,17 +359,13 @@ class ParseElem(TreeElem):
 
     # ParseElem attributes that should be expanded hierarchically
     # by pp_gen(), rather than being shown simply via repr().
-    PP_CHILDREN = ('elems', 'params', 'opt')
-    WALKABLE = ('elems', 'params', 'opt')
+    WALKABLE = ('elems', 'opt')
 
     def elems_to_alternatives(self):
-        # Applies only to Variants and Groups.
-        if not isinstance(self, (Variant, Group)):
-            return
-
-        # Do nothing if the element contains no ChoiceSep.
+        # If the Group or Variant has no ChoiceSep,
+        # return the elems unchanged.
         if not any(isinstance(e, ChoiceSep) for e in self.elems):
-            return
+            return self.elems
 
         # Reorganize elems into Alternative instances.
         alts = []
@@ -355,11 +377,18 @@ class ParseElem(TreeElem):
             else:
                 curr.append(e)
 
-        # Get the last chunk of elems.
+        # Get the last chunk of elems, and return the Alternatives.
         alts.append(Alternative(elems = curr))
+        return alts
 
-        # Change elems to the list[Alternative] we assembled.
-        self.elems = alts
+    def elems_without_partials(self, partials):
+        new = []
+        for e in self.elems:
+            if isinstance(e, PartialUsage):
+                new.extend(partials[e.name].elems)
+            else:
+                new.append(e)
+        return new
 
 VariantElem = Union[
     'Option',
@@ -386,6 +415,11 @@ SpecElem = Union[
 OptSpecElem = Union[
     'Option',
     'Positional',
+    'Group',
+]
+
+OptionElem = Union[
+    'Parameter',
     'Group',
 ]
 
@@ -477,7 +511,7 @@ class BareOption(ParseElem):
 @dataclass
 class Option(ParseElem):
     name: str
-    params: list[Parameter]
+    elems: list[OptionElem]
     quantifier: Quantifier = None
     aliases: list[BareOption] = field(default_factory = list)
 
@@ -981,9 +1015,9 @@ class SpecParser:
     def option(self):
         b = self.bare_option()
         if b:
-            params = self.parse_some(self.any_parameter, top_level = True)
-            e = Option(b.name, params, None)
-            if params:
+            elems = self.parse_some(self.any_parameter, top_level = True)
+            e = Option(b.name, elems, None)
+            if elems:
                 return e
             else:
                 return self.with_quantifer(e)
@@ -1035,13 +1069,13 @@ class SpecParser:
         aliases = self.parse_some(self.bare_option)
         if aliases:
             b = aliases.pop()
-            params = self.parse_some(self.any_parameter, top_level = True)
+            elems = self.parse_some(self.any_parameter, top_level = True)
             e = Option(
                 name = b.name,
-                params = params,
+                elems = elems,
                 aliases = aliases,
             )
-            if params:
+            if elems:
                 return e
             else:
                 return self.with_quantifer(e)
@@ -1489,70 +1523,87 @@ class SpecParser:
 
         '''
 
-        - variants: traverse:
-            - Convert ParseElem => GrammarElem.
-            - Relevent elems: Option, Positional, Literal, Group.
+        - VariantElem
 
-        - elems: traverse:
-            - Convert ParseElem => Sections.
-            - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
-
-        - opts: unify/reconcile: opt-specs <=> variants.
-
-        - elems inventory at the start:
-
-            # VariantElem
             Option
+                name: str
+                elems: list[Parameter]
+                quantifier: Quantifier = None
+                aliases: list[BareOption] = field(default_factory = list)
             Positional
+                name: str
+                elems: list[Choice]
+                quantifier: Quantifier = None
             Literal
-            PartialUsage
-            ChoiceSep
+                text: str
             Group
-            Option
+                name: str
+                elems: list[VariantElem]
+                quantifier: Quantifier = None
+                required: bool = True
+            PartialUsage
+                DROPPED
+            ChoiceSep
+                DROPPED
 
-            # SectionElem
+        - SectionElem
+
             SectionTitle
+                scope: Scope
+                title: str
+                token: Token
             Heading
+                title: str
+                token: Token
             BlockQuote
+                text: str
+                comment: bool
+                no_wrap: bool
+                token: Token
             OptSpec
+                scope: Scope
+                opt: OptSpecElem
+                text: str
+                token: Token
 
         '''
 
         ast_orig = deepcopy(ast)
 
-        # Split SpecAST.elems into variants and other elems.
-        any_variants = []
-        other_elems = []
-        for e in ast.elems:
-            if isinstance(e, Variant):
-                any_variants.append(e)
-            else:
-                other_elems.append(e)
+        # Partition the SpecAST elems into variants and other stuff.
+        is_variant = lambda e: isinstance(e, Variant)
+        variants, others = partition(ast.elems, is_variant)
 
-        # For Variants and Groups with ChoiceSep, 
+        # For Variants or their Groups having a ChoiceSep,
         # reorganize the elems into Alternatives.
-        for v in any_variants:
-            # TODO: pass Variant, Group into the walk_elems() call.
-            for e in v.walk_elems():
-                # TODO: reword this method so that it returns
-                # a new list of elems.
-                #
-                # e.elems = e.elems_to_alternatives()
-                #
-                e.elems_to_alternatives()
+        for v in variants:
+            for e in v.walk_elems(Variant, Group):
+                e.elems = e.elems_to_alternatives()
 
-        # Organize variants into a list of regular variants
-        # and a dict of partial variants.
-        variants = []
-        partials = {}
-        for v in any_variants:
-            if v.is_partial:
-                partials[v.name] = v
-            else:
-                variants.append(v)
+        # Build lookup dict for the partial-variants.
+        partials = {
+            v.name : v
+            for v in variants
+            if v.is_partial
+        }
 
         # variants: traverse: replace PartialUsage with actual elems.
-        # TODO: __HERE__
+        for v in variants:
+            for e in v.walk_elems(Variant, Group, Alternative):
+                e.elems = e.elems_without_partials(partials)
+
+        # TODO: variants: traverse:
+        #   - Convert ParseElem => GrammarElem.
+        #   - Relevent elems: Option, Positional, Literal, Group.
+        pass
+
+        # TODO: elems: traverse:
+        #   - Convert ParseElem => Sections.
+        #   - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
+        pass
+
+        # TODO: opts: unify/reconcile: opt-specs <=> variants.
+        pass
 
         # Return.
         return ast_orig
