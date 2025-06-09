@@ -3,24 +3,31 @@ r'''
 
 TODO:
 
-    - define base class: Container.
+    - This is supported, but the current code does not handle it:
 
-    - for_grammar(): define for these:
+        <x>{2}{3}
 
-        - Simple elems:
-            - Quantifier
-            - Choice
+        - Double call of with_quantifer() just overwrites the first
+          quantifier.
+
+    - as_gelem():
+
+        x Simple elems:
+            x Quantifier
+            x Choice
 
         - Core elems, some with simple child elems:
             - Option
             - Parameter
-            - Positional
-            - Literal
+            - Positional    # HERE
+            x Literal
 
         - Container elems:
             - Variant
             - Alternative
             - Group
+
+    - define base class: Container.  [REALLY??]
 
     - build_grammar()
 
@@ -328,17 +335,20 @@ from .regex_lexer import RegexLexer
 from .tokens import Token, TokDefs
 from .utils import get, distilled, partition
 from .grammar import (
-    Grammar,
-    Variant,
-    Group,
-    Positional,
-    Option,
-    Literal,
-    Argument,
-    Parameter,
-    Choice,
-    Quantifier,
+
+    # Grammar,
+    # Variant,
+    # Group,
+    # Positional,
+    # Option,
+    # Literal,
+    # Argument,
+    # Parameter,
+    # Choice,
+    # Quantifier,
+
     TreeElem,
+    GrammarElems as GE,
 )
 
 ####
@@ -454,10 +464,20 @@ class Quantifier(ParseElem):
     n: int
     greedy: bool = True
 
+    def as_gelem(self):
+        return GE.Quantifier(
+            m = self.m,
+            n = self.n,
+            greedy = self.greedy,
+        )
+
 @dataclass
 class Choice(ParseElem):
     # A choice attached to a VarInput (positional or parameter).
     text: str
+
+    def as_gelem(self):
+        return GE.Choice(text = self.text)
 
 @dataclass
 class Variant(ParseElem):
@@ -495,6 +515,19 @@ class Positional(ParseElem):
     name: str
     elems: list[Choice]
     quantifier: Quantifier = None
+
+    def as_gelem(self):
+        return GE.Positional(
+            name = self.name,
+            dest = self.name,
+            # help_text = None,
+            # arguments = list['Argument'],
+            # nargs = 'Quantifier',
+            # ntimes = 'Quantifier',
+            # hide = bool,
+            # anchor = bool,
+            # dispatch = list[callable],
+        )
 
 @dataclass
 class Parameter(ParseElem):
@@ -559,6 +592,9 @@ class Literal(ParseElem):
     # Used to represent a quoted literal in a command-line grammar, or
     # as an intermediate object when parsing choices in a var-input.
     text: str
+
+    def as_gelem(self):
+        return GE.Literal(text = self.text)
 
 @dataclass
 class Alternative(ParseElem):
@@ -1570,11 +1606,13 @@ class SpecParser:
 
         ast_orig = deepcopy(ast)
 
-        # Partition the SpecAST elems into variants and other stuff.
+        # Partition SpecAST.elems into:
+        # - variants
+        # - other stuff (SectionElems)
         is_variant = lambda e: isinstance(e, Variant)
         variants, others = partition(ast.elems, is_variant)
 
-        # For Variants or their Groups having a ChoiceSep,
+        # For Variants (or their Groups) having a ChoiceSep,
         # reorganize the elems into Alternatives.
         for v in variants:
             for e in v.walk_elems(Variant, Group):

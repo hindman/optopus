@@ -276,3 +276,9 @@ class OptSpec(SectionElem):
     # TODO: not sure what this needs.
     pass
 
+GrammarElems = constants({
+    name : obj
+    for name, obj in globals().items()
+    if isinstance(obj, type) and issubclass(obj, GrammarElem)
+})
+

@@ -143,7 +143,173 @@ Plan next release:
 new-notes: New notes
 --------
 
-...
+Quantifiers: nargs, ntimes: which elems can have both?
+
+    - 
+
+        <foo>{2}{3}
+
+        --bar{2}{3}
+
+        (--vals <x>{2} <y> <z>{1,3})...
+
+            elem      | name | nargs | ntimes
+            ---------------------------------
+            Option    | vals | __    | __
+            Parameter | x    | 2     | __
+            Parameter | y    | 1     | __
+            Parameter | z    | 1+    | __
+
+            - nargs = N params
+            - ntimes = repetition of the Option
+
+Current plan:
+
+    - Elements and their supported quantifiers:
+
+        elem       | nargs | ntimes | Notes
+        -----------------------------------
+        Variant    | -     | yes    | .
+        Group      | -     | yes    | .
+        Positional | yes   | yes    | .
+        Option     | yes   | yes    | .
+        Argument   | -     | yes    | .
+        Parameter  | -     | yes    | .
+
+    - Declared meaning of nargs and ntimes:
+
+        nargs  : N arguments (for positionals) or parameters (for options).
+        ntimes : Governs only optionality and repetition via {m,n} or its shortcuts.
+
+    - But there are some oddities here:
+
+        - If a Positional can have both nargs and ntimes, why can't a
+          Parameter and Argument do the same?
+
+        - Example:
+
+            # Goal: 2, 4, or 6.
+            <x>{2}{1,3}
+
+        - But why not support similar flexibility for Parameter:
+
+            --foo <x>{2}{1,3} <y>{2} <z>
+
+            - And the result would be: Option(foo, nargs = (5,9)).
+            - But does that quantifier have a useful purpose?
+            - Perhaps a dumb question in light of the strange use case.
+
+        - A way out of the confusion:
+
+            - The spec syntax does not allow the user to configure
+              an Argument directly.
+            - Wait...
+                - what is the purpose of Argument?
+
+                - Parameter has a purpose:
+                    - Each param can a name/dest and choices.
+
+                    --vals <x=a|b> <y=c|d> <z=e|f|g>
+
+                - What is the analogue for Argument?
+
+                    <x=a|b>
+
+                    - There is no direct spec acces to the Argument.
+
+            - How do <x> and <y> differ across these examples?
+
+                <x> <y>
+                --foo <x> <y>
+
+                - One is tempted to say that they should be treated the same:
+                  if a Positional can do it, a Parameter can too.
+
+                - And I think my policy plan started to drift a bit in that
+                  direction after Positional got both nargs and ntimes in the
+                  plan.
+
+        - A different way out of the confusion:
+        
+            - The current policy was heavily influenced by the nargs tradition
+              in Python.
+
+                - Option.nargs     = N parameters
+                - Positional.nargs = N arguments
+
+            - And for the vast majority of use cases, that basic understanding
+              is good enough.
+
+            - Positionals and options are different:
+
+                - The spec support more configuration for an option than a
+                  positional: Option and each Parameter can have name/dest;
+                  each Parameter can have choices.
+
+                - For a Positional, choices and all other configuration are set
+                  at the Opt-level, not Arg-level.
+
+                - However, via the API a user could set up each Argument
+                  to have its own choices.
+                    - And why not its own name/dest too?
+                    - And its own nargs/ntimes?
+
+                - That starts to sound insane.
+
+        - Why not take a more restricted approach for sanity:
+
+            - No element can can more than one quantifier.
+            - To achieve complex things (eg 3 pairs), use groups.
+
+            - That policy would allow use to simplify things:
+
+                elem       | nargs | ntimes | Notes
+                -------------------------------------------------------------------------
+                Positional | yes   | -      | Conventional meaning
+                Option     | yes   | -      | "
+                Parameter  | yes   | -      | Follow the convention, make it like positional
+                Group      | yes   | -      | Not a perfect fit, but allows us to drop ntimes
+                Variant    | yes   | -      | "
+                -------------------------------------------------------------------------
+                Argument   | -     | -      | Drop the concept
+
+            - Drawbacks of that plan:
+
+                - Option.nargs is not really a thing.
+                - The used configures parameters.
+
+                - What about a flag and its quantifier?
+
+                    --verbose{1,3}
+
+                    - This suggests that the option itself can also be
+                      quantified.
+
+                        - One reaction is to conclude and options really
+                          do need ntimes. If so, might as well let groups
+                          have them too.
+
+                        - A different reaction is to say that an option with a
+                          direct quantifier (in the spec) is just a syntactic
+                          shortcut:
+
+                            --verbose{1,3}       # Spec
+                            (--verbose){1,3}     # Interpretation
+
+            - Two contradictory impulese:
+
+                - The broad vision for arg-parsing and the CLI-grammar pushes
+                  toward general-purpose ideas and lots of flexibility.
+
+                - But the most common command-line uses cases -- and the
+                  conventional language for argument parsers in Python -- push
+                  toward meanings for nargs that push cause some conceptual
+                  trouble.
+
+            - Is there a deep problem with the nargs-only simplification
+              outlined above?
+
+                - Is there anything that becomes impossible?
 
 --------
 road-map: Road map
