@@ -241,7 +241,7 @@ class Parameter(Arg):
     validate: callable
 
 @dataclass
-class Quantifier(Arg):
+class Quantifier(GrammarElem):
     m: int = None
     n: int = None
     greedy: bool = True

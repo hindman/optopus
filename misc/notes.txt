@@ -97,6 +97,8 @@ toc: Table of contents
 todos: TODOs
 --------
 
+Quantifiers reconsidered: see new-notes.
+
 Spec-parsing [see grammar.py for todo list].
 
 parsed-data-structure:
@@ -143,27 +145,7 @@ Plan next release:
 new-notes: New notes
 --------
 
-Quantifiers: nargs, ntimes: which elems can have both?
-
-    - 
-
-        <foo>{2}{3}
-
-        --bar{2}{3}
-
-        (--vals <x>{2} <y> <z>{1,3})...
-
-            elem      | name | nargs | ntimes
-            ---------------------------------
-            Option    | vals | __    | __
-            Parameter | x    | 2     | __
-            Parameter | y    | 1     | __
-            Parameter | z    | 1+    | __
-
-            - nargs = N params
-            - ntimes = repetition of the Option
-
-Current plan:
+Current situation:
 
     - Elements and their supported quantifiers:
 
@@ -215,7 +197,7 @@ Current plan:
 
                     <x=a|b>
 
-                    - There is no direct spec acces to the Argument.
+                    - There is no direct spec access to the Argument.
 
             - How do <x> and <y> differ across these examples?
 
@@ -242,7 +224,7 @@ Current plan:
 
             - Positionals and options are different:
 
-                - The spec support more configuration for an option than a
+                - The spec supports more configuration for an option than a
                   positional: Option and each Parameter can have name/dest;
                   each Parameter can have choices.
 
@@ -261,7 +243,7 @@ Current plan:
             - No element can can more than one quantifier.
             - To achieve complex things (eg 3 pairs), use groups.
 
-            - That policy would allow use to simplify things:
+            - That policy would allow us to simplify things:
 
                 elem       | nargs | ntimes | Notes
                 -------------------------------------------------------------------------
@@ -276,7 +258,8 @@ Current plan:
             - Drawbacks of that plan:
 
                 - Option.nargs is not really a thing.
-                - The used configures parameters.
+
+                - nargs is awkward terminology for Group/Variant.
 
                 - What about a flag and its quantifier?
 
@@ -285,9 +268,8 @@ Current plan:
                     - This suggests that the option itself can also be
                       quantified.
 
-                        - One reaction is to conclude and options really
-                          do need ntimes. If so, might as well let groups
-                          have them too.
+                        - One reaction is to conclude that options really
+                          do need ntimes.
 
                         - A different reaction is to say that an option with a
                           direct quantifier (in the spec) is just a syntactic
@@ -301,15 +283,140 @@ Current plan:
                 - The broad vision for arg-parsing and the CLI-grammar pushes
                   toward general-purpose ideas and lots of flexibility.
 
-                - But the most common command-line uses cases -- and the
-                  conventional language for argument parsers in Python -- push
-                  toward meanings for nargs that push cause some conceptual
-                  trouble.
+                - But the most common command-line uses cases push toward
+                  simpler meanings for nargs.
 
             - Is there a deep problem with the nargs-only simplification
               outlined above?
 
-                - Is there anything that becomes impossible?
+                - Is there anything that becomes grammatically impossible?
+                - I haven't come up with anything so far.
+
+More thoughts:
+
+    Command-line elements:
+
+        Positional | Option | Parameter | Any-group | Characteristic
+        ----------------------------------------------------------------------
+        Y          | Y      | .         | .         | Conventional CLI element
+        Y          | .      | Y         | .         | Variable input
+        .          | Y      | .         | Y         | Container
+
+        - This table helps explain the complexity of these issues.
+        - The characterists does break down neatly or in perfect alignment with
+          conventional thinking about CLI grammars.
+
+    Any-group:
+        - Includes Group, Alternative, and Variant.
+
+    Details about characteristics:
+
+        - Conventional CLI element: the primary top-level command-line
+          elements, as conventionally understood by most programmers,
+          implemented in most argument-parsing libraries, and needed for the
+          vast majority of use cases.
+
+        - Variable input: end-user input values. Such elements can have a
+          name/dest, quantifer, choices, help-text, etc.
+
+        - Container: an element grouping/containing other elements. Can have
+          its own name/dest and quantifier. The container-like characteristics
+          of an option are not apparent in the conventional understanding of
+          command-line elements, but Argle needs Parameter for several purposes
+          -- making Option a container. [Positional contains Choice, but
+          that is not relevant here.]
+
+    Implications of the rule that each elem has only one quantifier:
+
+        - Option.nargs is not exactly a fundamental unit.
+
+        - The nargs actually live on the Parameters:
+            - That is what the user interacts with in a spec.
+            - And it where nargs operates inside a Grammar.
+
+        - Technically, Option.nargs is the sum of its Parameter.nargs.
+
+        - In the vast majority of use cases, Option.nargs is both
+          conventional (nargs = N parameters) and a shortcut for users
+          to configure the parameters.
+
+    Another argument against quantifier stacking:
+
+        - If you start with a single-quantifier per element rule, the source of
+          greatest temptation is Option.
+
+            - Simple starting point: Option.nargs = N parameters.
+
+            - Repeatable flags (a legitimate real-world use case) push
+              you to allow Option to have both nargs and ntimes.
+
+            - From that point, similarities between entities start a cascade:
+                - Positional ~ Option => allow Positional nargs and ntimes.
+                - Parameter ~ Positional => ditto for Parameter.
+
+            - And the general logic for stacked quantifiers can be extended:
+
+                - If 1+ pairs is a reasonable use case for positionals, and
+                  then for parameters, why not for groups and variants?
+
+                - And why stop there: in theory quantifiers could be stacked
+                  without limit.
+
+                    <x>{2}{1,3}{5}
+
+            - It's too much complexity for exponentially diminishing utility.
+
+            - Hard to see an obviously strong rationale for stopping earlier
+              along the policy spectrum, other than the proposed
+              single-quantifier rule.
+
+        - Meanwhile, the single-quantifier rule already offers a viable
+          workaround for any user who actually needs super complex
+          quantification: groups.
+
+    - Why Argument is not useful:
+
+        - The Argument is invisible where it matters:
+            - Spec (users).
+            - Usage text (end-users).
+
+        - It has no obvious purpose in the library code.
+            - None mentioned in notes.txt.
+            - I could not enivion any, other than help text for specific choices.
+            - But that text belongs on Choice (not Parameter or Argument).
+
+        - No known use case requires Argument.
+
+    - Why ntimes is useful:
+
+        - Option.nargs is sum of child nargs.
+        - Group.nargs could be the same.
+        - But that is not useful at all.
+        - To avoid confusion, Group.ntimes is better.
+
+    - Decisions:
+
+        - Make a visual tree of GrammarElem:
+            - Assess the need for base classes noted below.
+
+        - Drop Argument: move attrs to the Positional.
+        - Drop Arg.
+        - Add Choice.help_text.
+        - Add VarInput.
+        - Add Container [but not sure about Option: leaning no].
+
+        - One Quantifier per element:
+
+            elem       | nargs | ntimes | Notes
+            -----------------------------------
+            Variant    | .     | yes    | .
+            Group      | .     | yes    | .
+            Positional | yes   | .      | .
+            Option     | yes   | .      | Sum of Parameter.nargs
+            Parameter  | yes   | .      | .
+
+        - Edit to align with new policy:
+            - parsed-data-structure: Parsed data structure
 
 --------
 road-map: Road map
