@@ -3,31 +3,25 @@ r'''
 
 TODO:
 
-    - This is supported, but the current code does not handle it:
-
-        <x>{2}{3}
-
-        - Double call of with_quantifer() just overwrites the first
-          quantifier.
-
     - as_gelem():
 
-        x Simple elems:
-            x Quantifier
-            x Choice
+        x Quantifier
+        x Choice
 
-        - Core elems, some with simple child elems:
-            - Option
-            - Parameter
-            - Positional    # HERE
-            x Literal
+        x Literal
+        - Positional
+        - Parameter
+        - Option
 
-        - Container elems:
-            - Variant
-            - Alternative
-            - Group
+        - Alternative
+        - Group
+        - Variant
 
-    - define base class: Container.  [REALLY??]
+    - Issues:
+
+        - GE.Choice.help_text: figure out what needs to be added to
+          spec_parser.py to support this. This will be relevant when dealing
+          with OptSpec (the sections, not the grammar).
 
     - build_grammar()
 
@@ -523,7 +517,6 @@ class Positional(ParseElem):
             # help_text = None,
             # arguments = list['Argument'],
             # nargs = 'Quantifier',
-            # ntimes = 'Quantifier',
             # hide = bool,
             # anchor = bool,
             # dispatch = list[callable],
@@ -1035,17 +1028,13 @@ class SpecParser:
 
     @track_parse
     def any_group(self):
-        return self.with_quantifer(
-            self.get_bracketed(GBKinds.group)
-        )
+        e = self.get_bracketed(GBKinds.group)
+        return self.with_quantifer(e)
 
     @track_parse
     def positional(self):
-        return self.with_quantifer(
-            self.with_quantifer(
-                self.get_bracketed(GBKinds.positional)
-            )
-        )
+        e = self.get_bracketed(GBKinds.positional)
+        return self.with_quantifer(e)
 
     @track_parse
     def option(self):

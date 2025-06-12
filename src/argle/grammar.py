@@ -156,7 +156,6 @@ class Grammar(GrammarElem):
 class Variant(GrammarElem):
     name: str
     elems: list[VariantElem]
-    ntimes: 'Quantifier'
 
 @dataclass
 class Group(GrammarElem):
@@ -176,24 +175,29 @@ class Opt(GrammarElem):
     pass
 
 @dataclass
-class Arg(GrammarElem):
+class VarInput(GrammarElem):
     pass
 
 @dataclass
 class Choice(GrammarElem):
     text: str
+    help_text: str
 
 @dataclass
-class Positional(Opt):
+class Positional(Opt, VarInput):
     name: str
     dest: str
     help_text: str
     arguments: list['Argument']
     nargs: 'Quantifier'
-    ntimes: 'Quantifier'
+    choices: list[Choice]
     hide: bool
     anchor: bool
     dispatch: list[callable]
+    default: object
+    factory: callable
+    convert: callable
+    validate: callable
 
 @dataclass
 class Option(Opt):
@@ -202,7 +206,6 @@ class Option(Opt):
     help_text: str
     parameters: list[Union['Parameter', Group]]
     nargs: 'Quantifier'
-    ntimes: 'Quantifier'
     hide: bool
     anchor: bool
     dispatch: list[callable]
@@ -218,21 +221,11 @@ class Literal(Opt):
     anchor = True
 
 @dataclass
-class Argument(Arg):
-    help_text: str
-    ntimes: 'Quantifier'
-    choices: list[Choice]
-    default: object
-    factory: callable
-    convert: callable
-    validate: callable
-
-@dataclass
-class Parameter(Arg):
+class Parameter(VarInput):
     name: str
     dest: str
     help_text: str
-    ntimes: 'Quantifier'
+    nargs: 'Quantifier'
     choices: list[Choice]
     default: object
     factory: callable

@@ -97,44 +97,6 @@ toc: Table of contents
 todos: TODOs
 --------
 
-quantifiers-revisited:
-
-    x Draft the new policy.
-
-    x Basic editing pass: quantifiers-revisited
-
-    . Edit other material to align:
-
-        x notes: search/edit:
-            x Argument
-            x Arguments
-            x Arg
-            x Args
-
-        x spec-syntax
-        x opts-revised-OO-plan
-        - parsed-data-structure
-        - parsed-data-with-context
-        - syntax-examples
-        - classes-and-attributes
-        - groups-can-be-parameters
-        - opt-and-varinput-configuration
-        - opt-independence
-
-        - examples/
-
-    - Implementation:
-
-        - One Quantifier per element, never multiple.
-
-        - GrammarElem modifications:
-            - Drop Argument: move attrs to the Positional.
-            - Drop Arg: not helpful, since only Parameter would derive from it.
-            - Add base class: VarInput.
-            - Defer base class until need arises: Container.
-            - Add Choice.help_text.
-            - Drop Variant.ntimes: this was a mistake.
-
 Spec-parsing [see grammar.py for todo list].
 
 Argument parsing.
@@ -1047,6 +1009,9 @@ Overview:
         Choice
         Result
         Query
+        Section
+        Heading
+        OptSpec
 
     - Relationships among user-facing entities:
 
@@ -1278,7 +1243,6 @@ Positional:
         dest: str
         help: str
         nargs: Quantifier
-        ntimes: Quantifier
         choices: list[Choice]
         --
         hide: bool
@@ -1299,7 +1263,6 @@ Option:
         dest: str
         help: str
         nargs: Quantifier
-        ntimes: Quantifier
         elems: list[Parameter or Group]
         --
         hide: bool
@@ -1325,16 +1288,15 @@ VarInput:
 Parameter:
     - Attributes:
         spec: str
+        name: str
+        dest: str
         help: str
-        ntimes: Quantifier
+        nargs: Quantifier
         choices: list[Choice]
         default: object
         factory: callable
         convert: callable
         validate: callable
-        --
-        name: str
-        dest: str
 
 Choice:
     - Attributes:
@@ -2239,17 +2201,8 @@ Names of VarInputs:
 
     - Positionals are much more restricted:
 
-        - Two approaches were considered:
-            - Shared name (copied from parent Positional).
-            - Anonymous.
-
-            - Argle policy: anonymous.
-
-        - That policy addresses a querying problem with shared-names:
-
-            - Queries by name would return Positional and children.
-            - Most common use case is to query just for the Positional.
-            - Query-via-index can address the less common use cases.
+        - Only the positional itself has a name.
+        - There is no analogue to Parameter.
 
 Assignment of Parameter attributes via the parent Option:
 
@@ -2282,10 +2235,10 @@ Assignment of Parameter attributes via the parent Option:
 
     - The policy:
 
-        - If the query() PATH gets an Opt.
+        - If the query() PATH gets an Option.
         - Apply each setting, based on its kwarg, to the appropriate object(s).
 
-        - If kwarg is shared by Opt/Parameter, apply setting to the Opt.
+        - If kwarg is shared by Option/Parameter, apply setting to the Option.
             - The shared attributes (spec, name, text, ntimes) are not natural
               fits for configuration via query().
             - Users who need to can use explicit paths.
@@ -3283,31 +3236,30 @@ Background for the opt-scope syntax:
 parsed-data-structure: Parsed data structure
 --------
 
-The meaning of nargs and ntimes:
+Quantifiers overview: nargs and ntimes:
 
     Elem       | Quantifier | Note
-    -----------------------------------------------
-    Positional | nargs      | N of args
+    ----------------------------------------------
+    Positional | nargs      | N of CLI arguments
     Parameter  | nargs      | Ditto
-    -----------------------------------------------
+    ----------------------------------------------
     Option     | nargs      | sum(Parameter.nargs)
-    -----------------------------------------------
+    ----------------------------------------------
     Group      | ntimes     | N of repetitions
 
 Quantifiers and Result structure: overview:
 
-    nargs  | Result value | Note
+    nargs | ntimes 0, 1 | ntimes 1+
     ---------------------------------------
-    0 or 1 | VAL          | Singular
-    1+     | [VAL, ...]   | Plural
+    0, 1  | VAL         | list[VAL]
+    1+    | list[VAL]   | list[list[VAL]]
 
-    nargs  | ntimes=(0,1) | ntimes=(1,None)
-    ---------------------------------------
-    0 or 1 | VAL          | list[VAL]
-    1+     | list[VAL]    | list[list[VAL]]
+Inner Results: overview:
 
-    - Repetition due to Group.ntimes creates an outer list around those
-      structures.
+    - A Group does not create an inner Result or a corresponding dest.
+    - Names do that:
+        - A named Group causes its data to be bundled in a Result.
+        - An Option having differently named Parameters will do the same.
 
 An example:
 
@@ -3320,7 +3272,7 @@ An example:
 
     - Result:
 
-        - Each line hold data from one Group repetition.
+        - Each line hold data from one Group.ntimes repetition.
         - Since the Group is anonymous (no dest), the groups must be shoved
           into the Opt dests.
 
@@ -3364,36 +3316,6 @@ An example:
             ]
         )
 
-Flattening policy:
-
-    * I think I should drop this flattening complexity:
-
-        - None of the non-default cells in the table below are compelling.
-        - Drop the whole business.
-
-    - Internally, all data assigned to destinations will be stored in a fully
-      explicit manner. Assume a list of lists, where:
-
-    - The guiding princples:
-
-        - Names create dests. Groups do not.
-
-        - Argle prefers to flatten where it makes sense.
-
-    - If an Opt does not have both plural nargs and plural ntimes, its data
-      will be flattened by default, as shown in the table.
-
-    - User can request non-flattened data or flattened data to reverse the
-      usual defaults
-
-    - Defaults are marked with ** in the two columns for 2+ ntimes.
-
-    nargs | ntimes 0,1 | ntimes 2+ (flat)    | ntimes 2+ (non-flat)
-    ---------------------------------------------------------------
-    0     | bool       | [bool, ...] **      | [[bool], ...]
-    1     | a1         | [a1, ...] **        | [[a1], ...]
-    2+    | [a1, ...]  | [a1, ..., ..., ...] | [[a1, ...], ...] **
-
 Duplicate dests within a Result:
 
     - Users can define specs with non-unique dests. An extreme example:
@@ -3401,7 +3323,7 @@ Duplicate dests within a Result:
         <x>... [-x] <x> [-x <x>{2}]
 
     - In such cases, Argle will add another outer list to the structures
-      documented in the table above.
+      documented above.
 
         opts.x = [
             [X, ...], # <x>...
@@ -3436,7 +3358,7 @@ Parameters:
         - This is the most common use case.
         - A "single dest" includes the situation when all dests are unnamed.
         - This is the exception to the general idea that names create dests.
-        - Not separate dest (ie inner-Result) occurs, because flattening helps
+        - No separate dest (ie inner-Result) occurs, because flattening helps
           in these common, simple use cases.
 
         --age <yr>
