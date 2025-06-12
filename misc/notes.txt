@@ -24,7 +24,6 @@ toc: Table of contents
 
     discussion | Discussion
 
-        name: str
         api-vs-text                    | API-driven vs text-driven
         other-lib-weaknesses           | Addressing weaknesses common in other libraries
         other-goals                    | Other goals
@@ -37,7 +36,7 @@ toc: Table of contents
         opts-revised-OO-plan           | Revised OO plan for Opts and child elements
         groups-can-be-parameters       | Options can have Groups as parameters
         parser-config-api              | Parser.config() API
-        opt-and-arg-configuration      | Configuration of Opt and Arg
+        opt-and-varinput-configuration | Configuration of Opt and VarInput
         help-text-formatting-and-api   | Help text formatting and API
         spec-parsing-general-approach  | Spec parsing: general approach
         arg-parsing-algo               | Parsing algorithm
@@ -74,7 +73,7 @@ toc: Table of contents
         usage-section-spec-syntax      | Usage section in the spec-syntax
         usage-text-and-named-groups    | Usage-text and named groups or choices
         headings-in-spec-syntax        | Spec-syntax support for headings
-        arg-choices-in-usage-text      | Arg.choices in usage-text
+        choices-in-usage-text          | Choices in usage-text
         groups-need-names              | Why Group needs both dest and name
         degenerate-groups              | Degenerate groups with only one element
         settings-and-opts              | Opts and settings (preferences and environment variables)
@@ -102,16 +101,27 @@ quantifiers-revisited:
 
     x Draft the new policy.
 
-    - Basic editing pass:
-        - quantifiers-revisited
+    x Basic editing pass: quantifiers-revisited
 
-    - Edit other material to align:
+    . Edit other material to align:
 
+        x notes: search/edit:
+            x Argument
+            x Arguments
+            x Arg
+            x Args
+
+        x spec-syntax
+        x opts-revised-OO-plan
         - parsed-data-structure
+        - parsed-data-with-context
+        - syntax-examples
+        - classes-and-attributes
+        - groups-can-be-parameters
+        - opt-and-varinput-configuration
+        - opt-independence
 
         - examples/
-
-        - check TOC for other sections.
 
     - Implementation:
 
@@ -175,7 +185,7 @@ road-map: Road map
     - Much of the ordering seems questionable.
     - Revisit after achieving the core behaviors.
 
-Arg configuration:
+Opt and Parameter configuration:
 
     - Convert.
 
@@ -475,7 +485,7 @@ opt-spec:
         - Empty opt-scope:
             - Parent: preceding (non-scoped) opt-spec.
             - Child: current opt-spec.
-            - Child configures an Arg or Choice of the parent.
+            - Child configures an Parameter or Choice of the parent.
 
 opt-spec-def:
 
@@ -998,7 +1008,7 @@ Literal-input:
     - Examples:
         - The separator in a separator-based grammar: EX_NECK_DIAG.
         - In a subcommand-style program:
-            - Each subcommand is an Arg.choice.
+            - Each subcommand is an Positional.choice.
             - In usage-text, each variant uses a choice as a literal-input.
 
 Anonymous-input:
@@ -1033,9 +1043,7 @@ Overview:
             Positional
             Option
             Literal
-        Arg
-            Argument
-            Parameter
+        Parameter
         Choice
         Result
         Query
@@ -1054,10 +1062,10 @@ Overview:
             elems = List[Group or Opt]         # 0+
 
         Opt:
-            elems = list[Argument or Parameter]
+            elems = list[Choice or Parameter]
 
-        Arg:
-            choices = list[Choice]
+        Parameter:
+            elems = list[Choice]
 
     - Objects used during spec-parsing:
 
@@ -1181,7 +1189,7 @@ Query:
 
     - Attributes:
 
-        elems: list[Group or Opt or Arg]
+        elems: list[Group or Opt or Parameter]
 
     - API:
 
@@ -1249,23 +1257,17 @@ Group:
 
 Opt and children: overview:
 
-    - Base classes: an Opt has 0+ Args:
-        Opt
-        Arg
+    - Opts and their children:
 
-    - Opt kinds and their Arg kinds:
-        Positional
-            Argument
-        Option
-            Parameter
-        Literal
-            None
+        Positional > Choice
+        Option > Parameter > Choice
+        Literal > None
 
 Opt:
     - Base class for Positional, Option, or Literal.
     - Some of the common attributes listed for each subclass (below) might be
       implemented at the Opt level (TBD).
-    - Also see: opt-and-arg-configuration
+    - Also see: opt-and-varinput-configuration
 
 Positional:
     - Subclass of Opt.
@@ -1277,11 +1279,16 @@ Positional:
         help: str
         nargs: Quantifier
         ntimes: Quantifier
-        elems: list[Argument]
+        choices: list[Choice]
         --
         hide: bool
         anchor: bool
         dispatch: list[callable]
+        --
+        default: object
+        factory: callable
+        convert: callable
+        validate: callable
 
 Option:
     - Subclass of Opt.
@@ -1310,28 +1317,12 @@ Literal:
         spec: str         # The literal value (no backquotes).
         anchor: bool      # Always True.
 
-Arg:
+VarInput:
     - Base class for a variable-input as a configurable unit.
-    - Sub-classes: Argument or Parameter.
-    - Also see: opt-and-arg-configuration
-
-Argument:
-    - Subclass of Arg.
-    - No name and no dest.
-
-    - Attributes:
-        spec: str
-        help: str
-        ntimes: Quantifier
-        choices: list[Choice]
-        default: object
-        factory: callable
-        convert: callable
-        validate: callable
+    - Sub-classes: Positional or Parameter.
+    - Also see: opt-and-varinput-configuration
 
 Parameter:
-    - Subclass of Arg.
-
     - Attributes:
         spec: str
         help: str
@@ -1977,6 +1968,10 @@ to configure name and dest independently.
 opts-revised-OO-plan: Revised OO plan for Opts and child elements
 --------
 
+* See quantifiers-revisited for additional changes to the plan adopted here.
+    - Arg => DROPPED.
+    - Argument => DROPPED.
+
 In prior planing, Opt and Arg were multi-purpose:
 
     - A kind attribute would distinguish positional vs option.
@@ -2188,7 +2183,7 @@ Two general styles of config() calls:
         )
 
 --------
-opt-and-arg-configuration: Configuration of Opt and Arg
+opt-and-varinput-configuration: Configuration of Opt and VarInput
 --------
 
 Opt child elements: Positionals vs Options:
@@ -2203,41 +2198,34 @@ Opt child elements: Positionals vs Options:
 
     - Positionals:
 
-        - Child elems must be Argument.
+        - Does not have analogue to Parameter.
+        - Has choices, not elems.
         - Under spec-parsing policies you cannot create a Positional having
           Groups as children.
 
-Quantifiers and configuration independence among Args:
+Quantifiers and configuration independence among VarInputs:
 
     - Examples:
 
         (--point <x> <y> <z>...){1,4}
 
-        Option(name=point, nargs=(3,None), ntimes=(1,4))
-            Parameter(name=x, ntimes=1)
-            Parameter(name=y, ntimes=1)
-            Parameter(name=z, ntimes=(1,None))
+        Group(ntimes=(1,4))
+            Option(name=point, nargs=(3,None))
+                Parameter(name=x, ntimes=1)
+                Parameter(name=y, ntimes=1)
+                Parameter(name=z, ntimes=(1,None))
 
-        <val>{2}{3}
+        (<val>{2}){3}
 
-        Positional(name=val, nargs=2, ntimes=3)
-            Argument(name=None, ntimes=1)
-            Argument(name=None, ntimes=1)
+        Group(ntimes=3)
+            Positional(name=val, nargs=2)
 
     - Key points:
 
-        - N of Args is based on nargs.
+        - Each Opt, Positional, Parameter is one configurable unit.
+        - Repetition across Group.ntimes does not create independent units.
 
-        - Each Arg represents 1 independently configurable entity.
-        - Repetition across ntimes does not create independent units.
-
-        - Quantifiers available:
-            - Opt: nargs and ntimes.
-            - Arg: ntimes.
-                - Represents one configurable entity.
-                - Which aligns with nargs restricted to 1.
-
-Names of Args:
+Names of VarInputs:
 
     - Options have flexibility in naming:
 
@@ -2263,43 +2251,41 @@ Names of Args:
             - Most common use case is to query just for the Positional.
             - Query-via-index can address the less common use cases.
 
-Assignment of Arg attributes via the parent-Opt:
+Assignment of Parameter attributes via the parent Option:
 
     - An example for the discussion:
 
-        p = Parser('<x>{2} [<y>] [-z <a> <b>]')
+        p = Parser('-z <a> <b>')
 
-    - Configuration of Opts and Args:
+    - Configuration of Opts and Parameters:
 
         - The most common and intuitive use cases:
-            - User wants child Args to have identical configuration.
+            - User wants parameters to have identical configuration.
             - They want to apply that configuration via the Opt.name.
 
             # Should adhere to the DWIM policy.
-            p.config('x', default = 888, convert = int)
-            p.config('y', default = 0.0, convert = float)
+            p.config('z', default = 0.0, convert = float)
 
         - Sometimes users want separate configurations for the children.
 
     - The complication:
 
+        - Option and Parameter share some attribute names.
+
         - Strict interpretion of query(PATH) would be bad:
 
-            - A query by Opt.name will get the Opt, not the Args.
+            - A query by Opt.name will get the Opt, not the Parameters.
             - Forcing users query explicitly would be annoying.
 
             # Tedious.
             query('z.a', 'z.b')
-            query('x.0', 'x.1')
-
-        - Opt and Arg share some attribute names.
 
     - The policy:
 
         - If the query() PATH gets an Opt.
         - Apply each setting, based on its kwarg, to the appropriate object(s).
 
-        - If kwarg is shared by Opt/Arg, apply setting to the Opt.
+        - If kwarg is shared by Opt/Parameter, apply setting to the Opt.
             - The shared attributes (spec, name, text, ntimes) are not natural
               fits for configuration via query().
             - Users who need to can use explicit paths.
@@ -3204,7 +3190,7 @@ Discussion of the policy across various domains:
             - At the moment of invalid input, get the valid choices from the
               unified Opt.
             - Implemented a correct listing of choices would require also
-              storing a subset of choices in the Arg.
+              storing a subset of choices in the VarInput.
             - Which might be too awkward.
 
     - Consolidation necessarily occurs during Result creation:
@@ -3299,75 +3285,94 @@ parsed-data-structure: Parsed data structure
 
 The meaning of nargs and ntimes:
 
-    nargs  : N arguments (for positionals) or parameters (for options).
-    ntimes : Governs only optionality and repetition via {m,n} or its shortcuts.
+    Elem       | Quantifier | Note
+    -----------------------------------------------
+    Positional | nargs      | N of args
+    Parameter  | nargs      | Ditto
+    -----------------------------------------------
+    Option     | nargs      | sum(Parameter.nargs)
+    -----------------------------------------------
+    Group      | ntimes     | N of repetitions
 
-    Options:                    #  nargs   ntimes
+Quantifiers and Result structure: overview:
 
-        -y                      #  0        (1,1)
-        [-y]                    #  0        (0,1)
-        [-y {} {}]              #  2        (0,1)
-        -y {} [{}]              #  (1,2)    (1,1)
-        -y {}{3}                #  3        (1,1)
+    nargs  | Result value | Note
+    ---------------------------------------
+    0 or 1 | VAL          | Singular
+    1+     | [VAL, ...]   | Plural
 
-    Positionals:                #  nargs    ntimes
+    nargs  | ntimes=(0,1) | ntimes=(1,None)
+    ---------------------------------------
+    0 or 1 | VAL          | list[VAL]
+    1+     | list[VAL]    | list[list[VAL]]
 
-        <x>                     #  1        (1,1)
-        [<x>]                   #  1        (0,1)
-        <x>{4}{0,2}             #  4        (0,2)
+    - Repetition due to Group.ntimes creates an outer list around those
+      structures.
 
-Internally, all data assigned to destinations will be stored in a fully
-explicit manner. Assume a list of lists, where:
+An example:
 
-    Opt attribute | Determines length of
-    ------------------------------------
-    nargs         | inner list
-    ntimes        | outer list
-
-    - Singular nargs and ntimes:
-
-        a1     # Either value or bool (latter if nargs is zero).
-
-    - Plural nargs:
-
-        [a1, a2, ...]
-
-    - With plural ntimes:
-
-        <z>{2}{3}
-
-        [[a1, a2], ..., ...]
-
-    - With a layer of nested plural ntimes (and no Group.dest):
+    - Spec:
 
         (
             --foo <> <>
-            <z>{2}{3}
+            (<z>{2}){3}
         ){4}
 
-        foo: nargs   2, ntimes 1 x 4
-        z  : nargs   2, ntimes 3 x 4
+    - Result:
 
-        foo = [
-            [a1, a2],                # One group of data.
-            ...,
-            ...,
-            ...,
-        ]
+        - Each line hold data from one Group repetition.
+        - Since the Group is anonymous (no dest), the groups must be shoved
+          into the Opt dests.
 
-        z = [
-            [[a1, a2], ..., ...],    # Ditto.
-            ...,
-            ...,
-            ...,
-        ]
+        Result(
+            foo = [
+                [V1, V2],
+                ...,
+                ...,
+                ...,
+            ],
+            z = [
+                [ [V1, V2], ..., ... ],
+                ...,
+                ...,
+                ...,
+            ],
+        )
 
-        - Each line for foo and z (above) hold data from one Group repetition.
-        - Since the Group is anonymous (no dest), the groups must
-          be shoved into the Opt dests.
-        - If the Group had a dest, it would store ntimes=4 inner Results.
+    - Same spec, but with named groups:
+
+        outer=(
+            --foo <> <>
+            inner=(<z>{2}){3}
+        ){4}
+
+    - Result:
+
+        Result(
+            outer = [
+                Result(
+                    foo = [V1, V2],
+                    inner = [
+                        Result(z = [V1, V2]),
+                        ...,
+                        ...,
+                    ]
+                ),
+                ...,
+                ...,
+                ...,
+            ]
+        )
 
 Flattening policy:
+
+    * I think I should drop this flattening complexity:
+
+        - None of the non-default cells in the table below are compelling.
+        - Drop the whole business.
+
+    - Internally, all data assigned to destinations will be stored in a fully
+      explicit manner. Assume a list of lists, where:
 
     - The guiding princples:
 
@@ -3901,7 +3906,7 @@ Overview:
 
         - Prompted:
             - Any Opt.
-            - Get Arg input(s) via prompting.
+            - Get input(s) via prompting.
             - Includes confirmation Opts (eg --yes).
             - Occurs only after successful parse.
 
@@ -3985,7 +3990,7 @@ Calling protocol for dispatching:
             - After parse() finishes or fails.
             - Important consequence:
                 - If any Option has priority.
-                - And if that Option is present in Args.
+                - And if that Option is present in args.
                 - Then failed parse() calls do not halt.
             - That consequence is the purpose of priority=True:
                 - If the priority-option is present.
@@ -4051,15 +4056,15 @@ Calling protocol for dispatching:
                 - Argle will print msg.
                 - To stderr if exit_code is a positive int.
 
-Why dispatch operates at the level of Opt, not Arg:
+Why dispatch operates at the level of Opt, not lower:
 
     - One could do it at the Arg-level, in theory.
 
     - But its seems implausible to want it:
-        - Positionals: does not make a lot of sense.
+        - Positionals: does not make a lot of sense. [And Argument was dropped.]
         - Parameters: conceivable, but unlikely a frequent use case.
 
- Why "priority" couples two behaviors:
+Why "priority" couples two behaviors:
 
     1. Flexible parsing: simple membership test in ARGS.
     2. Dispatching priority.
@@ -4250,7 +4255,7 @@ Why priority-opts should be restricted to flags or Options:
               position (in args) where the parsing halted.
 
         - But if a priority-opt were allowed to be more complex:
-            - With Args having grammatical/validation requirements.
+            - With args having grammatical/validation requirements.
             - How would Argle successfully parse the entity?
             - Parsing has already failed.
             - An Opt could be marked as priority, but that configuration will
@@ -4441,7 +4446,7 @@ Types of errors in precedence order, by failure source:
 converters-validators: Converters and validators
 --------
 
-Argle supports three concepts to check Arg inputs:
+Argle supports three concepts to check argument inputs:
 
     - convert:
         - Takes a str direct from ARGS.
@@ -4462,8 +4467,8 @@ Argle supports three concepts to check Arg inputs:
           calling protocol focused on the values.
         - The check operation is intended to support broader checks that might
           require more contextual information, either about a full Opt (eg all
-          of its Arguments or Parameters) or about an Opt in the context of the
-          rest of the Result.
+          of its Parameters) or about an Opt in the context of the rest of the
+          Result.
 
 Calling protocol:
 
@@ -4479,7 +4484,7 @@ Calling protocol:
         - Take a grammar element and the Result.
         - The element is typically an Opt, but could be Group or Variant.
         - Occurs at the end of the parsing process.
-        - All Args have been converted/validated.
+        - All args have been converted/validated.
         - The full Result is known.
         - Returns bool to indicate whether the check is OK.
 
@@ -4932,7 +4937,7 @@ API overview:
         - Plus support for an abbreviated syntax for opt-specs:
 
             - OPT will be replaced by the syntax to get() the needed element
-              (Opt, Arg, or Choice).
+              (Opt, Parameter, or Choice).
 
             - Example:
 
@@ -5124,7 +5129,7 @@ Summary of new policy:
     - One Quantifier per element, never multiple.
 
     - GrammarElem modifications:
-        - Drop Argument: move attrs to the Positional.
+        - Drop Argument: move its attrs to the Positional.
         - Drop Arg: not helpful, since only Parameter would derive from it.
         - Add base class: VarInput.
         - Defer base class until need arises: Container.
@@ -5154,16 +5159,16 @@ Background: prior policy and how we got there:
         Argument   | .     | Y
         Parameter  | .     | Y
 
-That policy lacked a rigorous stopping point:
+Problem: the policy lacked a rigorous stopping point:
 
     - Imagine starting simple: one quantifier per element (nargs or ntimes).
 
     - Then note a common real-world use case: repeatable flags.
         - So you add Option.ntimes.
 
-    - Then it's tempting to give Positional the same flexitibilty.
+    - Then it's tempting to give Positional the same flexibilty.
         - Option and Positional are both Opts.
-        - Opts are given both nargs and ntimes.
+        - So Opts are given both nargs and ntimes.
 
     - Another step: Positional and Parameter are very similar:
 
@@ -5176,7 +5181,7 @@ That policy lacked a rigorous stopping point:
 
             - An Option can be viewed as named-group for Parameters.
             - Here are two ways to achieve generally the same grammatical and
-              Result-storage outcome output
+              Result-storage outcome:
 
                 pairs=(<x>{2}{3})   # Named Group.
                 --pairs <x>{2}{3}   # Same outcome via an Option.
@@ -5192,7 +5197,7 @@ That policy lacked a rigorous stopping point:
 
         - The rationale for any specific stopping point is unclear.
 
-    - And even stranger question:
+    - An even stranger question:
 
         - If Parameter and Argument are similar entities, and if Parameter
           gets both nargs/ntimes, should Argument do the same?
@@ -5208,26 +5213,25 @@ OO plan reconsidered too: why Argument is not useful:
     - No known use case requires Argument.
 
     - It has no known purpose in the library code.
-        - None was mentioned in opts-revised-OO-plan (or the rest of notes.txt).
+        - None mentioned in opts-revised-OO-plan (or elswhere in notes.txt).
         - I could not enivion any, other than help text for specific choices.
         - But, as planned, that text belongs on Choice, not Parameter/Argument.
 
 Command-line elements: hierarchy and characteristics:
 
-    - While thinking quantifiers and whether to drop Argument, I decided to
-      classify the grammatical elements and their characteristics.
+    - While thinking about quantifiers and whether to drop Argument, I decided
+      to classify the grammatical elements and their characteristics.
 
     - This exercise was helpful:
 
         - It explained why the chain of logic traced above -- extending the
           quantifier policy of one elment to a similiar element -- led to a
-          spiral into complexity.
+          spiral of complexity.
 
         - This happened because the elements do not fall into neat clusters.
+          The overlaps by characteristic are complex.
 
-        - The overlaps by characteristic are complex.
-
-    - The classification, using new policy's element roster and quantifiers.
+    - The classification (using the new policy):
 
         Elem                  | Opt | VarInput | Container | Quantifier
         --------------------------------------------------------------------
@@ -5248,8 +5252,8 @@ Command-line elements: hierarchy and characteristics:
 
 Solution to the quantifier problem: simplify:
 
-    - Lacking rationale for a clear stopping point when stacking quantifers, I
-      decided to drop stacking entirely.
+    - Lacking a rationale for a clear stopping point when stacking quantifers,
+      I decided to drop stacking entirely.
 
     - Elements can have only one quantifer, nargs or ntimes, not both.
 
@@ -5257,30 +5261,50 @@ Solution to the quantifier problem: simplify:
         - No grammatical power is lost.
         - And the Result-storage is the same.
 
-Groups are a simpler quantifier-stacking mechanism to understand:
+Groups are a simpler quantifier-stacking mechanism:
 
     - The two approaches:
+
         <x>{2}{1,3}       # Direct-stacking
         (<x>{2}){1,3}     # Stacking-via-groups
 
     - Stacking-via-groups:
+
         - Require no new terms or concepts.
         - Relies only on the core idea: elems have a quantifier.
         - Looks a bit less awkward to my eye for the purpose of spec and
           usage-text.
 
     - Direct-stacking, by contrast:
+
         - Requires a new thought (elem can have both nargs and ntimes).
         - Generates new policies (which elems have only one vs both).
         - Raises new questions:
             - Why can't some elems have both?
             - How does nargs-plus-ntimes interact with groups with respect to
               Result storage.
+
         - During planning work, for example, I had to remind myself about such
           matters on multiple occasions.
         - Not dire problems, to be sure, but noticeable.
 
-Option.nargs is a derivative value and a configuration shortcut:
+    - The simplification will affect multiple areas:
+
+        - Spec parsing.
+        - Argument parsing.
+        - Result storage.
+        - Documentation for all that.
+
+    - Result storage simplification is especially useful:
+
+        - Simple value (nargs singular).
+        - List of values (nargs plural).
+        - Lists those things (ntimes via enclosing groups).
+
+        - No need to worry about the more complex dynamic of plural nargs,
+          plural ntimes, plus group-ntimes.
+
+Option.nargs: a derivative value and a configuration shortcut:
 
     - The nargs actually live on the Parameters:
         - That is what the user interacts with in a spec.
@@ -5291,6 +5315,21 @@ Option.nargs is a derivative value and a configuration shortcut:
     - In the vast majority of use cases, Option.nargs is both conventional
       (nargs = N parameters) and a shortcut for users to configure the
       parameters.
+
+Option.ntimes: not supported, but semi-exists as a spec-syntax shorthand:
+
+    - As noted, Parameter.nargs exists; Option.nargs does not.
+    - So the option itself takes no quantifier.
+    - Option repetition is done via groups:
+
+        (--verbose)...
+
+    - But for flags, spec-syntax will support a direct quantifier. During
+      spec-parsing the element will become a Group enclosing the flag.
+
+        --verbose...
+        --verbose{1,3}
+        --verbose?
 
 Why ntimes is still needed:
 
@@ -5303,8 +5342,8 @@ Why ntimes is still needed:
 
 Why Variants do not have a quantifier:
 
-    - A partial-variant can have a quantifier in the spec.
-    - But it becomes a quantified Group in the Grammar.
+    - In theory, partial-variant could have a quantifier (it does not).
+    - Either way, it becomes a quantified Group in the Grammar.
     - The variants themselves live above the level of quantification.
 
 --------
@@ -5336,7 +5375,7 @@ Definitions:
                 - For the Opt.
                 - For child elements of the Opt.
                     - Parameters.
-                    - Arg choices.
+                    - Choices.
 
     - opt-desc:
         - An opt-spec becomes an opt-desc in the user-facing help-text.
@@ -5470,7 +5509,7 @@ Documenting Parameters and choices:
 
     - Opt-specs and opt-descs can document an Opt's "child elements".
         - Parameters (of Option).
-        - Choices of an Arg (Argument or Parameter).
+        - Choices (of Positional or Parameter).
 
     - Syntax:
         - The scoping syntax is used to declare the parent-child relationship.
@@ -5595,7 +5634,7 @@ OO model: where do help-texts of child entities reside?
     - Model:
 
         Positional(action, help='blah-action')
-            Arg.choices = [
+            choices = [
                 Choice(value='go', help='blah-go'),
                 Choice(value='stop', help='blah-stop'),
             ]
@@ -5796,20 +5835,20 @@ Triple vs double colons for headings:
     - Leaves open possiblity of supporting subheadings.
 
 --------
-arg-choices-in-usage-text: Arg.choices in usage-text
+choices-in-usage-text: Choices in usage-text
 --------
 
 Policy under most circumstances:
     - An entity is represented by its name in usage-text and spec.
-    - Under most circumstances, that is true for Args.
+    - Under most circumstances, that is true for args.
 
-But when an Arg has either choices or choice, things change:
+But when a VarInput has either choices or choice, things change:
 
-    - Arg with choices:
+    - VarInput with choices:
         - Use the name, if defined.
         - Otherwise, use choices as a stand-in for the symbolic name.
 
-    - Arg with a choice:
+    - VarInput with a choice:
         - This occurs in arg-variants.
         - Use the choice in usage-text, even if a name is defined.
         - Explanation:
@@ -5818,7 +5857,7 @@ But when an Arg has either choices or choice, things change:
                 - The choice is no longer a var-input.
                 - It is a literal-input.
 
-    - Arg with no choices and no name:
+    - VarInput with no choices and no name:
         - Represented as an anonymous-input in usage:
 
             --point <> <>
