@@ -97,6 +97,26 @@ toc: Table of contents
 todos: TODOs
 --------
 
+quantifiers-revisited: round 2.
+    - editing pass
+
+    - Re-assess the spec-syntax and usage-syntax for quantifiers.
+
+        - Is this intutive?
+
+            <x>{1,3}
+            <y>{2,}
+
+        - What about these instead?
+
+            <x>{1-3}
+            <y>{2+}
+
+        - Which would then leave the comma for other enhancements:
+
+            <x>{0,3-4}
+            <y>{0,2+}
+
 Spec-parsing [see grammar.py for todo list].
 
 Argument parsing.
@@ -137,75 +157,7 @@ Plan next release:
 new-notes: New notes
 --------
 
-Should Quantifer have a required attribute?
-
-    - Groups illustrate the case:
-
-        [...]{3,4}  # valid: 0, 3, 4
-        (...){3,4}  # valid: 3, 4
-
-    - If we drop degenerate-groups, could other elems?
-
-    - Positional and Parameter: yes, could work.
-
-        [<x>]{3,4}            # valid: 0, 3, 4
-        <x>{3,4}              # valid: 3, 4
-
-        --xs [<x>]{3,4}       # valid: 0, 3, 4
-        --xs <x>{3,4}         # valid: 3, 4
-
-    - Option: problem.
-
-        - Option.nargs is derived.
-        - Option has no quantifer to which required could be attached.
-
-        [--point <x> <y>]
-
-    - Maybe required should be an attribute of top-level GrammarElem?
-
-        - Group
-        - Positional
-        - Option
-        - Literal
-
-    - Can Group be handled without required?
-
-        (...){3,4} => works directly:
-
-            Group(ntimes = (3,4))
-
-        [...]{3,4} => requires an additional Group:
-
-            Group(
-                ntimes = (0,1),
-                elems = [Group(ntimes=(3,4))],
-            )
-
-    - For flags, spec-syntax supports a direct quantifier as
-      syntactic sugar for a Group enclosing the flag.
-
-        --verbose...
-        --verbose{1,3}
-
-    - Is there a good reason to fear the extra layer of groups?
-
-        - In future, quantifiers are envisioned to become more featureful. A
-          required attribute makes sense in that light.
-
-        - But if you add required at the Quantifer level, what about Option?
-            - How do you express a non-required Option?
-            - The Option quantifier does not describe the Option.
-
-            - So adding required to Quantifer does not fully solve the issue.
-
-        - It seems odd that an argument parsing library would require an
-          intermediary like Group to express a commonplace thing like a
-          non-required Option. It seems like a bad design.
-
-        - Two ways to give Option non-required status without Group:
-
-            - Allow nargs & ntimes. [don't like that]
-            - Treat required and quantifier as independent attributes.
+...
 
 --------
 road-map: Road map
@@ -5116,15 +5068,70 @@ quantifiers-revisited: Quantifiers: conceptual clarification, policy simplificat
 
 Summary of new policy:
 
-    - One Quantifier per element, never multiple.
+    - Process:
 
-    - GrammarElem modifications:
-        - Drop Argument: move its attrs to the Positional.
-        - Drop Arg: not helpful, since only Parameter would derive from it.
-        - Add base class: VarInput.
-        - Defer base class until need arises: Container.
-        - Add Choice.help_text.
-        - Drop Variant.ntimes: this was a mistake.
+        - This revisiting went through two phases.
+        - The second build on the first.
+        - Each phase made important conceptual clarifications.
+
+    - First phase:
+
+        - One Quantifier per element, nargs or ntimes:
+
+            - No quantifier "stacking".
+            - Where stacking means using both nargs and ntimes to support use
+              cases like "1+ pairs".
+
+        - GrammarElem modifications:
+
+            - Drop Argument: move its attrs to the Positional.
+            - Drop Arg: not helpful, since only Parameter would derive from it.
+            - Add base class: VarInput.
+            - Defer base class until need arises: Container.
+            - Add Choice.help_text.
+            - Drop Variant.ntimes: this was a mistake.
+
+    - Second phase:
+
+        - Clarify the single-quantifier rule:
+            
+            - An element can have only one *substantive* quantifier.
+            - Option can have both nargs (derived) and ntimes (substantive).
+
+        - Add Option.ntimes.
+
+            - There is a good principled case for this.
+            - Unlike the cases for Positional.ntimes and Parameter.ntimes,
+              which led to a spiral of complexity.
+
+        - Add Quantifier.required.
+
+            - This is an important addition.
+            - Especially for Group and Option.
+
+        - Degenerate-groups: remove during spec-parsing, under some conditions:
+
+            - Group contains only one Option or Group.
+            - The outer ntimes and inner ntimes are mergeable.
+
+Overview of new policy:
+
+    Elem                  | Opt | VarInput | Container | nargs     | ntimes
+    -----------------------------------------------------------------------
+    Grammar               | .   | .        | Y         | .         | .
+        Variant           | .   | .        | Y         | .         | .
+            Group         | .   | .        | Y         | .         | Y
+            Alternative   | .   | .        | Y         | .         | .
+            Positional    | Y   | Y        | .         | Y         | .
+            Option        | Y   | .        | Y         | [derived] | Y
+                Parameter | .   | Y        | .         | Y         | .
+            Literal       | Y   | .        | .         | .         | .
+
+    - Characteristics:
+        - Opt: a conventional top-level CLI element.
+        - VarInput: non-static end-user input.
+        - Container: contains other elem in the table.
+        - Quantifier: has nargs or ntimes (never both).
 
 Background: prior policy and how we got there:
 
@@ -5212,6 +5219,8 @@ Command-line elements: hierarchy and characteristics:
     - While thinking about quantifiers and whether to drop Argument, I decided
       to classify the grammatical elements and their characteristics.
 
+        - The resulting classification is shown in the Overview table above.
+
     - This exercise was helpful:
 
         - It explained why the chain of logic traced above -- extending the
@@ -5221,62 +5230,32 @@ Command-line elements: hierarchy and characteristics:
         - This happened because the elements do not fall into neat clusters.
           The overlaps by characteristic are complex.
 
-    - The classification (using the new policy):
-
-        Elem                  | Opt | VarInput | Container | Quantifier
-        --------------------------------------------------------------------
-        Grammar               | .   | .        | Y         | .
-            Variant           | .   | .        | Y         | .
-                Group         | .   | .        | Y         | ntimes
-                Alternative   | .   | .        | Y         | .
-                Positional    | Y   | Y        | .         | nargs
-                Option        | Y   | .        | Y         | nargs [derived]
-                    Parameter | .   | Y        | .         | nargs
-                Literal       | Y   | .        | .         | .
-
-        - Characteristics:
-            - Opt: a conventional top-level CLI element.
-            - VarInput: non-static end-user input.
-            - Container: contains other elem in the table.
-            - Quantifier: has nargs or ntimes (never both).
-
 Solution to the quantifier problem: simplify:
 
     - Lacking a rationale for a clear stopping point when stacking quantifers,
       I decided to drop stacking entirely.
 
     - Elements can have only one quantifer, nargs or ntimes, not both.
+        - Then in the second phase of revisiting quantifers, I clarified this
+          to mean "only one substantive quantifer".
 
     - To achieve more complex quantification, users can rely on groups.
         - No grammatical power is lost.
         - And the Result-storage is the same.
 
-Groups are a simpler quantifier-stacking mechanism:
+Groups are a simpler mechanism than quantifier-stacking:
 
     - The two approaches:
 
         <x>{2}{1,3}       # Direct-stacking
-        (<x>{2}){1,3}     # Stacking-via-groups
+        (<x>{2}){1,3}     # Via-groups
 
-    - Stacking-via-groups:
+    - Via-groups:
 
         - Require no new terms or concepts.
         - Relies only on the core idea: elems have a quantifier.
         - Looks a bit less awkward to my eye for the purpose of spec and
           usage-text.
-
-    - Direct-stacking, by contrast:
-
-        - Requires a new thought (elem can have both nargs and ntimes).
-        - Generates new policies (which elems have only one vs both).
-        - Raises new questions:
-            - Why can't some elems have both?
-            - How does nargs-plus-ntimes interact with groups with respect to
-              Result storage.
-
-        - During planning work, for example, I had to remind myself about such
-          matters on multiple occasions.
-        - Not dire problems, to be sure, but noticeable.
 
     - The simplification will affect multiple areas:
 
@@ -5289,7 +5268,7 @@ Groups are a simpler quantifier-stacking mechanism:
 
         - Simple value (nargs singular).
         - List of values (nargs plural).
-        - Lists those things (ntimes via enclosing groups).
+        - Lists those things (ntimes via enclosing Group/Option).
 
         - No need to worry about the more complex dynamic of plural nargs,
           plural ntimes, plus group-ntimes.
@@ -5306,21 +5285,71 @@ Option.nargs: a derivative value and a configuration shortcut:
       (nargs = N parameters) and a shortcut for users to configure the
       parameters.
 
-Option.ntimes: not supported, but semi-exists as a spec-syntax shorthand:
+Option.ntimes: a principled case:
 
-    - As noted, Parameter.nargs exists; Option.nargs does not.
-    - So the option itself takes no quantifier.
-    - Option repetition is done via groups:
+    - Positional and Parameter: nargs covers everything:
 
-        (--verbose)...
+        - N arguments.
+        - Existence of the entire element.
 
-    - But for flags, spec-syntax will support a direct quantifier. During
-      spec-parsing the element will become a Group enclosing the flag.
+    - Option is different:
 
-        --verbose...
-        --verbose{1,3}
+        - Option.nargs:
+            - Derived as sum(Parameter.nargs).
+            - Even if zero, the Option can still exist (a flag).
+            - Provides a configuration shortcut for the most common use cases.
 
-Why ntimes is still needed:
+        - Option.ntimes:
+            - A substantive quantifier for the element in question.
+            - Governs existence and repetition.
+            
+    - Meaning of nargs and ntimes:
+
+        nargs  | N arguments (ie VarInputs)
+        ntimes | N occurences (of a Container)
+
+    - Use cases to justify dual quantifiers for Positional and Parameter
+      were ill-conceived:
+
+        - Example:
+            - Goal: 1+ pairs
+            - Spec: <x>{2}...
+
+        - The problem with that logic:
+            - The goal statement has a group concept embedded inside it.
+            - It makes more sense convey that directly, via a Group.
+
+The case for Quantifier.required:
+
+    - Groups illustrate the need, or at least the utility:
+
+        Spec       | Valid quantities
+        -----------------------------
+        (...){3,4} | 3, 4
+        [...]{3,4} | 3, 4 and 0
+
+        - The second example can be handled either via a required attribute or
+          by wrapping the main Group in an outer Group to convey optionality.
+
+    - Options are similar:
+
+        - They are also a group-like element.
+        - They can have existence (ie optionality) even without Parameters.
+
+        - A non-required Option is a bread-and-butter use case.
+        - An Option class should be able to handle that directly.
+        - Should not need to be wrapped in a Group.
+
+    - Why Quantifer.required makes sense for other reasons:
+
+        - In future, quantifiers are envisioned to become more featureful.
+            - Skip value, akin to a range().
+            - Any list of quantities.
+
+        - A required attribute is essentially a shorthand mechanism for
+          supporting the addition of one special quantity: zero.
+
+Why Group.ntimes is better than Group.nargs:
 
     - I considered dropping ntimes and using nargs for all quantifiers.
 
@@ -5348,6 +5377,24 @@ Quantifiers could be more featureful:
     - Ability to support noncontiguous quantities:
 
         <x>{!1,2,3,5}   # 1, 2, 3, or 5
+
+    - Ability to use a callable to get the next allowed quantity?
+
+Once problem with such enhancements:
+
+    - How to convey them sufficiently in the generated usage-text.
+
+    - One workaround is the following:
+
+        - Quantifier.required tells us whether the elem is optional.
+
+        - For any non-simple quantification, Argle could use triple-dot.
+
+            <x>...
+            [<x>...]
+
+        - Leave the job of explaining the complex quantification to the user,
+          in the opt-spec or other help-text.
 
 --------
 opt-specs-and-opt-descs: Opt-specs and opt-descs
