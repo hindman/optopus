@@ -159,12 +159,12 @@ class Variant(GrammarElem):
 
 @dataclass
 class Group(GrammarElem):
-    name: str
-    dest: str
-    elems: list[VariantElem]
-    ntimes: 'Quantifier'
-    validate: callable
-    mutex: bool
+    name: str = None
+    dest: str = None
+    elems: list[VariantElem] = field(default_factory = list)
+    ntimes: 'Quantifier' = None
+    validate: callable = None
+    mutex: bool = False
 
 @dataclass
 class Alternative(GrammarElem):
@@ -186,32 +186,35 @@ class Choice(GrammarElem):
 @dataclass
 class Positional(Opt, VarInput):
     name: str
-    dest: str
-    help_text: str
-    arguments: list['Argument']
-    nargs: 'Quantifier'
-    choices: list[Choice]
-    hide: bool
-    anchor: bool
-    dispatch: list[callable]
-    default: object
-    factory: callable
-    convert: callable
-    validate: callable
+    dest: str = None
+    help_text: str = None
+    nargs: 'Quantifier' = None
+    choices: list[Choice] = field(default_factory = list)
+    hide: bool = False
+    anchor: bool = False
+    dispatch: list[callable] = field(default_factory = list)
+    default: object = None
+    factory: callable = None
+    convert: callable = None
+    validate: callable = None
 
 @dataclass
 class Option(Opt):
     name: str
-    dest: str
-    help_text: str
-    parameters: list[Union['Parameter', Group]]
-    nargs: 'Quantifier'
-    hide: bool
-    anchor: bool
-    dispatch: list[callable]
-    aliases: list[str]
-    priority: bool
-    negaters: list['Option']
+    dest: str = None
+    help_text: str = None
+    nargs: 'Quantifier' = None
+    parameters: list[Union['Parameter', Group]] = field(default_factory = list)
+    aliases: list[str] = field(default_factory = list)
+    hide: bool = False
+    anchor: bool = False
+    dispatch: list[callable] = None
+    priority: bool = False
+    negaters: list['Option'] = None
+
+@dataclass
+class Alias(GrammarElem):
+    name: str
 
 @dataclass
 class Literal(Opt):
@@ -222,15 +225,15 @@ class Literal(Opt):
 
 @dataclass
 class Parameter(VarInput):
-    name: str
-    dest: str
-    help_text: str
-    nargs: 'Quantifier'
-    choices: list[Choice]
-    default: object
-    factory: callable
-    convert: callable
-    validate: callable
+    name: str = None
+    dest: str = None
+    help_text: str = None
+    nargs: 'Quantifier' = None
+    choices: list[Choice] = field(default_factory = list)
+    default: object = None
+    factory: callable = None
+    convert: callable = None
+    validate: callable = None
 
 @dataclass
 class Quantifier(GrammarElem):

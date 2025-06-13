@@ -9,9 +9,10 @@ TODO:
         x Choice
 
         x Literal
-        - Positional
-        - Parameter
-        - Option
+        x Positional
+        x Parameter
+        x BareOption
+        x Option
 
         - Alternative
         - Group
@@ -458,7 +459,9 @@ class Quantifier(ParseElem):
     n: int
     greedy: bool = True
 
-    def as_gelem(self):
+    def as_gelem(self, required = False):
+
+
         return GE.Quantifier(
             m = self.m,
             n = self.n,
@@ -493,6 +496,14 @@ class Group(ParseElem):
     quantifier: Quantifier = None
     required: bool = True
 
+    def as_gelem(self):
+        return GE.Group(
+            name = self.name,
+            dest = self.name,
+            elems = [e.as_gelem() for e in self.elems],
+            ntimes = self.quantifier.as_gelem(),
+        )
+
 @dataclass
 class ChoiceSep(ParseElem):
     # Used to represent the choice separator inside a Group.
@@ -514,12 +525,8 @@ class Positional(ParseElem):
         return GE.Positional(
             name = self.name,
             dest = self.name,
-            # help_text = None,
-            # arguments = list['Argument'],
-            # nargs = 'Quantifier',
-            # hide = bool,
-            # anchor = bool,
-            # dispatch = list[callable],
+            nargs = self.quantifier.as_gelem(),
+            choices = [e.as_gelem() for e in self.elems],
         )
 
 @dataclass
@@ -528,11 +535,24 @@ class Parameter(ParseElem):
     elems: list[Choice]
     quantifier: Quantifier = None
 
+    def as_gelem(self):
+        return GE.Parameter(
+            name = self.name,
+            dest = self.name,
+            nargs = self.quantifier.as_gelem(),
+            choices = [e.as_gelem() for e in self.elems],
+        )
+
 @dataclass
 class BareOption(ParseElem):
     # An intermediate object used when parsing (a) an option,
     # or (b) aliases in an opt-spec.
     name: str
+
+    def as_gelem(self):
+        return GE.Alias(
+            name = self.name,
+        )
 
 @dataclass
 class Option(ParseElem):
@@ -540,6 +560,15 @@ class Option(ParseElem):
     elems: list[OptionElem]
     quantifier: Quantifier = None
     aliases: list[BareOption] = field(default_factory = list)
+
+    def as_gelem(self):
+        return GE.Option(
+            name = self.name,
+            dest = self.name,
+            nargs = self.quantifier.as_gelem(),
+            parameters = [e.as_gelem() for e in self.elems],
+            aliases = [e.as_gelem() for e in self.aliases],
+        )
 
 @dataclass
 class OptHelpText(ParseElem):
@@ -594,6 +623,11 @@ class Alternative(ParseElem):
     # Used as an intermediate object while transforming
     # the initial SpecAST into a Grammar.
     elems: list[VariantElem]
+
+    def as_gelem(self):
+        return GE.Group(
+            ...
+        )
 
 ####
 # Constants used when parsing bracketed expressions: () [] <>.

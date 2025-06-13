@@ -137,7 +137,75 @@ Plan next release:
 new-notes: New notes
 --------
 
-...
+Should Quantifer have a required attribute?
+
+    - Groups illustrate the case:
+
+        [...]{3,4}  # valid: 0, 3, 4
+        (...){3,4}  # valid: 3, 4
+
+    - If we drop degenerate-groups, could other elems?
+
+    - Positional and Parameter: yes, could work.
+
+        [<x>]{3,4}            # valid: 0, 3, 4
+        <x>{3,4}              # valid: 3, 4
+
+        --xs [<x>]{3,4}       # valid: 0, 3, 4
+        --xs <x>{3,4}         # valid: 3, 4
+
+    - Option: problem.
+
+        - Option.nargs is derived.
+        - Option has no quantifer to which required could be attached.
+
+        [--point <x> <y>]
+
+    - Maybe required should be an attribute of top-level GrammarElem?
+
+        - Group
+        - Positional
+        - Option
+        - Literal
+
+    - Can Group be handled without required?
+
+        (...){3,4} => works directly:
+
+            Group(ntimes = (3,4))
+
+        [...]{3,4} => requires an additional Group:
+
+            Group(
+                ntimes = (0,1),
+                elems = [Group(ntimes=(3,4))],
+            )
+
+    - For flags, spec-syntax supports a direct quantifier as
+      syntactic sugar for a Group enclosing the flag.
+
+        --verbose...
+        --verbose{1,3}
+
+    - Is there a good reason to fear the extra layer of groups?
+
+        - In future, quantifiers are envisioned to become more featureful. A
+          required attribute makes sense in that light.
+
+        - But if you add required at the Quantifer level, what about Option?
+            - How do you express a non-required Option?
+            - The Option quantifier does not describe the Option.
+
+            - So adding required to Quantifer does not fully solve the issue.
+
+        - It seems odd that an argument parsing library would require an
+          intermediary like Group to express a commonplace thing like a
+          non-required Option. It seems like a bad design.
+
+        - Two ways to give Option non-required status without Group:
+
+            - Allow nargs & ntimes. [don't like that]
+            - Treat required and quantifier as independent attributes.
 
 --------
 road-map: Road map
@@ -5251,7 +5319,6 @@ Option.ntimes: not supported, but semi-exists as a spec-syntax shorthand:
 
         --verbose...
         --verbose{1,3}
-        --verbose?
 
 Why ntimes is still needed:
 
