@@ -1,6 +1,6 @@
-  [-i]? [-v]...
+  [-i] [-v]...
        <rgx> [<path>{1,7}]
-  [--foo] <blort>?
+  [--foo] <blort>
 
 Positionals needed ::
 

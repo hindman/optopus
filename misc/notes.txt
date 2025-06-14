@@ -97,26 +97,6 @@ toc: Table of contents
 todos: TODOs
 --------
 
-quantifiers-revisited: round 2.
-    - editing pass
-
-    - Re-assess the spec-syntax and usage-syntax for quantifiers.
-
-        - Is this intutive?
-
-            <x>{1,3}
-            <y>{2,}
-
-        - What about these instead?
-
-            <x>{1-3}
-            <y>{2+}
-
-        - Which would then leave the comma for other enhancements:
-
-            <x>{0,3-4}
-            <y>{0,2+}
-
 Spec-parsing [see grammar.py for todo list].
 
 Argument parsing.
@@ -573,8 +553,8 @@ quantifer:
 
     - Where quant-range:
 
-        {min,max}
-        {min,}
+        {min-max}
+        {min+}
 
         - Both are positive integers.
 
@@ -1199,6 +1179,7 @@ Quantifier:
 
         m: int
         n: int
+        required: bool
         greedy: bool
 
 Variant:
@@ -1283,6 +1264,7 @@ Option:
         dest: str
         help: str
         nargs: Quantifier
+        ntimes: Quantifier
         elems: list[Parameter or Group]
         --
         hide: bool
@@ -2191,11 +2173,10 @@ Quantifiers and configuration independence among VarInputs:
 
         (--point <x> <y> <z>...){1,4}
 
-        Group(ntimes=(1,4))
-            Option(name=point, nargs=(3,None))
-                Parameter(name=x, ntimes=1)
-                Parameter(name=y, ntimes=1)
-                Parameter(name=z, ntimes=(1,None))
+        Option(name=point, nargs=(3,None), ntimes=(1,4))
+            Parameter(name=x, ntimes=1)
+            Parameter(name=y, ntimes=1)
+            Parameter(name=z, ntimes=(1,None))
 
         (<val>{2}){3}
 
@@ -2205,7 +2186,7 @@ Quantifiers and configuration independence among VarInputs:
     - Key points:
 
         - Each Opt, Positional, Parameter is one configurable unit.
-        - Repetition across Group.ntimes does not create independent units.
+        - Repetition across ntimes does not create independent units.
 
 Names of VarInputs:
 
@@ -3261,11 +3242,12 @@ Quantifiers overview: nargs and ntimes:
     Elem       | Quantifier | Note
     ----------------------------------------------
     Positional | nargs      | N of CLI arguments
-    Parameter  | nargs      | Ditto
+    Parameter  | nargs      | "
     ----------------------------------------------
     Option     | nargs      | sum(Parameter.nargs)
     ----------------------------------------------
-    Group      | ntimes     | N of repetitions
+    Option     | ntimes     | N of repetitions
+    Group      | ntimes     | "
 
 Quantifiers and Result structure: overview:
 
@@ -3697,7 +3679,7 @@ Quantifiers:
 
     - The ... is intuitive and practically a convention.
 
-    - The {m,n} syntax directly mimics regex and is also quite intutive.
+    - The {m-n} and {m+} syntax is intutive.
 
 General name assignment:
 
@@ -5071,8 +5053,8 @@ Summary of new policy:
     - Process:
 
         - This revisiting went through two phases.
-        - The second build on the first.
-        - Each phase made important conceptual clarifications.
+        - Each phase reached important conceptual clarifications.
+        - The second built on the first.
 
     - First phase:
 
@@ -5114,24 +5096,28 @@ Summary of new policy:
             - Group contains only one Option or Group.
             - The outer ntimes and inner ntimes are mergeable.
 
+        - Quantifier ranges: switch to a more intuitive syntax:
+
+            <x>{1-3}   # Hyphen rather than comma.
+            <y>{2+}    # Plus sign.
+
 Overview of new policy:
 
-    Elem                  | Opt | VarInput | Container | nargs     | ntimes
+    Elem                  | Opt | VarInput | Container | nargs   | ntimes
     -----------------------------------------------------------------------
-    Grammar               | .   | .        | Y         | .         | .
-        Variant           | .   | .        | Y         | .         | .
-            Group         | .   | .        | Y         | .         | Y
-            Alternative   | .   | .        | Y         | .         | .
-            Positional    | Y   | Y        | .         | Y         | .
-            Option        | Y   | .        | Y         | [derived] | Y
-                Parameter | .   | Y        | .         | Y         | .
-            Literal       | Y   | .        | .         | .         | .
+    Grammar               | .   | .        | Y         | .       | .
+        Variant           | .   | .        | Y         | .       | .
+            Group         | .   | .        | Y         | .       | Y
+            Alternative   | .   | .        | Y         | .       | .
+            Positional    | Y   | Y        | .         | Y       | .
+            Option        | Y   | .        | Y         | Y [sum] | Y
+                Parameter | .   | Y        | .         | Y       | .
+            Literal       | Y   | .        | .         | .       | .
 
-    - Characteristics:
+    Characteristics:
         - Opt: a conventional top-level CLI element.
         - VarInput: non-static end-user input.
         - Container: contains other elem in the table.
-        - Quantifier: has nargs or ntimes (never both).
 
 Background: prior policy and how we got there:
 
@@ -5219,6 +5205,7 @@ Command-line elements: hierarchy and characteristics:
     - While thinking about quantifiers and whether to drop Argument, I decided
       to classify the grammatical elements and their characteristics.
 
+        - Opt, VarInput, and Container.
         - The resulting classification is shown in the Overview table above.
 
     - This exercise was helpful:
@@ -5254,8 +5241,7 @@ Groups are a simpler mechanism than quantifier-stacking:
 
         - Require no new terms or concepts.
         - Relies only on the core idea: elems have a quantifier.
-        - Looks a bit less awkward to my eye for the purpose of spec and
-          usage-text.
+        - Syntax looks a bit less awkward, at least to my eye.
 
     - The simplification will affect multiple areas:
 
@@ -5269,9 +5255,6 @@ Groups are a simpler mechanism than quantifier-stacking:
         - Simple value (nargs singular).
         - List of values (nargs plural).
         - Lists those things (ntimes via enclosing Group/Option).
-
-        - No need to worry about the more complex dynamic of plural nargs,
-          plural ntimes, plus group-ntimes.
 
 Option.nargs: a derivative value and a configuration shortcut:
 
@@ -5363,6 +5346,20 @@ Why Variants do not have a quantifier:
     - In theory, partial-variant could have a quantifier (it does not).
     - Either way, it becomes a quantified Group in the Grammar.
     - The variants themselves live above the level of quantification.
+
+Quantifier ranges: a more intuitive syntax:
+
+    - Should have made this switch a long time ago.
+
+        Old      | New      | Note
+        -----------------------------------------
+        <x>{1,3} | <x>{1-3} | Hyphen for range
+        <y>{2,}  | <y>{2+}  | Plus for unbounded
+
+    - Reserve the comma for future enhancements:
+
+        <x>{0,3-4}
+        <y>{0,2+}
 
 --------
 enhanced-quantifiers: Enhanced quantifiers

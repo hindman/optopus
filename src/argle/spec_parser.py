@@ -3,6 +3,16 @@ r'''
 
 TODO:
 
+    - Add Option.ntimes.
+
+    - Add Quantifier.required.
+
+    - Quantifier ranges: better syntax.
+
+        x notes.txt
+        - examples
+        - tests
+
     - as_gelem():
 
         x Quantifier
@@ -45,6 +55,8 @@ TODO:
         - variants: traverse:
             - Convert ParseElem => GrammarElem.
             - Relevent elems: Option, Positional, Literal, Group.
+
+        - Degenerate-groups: remove.
 
         - elems: traverse:
             - Convert ParseElem => Sections.
@@ -330,18 +342,6 @@ from .regex_lexer import RegexLexer
 from .tokens import Token, TokDefs
 from .utils import get, distilled, partition
 from .grammar import (
-
-    # Grammar,
-    # Variant,
-    # Group,
-    # Positional,
-    # Option,
-    # Literal,
-    # Argument,
-    # Parameter,
-    # Choice,
-    # Quantifier,
-
     TreeElem,
     GrammarElems as GE,
 )
@@ -457,14 +457,14 @@ class Quantifier(ParseElem):
     # A quantifier attached to various ParseElem.
     m: int
     n: int
+    required: bool = True
     greedy: bool = True
 
     def as_gelem(self, required = False):
-
-
         return GE.Quantifier(
             m = self.m,
             n = self.n,
+            required = self.required,
             greedy = self.greedy,
         )
 
@@ -1252,8 +1252,8 @@ class SpecParser:
         if q:
             q.greedy = not self.eat(TokDefs.question)
             return q
-        elif self.eat(TokDefs.question):
-            return Quantifier(m = 0, n = 1)
+        # elif self.eat(TokDefs.question):
+        #     return Quantifier(m = 0, n = 1)
         else:
             return None
 
@@ -1656,6 +1656,9 @@ class SpecParser:
         # TODO: variants: traverse:
         #   - Convert ParseElem => GrammarElem.
         #   - Relevent elems: Option, Positional, Literal, Group.
+        pass
+
+        # TODO: Degenerate-groups: remove.
         pass
 
         # TODO: elems: traverse:

@@ -108,8 +108,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'angle_open')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'angle_open')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -165,8 +163,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'choice_sep')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'choice_sep')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -247,8 +243,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'angle_open')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'angle_open')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -304,8 +298,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'choice_sep')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'choice_sep')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -386,8 +378,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'angle_open')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'angle_open')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -473,8 +463,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'choice_sep')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'choice_sep')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -555,8 +543,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'angle_open')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'angle_open')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -693,8 +679,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'angle_open')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'angle_open')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -831,8 +815,6 @@ parse()
                   eat(wanted = 'quant_range')
                   get_next_token(lexed = 'angle_open')
                   quant_range(∅)
-                eat(wanted = 'question')
-                get_next_token(lexed = 'angle_open')
                 quantifier(∅)
               with_quantifer(RESULT = Positional)
             positional(RESULT = Positional)
@@ -938,8 +920,6 @@ parse()
               eat(wanted = 'quant_range')
               get_next_token(lexed = 'variant_def')
               quant_range(∅)
-            eat(wanted = 'question')
-            get_next_token(lexed = 'variant_def')
             quantifier(∅)
           with_quantifer(RESULT = Group)
         any_group(RESULT = Group)
@@ -1274,7 +1254,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'notes',
-                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -1291,7 +1271,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'syms',
-                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -1308,7 +1288,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'syms',
-                            quantifier = Quantifier(m=1, n=None, greedy=True),
+                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -1325,7 +1305,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = Quantifier(m=1, n=None, greedy=True),
+                    quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
                     required = False,
                     elems = [
                         Literal(
