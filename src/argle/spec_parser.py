@@ -3,9 +3,21 @@ r'''
 
 TODO:
 
-    - Add Option.ntimes.
+    x Add Option.ntimes.
 
-    - Add Quantifier.required.
+    . Add Quantifier.required.
+
+        - Step back.
+        - Review the elem with Quantifier.
+            - which can end up with a Quantifier in
+              a contradictory state?
+
+        required | m  | is_required
+        ---------------------------
+        True     | 0  | False
+        True     | 1+ | .
+        False    | 0  | .
+        False    | 1+ | True
 
     - Quantifier ranges: better syntax.
 
@@ -460,7 +472,7 @@ class Quantifier(ParseElem):
     required: bool = True
     greedy: bool = True
 
-    def as_gelem(self, required = False):
+    def as_gelem(self):
         return GE.Quantifier(
             m = self.m,
             n = self.n,
@@ -493,7 +505,7 @@ class Group(ParseElem):
     # If the latter, required=False.
     name: str
     elems: list[VariantElem]
-    quantifier: Quantifier = None
+    ntimes: Quantifier = None
     required: bool = True
 
     def as_gelem(self):
@@ -501,7 +513,7 @@ class Group(ParseElem):
             name = self.name,
             dest = self.name,
             elems = [e.as_gelem() for e in self.elems],
-            ntimes = self.quantifier.as_gelem(),
+            ntimes = self.ntimes.as_gelem(),
         )
 
 @dataclass
@@ -519,13 +531,13 @@ class VarInput(ParseElem):
 class Positional(ParseElem):
     name: str
     elems: list[Choice]
-    quantifier: Quantifier = None
+    nargs: Quantifier = None
 
     def as_gelem(self):
         return GE.Positional(
             name = self.name,
             dest = self.name,
-            nargs = self.quantifier.as_gelem(),
+            nargs = self.nargs.as_gelem(),
             choices = [e.as_gelem() for e in self.elems],
         )
 
@@ -533,13 +545,13 @@ class Positional(ParseElem):
 class Parameter(ParseElem):
     name: str
     elems: list[Choice]
-    quantifier: Quantifier = None
+    nargs: Quantifier = None
 
     def as_gelem(self):
         return GE.Parameter(
             name = self.name,
             dest = self.name,
-            nargs = self.quantifier.as_gelem(),
+            nargs = self.nargs.as_gelem(),
             choices = [e.as_gelem() for e in self.elems],
         )
 
@@ -558,14 +570,15 @@ class BareOption(ParseElem):
 class Option(ParseElem):
     name: str
     elems: list[OptionElem]
-    quantifier: Quantifier = None
+    nargs: Quantifier = None
+    ntimes: Quantifier = None
     aliases: list[BareOption] = field(default_factory = list)
 
     def as_gelem(self):
         return GE.Option(
             name = self.name,
             dest = self.name,
-            nargs = self.quantifier.as_gelem(),
+            nargs = self.nargs.as_gelem(),
             parameters = [e.as_gelem() for e in self.elems],
             aliases = [e.as_gelem() for e in self.aliases],
         )
@@ -1111,9 +1124,8 @@ class SpecParser:
     @track_parse
     def opt_spec_group(self):
         # The enclosing-group around an opt-spec definition.
-        return self.with_quantifer(
-            self.get_bracketed(GBKinds.opt_spec_group)
-        )
+        e = self.get_bracketed(GBKinds.opt_spec_group)
+        return self.with_quantifer(e)
 
     @track_parse
     def opt_spec_elem(self):
@@ -1192,9 +1204,8 @@ class SpecParser:
 
     @track_parse
     def parameter(self):
-        return self.with_quantifer(
-            self.get_bracketed(GBKinds.parameter)
-        )
+        e = self.get_bracketed(GBKinds.parameter)
+        return self.with_quantifer(e)
 
     @track_parse
     def parameter_group(self, top_level = True):
@@ -1242,18 +1253,24 @@ class SpecParser:
         if e:
             q = self.quantifier()
             if q:
-                e.quantifier = q
+                # Attach Group.required to Quantifier.required.
+                is_group = isinstance(e, Group)
+                if is_group:
+                    q.required = e.required
+                # Determine which attr to used for the Quantifier.
+                is_var_input = isinstance(e, (Positional, Parameter))
+                attr = 'nargs' if is_var_input else 'ntimes'
+                # Attach it.
+                setattr(e, attr, q)
         return e
 
     @track_parse
     def quantifier(self):
-        # Parses quantifiers: ... or {m,n} or ?
+        # Parses quantifiers: ... or {m,n}.
         q = self.triple_dot() or self.quant_range()
         if q:
             q.greedy = not self.eat(TokDefs.question)
             return q
-        # elif self.eat(TokDefs.question):
-        #     return Quantifier(m = 0, n = 1)
         else:
             return None
 

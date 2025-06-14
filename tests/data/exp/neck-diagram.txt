@@ -1183,12 +1183,12 @@ SpecAST(
             elems = [
                 Group(
                     name = 'command',
-                    quantifier = None,
+                    ntimes = None,
                     required = True,
                     elems = [
                         Positional(
                             name = 'cmd',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                                 Choice(
                                     text = 'snum',
@@ -1197,7 +1197,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'snum',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                             ],
                         ),
@@ -1205,7 +1205,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'cmd',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                                 Choice(
                                     text = 'fnum',
@@ -1214,7 +1214,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'fnum',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                             ],
                         ),
@@ -1222,7 +1222,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'cmd',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                                 Choice(
                                     text = 'number',
@@ -1231,7 +1231,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'numbering',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                                 Choice(
                                     text = 'on',
@@ -1245,7 +1245,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'cmd',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                                 Choice(
                                     text = 'tuning',
@@ -1254,7 +1254,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'notes',
-                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                            nargs = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -1262,7 +1262,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'cmd',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                                 Choice(
                                     text = 'fret',
@@ -1271,7 +1271,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'syms',
-                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                            nargs = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -1279,7 +1279,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'cmd',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                                 Choice(
                                     text = 'invert',
@@ -1288,7 +1288,7 @@ SpecAST(
                         ),
                         Positional(
                             name = 'syms',
-                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                            nargs = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -1305,7 +1305,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                    ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
                     required = False,
                     elems = [
                         Literal(

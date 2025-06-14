@@ -1043,7 +1043,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=0, line=1, col=1, indent=0, is_first=True),
             opt = Positional(
                 name = 'rgx',
-                quantifier = None,
+                nargs = None,
                 elems = [
                 ],
             ),
@@ -1054,12 +1054,12 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=34, line=2, col=1, indent=0, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Positional(
                         name = 'path',
-                        quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                        nargs = Quantifier(m=1, n=None, required=True, greedy=True),
                         elems = [
                         ],
                     ),
@@ -1072,12 +1072,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=65, line=3, col=1, indent=0, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'ignore-case',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [BareOption(name='i')],
                         elems = [
                         ],
@@ -1091,12 +1092,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=98, line=4, col=1, indent=0, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'invert-match',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [BareOption(name='v')],
                         elems = [
                         ],
@@ -1110,17 +1112,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=146, line=5, col=1, indent=0, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'max-count',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [BareOption(name='m')],
                         elems = [
                             Parameter(
                                 name = 'n',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
@@ -1135,17 +1138,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=200, line=6, col=1, indent=0, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'context',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [BareOption(name='C')],
                         elems = [
                             Parameter(
                                 name = 'n',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
@@ -1160,17 +1164,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=259, line=7, col=1, indent=0, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'color',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                             Parameter(
                                 name = None,
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                     Choice(
                                         text = 'red',

@@ -204,6 +204,7 @@ class Option(Opt):
     dest: str = None
     help_text: str = None
     nargs: 'Quantifier' = None
+    ntimes: 'Quantifier' = None
     parameters: list[Union['Parameter', Group]] = field(default_factory = list)
     aliases: list[str] = field(default_factory = list)
     hide: bool = False
@@ -239,6 +240,7 @@ class Parameter(VarInput):
 class Quantifier(GrammarElem):
     m: int = None
     n: int = None
+    required: bool = True
     greedy: bool = True
 
 ####

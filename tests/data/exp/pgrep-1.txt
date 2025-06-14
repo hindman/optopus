@@ -476,12 +476,13 @@ SpecAST(
             elems = [
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'i',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -490,12 +491,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'v',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -504,13 +506,13 @@ SpecAST(
                 ),
                 Positional(
                     name = 'rgx',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Positional(
                     name = 'path',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),

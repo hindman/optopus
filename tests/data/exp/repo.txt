@@ -10252,17 +10252,18 @@ SpecAST(
             elems = [
                 Group(
                     name = 'general-options',
-                    quantifier = None,
+                    ntimes = None,
                     required = True,
                     elems = [
                         Group(
                             name = None,
-                            quantifier = None,
+                            ntimes = None,
                             required = False,
                             elems = [
                                 Option(
                                     name = 'repo-home',
-                                    quantifier = None,
+                                    nargs = None,
+                                    ntimes = None,
                                     aliases = [],
                                     elems = [
                                     ],
@@ -10271,12 +10272,13 @@ SpecAST(
                         ),
                         Group(
                             name = None,
-                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                            ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
                             required = False,
                             elems = [
                                 Option(
                                     name = 'config',
-                                    quantifier = None,
+                                    nargs = None,
+                                    ntimes = None,
                                     aliases = [],
                                     elems = [
                                     ],
@@ -10285,12 +10287,13 @@ SpecAST(
                         ),
                         Group(
                             name = None,
-                            quantifier = None,
+                            ntimes = None,
                             required = False,
                             elems = [
                                 Option(
                                     name = 'verbose',
-                                    quantifier = None,
+                                    nargs = None,
+                                    ntimes = None,
                                     aliases = [],
                                     elems = [
                                     ],
@@ -10310,7 +10313,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'command',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'clone',
@@ -10319,18 +10322,18 @@ SpecAST(
                 ),
                 Positional(
                     name = 'src',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Positional(
                             name = 'dst',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                             ],
                         ),
@@ -10338,12 +10341,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'shallow',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10352,7 +10356,8 @@ SpecAST(
                         ),
                         Option(
                             name = 'deep',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10361,12 +10366,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'rev',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10384,7 +10390,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'command',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'commit',
@@ -10393,12 +10399,12 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                    ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
                     required = False,
                     elems = [
                         Positional(
                             name = 'file',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                             ],
                         ),
@@ -10406,12 +10412,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'message',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10429,7 +10436,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'command',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'copy',
@@ -10438,12 +10445,12 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                    ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
                     required = False,
                     elems = [
                         Positional(
                             name = 'src',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                             ],
                         ),
@@ -10451,18 +10458,19 @@ SpecAST(
                 ),
                 Positional(
                     name = 'dst',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'force',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10480,7 +10488,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'command',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'delete',
@@ -10489,12 +10497,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'yes',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10512,7 +10521,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'command',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'setuser',
@@ -10521,12 +10530,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'username',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10535,12 +10545,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'email',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10549,12 +10560,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'password',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -10579,7 +10591,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=638, line=19, col=5, indent=4, is_first=True),
             opt = Positional(
                 name = 'command',
-                quantifier = None,
+                nargs = None,
                 elems = [
                     Choice(
                         text = 'clone',
@@ -10593,7 +10605,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=682, line=20, col=5, indent=4, is_first=True),
             opt = Positional(
                 name = 'command',
-                quantifier = None,
+                nargs = None,
                 elems = [
                     Choice(
                         text = 'commit',
@@ -10607,7 +10619,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=734, line=21, col=5, indent=4, is_first=True),
             opt = Positional(
                 name = 'command',
-                quantifier = None,
+                nargs = None,
                 elems = [
                     Choice(
                         text = 'copy',
@@ -10621,7 +10633,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=771, line=22, col=5, indent=4, is_first=True),
             opt = Positional(
                 name = 'command',
-                quantifier = None,
+                nargs = None,
                 elems = [
                     Choice(
                         text = 'delete',
@@ -10635,7 +10647,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=816, line=23, col=5, indent=4, is_first=True),
             opt = Positional(
                 name = 'command',
-                quantifier = None,
+                nargs = None,
                 elems = [
                     Choice(
                         text = 'setuser',
@@ -10653,17 +10665,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=887, line=26, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'repo-home',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                             Parameter(
                                 name = 'path',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
@@ -10678,23 +10691,24 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=960, line=27, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
                         name = 'config',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                             Parameter(
                                 name = 'key',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
                             Parameter(
                                 name = 'value',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
@@ -10709,12 +10723,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1041, line=28, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'verbose',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [BareOption(name='v')],
                         elems = [
                         ],
@@ -10728,12 +10743,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1096, line=29, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'version',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                         ],
@@ -10747,12 +10763,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1112, line=30, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'help',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                         ],
@@ -10777,7 +10794,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=1327, line=40, col=5, indent=4, is_first=True),
             opt = Positional(
                 name = 'src',
-                quantifier = None,
+                nargs = None,
                 elems = [
                 ],
             ),
@@ -10788,12 +10805,12 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1371, line=41, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Positional(
                         name = 'dst',
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -10806,12 +10823,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1444, line=42, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'deep',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                         ],
@@ -10825,12 +10843,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1498, line=43, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'shallow',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                         ],
@@ -10844,17 +10863,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1541, line=44, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'rev',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [BareOption(name='r')],
                         elems = [
                             Parameter(
                                 name = 'commit',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
@@ -10880,12 +10900,12 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1889, line=58, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
                 required = False,
                 elems = [
                     Positional(
                         name = 'file',
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -10898,17 +10918,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1930, line=59, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
                         name = 'message',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [BareOption(name='m')],
                         elems = [
                             Parameter(
                                 name = 'text',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
@@ -10934,12 +10955,12 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2128, line=68, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
                 required = False,
                 elems = [
                     Positional(
                         name = 'src',
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -10952,7 +10973,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=2155, line=69, col=5, indent=4, is_first=True),
             opt = Positional(
                 name = 'dst',
-                quantifier = None,
+                nargs = None,
                 elems = [
                 ],
             ),
@@ -10963,12 +10984,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2202, line=70, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'force',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                         ],
@@ -10993,12 +11015,13 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2353, line=80, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'yes',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                         ],
@@ -11023,17 +11046,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2507, line=90, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'username',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                             Parameter(
                                 name = 'user',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
@@ -11048,17 +11072,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2542, line=91, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'email',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                             Parameter(
                                 name = 'address',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),
@@ -11073,17 +11098,18 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2582, line=92, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                quantifier = None,
+                ntimes = None,
                 required = False,
                 elems = [
                     Option(
                         name = 'password',
-                        quantifier = None,
+                        nargs = None,
+                        ntimes = None,
                         aliases = [],
                         elems = [
                             Parameter(
                                 name = 'pw',
-                                quantifier = None,
+                                nargs = None,
                                 elems = [
                                 ],
                             ),

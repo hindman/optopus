@@ -4180,7 +4180,7 @@ SpecAST(
             elems = [
                 Positional(
                     name = 'task',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'grep',
@@ -4189,12 +4189,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'i',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4203,12 +4204,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'v',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4217,12 +4219,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'm',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4231,12 +4234,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'C',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4245,17 +4249,18 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'color',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                                 Parameter(
                                     name = None,
-                                    quantifier = None,
+                                    nargs = None,
                                     elems = [
                                         Choice(
                                             text = 'red',
@@ -4274,18 +4279,18 @@ SpecAST(
                 ),
                 Positional(
                     name = 'rgx',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Positional(
                             name = 'path',
-                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                            nargs = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -4299,7 +4304,7 @@ SpecAST(
             elems = [
                 Positional(
                     name = 'task',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'sub',
@@ -4308,12 +4313,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'i',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4322,12 +4328,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'n',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4336,24 +4343,24 @@ SpecAST(
                 ),
                 Positional(
                     name = 'rgx',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Positional(
                     name = 'rep',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Positional(
                             name = 'path',
-                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                            nargs = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -4367,7 +4374,7 @@ SpecAST(
             elems = [
                 Positional(
                     name = 'task',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'search',
@@ -4376,12 +4383,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'i',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4390,12 +4398,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'g',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4404,12 +4413,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'd',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4418,7 +4428,8 @@ SpecAST(
                         ),
                         Option(
                             name = 'p',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -4427,18 +4438,18 @@ SpecAST(
                 ),
                 Positional(
                     name = 'rgx',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Positional(
                             name = 'path',
-                            quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                            nargs = Quantifier(m=1, n=None, required=True, greedy=True),
                             elems = [
                             ],
                         ),
@@ -4452,7 +4463,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=208, line=7, col=1, indent=0, is_first=True),
             opt = Positional(
                 name = 'task',
-                quantifier = None,
+                nargs = None,
                 elems = [
                 ],
             ),
@@ -4463,7 +4474,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=245, line=8, col=1, indent=0, is_first=True),
             opt = Positional(
                 name = 'task',
-                quantifier = None,
+                nargs = None,
                 elems = [
                     Choice(
                         text = 'grep',
@@ -4477,7 +4488,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=294, line=9, col=1, indent=0, is_first=True),
             opt = Positional(
                 name = 'task',
-                quantifier = None,
+                nargs = None,
                 elems = [
                     Choice(
                         text = 'sub',
@@ -4491,7 +4502,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=346, line=10, col=1, indent=0, is_first=True),
             opt = Positional(
                 name = 'task',
-                quantifier = None,
+                nargs = None,
                 elems = [
                     Choice(
                         text = 'search',
@@ -4505,7 +4516,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=394, line=11, col=1, indent=0, is_first=True),
             opt = Positional(
                 name = 'rgx',
-                quantifier = None,
+                nargs = None,
                 elems = [
                 ],
             ),
@@ -4516,7 +4527,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=441, line=12, col=1, indent=0, is_first=True),
             opt = Positional(
                 name = 'path',
-                quantifier = None,
+                nargs = None,
                 elems = [
                 ],
             ),
@@ -4527,7 +4538,7 @@ SpecAST(
             token = Token(kind='angle_open', text='<', pos=479, line=13, col=1, indent=0, is_first=True),
             opt = Positional(
                 name = 'rep',
-                quantifier = None,
+                nargs = None,
                 elems = [
                 ],
             ),
@@ -4538,7 +4549,8 @@ SpecAST(
             token = Token(kind='short_option', text='-i', pos=517, line=14, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'ignore-case',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [BareOption(name='i')],
                 elems = [
                 ],
@@ -4550,7 +4562,8 @@ SpecAST(
             token = Token(kind='short_option', text='-v', pos=550, line=15, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'invert-match',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [BareOption(name='v')],
                 elems = [
                 ],
@@ -4562,12 +4575,13 @@ SpecAST(
             token = Token(kind='short_option', text='-m', pos=597, line=16, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'max-count',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [BareOption(name='m')],
                 elems = [
                     Parameter(
                         name = 'n',
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -4580,12 +4594,13 @@ SpecAST(
             token = Token(kind='short_option', text='-C', pos=649, line=17, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'context',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [BareOption(name='C')],
                 elems = [
                     Parameter(
                         name = 'n',
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -4598,12 +4613,13 @@ SpecAST(
             token = Token(kind='long_option', text='--color', pos=708, line=18, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'color',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [],
                 elems = [
                     Parameter(
                         name = None,
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -4616,12 +4632,13 @@ SpecAST(
             token = Token(kind='short_option', text='-n', pos=753, line=19, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'nsubs',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [BareOption(name='n')],
                 elems = [
                     Parameter(
                         name = 'n',
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -4634,12 +4651,13 @@ SpecAST(
             token = Token(kind='short_option', text='-g', pos=793, line=20, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'group',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [BareOption(name='g')],
                 elems = [
                     Parameter(
                         name = 'n',
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -4652,12 +4670,13 @@ SpecAST(
             token = Token(kind='short_option', text='-d', pos=852, line=21, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'delim',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [BareOption(name='d')],
                 elems = [
                     Parameter(
                         name = 's',
-                        quantifier = None,
+                        nargs = None,
                         elems = [
                         ],
                     ),
@@ -4670,7 +4689,8 @@ SpecAST(
             token = Token(kind='short_option', text='-p', pos=908, line=22, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'para',
-                quantifier = None,
+                nargs = None,
+                ntimes = None,
                 aliases = [BareOption(name='p')],
                 elems = [
                 ],

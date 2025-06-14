@@ -2737,7 +2737,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'cmd',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'chomp',
@@ -2755,7 +2755,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'cmd',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'findall',
@@ -2764,18 +2764,19 @@ SpecAST(
                 ),
                 Positional(
                     name = 'rgx',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'a',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -2793,7 +2794,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'cmd',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'grep',
@@ -2802,18 +2803,19 @@ SpecAST(
                 ),
                 Positional(
                     name = 'rgx',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'i',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -2822,12 +2824,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'v',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -2836,12 +2839,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 's',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -2859,7 +2863,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'cmd',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'range',
@@ -2868,24 +2872,24 @@ SpecAST(
                 ),
                 Positional(
                     name = 'start',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Positional(
                     name = 'stop',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Positional(
                             name = 'step',
-                            quantifier = None,
+                            nargs = None,
                             elems = [
                             ],
                         ),
@@ -2893,12 +2897,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'g',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -2916,7 +2921,7 @@ SpecAST(
                 ),
                 Positional(
                     name = 'cmd',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                         Choice(
                             text = 'run',
@@ -2925,23 +2930,24 @@ SpecAST(
                 ),
                 Positional(
                     name = 'code',
-                    quantifier = None,
+                    nargs = None,
                     elems = [
                     ],
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'g',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                                 Parameter(
                                     name = None,
-                                    quantifier = None,
+                                    nargs = None,
                                     elems = [
                                     ],
                                 ),
@@ -2951,12 +2957,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'a',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -2965,12 +2972,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'v',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -2979,12 +2987,13 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'i',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -2999,12 +3008,13 @@ SpecAST(
             elems = [
                 Group(
                     name = None,
-                    quantifier = None,
+                    ntimes = None,
                     required = False,
                     elems = [
                         Option(
                             name = 'trace',
-                            quantifier = None,
+                            nargs = None,
+                            ntimes = None,
                             aliases = [],
                             elems = [
                             ],
@@ -3013,7 +3023,7 @@ SpecAST(
                 ),
                 Group(
                     name = 'commands',
-                    quantifier = Quantifier(m=1, n=None, required=True, greedy=True),
+                    ntimes = Quantifier(m=1, n=None, required=True, greedy=True),
                     required = True,
                     elems = [
                         PartialUsage(
@@ -3049,7 +3059,8 @@ SpecAST(
             elems = [
                 Option(
                     name = 'help',
-                    quantifier = None,
+                    nargs = None,
+                    ntimes = None,
                     aliases = [],
                     elems = [
                     ],
