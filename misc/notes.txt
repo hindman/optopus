@@ -5093,8 +5093,15 @@ Summary of new policy:
 
         - Degenerate-groups: remove during spec-parsing, under some conditions:
 
-            - Group contains only one Option or Group.
-            - The outer ntimes and inner ntimes are mergeable.
+            - Group must:
+                - Contain only 1 Option or Group.
+                - Have ntimes {0,1} or {1,1}.
+
+            - If yes:
+                - If Group is optional:
+                    - Specifically: required=False or m=0.
+                    - Then set child Quantifier.required = False.
+                - Drop Group.
 
         - Quantifier ranges: switch to a more intuitive syntax:
 
@@ -5394,6 +5401,15 @@ Quantifiers could be more featureful:
         <x>{!1,2,3,5}   # 1, 2, 3, or 5
 
     - Ability to use a callable to get the next allowed quantity?
+
+A counter-argument:
+
+    - Let the user validate complex quantification needs via the Option.check
+      callable.
+
+    - Argle intends to make it hassle-free for users to raise their own errors.
+      Rely on that fallback rather than adding too much complexity to the
+      system.
 
 Once problem with such enhancements:
 
@@ -6018,8 +6034,8 @@ Groups with one element will occur often:
 
 In the spec-syntax, single-element groups exist for good reason:
 
-    - But when the parsed spec is converted into the actual
-      Grammar instance, degenerate groups will be dropped.
+    - But when the parsed spec is converted into the actual Grammar instance,
+      degenerate groups will be dropped, under some conditions.
 
     - And the group's quantifier will be applied directly to the single
       element.

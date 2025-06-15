@@ -6,13 +6,16 @@ TODO:
     x Add Option.ntimes.
 
     - quant_range()
-
         - error unless m <= n
-        - maybe require 0 < m
+
+    - Quantifier:
+        - normalize post-init: m=0  =>  m=1, required=False
 
     . Add Quantifier.required.
 
-        - Where quantifiers are considered:
+        - Applies only when Group is involved.
+
+        - Where quantifiers are considered: [move these notes below when done]
 
             any_group()          | variant
             opt_spec_group()     | opt-spec
@@ -23,22 +26,6 @@ TODO:
             aliases_and_option() | opt-spec
             -----------------------------------------
             parameter()          | option
-
-        - Quantifiers: internal contradictions:
-
-            - Specs that can create such contradictions:
-
-                - Those involving groups (directly or via degenerate removal).
-                - Group.required is based on parentheses: [] or ().
-                - Which can be at odds with required status implied by {m,n}.
-
-            - Resolving the contradictions:
-
-                - Resolve in whatever way leads to the most expansive set of
-                  legal quantities.
-
-                - Favor the interpretation that preserves required=False, thus
-                  keeping 0 in the legal set.
 
     - Quantifier ranges: better syntax.
 
