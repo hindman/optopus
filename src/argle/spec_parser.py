@@ -5,19 +5,40 @@ TODO:
 
     x Add Option.ntimes.
 
+    - quant_range()
+
+        - error unless m <= n
+        - maybe require 0 < m
+
     . Add Quantifier.required.
 
-        - Step back.
-        - Review the elem with Quantifier.
-            - which can end up with a Quantifier in
-              a contradictory state?
+        - Where quantifiers are considered:
 
-        required | m  | is_required
-        ---------------------------
-        True     | 0  | False
-        True     | 1+ | .
-        False    | 0  | .
-        False    | 1+ | True
+            any_group()          | variant
+            opt_spec_group()     | opt-spec
+            parameter_group()    | option
+            -----------------------------------------
+            positional()         | .
+            option()             | .
+            aliases_and_option() | opt-spec
+            -----------------------------------------
+            parameter()          | option
+
+        - Quantifiers: internal contradictions:
+
+            - Specs that can create such contradictions:
+
+                - Those involving groups (directly or via degenerate removal).
+                - Group.required is based on parentheses: [] or ().
+                - Which can be at odds with required status implied by {m,n}.
+
+            - Resolving the contradictions:
+
+                - Resolve in whatever way leads to the most expansive set of
+                  legal quantities.
+
+                - Favor the interpretation that preserves required=False, thus
+                  keeping 0 in the legal set.
 
     - Quantifier ranges: better syntax.
 

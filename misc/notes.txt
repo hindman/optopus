@@ -5349,7 +5349,7 @@ Why Variants do not have a quantifier:
 
 Quantifier ranges: a more intuitive syntax:
 
-    - Should have made this switch a long time ago.
+    - Syntax change:
 
         Old      | New      | Note
         -----------------------------------------
@@ -5360,6 +5360,24 @@ Quantifier ranges: a more intuitive syntax:
 
         <x>{0,3-4}
         <y>{0,2+}
+
+    - Background:
+
+        - The syntax for a quantifier range borrowed from regex.
+            - That impulse was reasonable.
+            - But ultimately flawed.
+
+        - Affected users:
+            - Regex-based syntax is compelling for Argle users (programmers).
+            - Much less so for end-users reading usage text (wider audience).
+
+        - Regex overlap is minimal:
+            - Argle does not adopt regex quantifiers in whole.
+            - It just borrowed {m,n} syntax -- and only partially.
+
+        - Rather than cling weakly to regex, Argle should prefer the more
+          intuitive quantifier syntax outlined above. Its only non-intuitive
+          part are the braces (not sure what the alternative is for that).
 
 --------
 enhanced-quantifiers: Enhanced quantifiers
