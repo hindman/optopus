@@ -488,9 +488,9 @@ simple, general-purpose mechanism for alternatives (for example, either `-a` OR
 [here][grammar_ex09].
 
 **Flexible quantification**. The argparse library supports four basic
-quantifiers (`N`, `?` `*`, and `+`), but it lacks support for regex-style
-ranges (e.g., `{1,3}`), which can arise in a variety of plausible uses cases.
-There is no strong reason not to support them. See [here][grammar_ex10],
+quantifiers (`N`, `?` `*`, and `+`), but it lacks support for ranges (e.g.,
+`{1-3}`), which can arise in a variety of plausible uses cases. There is no
+strong reason not to support them. See [here][grammar_ex10],
 [here][grammar_ex15], or [here][grammar_ex16].
 
 **More complex repetition**. The argparse library can apply quantifiers to
@@ -554,8 +554,8 @@ grammars by combining a few core ideas:
 - Quantifiers that can applied to single elements or groups. This is another
   one of the crucial missing ingredients in most parsers. Argle relies
   primarily on the quantifiers from usage-syntax conventions: `...` for
-  one-or-more and square brackets to convey optionality. To those it adds the
-  regex `{m,n}` syntax for quantity ranges.
+  one-or-more and square brackets to convey optionality. To those it adds
+  `{m-n}` syntax for quantity ranges.
 
 - Like regular expressions, grammar elements and parsing itself are greedy by
   default. This policy decision is necessary to resolve a variety of parsing
@@ -579,7 +579,7 @@ convenient label/handle when using the Parser's configuration API.
 ```python
 p = Parser('''name-db
     Add      : <task=add> (<name> <id>)...
-    Delete   : <task=delete> <id>{1,5} [--archive [--json [--indent] | --xml]]
+    Delete   : <task=delete> <id>{1-5} [--archive [--json [--indent] | --xml]]
     Examples : --examples
 ''')
 ```

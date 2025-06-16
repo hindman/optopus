@@ -1,7 +1,7 @@
 
 # SPEC
   [-i] [-v]...
-       <rgx> [<path>{1,7}]
+       <rgx> [<path>{1-7}]
   [--foo] <blort>
 
 Positionals needed ::
@@ -420,7 +420,7 @@ parse()
                   get_next_token(lexed = 'quant_range')
                   taste(ok = True, indent_reason = 'indent', self_indent = 2, tok_indent = 7)
                   get_next_token(returned = 'quant_range')
-                  eat(eaten = 'quant_range', text = '{1,7}', pos = 35, line = 2, col = 21)
+                  eat(eaten = 'quant_range', text = '{1-7}', pos = 35, line = 2, col = 21)
                   quant_range(RESULT = Quantifier)
                 eat(wanted = 'question')
                 get_next_token(lexed = 'brack_close')

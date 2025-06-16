@@ -177,13 +177,11 @@ def define_tokdefs():
     # Quantifers.
     triple_dot = r'\.' * 3
     question = r'\?'
-    comma_sep = wrapped_in(whitespace0, ',')
+    hyphen_sep = wrapped_in(whitespace0, '-')
     quant_range_guts = wrapped_in(whitespace0, '|'.join((
-        number + comma_sep + number,
-        number + comma_sep,
-        number,
-        comma_sep + number,
-        comma_sep,
+        number + hyphen_sep + number, # {m-n}
+        number + hyphen_sep,          # {m-}
+        number,                       # {m}
     )))
     quant_range = r'\{' + captured(quant_range_guts) + r'\}'
 

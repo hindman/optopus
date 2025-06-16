@@ -15,7 +15,7 @@ get       : <task=get> get! general!
 drop      : <task=drop> drop! general!
 
 fubb : <fubb>... (--fast | --slow) [-a] [-b] [-x] chat!
-wizz : triples=(<a> <b> <c> [-z]){2,7} [-x] [-y] chat!
+wizz : triples=(<a> <b> <c> [-z]){2-7} [-x] [-y] chat!
 
 General options :::
     [--verbose]         : Blah blah

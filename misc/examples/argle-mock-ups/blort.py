@@ -22,7 +22,7 @@ Usage:
     blort get -j <> [--json [--indent <n>] | --b64 | --yaml] [<general-options>]
     blort drop <method> <n> [--print] [<general-options>]                                ## NOTE_815
     blort <fubb>... (--fast | --slow) [-a] [-b] [-x] [chat-options]
-    blort <triple>{2,7} [-x] [-y] [chat-options]                                         ## NOTE_1240
+    blort <triple>{2-7} [-x] [-y] [chat-options]                                         ## NOTE_1240
 
     General options:
         --verbose         : Blah blah
@@ -130,7 +130,7 @@ SPEC = '''
     drop      : <task=drop> drop! general!
 
     fubb : <fubb>... (--fast | --slow) [-a] [-b] [-x] chat!                              ## NOTE_400
-    wizz : triples=(<a> <b> <c> [-z]){2,7} [-x] [-y] chat!                               ## NOTE_1210
+    wizz : triples=(<a> <b> <c> [-z]){2-7} [-x] [-y] chat!                               ## NOTE_1210
 
     General options :::                                                                  ## NOTE_420
         [--verbose]         : Blah blah

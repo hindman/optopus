@@ -2171,7 +2171,7 @@ Quantifiers and configuration independence among VarInputs:
 
     - Examples:
 
-        (--point <x> <y> <z>...){1,4}
+        (--point <x> <y> <z>...){1-4}
 
         Option(name=point, nargs=(3,None), ntimes=(1,4))
             Parameter(name=x, ntimes=1)
@@ -3438,7 +3438,7 @@ Parameters:
                 x2 = [X2, ...],
             )
 
-        --bar <b> (<x1>{2,3} <x2>)...
+        --bar <b> (<x1>{2-3} <x2>)...
 
             opts.bar = Result(
                 b = B,
@@ -3446,13 +3446,13 @@ Parameters:
                 x2 = [X2, ...],
             )
 
-        --bar <b> (<>{2,3} <>)...
+        --bar <b> (<>{2-3} <>)...
 
             opts.bar = Result(
                 b = B,
                 _ = [
                     [
-                        [V1, V2, V3],    # For <>{2,3}
+                        [V1, V2, V3],    # For <>{2-3}
                         V9,              # For <>
                     ],
                     ...
@@ -3461,13 +3461,13 @@ Parameters:
 
     - Unnamed everything in a perverse combo:
 
-        --bar <> (<>{2,3} <>)...
+        --bar <> (<>{2-3} <>)...
 
             opts.bar = [
                 B,                       # For the first <>
                 [                        # For the group
                     [
-                        [V1, V2, V3],    # For one occurrence of <>{2,3}
+                        [V1, V2, V3],    # For one occurrence of <>{2-3}
                         V9,              # Ditto, for <>
                     ],
                     ...                  # The group's repetition
@@ -3582,7 +3582,7 @@ eager-attachment-at-bounary: Eager option attachment at repetition boundaries
 In the following example, the -z option will bind eagerly to the repeated
 triplets of positionals.
 
-    Grammar       : cmds=(<a> <b> <c> [-z]){2,7}
+    Grammar       : cmds=(<a> <b> <c> [-z]){2-7}
     Example input : A1 B1 C1 -z A2 B2 C2
     Result        : opts.cmds[0] = Result(a=A1, b=B1, c=C1, z=True)
 
@@ -5095,7 +5095,7 @@ Summary of new policy:
 
             - Group must:
                 - Contain only 1 Option or Group.
-                - Have ntimes {0,1} or {1,1}.
+                - Have ntimes {0-1} or {1-1}.
 
             - If yes:
                 - If Group is optional:
@@ -5183,7 +5183,7 @@ Problem: the policy lacked a rigorous stopping point:
 
         - If you can stack once, why not more?
 
-            <x>{2}{1,3}{5}
+            <x>{2}{1-3}{5}
 
         - The rationale for any specific stopping point is unclear.
 
@@ -5241,8 +5241,8 @@ Groups are a simpler mechanism than quantifier-stacking:
 
     - The two approaches:
 
-        <x>{2}{1,3}       # Direct-stacking
-        (<x>{2}){1,3}     # Via-groups
+        <x>{2}{1-3}       # Direct-stacking
+        (<x>{2}){1-3}     # Via-groups
 
     - Via-groups:
 
@@ -5315,8 +5315,8 @@ The case for Quantifier.required:
 
         Spec       | Valid quantities
         -----------------------------
-        (...){3,4} | 3, 4
-        [...]{3,4} | 3, 4 and 0
+        (...){3-4} | 3, 4
+        [...]{3-4} | 3, 4 and 0
 
         - The second example can be handled either via a required attribute or
           by wrapping the main Group in an outer Group to convey optionality.
@@ -5486,7 +5486,7 @@ Opt-descs: why they excludes quantifiers:
 
             --blort [<b>]               Blah blah
             --nums <x> [<y>]            Blah blah
-            --vals <a> <b>{1,3}         Blah blah
+            --vals <a> <b>{1-3}         Blah blah
             --point <x> (<y> <z>)...    Blah blah
 
         - Without quantifiers:
@@ -7026,9 +7026,9 @@ https://stackoverflow.com/questions/5257403
     - other possibilities:
 
         frob -x A...{7}
-        frob -x A...{1,3}
-        frob -x A...{0,3}
-        frob -x A...{3,}
+        frob -x A...{1-3}
+        frob -x A...{0-3}
+        frob -x A...{3-}
 
 https://stackoverflow.com/questions/4692556
 

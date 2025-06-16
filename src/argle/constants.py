@@ -28,6 +28,7 @@ Chars = cons(
     newline = '\n',
     exclamation = '!',
     comma = ',',
+    hyphen = '-',
     empty_set = '∅',
     caret = '^',
     backquote1 = '`',

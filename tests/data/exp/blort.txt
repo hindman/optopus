@@ -17,7 +17,7 @@ get       : <task=get> get! general!
 drop      : <task=drop> drop! general!
 
 fubb : <fubb>... (--fast | --slow) [-a] [-b] [-x] chat!
-wizz : triples=(<a> <b> <c> [-z]){2,7} [-x] [-y] chat!
+wizz : triples=(<a> <b> <c> [-z]){2-7} [-x] [-y] chat!
 
 General options :::
     [--verbose]         : Blah blah
@@ -4540,7 +4540,7 @@ parse()
               get_next_token(lexed = 'quant_range')
               taste(ok = True, indent_reason = 'line', self_indent = 0, tok_indent = 0)
               get_next_token(returned = 'quant_range')
-              eat(eaten = 'quant_range', text = '{2,7}', pos = 593, line = 18, col = 34)
+              eat(eaten = 'quant_range', text = '{2-7}', pos = 593, line = 18, col = 34)
               quant_range(RESULT = Quantifier)
             eat(wanted = 'question')
             get_next_token(lexed = 'brack_open')

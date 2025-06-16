@@ -8,16 +8,7 @@ TODO:
     x quant_range(): error unless m <= n
     x quant_range(): error if n == 0
     x Quantifier: normalize post-init: m=0  =>  m=1, required=False
-
-    - Quantifier ranges: better syntax.
-
-        - notes.txt
-        - examples
-        - tests
-
-        - tokens.py
-        - spec_parser.py
-        - other code
+    x Quantifier ranges: better syntax: {m-n}
 
     - as_gelem():
 
@@ -30,8 +21,8 @@ TODO:
         x BareOption
         x Option
 
-        - Alternative
         - Group
+        - Alternative
         - Variant
 
     - Issues:
@@ -1282,7 +1273,7 @@ class SpecParser:
 
     @track_parse
     def quantifier(self):
-        # Parses quantifiers: ... or {m,n}.
+        # Parses quantifiers: ... or {m-n}.
         q = self.triple_dot() or self.quant_range()
         if q:
             q.greedy = not self.eat(TokDefs.question)
@@ -1305,7 +1296,7 @@ class SpecParser:
             text = TokDefs.whitespace.regex.sub('', tok.m[1])
             xs = [
                 None if x == '' else int(x)
-                for x in text.split(Chars.comma)
+                for x in text.split(Chars.hyphen)
             ]
             m = xs[0]
             n = get(xs, 1, default = m)
