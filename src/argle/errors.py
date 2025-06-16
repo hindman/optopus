@@ -13,6 +13,8 @@ ErrMsgs = cons(
     empty_quote = 'Quoted literal or block quote cannot be empty',
     empty_group = 'Group cannot be empty',
     choice_sep_last = 'Choice separator (|) cannot be last element in variant or group',
+    quant_range_ordering = 'Invalid quantifier-range {m,n}: n cannot be less than m',
+    quant_range_empty = 'Invalid quantifier-range {m,n}: n cannot be 0',
 )
 
 ErrKinds = constants(ErrMsgs.keys())

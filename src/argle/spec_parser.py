@@ -4,34 +4,20 @@ r'''
 TODO:
 
     x Add Option.ntimes.
-
-    - quant_range()
-        - error unless m <= n
-
-    - Quantifier:
-        - normalize post-init: m=0  =>  m=1, required=False
-
-    . Add Quantifier.required.
-
-        - Applies only when Group is involved.
-
-        - Where quantifiers are considered: [move these notes below when done]
-
-            any_group()          | variant
-            opt_spec_group()     | opt-spec
-            parameter_group()    | option
-            -----------------------------------------
-            positional()         | .
-            option()             | .
-            aliases_and_option() | opt-spec
-            -----------------------------------------
-            parameter()          | option
+    x For Groups: set Quantifier.required.
+    x quant_range(): error unless m <= n
+    x quant_range(): error if n == 0
+    x Quantifier: normalize post-init: m=0  =>  m=1, required=False
 
     - Quantifier ranges: better syntax.
 
-        x notes.txt
+        - notes.txt
         - examples
         - tests
+
+        - tokens.py
+        - spec_parser.py
+        - other code
 
     - as_gelem():
 
@@ -343,6 +329,22 @@ Because options can have groups as parameters, grammatical overlap occurs:
         - Greedy parameter binding, as usual.
         - But failed parameter-group parses will be retried as regular groups.
 
+----
+Where quantifiers are handled
+----
+
+    Parsing function     | Context
+    -------------------------------
+    any_group()          | variant
+    opt_spec_group()     | opt-spec
+    parameter_group()    | option
+    -------------------------------
+    positional()         | .
+    option()             | .
+    aliases_and_option() | opt-spec
+    -------------------------------
+    parameter()          | option
+
 '''
 
 ####
@@ -479,6 +481,12 @@ class Quantifier(ParseElem):
     n: int
     required: bool = True
     greedy: bool = True
+
+    def __post_init__(self):
+        # Normalize: represent optional-status via required=False, not m=0.
+        if self.m == 0:
+            self.m = 1
+            self.required = False
 
     def as_gelem(self):
         return GE.Quantifier(
@@ -1261,7 +1269,7 @@ class SpecParser:
         if e:
             q = self.quantifier()
             if q:
-                # Attach Group.required to Quantifier.required.
+                # If Group, applied its required-status to its Quantifier.
                 is_group = isinstance(e, Group)
                 if is_group:
                     q.required = e.required
@@ -1301,7 +1309,12 @@ class SpecParser:
             ]
             m = xs[0]
             n = get(xs, 1, default = m)
-            return Quantifier(m = m, n = n)
+            if n < m:
+                self.error(ErrKinds.quant_range_ordering, m = m, n = n)
+            elif n == 0:
+                self.error(ErrKinds.quant_range_empty, m = m, n = n)
+            else:
+                return Quantifier(m = m, n = n)
         else:
             return None
 
