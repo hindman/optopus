@@ -6040,6 +6040,8 @@ In the spec-syntax, single-element groups exist for good reason:
     - And the group's quantifier will be applied directly to the single
       element.
 
+    - See quantifiers-revisited.
+
 --------
 settings-and-opts: Opts and settings (preferences and environment variables)
 --------

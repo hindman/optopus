@@ -11,16 +11,8 @@ TODO:
     x Quantifier ranges: better syntax: {m-n}
     x as_gelem(): define for ParseElem classes.
 
-    - build_grammar()
-
-        - Need to return:
-    
-            class ParsedSpec:
-                grammar: Grammar
-                sections: list[Section]
-
-        - The caller is typically a Parser: it will assign the vals it its own
-          attributes.
+    . ast_to_parsed_spec()
+        - todo items in doc-string
 
     - spec-parsing errors: add a new checks:
         - Unknown partial:
@@ -454,7 +446,9 @@ class Choice(ParseElem):
     text: str
 
     def as_gelem(self):
-        return GE.Choice(text = self.text)
+        return GE.Choice(
+            text = self.text,
+        )
 
 @dataclass
 class Variant(ParseElem):
@@ -488,7 +482,7 @@ class Group(ParseElem):
             name = self.name,
             dest = self.name,
             elems = [e.as_gelem() for e in self.elems],
-            ntimes = self.ntimes.as_gelem(),
+            ntimes = as_gelem(self.ntimes),
         )
 
 @dataclass
@@ -512,7 +506,7 @@ class Positional(ParseElem):
         return GE.Positional(
             name = self.name,
             dest = self.name,
-            nargs = self.nargs.as_gelem(),
+            nargs = as_gelem(self.nargs),
             choices = [e.as_gelem() for e in self.elems],
         )
 
@@ -526,7 +520,7 @@ class Parameter(ParseElem):
         return GE.Parameter(
             name = self.name,
             dest = self.name,
-            nargs = self.nargs.as_gelem(),
+            nargs = as_gelem(self.nargs),
             choices = [e.as_gelem() for e in self.elems],
         )
 
@@ -553,7 +547,8 @@ class Option(ParseElem):
         return GE.Option(
             name = self.name,
             dest = self.name,
-            nargs = self.nargs.as_gelem(),
+            nargs = as_gelem(self.nargs),
+            ntimes = as_gelem(self.ntimes),
             parameters = [e.as_gelem() for e in self.elems],
             aliases = [e.as_gelem() for e in self.aliases],
         )
@@ -616,6 +611,21 @@ class Alternative(ParseElem):
         return GE.Group(
             elems = [e.as_gelem() for e in self.elems],
         )
+
+def as_gelem(e):
+    if e:
+        return e.as_gelem()
+    else:
+        return None
+
+####
+# Data object to hold a parsed spec in full, grammar and sections.
+####
+
+@dataclass
+class ParsedSpec:
+    grammar: GE.Grammar
+    sections: list[GE.Section]
 
 ####
 # Constants used when parsing bracketed expressions: () [] <>.
@@ -835,10 +845,10 @@ class SpecParser:
         if not (tok and tok.isa(TokDefs.eof)):
             self.error(ErrKinds.incomplete_spec_parse)
 
-        # Convert the elements to a Grammar.
+        # Convert the elems to a SpecAST, then a ParsedSpec.
         ast = SpecAST(elems)
-        g = self.build_grammar(ast)
-        return g
+        pspec = self.ast_to_parsed_spec(ast)
+        return pspec
 
     ####
     # Parsing functions:
@@ -1579,35 +1589,19 @@ class SpecParser:
     # Converting the SpecAST to a Grammar.
     ####
 
-    def build_grammar(self, ast):
-        # TODO.
+    def ast_to_parsed_spec(self, ast):
 
         '''
 
-        - VariantElem
+        - Degenerate-groups: remove.
 
-            Option
-                name: str
-                elems: list[Parameter]
-                quantifier: Quantifier = None
-                aliases: list[BareOption] = field(default_factory = list)
-            Positional
-                name: str
-                elems: list[Choice]
-                quantifier: Quantifier = None
-            Literal
-                text: str
-            Group
-                name: str
-                elems: list[VariantElem]
-                quantifier: Quantifier = None
-                required: bool = True
-            PartialUsage
-                DROPPED
-            ChoiceSep
-                DROPPED
+        - elems: traverse:
+            - Convert ParseElem => Sections.
+            - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
 
-        - SectionElem
+            - Issue. GE.Choice.help_text: figure out what needs to be added to
+              spec_parser.py to support this. This will be relevant when
+              dealing with OptSpec (the sections, not the grammar).
 
             SectionTitle
                 scope: Scope
@@ -1626,37 +1620,6 @@ class SpecParser:
                 opt: OptSpecElem
                 text: str
                 token: Token
-
-
-        x elems: split into:
-            - variants
-            - elems
-
-        x variants (and their inner groups):
-            - If ChoiceSep is among the elems:
-                - Split elems on ChoiceSep.
-                - Put each batch of elems into an Alternative(ParseElem).
-
-        x variants: split into:
-            - variants: list[Variant]
-            - partials: dict[NAME => Variant]
-
-        x variants: traverse:
-            - Replace PartialUsage with actual elems.
-
-        x variants: traverse:
-            - Convert ParseElem => GrammarElem.
-            - Relevent elems: Option, Positional, Literal, Group.
-
-        - Degenerate-groups: remove.
-
-        - elems: traverse:
-            - Convert ParseElem => Sections.
-            - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
-
-            - Issue. GE.Choice.help_text: figure out what needs to be added to
-              spec_parser.py to support this. This will be relevant when
-              dealing with OptSpec (the sections, not the grammar).
 
         - opts: unify/reconcile: opt-specs <=> variants.
 
@@ -1692,11 +1655,22 @@ class SpecParser:
 
         # Define a Grammar by converting the ParseElem Variants
         # to GrammarElem Variants.
-        g = Grammar(
+        g = GE.Grammar(
             variants = [v.as_gelem() for v in variants],
         )
 
         # TODO: Degenerate-groups: remove.
+        #
+        # Group must:
+        #   - Contain only 1 Option or Group.
+        #   - Have ntimes {0-1} or {1-1}.
+        #
+        # If yes:
+        #   - If Group is optional:
+        #       - Specifically: required=False or m=0.
+        #       - Then set child Quantifier.required = False.
+        #   - Drop Group.
+        #
         pass
 
         # TODO: elems: traverse:
@@ -1711,7 +1685,11 @@ class SpecParser:
         pass
 
         # Return -- TEMP.
-        return ast_orig
+        sections = []
+        return ParsedSpec(
+            grammar = ast_orig,
+            sections = sections,
+        )
 
     ####
     # Other helpers.

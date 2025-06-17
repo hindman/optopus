@@ -464,7 +464,7 @@ parse()
         opt_spec(∅)
       section_content_elem(∅)
     collect_section_elems(∅)
-  parse(RESULT = SpecAST)
+  parse(RESULT = ParsedSpec)
 
 
 # GRAMMAR

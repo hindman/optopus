@@ -33,73 +33,85 @@ class Sio(io.StringIO):
 def test_ex_pgrep_1(tr):
     esp = ESpecs.pgrep_1
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_pgrep_2(tr):
     esp = ESpecs.pgrep_2
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_pgrep_3(tr):
     esp = ESpecs.pgrep_3
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_wrangle(tr):
     esp = ESpecs.wrangle
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_line_wrap_1(tr):
     esp = ESpecs.line_wrap_1
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_line_wrap_2(tr):
     esp = ESpecs.line_wrap_2
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_line_wrap_3(tr):
     esp = ESpecs.line_wrap_3
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_blort(tr):
     esp = ESpecs.blort
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_naval_fate(tr):
     esp = ESpecs.naval_fate
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_repo(tr):
     esp = ESpecs.repo
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_neck_diagram(tr):
     esp = ESpecs.neck_diagram
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 def test_ex_nab(tr):
     esp = ESpecs.nab
     sp = SpecParser(esp.spec, debug = False)
-    g = sp.parse()
+    pspec = sp.parse()
+    g = pspec.grammar
     # tr.dump(g.pretty())
 
 ####
@@ -125,7 +137,8 @@ def test_against_baselines(tr):
         # Parse the spec into a grammar, with debug=True.
         spec = esp.spec
         sp = SpecParser(spec, debug = Sio())
-        g = sp.parse()
+        pspec = sp.parse()
+        g = pspec.grammar
         parser_debug = str(sp.debug)
 
         # Assemble the spec, debug output, and pretty-printable

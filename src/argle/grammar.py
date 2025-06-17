@@ -181,7 +181,7 @@ class VarInput(GrammarElem):
 @dataclass
 class Choice(GrammarElem):
     text: str
-    help_text: str
+    help_text: str = None
 
 @dataclass
 class Positional(Opt, VarInput):
@@ -276,6 +276,9 @@ class OptSpec(SectionElem):
 GrammarElems = constants({
     name : obj
     for name, obj in globals().items()
-    if isinstance(obj, type) and issubclass(obj, GrammarElem)
+    if (
+        isinstance(obj, type) and
+        issubclass(obj, (GrammarElem, SectionElem))
+    )
 })
 
