@@ -10257,7 +10257,7 @@ SpecAST(
                     elems = [
                         Group(
                             name = None,
-                            ntimes = None,
+                            ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                             required = False,
                             elems = [
                                 Option(
@@ -10287,7 +10287,7 @@ SpecAST(
                         ),
                         Group(
                             name = None,
-                            ntimes = None,
+                            ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                             required = False,
                             elems = [
                                 Option(
@@ -10328,7 +10328,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Positional(
@@ -10341,7 +10341,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -10366,7 +10366,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -10412,7 +10412,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -10464,7 +10464,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -10497,7 +10497,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -10530,7 +10530,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -10545,7 +10545,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -10560,7 +10560,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -10665,7 +10665,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=887, line=26, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -10723,7 +10723,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1041, line=28, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -10743,7 +10743,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1096, line=29, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -10763,7 +10763,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1112, line=30, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -10805,7 +10805,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1371, line=41, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Positional(
@@ -10823,7 +10823,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1444, line=42, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -10843,7 +10843,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1498, line=43, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -10863,7 +10863,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=1541, line=44, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -10984,7 +10984,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2202, line=70, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -11015,7 +11015,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2353, line=80, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -11046,7 +11046,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2507, line=90, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -11072,7 +11072,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2542, line=91, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(
@@ -11098,7 +11098,7 @@ SpecAST(
             token = Token(kind='brack_open', text='[', pos=2582, line=92, col=5, indent=4, is_first=True),
             opt = Group(
                 name = None,
-                ntimes = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                 required = False,
                 elems = [
                     Option(

@@ -9,57 +9,18 @@ TODO:
     x quant_range(): error if n == 0
     x Quantifier: normalize post-init: m=0  =>  m=1, required=False
     x Quantifier ranges: better syntax: {m-n}
-
-    - as_gelem():
-
-        x Quantifier
-        x Choice
-
-        x Literal
-        x Positional
-        x Parameter
-        x BareOption
-        x Option
-
-        - Group
-        - Alternative
-        - Variant
-
-    - Issues:
-
-        - GE.Choice.help_text: figure out what needs to be added to
-          spec_parser.py to support this. This will be relevant when dealing
-          with OptSpec (the sections, not the grammar).
+    x as_gelem(): define for ParseElem classes.
 
     - build_grammar()
 
-        x elems: split into:
-            - variants
-            - elems
+        - Need to return:
+    
+            class ParsedSpec:
+                grammar: Grammar
+                sections: list[Section]
 
-        x variants (and their inner groups):
-            - If ChoiceSep is among the elems:
-                - Split elems on ChoiceSep.
-                - Put each batch of elems into an Alternative(ParseElem).
-
-        - variants: split into:
-            - variants: list[Variant]
-            - partials: dict[NAME => Variant]
-
-        - variants: traverse:
-            - Replace PartialUsage with actual elems.
-
-        - variants: traverse:
-            - Convert ParseElem => GrammarElem.
-            - Relevent elems: Option, Positional, Literal, Group.
-
-        - Degenerate-groups: remove.
-
-        - elems: traverse:
-            - Convert ParseElem => Sections.
-            - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
-
-        - opts: unify/reconcile: opt-specs <=> variants.
+        - The caller is typically a Parser: it will assign the vals it its own
+          attributes.
 
     - spec-parsing errors: add a new checks:
         - Unknown partial:
@@ -501,6 +462,12 @@ class Variant(ParseElem):
     is_partial: bool
     elems: list[VariantElem]
 
+    def as_gelem(self):
+        return GE.Group(
+            name = self.name,
+            elems = [e.as_gelem() for e in self.elems],
+        )
+
 @dataclass
 class PartialUsage(ParseElem):
     # When a partial-variant is used inside another variant.
@@ -509,7 +476,8 @@ class PartialUsage(ParseElem):
 @dataclass
 class Group(ParseElem):
     # A group: () or [].
-    # If the latter, required=False.
+    # Bracket kind determines required status -- information
+    # subsequently transferred to the Group's quantifier.
     name: str
     elems: list[VariantElem]
     ntimes: Quantifier = None
@@ -646,7 +614,7 @@ class Alternative(ParseElem):
 
     def as_gelem(self):
         return GE.Group(
-            ...
+            elems = [e.as_gelem() for e in self.elems],
         )
 
 ####
@@ -1260,15 +1228,20 @@ class SpecParser:
         if e:
             q = self.quantifier()
             if q:
-                # If Group, applied its required-status to its Quantifier.
-                is_group = isinstance(e, Group)
-                if is_group:
-                    q.required = e.required
                 # Determine which attr to used for the Quantifier.
+                # Then attach it to the elem.
                 is_var_input = isinstance(e, (Positional, Parameter))
                 attr = 'nargs' if is_var_input else 'ntimes'
-                # Attach it.
                 setattr(e, attr, q)
+
+            # If elem is non-required Group, apply its required-status to
+            # its Quantifier (adding one if that did not occur above).
+            if isinstance(e, Group) and not e.required:
+                if not q:
+                    q = Quantifier(m = 1, n = 1)
+                    e.ntimes = q
+                q.required = e.required
+
         return e
 
     @track_parse
@@ -1654,12 +1627,47 @@ class SpecParser:
                 text: str
                 token: Token
 
+
+        x elems: split into:
+            - variants
+            - elems
+
+        x variants (and their inner groups):
+            - If ChoiceSep is among the elems:
+                - Split elems on ChoiceSep.
+                - Put each batch of elems into an Alternative(ParseElem).
+
+        x variants: split into:
+            - variants: list[Variant]
+            - partials: dict[NAME => Variant]
+
+        x variants: traverse:
+            - Replace PartialUsage with actual elems.
+
+        x variants: traverse:
+            - Convert ParseElem => GrammarElem.
+            - Relevent elems: Option, Positional, Literal, Group.
+
+        - Degenerate-groups: remove.
+
+        - elems: traverse:
+            - Convert ParseElem => Sections.
+            - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
+
+            - Issue. GE.Choice.help_text: figure out what needs to be added to
+              spec_parser.py to support this. This will be relevant when
+              dealing with OptSpec (the sections, not the grammar).
+
+        - opts: unify/reconcile: opt-specs <=> variants.
+
+        - return Grammar and sections.
+
         '''
 
         ast_orig = deepcopy(ast)
 
         # Partition SpecAST.elems into:
-        # - variants
+        # - variants (ParseElem.Variants)
         # - other stuff (SectionElems)
         is_variant = lambda e: isinstance(e, Variant)
         variants, others = partition(ast.elems, is_variant)
@@ -1677,15 +1685,16 @@ class SpecParser:
             if v.is_partial
         }
 
-        # variants: traverse: replace PartialUsage with actual elems.
+        # Variants: traverse and replace PartialUsage with actual elems.
         for v in variants:
             for e in v.walk_elems(Variant, Group, Alternative):
                 e.elems = e.elems_without_partials(partials)
 
-        # TODO: variants: traverse:
-        #   - Convert ParseElem => GrammarElem.
-        #   - Relevent elems: Option, Positional, Literal, Group.
-        pass
+        # Define a Grammar by converting the ParseElem Variants
+        # to GrammarElem Variants.
+        g = Grammar(
+            variants = [v.as_gelem() for v in variants],
+        )
 
         # TODO: Degenerate-groups: remove.
         pass
@@ -1698,7 +1707,10 @@ class SpecParser:
         # TODO: opts: unify/reconcile: opt-specs <=> variants.
         pass
 
-        # Return.
+        # TODO: return Grammar and list[Section]
+        pass
+
+        # Return -- TEMP.
         return ast_orig
 
     ####

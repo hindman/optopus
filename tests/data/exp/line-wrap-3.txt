@@ -1797,7 +1797,7 @@ SpecAST(
             elems = [
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
@@ -1833,7 +1833,7 @@ SpecAST(
                 ),
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Positional(
@@ -1852,7 +1852,7 @@ SpecAST(
             elems = [
                 Group(
                     name = None,
-                    ntimes = None,
+                    ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
                     required = False,
                     elems = [
                         Option(
