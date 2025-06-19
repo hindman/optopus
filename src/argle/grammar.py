@@ -142,7 +142,45 @@ class TreeElem:
 VariantElem = Union['Opt', 'Group', 'Alternative']
 
 @dataclass
-class GrammarElem:
+class GrammarElem(TreeElem):
+
+    WALKABLE = [
+        'variants',
+        'elems',
+        'parameters',
+        'choices',
+    ]
+
+    def without_degen_group(self):
+        # Must be Group.
+        if not isinstance(self, Group):
+            return self
+
+        # Group.ntimes must be singular.
+        if self.ntimes and not self.ntimes.is_singular:
+            return self
+
+        # Must have only 1 child elem.
+        if len(self.elems) != 1:
+            return self
+
+        # The child must be Group or Option.
+        # If so, we will be returning the child, not self.
+        child = self.elems[0]
+        if not isinstance(child, (Group, Option)):
+            return self
+
+        # If the Group is not required, apply that status
+        # to the the child's ntimes.
+        q = self.ntimes
+        if q and q.is_optional:
+            if child.ntimes:
+                child.ntimes.required = False
+            else:
+                child.ntimes = Quantifier(m = 1, n = 1, required = False)
+
+        # Return the child -- after applying the process recursively.
+        return child.without_degen_group()
 
     @property
     def pp(self):
@@ -242,6 +280,14 @@ class Quantifier(GrammarElem):
     n: int = None
     required: bool = True
     greedy: bool = True
+
+    @property
+    def is_singular(self):
+        return self.m <= 1 and self.n == 1
+
+    @property
+    def is_optional(self):
+        return self.m == 0 or not self.required
 
 ####
 # Data classes: SectionElem.

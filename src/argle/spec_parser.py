@@ -12,6 +12,11 @@ TODO:
     x as_gelem(): define for ParseElem classes.
 
     . ast_to_parsed_spec()
+
+        - without_degen_group()
+            - this is running.
+            - why didn't it cause any tests to fail?
+
         - todo items in doc-string
 
     - spec-parsing errors: add a new checks:
@@ -1659,19 +1664,17 @@ class SpecParser:
             variants = [v.as_gelem() for v in variants],
         )
 
-        # TODO: Degenerate-groups: remove.
-        #
-        # Group must:
-        #   - Contain only 1 Option or Group.
-        #   - Have ntimes {0-1} or {1-1}.
-        #
-        # If yes:
-        #   - If Group is optional:
-        #       - Specifically: required=False or m=0.
-        #       - Then set child Quantifier.required = False.
-        #   - Drop Group.
-        #
-        pass
+        # Remove degenerate-groups, under some conditions: the
+        # without_degen_group() method handles those details, returning a new
+        # elem if they are met, or the same elem if they are not.
+        for e in g.walk_elems(GE.Variant, GE.Group, GE.Alternative, GE.Option):
+            if isinstance(e, GE.Option):
+                attr = 'parameters'
+            else:
+                attr = 'elems'
+            old_elems = getattr(e, attr)
+            new_elems = [c.without_degen_group() for c in old_elems]
+            setattr(e, attr, new_elems)
 
         # TODO: elems: traverse:
         #   - Convert ParseElem => Sections.
