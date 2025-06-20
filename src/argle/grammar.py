@@ -31,6 +31,13 @@ TreeElemKinds = cons(
     'elem',
 )
 
+WalkElemKinds = cons(
+    'elem',
+    'elem_close',
+    'list_open',
+    'list_close',
+)
+
 @dataclass
 class WalkElem:
     level: int
@@ -42,6 +49,45 @@ class WalkElem:
 class TreeElem:
 
     WALKABLE = []
+
+    def traverse(self, include_closing = False):
+        # Yields a WalkElem for each TreeElem, in DFS-order.
+
+        stack = [(self, 0, None)]
+
+        while stack:
+            e, level, attr = stack.pop()
+            yield WalkElem(
+                level = level,
+                kind = WalkElemKinds.elem,
+                attr = attr,
+                val = e,
+            )
+
+            for attr in e.WALKABLE:
+                child = getattr(e, attr, None)
+                if isinstance(child, list):
+                    if include_closing:
+                        yield WalkElem(
+                            level = level,
+                            kind = WalkElemKinds.list_open,
+                            attr = attr,
+                        )
+                    for c in child:
+                        stack.append((c, level + 1, None))
+                    if include_closing:
+                        yield WalkElem(
+                            level = level,
+                            kind = WalkElemKinds.list_close,
+                        )
+                elif child:
+                    stack.append((child, level + 1, attr))
+
+            if include_closing:
+                yield WalkElem(
+                    level = level,
+                    kind = WalkElemKinds.elem_close,
+                )
 
     def walk(self, level = 0, attr = None):
 
@@ -106,6 +152,94 @@ class TreeElem:
             )
             if emit:
                 yield we.val
+
+    '''
+
+    - Algorithm:
+
+        - Get a WalkElem
+        - E = we.val
+        - WL = WalkElem.level
+
+        - E itself:
+            - no-attr:
+                - level = WL * 2
+            - has-attr:
+                - level = WL * 2 - 1
+
+        - Organize E.attrs into 3 groups:
+            - non-walkable
+            - walkable-non-list
+            - walkable-list
+
+        - non-walkable:
+            - level = WL * 2 + 1
+
+        - walkable-non-list:
+            - do nothing
+            - handled when the elem is encountered later
+
+        - walkable-list:
+            - attr + open-bracket
+            - ...
+            - close-bracket
+
+    SpecAST(                                      | SpecAST, 0    | 0
+      elems = [                                   | .             | 1
+        OptSpec(                                  | OptSpec, 1    | 2
+          scope = None,                           | .             | 3
+          text = 'Python regular expression',     | .             | 3
+          token = Token(kind='angle_open'),       | .             | 3
+          opt = Positional(                       | Positional, 2 | 3
+            name = 'rgx',                         | .             | 4
+            nargs = None,                         | .             | 4
+            elems = [                             | .             | 4
+        OptSpec(                                  | OptSpec, 1    | etc
+          scope = None,                           | .             | .
+          text = 'Path(s) to input',              | .             | .
+          token = Token(kind='brack_open'),       | .             | .
+          opt = Group(                            | Group, 2      | .
+            name = None,                          | .             | .
+            ntimes = Quantifier(m=1, n=1),        | .             | .
+            required = False,                     | .             | .
+            elems = [                             | .             | .
+              Positional(                         | Positional, 3 | .
+                name = 'path',                    | .             | .
+                nargs = Quantifier(m=1, n=None),  | .             | .
+                elems = [                         | .             | .
+        OptSpec(                                  | OptSpec, 1    | .
+          scope = None,                           | .             | .
+          text = 'Ignore case',                   | .             | .
+          token = Token(kind='brack_open'),       | .             | .
+          opt = Group(                            | Group, 2      | .
+            name = None,                          | .             | .
+            ntimes = Quantifier(m=1, n=1),        | .             | .
+            required = False,                     | .             | .
+            elems = [                             | .             | .
+              Option(                             | Option, 3     | .
+                name = 'ignore-case',             | .             | .
+                nargs = None,                     | .             | .
+                ntimes = None,                    | .             | .
+                aliases = [BareOption(name='i')], | .             | .
+                elems = [                         | .             | .
+        OptSpec(                                  | OptSpec, 1    | .
+          scope = None,                           | .             | .
+          text = 'Select non-matching lines',     | .             | .
+          token = Token(kind='brack_open'),       | .             | .
+          opt = Group(                            | Group, 2      | .
+            name = None,                          | .             | .
+            ntimes = Quantifier(m=1, n=1),        | .             | .
+            required = False,                     | .             | .
+            elems = [                             | .             | .
+              Option(                             | Option, 3     | .
+                name = 'invert-match',            | .             | .
+                nargs = None,                     | .             | .
+                ntimes = None,                    | .             | .
+                aliases = [BareOption(name='v')], | .             | .
+                elems = [                         | .             | .
+
+    '''
+
 
     def pretty(self, indent_size = 4, omit_end = False):
         lines = []

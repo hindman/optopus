@@ -17,7 +17,7 @@ from argle.spec_parser import (
 )
 
 from argle.grammar import (
-    TreeElemKinds,
+    WalkElemKinds,
 )
 
 halt = bp.halt
@@ -65,6 +65,11 @@ ARG_CONFIGS = (
         help = 'Print SpecAST as a sequence of elems',
     ),
     dict(
+        name = f'--traverse -v',
+        action = 'store_true',
+        help = 'Print SpecAST via traverse()',
+    ),
+    dict(
         add_help = True,
     ),
 )
@@ -75,7 +80,7 @@ def main(args):
         ARG_CONFIGS,
         description = DESCRIPTION,
     )
-    if opts.debug or opts.tree or opts.elems:
+    if opts.debug or opts.tree or opts.elems or opts.traverse:
         opts.parse = True
 
     if opts.clipboard:
@@ -96,20 +101,41 @@ def main(args):
     g = None
     if opts.parse:
         sp = SpecParser(spec, debug = opts.debug)
-        g = sp.parse()
+        pspec = sp.parse()
+        g = pspec.grammar
         print('# SPEC-OK')
 
-    if g and opts.tree:
-        msg = g.pretty(omit_end = True, indent_size = 2)
-        print('# TREE')
-        print(msg)
+    if g:
 
-    if g and opts.elems:
-        print('# ELEMS')
-        for e in g.walk_elems():
-            cls = e.__class__.__name__
-            name = getattr(e, 'name', None)
-            print(f'{cls}(name = {name!r})')
+        if opts.tree:
+            msg = g.pretty(omit_end = True, indent_size = 2)
+            print('# TREE')
+            print(msg)
+
+        if opts.elems:
+            print('# ELEMS')
+            for e in g.walk_elems():
+                cls = e.__class__.__name__
+                name = getattr(e, 'name', None)
+                print(f'{cls}(name = {name!r})')
+
+        if opts.traverse:
+            print('# TRAVERSE')
+            for we in g.traverse(include_closing = True):
+                indent = '  ' * we.level
+                if we.kind == WalkElemKinds.elem_close:
+                    ...
+                elif we.kind == WalkElemKinds.list_open:
+                    ...
+                    # print(f'{indent}[')
+                elif we.kind == WalkElemKinds.list_close:
+                    ...
+                    # print(f'{indent}]')
+                else:
+                    e = we.val
+                    cls = e.__class__.__name__
+                    name = getattr(e, 'name', '')
+                    print(f'{indent}{cls}({name})')
 
 def read_file(path):
     with open(path) as fh:
