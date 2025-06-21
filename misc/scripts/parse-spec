@@ -120,22 +120,9 @@ def main(args):
                 print(f'{cls}(name = {name!r})')
 
         if opts.traverse:
-            print('# TRAVERSE')
-            for we in g.traverse(include_closing = True):
-                indent = '  ' * we.level
-                if we.kind == WalkElemKinds.elem_close:
-                    ...
-                elif we.kind == WalkElemKinds.list_open:
-                    ...
-                    # print(f'{indent}[')
-                elif we.kind == WalkElemKinds.list_close:
-                    ...
-                    # print(f'{indent}]')
-                else:
-                    e = we.val
-                    cls = e.__class__.__name__
-                    name = getattr(e, 'name', '')
-                    print(f'{indent}{cls}({name})')
+            msg = g.pretty_new(omit_end = True, indent_size = 2)
+            print('# TREE')
+            print(msg)
 
 def read_file(path):
     with open(path) as fh:

@@ -1,6 +1,34 @@
 
 '''
 
+New code seems to be working. 
+    traverse()
+    pretty_new()
+
+Rename the funcs to swap in the new for the old.
+
+See if test are passing with acceptable differences.
+
+If so, editing pass over the new material.
+
+Include notes on how the new walk code is safe for parent.elems mutations
+during a traversal.
+
+When dropping degen-groups:
+
+    - Think through the ntimes criteria.
+
+    - Current notes say that parent Group.ntimes must be singular.
+
+    - But I suspect the real test is the following:
+        Parent.ntimes singular   # enclosing Group
+        OR
+        Child.ntimes singular    # inner Group/Option
+
+        - Example: both of these seem mergeable:
+
+            [--foo]{3-4}
+            [--foo{3-4}]
 
 '''
 
@@ -50,44 +78,69 @@ class TreeElem:
 
     WALKABLE = []
 
-    def traverse(self, include_closing = False):
+    def traverse(self, include_closing = False, level = 0, attr = None):
         # Yields a WalkElem for each TreeElem, in DFS-order.
 
-        stack = [(self, 0, None)]
+        '''
 
-        while stack:
-            e, level, attr = stack.pop()
-            yield WalkElem(
-                level = level,
-                kind = WalkElemKinds.elem,
-                attr = attr,
-                val = e,
-            )
+        # A traversal that mutates parent.elems.
 
-            for attr in e.WALKABLE:
-                child = getattr(e, attr, None)
-                if isinstance(child, list):
-                    if include_closing:
-                        yield WalkElem(
-                            level = level,
-                            kind = WalkElemKinds.list_open,
-                            attr = attr,
-                        )
-                    for c in child:
-                        stack.append((c, level + 1, None))
-                    if include_closing:
-                        yield WalkElem(
-                            level = level,
-                            kind = WalkElemKinds.list_close,
-                        )
-                elif child:
-                    stack.append((child, level + 1, attr))
+        # We get the parent (eg Variant) and process its elems via indexes.
+        for parent in g.traverse():
+            for i in range(len(parent.elems)):
+                child = parent.elems[i]
 
+                # Unwrap the child from 1 or more degen-groups.
+                # eg  [[--foo]]
+                was_degen = True
+                while was_degen:
+                    child, was_degen = child.unwrap_degen()
+
+                # Put the child into the same spot in parent.elems.
+                parent.elems[i] = child
+
+            # At this point parent.elems is modified. Back in traverse(), the
+            # method will look for children. Since parent.elems is no longer
+            # being modified, the rest of the traversal will use
+            # correctly-updated elems.
+
+        '''
+
+        WEK = WalkElemKinds
+
+        def we_close(level = level, **kws):
             if include_closing:
+                yield WalkElem(level = level, **kws)
+
+        yield WalkElem(
+            level = level,
+            kind = WEK.elem,
+            attr = attr,
+            val = self,
+        )
+
+        for attr in self.WALKABLE:
+            children = getattr(self, attr, None)
+            if children is None:
+                continue
+
+            if isinstance(children, list):
+                yield from we_close(kind = WEK.list_open, attr = attr)
+                for c in children:
+                    yield from c.traverse(
+                        level = level + 1,
+                        include_closing = include_closing,
+                    )
+                yield from we_close(kind = WEK.list_close)
+            else:
                 yield WalkElem(
-                    level = level,
-                    kind = WalkElemKinds.elem_close,
+                    level = level + 1,
+                    kind = WEK.elem,
+                    val = children,
+                    attr = attr,
                 )
+
+            yield from we_close(kind = WEK.elem_close)
 
     def walk(self, level = 0, attr = None):
 
@@ -155,39 +208,11 @@ class TreeElem:
 
     '''
 
-    - Algorithm:
-
-        - Get a WalkElem
-        - E = we.val
-        - WL = WalkElem.level
-
-        - E itself:
-            - no-attr:
-                - level = WL * 2
-            - has-attr:
-                - level = WL * 2 - 1
-
-        - Organize E.attrs into 3 groups:
-            - non-walkable
-            - walkable-non-list
-            - walkable-list
-
-        - non-walkable:
-            - level = WL * 2 + 1
-
-        - walkable-non-list:
-            - do nothing
-            - handled when the elem is encountered later
-
-        - walkable-list:
-            - attr + open-bracket
-            - ...
-            - close-bracket
-
     SpecAST(                                      | SpecAST, 0    | 0
-      elems = [                                   | .             | 1
+      elems = [                                   | .        +1   | 1
+    ------------------------------------------------------------------------
         OptSpec(                                  | OptSpec, 1    | 2
-          scope = None,                           | .             | 3
+          scope = None,                           | .        +1   | 3
           text = 'Python regular expression',     | .             | 3
           token = Token(kind='angle_open'),       | .             | 3
           opt = Positional(                       | Positional, 2 | 3
@@ -238,8 +263,75 @@ class TreeElem:
                 aliases = [BareOption(name='v')], | .             | .
                 elems = [                         | .             | .
 
+    - Algorithm:
+
+        - Get a WalkElem
+        - E = we.val
+        - WL = WalkElem.level
+
+        - E itself:
+            - no-attr:
+                - level = WL * 2
+            - has-attr:
+                - level = WL * 2 - 1
+
+        - Organize E.attrs into 3 groups:
+            - non-walkable
+            - walkable-non-list
+            - walkable-list
+
+        - non-walkable:
+            - level = WL * 2 + 1
+
+        - walkable-non-list:
+            - do nothing
+            - handled when the elem is encountered later
+
+        - walkable-list:
+            - attr + open-bracket
+            - ...
+            - close-bracket
+
     '''
 
+    def pretty_new(self, indent_size = 4, omit_end = False):
+        lines = []
+        indent = lambda n: Chars.space * indent_size * n
+
+        for we in self.traverse(include_closing = True):
+
+            N = we.level * 2
+
+            attr_eq = f'{we.attr} = ' if we.attr else ''
+
+            if we.kind == WalkElemKinds.elem:
+                n = N + bool(we.attr)
+                cls_name = we.val.__class__.__name__
+                lines.append(f'{indent(n)}{attr_eq}{cls_name}(')
+
+                elem = we.val
+                for a, val in elem.__dict__.items():
+                    if a not in elem.WALKABLE:
+                        if isinstance(val, Token):
+                            val_str = val.brief
+                        else:
+                            val_str = f'{val!r}'
+                        lines.append(f'{indent(n + 1)}{a} = {val_str},')
+
+            elif we.kind == WalkElemKinds.list_open:
+                n = N + bool(we.attr)
+                lines.append(f'{indent(n)}{attr_eq}[')
+
+            elif not omit_end:
+                n = N + bool(we.attr)
+
+                if we.kind == WalkElemKinds.elem_close:
+                    lines.append(f'{indent(n)}),')
+
+                elif we.kind == WalkElemKinds.list_close:
+                    lines.append(f'{indent(n + 1)}],')
+
+        return Chars.newline.join(lines)
 
     def pretty(self, indent_size = 4, omit_end = False):
         lines = []
