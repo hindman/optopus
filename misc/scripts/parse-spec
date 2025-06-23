@@ -16,10 +16,6 @@ from argle.spec_parser import (
     Group,
 )
 
-from argle.grammar import (
-    WalkElemKinds,
-)
-
 halt = bp.halt
 EXIT = bp.EXIT
 
@@ -57,17 +53,12 @@ ARG_CONFIGS = (
     dict(
         name = f'--tree -t',
         action = 'store_true',
-        help = 'Print SpecAST as a tree',
+        help = 'Print ParsedSpec as a tree',
     ),
     dict(
         name = f'--elems -e',
         action = 'store_true',
-        help = 'Print SpecAST as a sequence of elems',
-    ),
-    dict(
-        name = f'--traverse -v',
-        action = 'store_true',
-        help = 'Print SpecAST via traverse()',
+        help = 'Print ParsedSpec as a sequence of elems',
     ),
     dict(
         add_help = True,
@@ -80,7 +71,7 @@ def main(args):
         ARG_CONFIGS,
         description = DESCRIPTION,
     )
-    if opts.debug or opts.tree or opts.elems or opts.traverse:
+    if opts.debug or opts.tree or opts.elems:
         opts.parse = True
 
     if opts.clipboard:
@@ -114,15 +105,12 @@ def main(args):
 
         if opts.elems:
             print('# ELEMS')
-            for e in g.walk_elems():
+            for we in g.traverse():
+                e = we.val
                 cls = e.__class__.__name__
                 name = getattr(e, 'name', None)
-                print(f'{cls}(name = {name!r})')
-
-        if opts.traverse:
-            msg = g.pretty_new(omit_end = True, indent_size = 2)
-            print('# TREE')
-            print(msg)
+                indent = '    ' * we.level
+                print(f'{indent}{cls}(name = {name!r})')
 
 def read_file(path):
     with open(path) as fh:

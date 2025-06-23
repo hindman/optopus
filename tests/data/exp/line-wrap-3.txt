@@ -1877,71 +1877,67 @@ SpecAST(
             scope = None,
             title = 'Positionals needed ',
             token = Token(kind='section_title', text='Positionals needed ::', pos=61, line=5, col=1, indent=0, is_first=True),
-        ),
         BlockQuote(
             text = QuotedText(text='\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=84, line=7, col=1, indent=0, is_first=True),
-        ),
         OptSpec(
             scope = None,
             text = 'Regular expression',
             token = Token(kind='angle_open', text='<', pos=149, line=12, col=5, indent=4, is_first=True),
-            opt = Positional(
-                name = 'rgx',
-                nargs = None,
-                elems = [
-                ],
-            ),
+                    opt = Positional(
+                        name = 'rgx',
+                        nargs = None,
+                    elems = [
+                    ],
+                ),
         ),
         OptSpec(
             scope = None,
             text = 'Path to the file',
             token = Token(kind='angle_open', text='<', pos=192, line=14, col=5, indent=4, is_first=True),
-            opt = Positional(
-                name = 'path',
-                nargs = None,
-                elems = [
-                ],
-            ),
+                    opt = Positional(
+                        name = 'path',
+                        nargs = None,
+                    elems = [
+                    ],
+                ),
         ),
         SectionTitle(
             scope = None,
             title = 'Options',
             token = Token(kind='section_title', text='Options::', pos=245, line=18, col=1, indent=0, is_first=True),
-        ),
         BlockQuote(
             text = QuotedText(text='\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=256, line=20, col=1, indent=0, is_first=True),
-        ),
         OptSpec(
             scope = None,
             text = 'Ignore case during search',
             token = Token(kind='short_option', text='-i', pos=321, line=25, col=5, indent=4, is_first=True),
-            opt = Option(
-                name = 'i',
-                nargs = None,
-                ntimes = None,
-                aliases = [],
-                elems = [
-                ],
-            ),
+                    opt = Option(
+                        name = 'i',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                    elems = [
+                    ],
+                ),
         ),
         OptSpec(
             scope = None,
             text = 'Invert: emit non-matched lines',
             token = Token(kind='short_option', text='-v', pos=367, line=27, col=5, indent=4, is_first=True),
-            opt = Option(
-                name = 'v',
-                nargs = None,
-                ntimes = None,
-                aliases = [],
-                elems = [
-                ],
-            ),
+                    opt = Option(
+                        name = 'v',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                    elems = [
+                    ],
+                ),
         ),
     ],
 ),

@@ -1,15 +1,19 @@
 
 '''
 
-New code seems to be working. 
-    traverse()
-    pretty_new()
+traverse(), pretty() etc:
+    - Editing pass over the new material.
 
-Rename the funcs to swap in the new for the old.
+    - traverse():
+        - I think it's working correctly.
 
-See if test are passing with acceptable differences.
+    - pretty():
+        - indent problems, especially in OptSpec
+        - maybe mismatch between traverse() LEVEL and pretty() INDENT.
+        - or maybe addition info needed to distinguish traverse() INDEX.
 
-If so, editing pass over the new material.
+        - stop trying to fix pretty() problems by fiddling with traverse()
+          LEVEL. The latter is correct, at least under the current plan.
 
 Include notes on how the new walk code is safe for parent.elems mutations
 during a traversal.
@@ -52,13 +56,6 @@ from .utils import get, distilled
 # Data classes: TreeElem and WalkElem.
 ####
 
-TreeElemKinds = cons(
-    'list',
-    'tuple',
-    'dict',
-    'elem',
-)
-
 WalkElemKinds = cons(
     'elem',
     'elem_close',
@@ -78,7 +75,7 @@ class TreeElem:
 
     WALKABLE = []
 
-    def traverse(self, include_closing = False, level = 0, attr = None):
+    def traverse(self, *wanted_types, with_structure = False, level = 0, attr = None):
         # Yields a WalkElem for each TreeElem, in DFS-order.
 
         '''
@@ -107,13 +104,17 @@ class TreeElem:
         '''
 
         WEK = WalkElemKinds
+        wanted_types = tuple(wanted_types or [TreeElem])
 
-        def we_close(level = level, **kws):
-            if include_closing:
-                yield WalkElem(level = level, **kws)
+        def structure_yielder(delta = 0, **kws):
+            if with_structure:
+                yield WalkElem(level = level + delta, **kws)
 
-        yield WalkElem(
-            level = level,
+        def elem_yielder(delta = 0, **kws):
+            if isinstance(kws.get('val'), wanted_types):
+                yield WalkElem(level = level + delta, **kws)
+
+        yield from elem_yielder(
             kind = WEK.elem,
             attr = attr,
             val = self,
@@ -125,180 +126,34 @@ class TreeElem:
                 continue
 
             if isinstance(children, list):
-                yield from we_close(kind = WEK.list_open, attr = attr)
+                yield from structure_yielder(
+                    # delta = 1,
+                    kind = WEK.list_open,
+                    attr = attr,
+                )
                 for c in children:
                     yield from c.traverse(
+                        *wanted_types,
                         level = level + 1,
-                        include_closing = include_closing,
+                        with_structure = with_structure,
                     )
-                yield from we_close(kind = WEK.list_close)
+                yield from structure_yielder(kind = WEK.list_close)
             else:
-                yield WalkElem(
+                c = children
+                yield from c.traverse(
+                    *wanted_types,
                     level = level + 1,
-                    kind = WEK.elem,
-                    val = children,
+                    with_structure = with_structure,
                     attr = attr,
                 )
 
-            yield from we_close(kind = WEK.elem_close)
+            yield from structure_yielder(kind = WEK.elem_close)
 
-    def walk(self, level = 0, attr = None):
-
-        # The elem itself: start.
-        we_self = WalkElem(
-            level = level,
-            kind = TreeElemKinds.elem,
-            attr = attr,
-            val = self,
-        )
-        yield we_self
-
-        # Categorize the attributes based on walkability.
-        walkability = {True: [], False: []}
-        for attr in self.__dict__:
-            walkability[attr in self.WALKABLE].append(attr)
-
-        # Non-walkable attributes: yield WalkElem for each.
-        for attr in walkability[False]:
-            val = getattr(self, attr)
-            yield WalkElem(
-                level = level + 1,
-                attr = attr,
-                val = val,
-                kind = None,
-            )
-
-        # Walkable attributes.
-        for attr in walkability[True]:
-            val = getattr(self, attr)
-            if isinstance(val, list):
-                # If val is a list, yield WalkElem(s) for the following:
-                # - list-start
-                # - yield from a walk of each list item
-                # - list-end
-                we_seq = WalkElem(
-                    level = level + 1,
-                    attr = attr,
-                    val = val,
-                    kind = TreeElemKinds.list,
-                )
-                yield we_seq
-                for e in val:
-                    yield from e.walk(level + 2)
-                yield clone(we_seq, is_end = True)
-
-            elif val:
-                # Otherwise, yield from a walk of the val.
-                yield from val.walk(level + 1, attr = attr)
-
-        # The elem itself: end.
-        yield clone(we_self, is_end = True)
-
-    def walk_elems(self, *types):
-        types = tuple(types or [TreeElem])
-        for we in self.walk():
-            val = we.val
-            emit = (
-                we.kind == TreeElemKinds.elem and
-                isinstance(val, types) and
-                not we.is_end
-            )
-            if emit:
-                yield we.val
-
-    '''
-
-    SpecAST(                                      | SpecAST, 0    | 0
-      elems = [                                   | .        +1   | 1
-    ------------------------------------------------------------------------
-        OptSpec(                                  | OptSpec, 1    | 2
-          scope = None,                           | .        +1   | 3
-          text = 'Python regular expression',     | .             | 3
-          token = Token(kind='angle_open'),       | .             | 3
-          opt = Positional(                       | Positional, 2 | 3
-            name = 'rgx',                         | .             | 4
-            nargs = None,                         | .             | 4
-            elems = [                             | .             | 4
-        OptSpec(                                  | OptSpec, 1    | etc
-          scope = None,                           | .             | .
-          text = 'Path(s) to input',              | .             | .
-          token = Token(kind='brack_open'),       | .             | .
-          opt = Group(                            | Group, 2      | .
-            name = None,                          | .             | .
-            ntimes = Quantifier(m=1, n=1),        | .             | .
-            required = False,                     | .             | .
-            elems = [                             | .             | .
-              Positional(                         | Positional, 3 | .
-                name = 'path',                    | .             | .
-                nargs = Quantifier(m=1, n=None),  | .             | .
-                elems = [                         | .             | .
-        OptSpec(                                  | OptSpec, 1    | .
-          scope = None,                           | .             | .
-          text = 'Ignore case',                   | .             | .
-          token = Token(kind='brack_open'),       | .             | .
-          opt = Group(                            | Group, 2      | .
-            name = None,                          | .             | .
-            ntimes = Quantifier(m=1, n=1),        | .             | .
-            required = False,                     | .             | .
-            elems = [                             | .             | .
-              Option(                             | Option, 3     | .
-                name = 'ignore-case',             | .             | .
-                nargs = None,                     | .             | .
-                ntimes = None,                    | .             | .
-                aliases = [BareOption(name='i')], | .             | .
-                elems = [                         | .             | .
-        OptSpec(                                  | OptSpec, 1    | .
-          scope = None,                           | .             | .
-          text = 'Select non-matching lines',     | .             | .
-          token = Token(kind='brack_open'),       | .             | .
-          opt = Group(                            | Group, 2      | .
-            name = None,                          | .             | .
-            ntimes = Quantifier(m=1, n=1),        | .             | .
-            required = False,                     | .             | .
-            elems = [                             | .             | .
-              Option(                             | Option, 3     | .
-                name = 'invert-match',            | .             | .
-                nargs = None,                     | .             | .
-                ntimes = None,                    | .             | .
-                aliases = [BareOption(name='v')], | .             | .
-                elems = [                         | .             | .
-
-    - Algorithm:
-
-        - Get a WalkElem
-        - E = we.val
-        - WL = WalkElem.level
-
-        - E itself:
-            - no-attr:
-                - level = WL * 2
-            - has-attr:
-                - level = WL * 2 - 1
-
-        - Organize E.attrs into 3 groups:
-            - non-walkable
-            - walkable-non-list
-            - walkable-list
-
-        - non-walkable:
-            - level = WL * 2 + 1
-
-        - walkable-non-list:
-            - do nothing
-            - handled when the elem is encountered later
-
-        - walkable-list:
-            - attr + open-bracket
-            - ...
-            - close-bracket
-
-    '''
-
-    def pretty_new(self, indent_size = 4, omit_end = False):
+    def pretty(self, indent_size = 4, omit_end = False):
         lines = []
         indent = lambda n: Chars.space * indent_size * n
 
-        for we in self.traverse(include_closing = True):
+        for we in self.traverse(with_structure = True):
 
             N = we.level * 2
 
@@ -319,7 +174,7 @@ class TreeElem:
                         lines.append(f'{indent(n + 1)}{a} = {val_str},')
 
             elif we.kind == WalkElemKinds.list_open:
-                n = N + bool(we.attr)
+                n = N + 1
                 lines.append(f'{indent(n)}{attr_eq}[')
 
             elif not omit_end:
@@ -330,34 +185,6 @@ class TreeElem:
 
                 elif we.kind == WalkElemKinds.list_close:
                     lines.append(f'{indent(n + 1)}],')
-
-        return Chars.newline.join(lines)
-
-    def pretty(self, indent_size = 4, omit_end = False):
-        lines = []
-        for we in self.walk():
-            indent = Chars.space * indent_size * we.level
-            attr_eq = f'{we.attr} = ' if we.attr else ''
-
-            if we.kind == TreeElemKinds.elem:
-                if we.is_end:
-                    if not omit_end:
-                        lines.append(f'{indent}),')
-                else:
-                    cls_name = we.val.__class__.__name__
-                    lines.append(f'{indent}{attr_eq}{cls_name}(')
-            elif we.kind == TreeElemKinds.list:
-                if we.is_end:
-                    if not omit_end:
-                        lines.append(f'{indent}],')
-                else:
-                    lines.append(f'{indent}{attr_eq}[')
-            else:
-                if isinstance(we.val, Token):
-                    val_str = we.val.brief
-                else:
-                    val_str = f'{we.val!r}'
-                lines.append(f'{indent}{attr_eq}{val_str},')
 
         return Chars.newline.join(lines)
 

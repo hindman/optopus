@@ -1632,6 +1632,12 @@ class SpecParser:
 
         '''
 
+        # sections = []
+        # return ParsedSpec(
+        #     grammar = ast,
+        #     sections = sections,
+        # )
+
         ast_orig = deepcopy(ast)
 
         # Partition SpecAST.elems into:
@@ -1643,7 +1649,8 @@ class SpecParser:
         # For Variants (or their Groups) having a ChoiceSep,
         # reorganize the elems into Alternatives.
         for v in variants:
-            for e in v.walk_elems(Variant, Group):
+            for we in v.traverse(Variant, Group):
+                e = we.val
                 e.elems = e.elems_to_alternatives()
 
         # Build lookup dict for the partial-variants.
@@ -1655,7 +1662,8 @@ class SpecParser:
 
         # Variants: traverse and replace PartialUsage with actual elems.
         for v in variants:
-            for e in v.walk_elems(Variant, Group, Alternative):
+            for we in v.traverse(Variant, Group, Alternative):
+                e = we.val
                 e.elems = e.elems_without_partials(partials)
 
         # Define a Grammar by converting the ParseElem Variants
@@ -1667,7 +1675,8 @@ class SpecParser:
         # Remove degenerate-groups, under some conditions: the
         # without_degen_group() method handles those details, returning a new
         # elem if they are met, or the same elem if they are not.
-        for e in g.walk_elems(GE.Variant, GE.Group, GE.Alternative, GE.Option):
+        for we in g.traverse(GE.Variant, GE.Group, GE.Alternative, GE.Option):
+            e = we.val
             if isinstance(e, GE.Option):
                 attr = 'parameters'
             else:
@@ -1691,6 +1700,7 @@ class SpecParser:
         sections = []
         return ParsedSpec(
             grammar = ast_orig,
+            # grammar = g,
             sections = sections,
         )
 

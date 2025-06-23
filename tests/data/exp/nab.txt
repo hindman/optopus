@@ -2734,14 +2734,12 @@ SpecAST(
             elems = [
                 Literal(
                     text = QuotedText(text='/'),
-                ),
                 Positional(
                     name = 'cmd',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'chomp',
-                        ),
                     ],
                 ),
             ],
@@ -2752,14 +2750,12 @@ SpecAST(
             elems = [
                 Literal(
                     text = QuotedText(text='/'),
-                ),
                 Positional(
                     name = 'cmd',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'findall',
-                        ),
                     ],
                 ),
                 Positional(
@@ -2791,14 +2787,12 @@ SpecAST(
             elems = [
                 Literal(
                     text = QuotedText(text='/'),
-                ),
                 Positional(
                     name = 'cmd',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'grep',
-                        ),
                     ],
                 ),
                 Positional(
@@ -2860,14 +2854,12 @@ SpecAST(
             elems = [
                 Literal(
                     text = QuotedText(text='/'),
-                ),
                 Positional(
                     name = 'cmd',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'range',
-                        ),
                     ],
                 ),
                 Positional(
@@ -2918,14 +2910,12 @@ SpecAST(
             elems = [
                 Literal(
                     text = QuotedText(text='/'),
-                ),
                 Positional(
                     name = 'cmd',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'run',
-                        ),
                     ],
                 ),
                 Positional(
@@ -3028,27 +3018,18 @@ SpecAST(
                     elems = [
                         PartialUsage(
                             name = 'chomp',
-                        ),
                         ChoiceSep(
-                        ),
                         PartialUsage(
                             name = 'findall',
-                        ),
                         ChoiceSep(
-                        ),
                         PartialUsage(
                             name = 'grep',
-                        ),
                         ChoiceSep(
-                        ),
                         PartialUsage(
                             name = 'range',
-                        ),
                         ChoiceSep(
-                        ),
                         PartialUsage(
                             name = 'run',
-                        ),
                     ],
                 ),
             ],
