@@ -1877,11 +1877,13 @@ SpecAST(
             scope = None,
             title = 'Positionals needed ',
             token = Token(kind='section_title', text='Positionals needed ::', pos=61, line=5, col=1, indent=0, is_first=True),
+        ),
         BlockQuote(
             text = QuotedText(text='\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=84, line=7, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'Regular expression',
@@ -1908,11 +1910,13 @@ SpecAST(
             scope = None,
             title = 'Options',
             token = Token(kind='section_title', text='Options::', pos=245, line=18, col=1, indent=0, is_first=True),
+        ),
         BlockQuote(
             text = QuotedText(text='\nPositionals blorty blorty blort blort\nfoo bar fubb.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=256, line=20, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'Ignore case during search',

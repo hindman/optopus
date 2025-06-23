@@ -10310,12 +10310,14 @@ SpecAST(
             elems = [
                 PartialUsage(
                     name = 'general',
+                ),
                 Positional(
                     name = 'command',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'clone',
+                        ),
                     ],
                 ),
                 Positional(
@@ -10351,6 +10353,7 @@ SpecAST(
                             ],
                         ),
                         ChoiceSep(
+                        ),
                         Option(
                             name = 'deep',
                             nargs = None,
@@ -10384,12 +10387,14 @@ SpecAST(
             elems = [
                 PartialUsage(
                     name = 'general',
+                ),
                 Positional(
                     name = 'command',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'commit',
+                        ),
                     ],
                 ),
                 Group(
@@ -10428,12 +10433,14 @@ SpecAST(
             elems = [
                 PartialUsage(
                     name = 'general',
+                ),
                 Positional(
                     name = 'command',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'copy',
+                        ),
                     ],
                 ),
                 Group(
@@ -10478,12 +10485,14 @@ SpecAST(
             elems = [
                 PartialUsage(
                     name = 'general',
+                ),
                 Positional(
                     name = 'command',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'delete',
+                        ),
                     ],
                 ),
                 Group(
@@ -10509,12 +10518,14 @@ SpecAST(
             elems = [
                 PartialUsage(
                     name = 'general',
+                ),
                 Positional(
                     name = 'command',
                     nargs = None,
                     elems = [
                         Choice(
                             text = 'setuser',
+                        ),
                     ],
                 ),
                 Group(
@@ -10569,9 +10580,11 @@ SpecAST(
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=388, line=10, col=1, indent=0, is_first=True),
+        ),
         Heading(
             title = 'Commands',
             token = Token(kind='heading', text='Commands :::', pos=621, line=18, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'Clones a repository',
@@ -10582,6 +10595,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'clone',
+                        ),
                     ],
                 ),
         ),
@@ -10595,6 +10609,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'commit',
+                        ),
                     ],
                 ),
         ),
@@ -10608,6 +10623,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'copy',
+                        ),
                     ],
                 ),
         ),
@@ -10621,6 +10637,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'delete',
+                        ),
                     ],
                 ),
         ),
@@ -10634,12 +10651,14 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'setuser',
+                        ),
                     ],
                 ),
         ),
         Heading(
             title = 'General options',
             token = Token(kind='heading', text='General options :::', pos=863, line=25, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'Changes the repository folder location',
@@ -10762,11 +10781,13 @@ SpecAST(
             scope = None,
             title = 'Command: clone ',
             token = Token(kind='section_title', text='Command: clone ::', pos=1122, line=32, col=1, indent=0, is_first=True),
+        ),
         BlockQuote(
             text = QuotedText(text='\nThis will clone the repository at <src> into the folder <dst>. If <dst> is not\nprovided this will automatically use the last path component of <src> and create\nthat folder.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=1141, line=34, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'Repository source',
@@ -10866,11 +10887,13 @@ SpecAST(
             scope = None,
             title = 'Command: commit ',
             token = Token(kind='section_title', text='Command: commit ::', pos=1606, line=46, col=1, indent=0, is_first=True),
+        ),
         BlockQuote(
             text = QuotedText(text='\nCommits outstanding changes.\n\nCommit changes to the given files into the repository. You will need to\n"repo push" to push up your changes to other repositories.\n\nIf a list of files is omitted, all changes reported by "repo status" will be\ncommitted.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=1626, line=48, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'File path',
@@ -10919,11 +10942,13 @@ SpecAST(
             scope = None,
             title = 'Command: copy ',
             token = Token(kind='section_title', text='Command: copy ::', pos=2006, line=61, col=1, indent=0, is_first=True),
+        ),
         BlockQuote(
             text = QuotedText(text='\nCopies one or multiple files to a new location. This copies all files from\n<src> to <dst>.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=2024, line=63, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'File path',
@@ -10977,11 +11002,13 @@ SpecAST(
             scope = None,
             title = 'Command: delete ',
             token = Token(kind='section_title', text='Command: delete ::', pos=2252, line=72, col=1, indent=0, is_first=True),
+        ),
         BlockQuote(
             text = QuotedText(text='\nDeletes a repository.\n\nThis will throw away the current repository.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=2272, line=74, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'Confirm the action without prompting',
@@ -11006,11 +11033,13 @@ SpecAST(
             scope = None,
             title = 'Command: setuser ',
             token = Token(kind='section_title', text='Command: setuser ::', pos=2401, line=82, col=1, indent=0, is_first=True),
+        ),
         BlockQuote(
             text = QuotedText(text='\nSets the user credentials.\n\nThis will override the current user config.\n'),
             comment = False,
             no_wrap = False,
             token = Token(kind='backquote3', text='```', pos=2422, line=84, col=1, indent=0, is_first=True),
+        ),
         OptSpec(
             scope = None,
             text = 'Username',

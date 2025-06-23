@@ -4184,6 +4184,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'grep',
+                        ),
                     ],
                 ),
                 Group(
@@ -4263,10 +4264,13 @@ SpecAST(
                                     elems = [
                                         Choice(
                                             text = 'red',
+                                        ),
                                         Choice(
                                             text = 'green',
+                                        ),
                                         Choice(
                                             text = 'blue',
+                                        ),
                                     ],
                                 ),
                             ],
@@ -4304,6 +4308,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'sub',
+                        ),
                     ],
                 ),
                 Group(
@@ -4373,6 +4378,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'search',
+                        ),
                     ],
                 ),
                 Group(
@@ -4419,6 +4425,7 @@ SpecAST(
                             ],
                         ),
                         ChoiceSep(
+                        ),
                         Option(
                             name = 'p',
                             nargs = None,
@@ -4471,6 +4478,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'grep',
+                        ),
                     ],
                 ),
         ),
@@ -4484,6 +4492,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'sub',
+                        ),
                     ],
                 ),
         ),
@@ -4497,6 +4506,7 @@ SpecAST(
                     elems = [
                         Choice(
                             text = 'search',
+                        ),
                     ],
                 ),
         ),

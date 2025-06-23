@@ -1192,6 +1192,7 @@ SpecAST(
                             elems = [
                                 Choice(
                                     text = 'snum',
+                                ),
                             ],
                         ),
                         Positional(
@@ -1201,12 +1202,14 @@ SpecAST(
                             ],
                         ),
                         ChoiceSep(
+                        ),
                         Positional(
                             name = 'cmd',
                             nargs = None,
                             elems = [
                                 Choice(
                                     text = 'fnum',
+                                ),
                             ],
                         ),
                         Positional(
@@ -1216,12 +1219,14 @@ SpecAST(
                             ],
                         ),
                         ChoiceSep(
+                        ),
                         Positional(
                             name = 'cmd',
                             nargs = None,
                             elems = [
                                 Choice(
                                     text = 'number',
+                                ),
                             ],
                         ),
                         Positional(
@@ -1230,17 +1235,21 @@ SpecAST(
                             elems = [
                                 Choice(
                                     text = 'on',
+                                ),
                                 Choice(
                                     text = 'off',
+                                ),
                             ],
                         ),
                         ChoiceSep(
+                        ),
                         Positional(
                             name = 'cmd',
                             nargs = None,
                             elems = [
                                 Choice(
                                     text = 'tuning',
+                                ),
                             ],
                         ),
                         Positional(
@@ -1250,12 +1259,14 @@ SpecAST(
                             ],
                         ),
                         ChoiceSep(
+                        ),
                         Positional(
                             name = 'cmd',
                             nargs = None,
                             elems = [
                                 Choice(
                                     text = 'fret',
+                                ),
                             ],
                         ),
                         Positional(
@@ -1265,12 +1276,14 @@ SpecAST(
                             ],
                         ),
                         ChoiceSep(
+                        ),
                         Positional(
                             name = 'cmd',
                             nargs = None,
                             elems = [
                                 Choice(
                                     text = 'invert',
+                                ),
                             ],
                         ),
                         Positional(
@@ -1289,6 +1302,7 @@ SpecAST(
             elems = [
                 PartialUsage(
                     name = 'cmd',
+                ),
                 Group(
                     name = None,
                     ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
@@ -1296,8 +1310,10 @@ SpecAST(
                     elems = [
                         Literal(
                             text = QuotedText(text='/'),
+                        ),
                         PartialUsage(
                             name = 'cmd',
+                        ),
                     ],
                 ),
             ],

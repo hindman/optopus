@@ -1179,10 +1179,13 @@ SpecAST(
                                     elems = [
                                         Choice(
                                             text = 'red',
+                                        ),
                                         Choice(
                                             text = 'green',
+                                        ),
                                         Choice(
                                             text = 'blue',
+                                        ),
                                     ],
                                 ),
                             ],
