@@ -4,20 +4,6 @@
 traverse(), pretty() etc:
     - Editing pass over the new material.
 
-    - traverse():
-        - I think it's working correctly.
-
-    - pretty():
-        - indent problems
-        - level must be set based on the structured flag
-
-        - add a level-calculating helper:
-
-            def calc_level(lev1, lev2):
-                return lev2 if structured else lev1
-
-        - use that helper throughout (also dropping delta).
-
 Include notes on how the new walk code is safe for parent.elems mutations
 during a traversal.
 
@@ -78,7 +64,7 @@ class TreeElem:
 
     WALKABLE = []
 
-    def traverse(self, *wanted_types, structured = False, level = 0, attr = None):
+    def traverse(self, *wanted_types, level = 0, attr = None, structured = False):
         # Yields a WalkElem for each TreeElem, in DFS-order.
 
         '''
@@ -109,23 +95,19 @@ class TreeElem:
         WEK = WalkElemKinds
         wanted_types = tuple(wanted_types or [TreeElem])
 
-        def structure_yielder(delta = 0, **kws):
+        def structure_yielder(**kws):
             if structured:
-                yield WalkElem(level = level + delta, **kws)
+                yield WalkElem(**kws)
 
-        def elem_yielder(delta = 0, **kws):
+        def elem_yielder(**kws):
             if isinstance(kws.get('val'), wanted_types):
-                yield WalkElem(level = level + delta, **kws)
+                yield WalkElem(**kws)
 
-        # PARENT     | 0 | 0 | yield
-        # list_open  | . | 1 | yield
-        # LIST-CHILD | 1 | 2 | traverse()
-        # list_close | . | 1 | yield
-        # ATTR-CHILD | 1 | 1 | traverse()
-        # elem_close | . | 0 | yield
+        def calc_level(d1, d2):
+            return level + (d2 if structured else (d1 or 0))
 
-        # LEVEL: (0, 0)
         yield from elem_yielder(
+            level = calc_level(0, 0),
             kind = WEK.elem,
             attr = attr,
             val = self,
@@ -137,47 +119,71 @@ class TreeElem:
                 continue
 
             if isinstance(children, list):
-                # LEVEL: (None, +1)
                 yield from structure_yielder(
+                    level = calc_level(None, 1),
                     kind = WEK.list_open,
                     attr = attr,
                 )
                 for c in children:
-                    # LEVEL: (+1, +2)
                     yield from c.traverse(
                         *wanted_types,
-                        level = level + 1,
+                        level = calc_level(1, 2),
                         structured = structured,
                     )
-                # LEVEL: (None, +1)
-                yield from structure_yielder(kind = WEK.list_close)
+                yield from structure_yielder(
+                    level = calc_level(None, 1),
+                    kind = WEK.list_close,
+                )
             else:
                 c = children
-                # LEVEL: (+1, +1)
                 yield from c.traverse(
                     *wanted_types,
-                    level = level + 1,
-                    structured = structured,
+                    level = calc_level(1, 1),
                     attr = attr,
+                    structured = structured,
                 )
 
-        # LEVEL: (None, 0)
-        yield from structure_yielder(kind = WEK.elem_close)
+        yield from structure_yielder(
+            level = calc_level(None, 0),
+            kind = WEK.elem_close,
+        )
+
+        '''
+
+        SpecAST(
+          elems = [
+            Variant(
+              name = None,
+              is_partial = False,
+              elems = [
+                Group(
+                  name = None,
+                  ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                  required = False,
+                  elems = [
+                    Option(
+                      name = 'i',
+                      nargs = None,
+                      ntimes = None,
+                      aliases = [],
+                      elems = [
+
+        '''
 
     def pretty(self, indent_size = 4, omit_end = False):
         lines = []
-        indent = lambda n: Chars.space * indent_size * n
+        WEK = WalkElemKinds
+        indent = Chars.space * indent_size
 
         for we in self.traverse(structured = True):
 
-            N = we.level * 2
-
+            ind0 = indent * we.level
+            ind1 = ind0 + indent
             attr_eq = f'{we.attr} = ' if we.attr else ''
 
-            if we.kind == WalkElemKinds.elem:
-                n = N + bool(we.attr)
+            if we.kind == WEK.elem:
                 cls_name = we.val.__class__.__name__
-                lines.append(f'{indent(n)}{attr_eq}{cls_name}(')
+                lines.append(f'{ind0}{attr_eq}{cls_name}(')
 
                 elem = we.val
                 for a, val in elem.__dict__.items():
@@ -186,20 +192,16 @@ class TreeElem:
                             val_str = val.brief
                         else:
                             val_str = f'{val!r}'
-                        lines.append(f'{indent(n + 1)}{a} = {val_str},')
+                        lines.append(f'{ind1}{a} = {val_str},')
 
-            elif we.kind == WalkElemKinds.list_open:
-                n = N + 1
-                lines.append(f'{indent(n)}{attr_eq}[')
+            elif we.kind == WEK.list_open:
+                lines.append(f'{ind0}{attr_eq}[')
 
             elif not omit_end:
-                n = N + bool(we.attr)
-
-                if we.kind == WalkElemKinds.elem_close:
-                    lines.append(f'{indent(n)}),')
-
-                elif we.kind == WalkElemKinds.list_close:
-                    lines.append(f'{indent(n + 1)}],')
+                if we.kind == WEK.elem_close:
+                    lines.append(f'{ind0}),')
+                elif we.kind == WEK.list_close:
+                    lines.append(f'{ind0}],')
 
         return Chars.newline.join(lines)
 

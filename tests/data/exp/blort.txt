@@ -13297,87 +13297,87 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=640, line=21, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'verbose',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'verbose',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=676, line=22, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'log-file',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'path',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'log-file',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'path',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=712, line=23, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'examples',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'examples',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = None,
             token = Token(kind='brack_open', text='[', pos=748, line=24, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'help',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'help',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         BlockQuote(
             text = QuotedText(text=' =================================================='),
@@ -13400,91 +13400,91 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='long_option', text='--env', pos=977, line=37, col=9, indent=8, is_first=True),
-                    opt = Option(
-                        name = 'env',
+            opt = Option(
+                name = 'env',
+                nargs = None,
+                ntimes = None,
+                aliases = [],
+                elems = [
+                    Parameter(
+                        name = 'host',
                         nargs = None,
-                        ntimes = None,
-                        aliases = [],
-                    elems = [
-                        Parameter(
-                            name = 'host',
-                            nargs = None,
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='long_option', text='--user', pos=1015, line=38, col=9, indent=8, is_first=True),
-                    opt = Option(
-                        name = 'user',
+            opt = Option(
+                name = 'user',
+                nargs = None,
+                ntimes = None,
+                aliases = [],
+                elems = [
+                    Parameter(
+                        name = 'id',
                         nargs = None,
-                        ntimes = None,
-                        aliases = [],
-                    elems = [
-                        Parameter(
-                            name = 'id',
-                            nargs = None,
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=1053, line=39, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'indent',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'n',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'indent',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'n',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=1091, line=40, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'person',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'name',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'person',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'name',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         BlockQuote(
             text = QuotedText(text=' =================================================='),
@@ -13507,91 +13507,91 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='short_option', text='-c', pos=1332, line=53, col=9, indent=8, is_first=True),
-                    opt = Option(
-                        name = 'c',
+            opt = Option(
+                name = 'c',
+                nargs = None,
+                ntimes = None,
+                aliases = [],
+                elems = [
+                    Parameter(
+                        name = None,
                         nargs = None,
-                        ntimes = None,
-                        aliases = [],
-                    elems = [
-                        Parameter(
-                            name = None,
-                            nargs = None,
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='short_option', text='-r', pos=1376, line=54, col=9, indent=8, is_first=True),
-                    opt = Option(
-                        name = 'r',
+            opt = Option(
+                name = 'r',
+                nargs = None,
+                ntimes = None,
+                aliases = [],
+                elems = [
+                    Parameter(
+                        name = None,
                         nargs = None,
-                        ntimes = None,
-                        aliases = [],
-                    elems = [
-                        Parameter(
-                            name = None,
-                            nargs = None,
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=1420, line=55, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'start-job',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'start-job',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=1464, line=56, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'person',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'name',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                                Parameter(
-                                    name = 'age',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'person',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'name',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                            Parameter(
+                                name = 'age',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         BlockQuote(
             text = QuotedText(text=' =================================================='),
@@ -13614,106 +13614,106 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='short_option', text='-j', pos=1702, line=69, col=9, indent=8, is_first=True),
-                    opt = Option(
-                        name = 'j',
+            opt = Option(
+                name = 'j',
+                nargs = None,
+                ntimes = None,
+                aliases = [],
+                elems = [
+                    Parameter(
+                        name = None,
                         nargs = None,
-                        ntimes = None,
-                        aliases = [],
-                    elems = [
-                        Parameter(
-                            name = None,
-                            nargs = None,
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=1737, line=70, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'json',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'json',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=1772, line=71, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'indent',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'n',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'indent',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'n',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=1807, line=72, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'b64',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'b64',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=1842, line=73, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'yaml',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'yaml',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         BlockQuote(
             text = QuotedText(text=' =================================================='),
@@ -13740,43 +13740,43 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='angle_open', text='<', pos=2090, line=87, col=9, indent=8, is_first=True),
-                    opt = Positional(
-                        name = 'method',
-                        nargs = None,
-                    elems = [
-                        Choice(
-                            text = 'first',
-                        ),
-                    ],
-                ),
+            opt = Positional(
+                name = 'method',
+                nargs = None,
+                elems = [
+                    Choice(
+                        text = 'first',
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='angle_open', text='<', pos=2126, line=88, col=9, indent=8, is_first=True),
-                    opt = Positional(
-                        name = 'method',
-                        nargs = None,
-                    elems = [
-                        Choice(
-                            text = 'last',
-                        ),
-                    ],
-                ),
+            opt = Positional(
+                name = 'method',
+                nargs = None,
+                elems = [
+                    Choice(
+                        text = 'last',
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='angle_open', text='<', pos=2162, line=89, col=9, indent=8, is_first=True),
-                    opt = Positional(
-                        name = 'method',
-                        nargs = None,
-                    elems = [
-                        Choice(
-                            text = 'random',
-                        ),
-                    ],
-                ),
+            opt = Positional(
+                name = 'method',
+                nargs = None,
+                elems = [
+                    Choice(
+                        text = 'random',
+                    ),
+                ],
+            ),
         ),
         Heading(
             title = 'Options',
@@ -13786,32 +13786,32 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='angle_open', text='<', pos=2215, line=92, col=9, indent=8, is_first=True),
-                    opt = Positional(
-                        name = 'n',
-                        nargs = None,
-                    elems = [
-                    ],
-                ),
+            opt = Positional(
+                name = 'n',
+                nargs = None,
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=2245, line=93, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'print',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'print',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         BlockQuote(
             text = QuotedText(text=' =================================================='),
@@ -13832,98 +13832,98 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='angle_open', text='<', pos=2378, line=102, col=9, indent=8, is_first=True),
-                    opt = Positional(
-                        name = 'fubb',
-                        nargs = Quantifier(m=1, n=None, required=True, greedy=True),
-                    elems = [
-                    ],
-                ),
+            opt = Positional(
+                name = 'fubb',
+                nargs = Quantifier(m=1, n=None, required=True, greedy=True),
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='long_option', text='--fast', pos=2411, line=103, col=9, indent=8, is_first=True),
-                    opt = Option(
-                        name = 'fast',
-                        nargs = None,
-                        ntimes = None,
-                        aliases = [],
-                    elems = [
-                    ],
-                ),
+            opt = Option(
+                name = 'fast',
+                nargs = None,
+                ntimes = None,
+                aliases = [],
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='long_option', text='--slow', pos=2444, line=104, col=9, indent=8, is_first=True),
-                    opt = Option(
-                        name = 'slow',
-                        nargs = None,
-                        ntimes = None,
-                        aliases = [],
-                    elems = [
-                    ],
-                ),
+            opt = Option(
+                name = 'slow',
+                nargs = None,
+                ntimes = None,
+                aliases = [],
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=2477, line=105, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'a',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'a',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=2510, line=106, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'b',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'b',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = Scope(query_path='fubb'),
             text = 'Blah blah fubbity',
             token = Token(kind='opt_spec_scope', text='fubb >> ', pos=2543, line=107, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'x',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'x',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         Heading(
             title = 'Triple: repeated group of arguments',
@@ -13933,54 +13933,54 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='angle_open', text='<', pos=2629, line=110, col=9, indent=8, is_first=True),
-                    opt = Positional(
-                        name = 'a',
-                        nargs = None,
-                    elems = [
-                    ],
-                ),
+            opt = Positional(
+                name = 'a',
+                nargs = None,
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='angle_open', text='<', pos=2654, line=111, col=9, indent=8, is_first=True),
-                    opt = Positional(
-                        name = 'b',
-                        nargs = None,
-                    elems = [
-                    ],
-                ),
+            opt = Positional(
+                name = 'b',
+                nargs = None,
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='angle_open', text='<', pos=2679, line=112, col=9, indent=8, is_first=True),
-                    opt = Positional(
-                        name = 'c',
-                        nargs = None,
-                    elems = [
-                    ],
-                ),
+            opt = Positional(
+                name = 'c',
+                nargs = None,
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=2704, line=113, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'z',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'z',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         Heading(
             title = 'Triple: other options',
@@ -13990,41 +13990,41 @@ SpecAST(
             scope = Scope(query_path='wizz'),
             text = 'Blah blah wizzity',
             token = Token(kind='opt_spec_scope', text='wizz >> ', pos=2760, line=116, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'x',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'x',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=2801, line=117, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'y',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'y',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         Heading(
             title = 'Chat options',
@@ -14034,61 +14034,61 @@ SpecAST(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=2856, line=120, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'hi',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'hi',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Blah blah',
             token = Token(kind='brack_open', text='[', pos=2884, line=121, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'bye',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'bye',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = None,
             token = Token(kind='brack_open', text='[', pos=2912, line=122, col=9, indent=8, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'help',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'help',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
     ],
 ),

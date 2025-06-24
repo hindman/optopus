@@ -10589,71 +10589,71 @@ SpecAST(
             scope = None,
             text = 'Clones a repository',
             token = Token(kind='angle_open', text='<', pos=638, line=19, col=5, indent=4, is_first=True),
-                    opt = Positional(
-                        name = 'command',
-                        nargs = None,
-                    elems = [
-                        Choice(
-                            text = 'clone',
-                        ),
-                    ],
-                ),
+            opt = Positional(
+                name = 'command',
+                nargs = None,
+                elems = [
+                    Choice(
+                        text = 'clone',
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Commits outstanding changes',
             token = Token(kind='angle_open', text='<', pos=682, line=20, col=5, indent=4, is_first=True),
-                    opt = Positional(
-                        name = 'command',
-                        nargs = None,
-                    elems = [
-                        Choice(
-                            text = 'commit',
-                        ),
-                    ],
-                ),
+            opt = Positional(
+                name = 'command',
+                nargs = None,
+                elems = [
+                    Choice(
+                        text = 'commit',
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Copies files',
             token = Token(kind='angle_open', text='<', pos=734, line=21, col=5, indent=4, is_first=True),
-                    opt = Positional(
-                        name = 'command',
-                        nargs = None,
-                    elems = [
-                        Choice(
-                            text = 'copy',
-                        ),
-                    ],
-                ),
+            opt = Positional(
+                name = 'command',
+                nargs = None,
+                elems = [
+                    Choice(
+                        text = 'copy',
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Deletes a repository',
             token = Token(kind='angle_open', text='<', pos=771, line=22, col=5, indent=4, is_first=True),
-                    opt = Positional(
-                        name = 'command',
-                        nargs = None,
-                    elems = [
-                        Choice(
-                            text = 'delete',
-                        ),
-                    ],
-                ),
+            opt = Positional(
+                name = 'command',
+                nargs = None,
+                elems = [
+                    Choice(
+                        text = 'delete',
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Sets the user credentials',
             token = Token(kind='angle_open', text='<', pos=816, line=23, col=5, indent=4, is_first=True),
-                    opt = Positional(
-                        name = 'command',
-                        nargs = None,
-                    elems = [
-                        Choice(
-                            text = 'setuser',
-                        ),
-                    ],
-                ),
+            opt = Positional(
+                name = 'command',
+                nargs = None,
+                elems = [
+                    Choice(
+                        text = 'setuser',
+                    ),
+                ],
+            ),
         ),
         Heading(
             title = 'General options',
@@ -10663,119 +10663,119 @@ SpecAST(
             scope = None,
             text = 'Changes the repository folder location',
             token = Token(kind='brack_open', text='[', pos=887, line=26, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'repo-home',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'path',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'repo-home',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'path',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Overrides a config key/value pair [repeatable]',
             token = Token(kind='brack_open', text='[', pos=960, line=27, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'config',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'key',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                                Parameter(
-                                    name = 'value',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'config',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'key',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                            Parameter(
+                                name = 'value',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Enables verbose mode',
             token = Token(kind='brack_open', text='[', pos=1041, line=28, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'verbose',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [BareOption(name='v')],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'verbose',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [BareOption(name='v')],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = None,
             token = Token(kind='brack_open', text='[', pos=1096, line=29, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'version',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'version',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = None,
             token = Token(kind='brack_open', text='[', pos=1112, line=30, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'help',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'help',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         SectionTitle(
             scope = None,
@@ -10792,96 +10792,96 @@ SpecAST(
             scope = None,
             text = 'Repository source',
             token = Token(kind='angle_open', text='<', pos=1327, line=40, col=5, indent=4, is_first=True),
-                    opt = Positional(
-                        name = 'src',
-                        nargs = None,
-                    elems = [
-                    ],
-                ),
+            opt = Positional(
+                name = 'src',
+                nargs = None,
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Directory path in which to put the cloned repo',
             token = Token(kind='brack_open', text='[', pos=1371, line=41, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Positional(
-                            name = 'dst',
-                            nargs = None,
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Positional(
+                        name = 'dst',
+                        nargs = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Deep checkout [the default]',
             token = Token(kind='brack_open', text='[', pos=1444, line=42, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'deep',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'deep',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Shallow checkout',
             token = Token(kind='brack_open', text='[', pos=1498, line=43, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'shallow',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'shallow',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Clone a specific revision instead of HEAD',
             token = Token(kind='brack_open', text='[', pos=1541, line=44, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'rev',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [BareOption(name='r')],
-                            elems = [
-                                Parameter(
-                                    name = 'commit',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'rev',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [BareOption(name='r')],
+                        elems = [
+                            Parameter(
+                                name = 'commit',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         SectionTitle(
             scope = None,
@@ -10898,45 +10898,45 @@ SpecAST(
             scope = None,
             text = 'File path',
             token = Token(kind='brack_open', text='[', pos=1889, line=58, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Positional(
-                            name = 'file',
-                            nargs = None,
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Positional(
+                        name = 'file',
+                        nargs = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Commit message [if multiple, joined by newline]',
             token = Token(kind='brack_open', text='[', pos=1930, line=59, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'message',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [BareOption(name='m')],
-                            elems = [
-                                Parameter(
-                                    name = 'text',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'message',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [BareOption(name='m')],
+                        elems = [
+                            Parameter(
+                                name = 'text',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         SectionTitle(
             scope = None,
@@ -10953,50 +10953,50 @@ SpecAST(
             scope = None,
             text = 'File path',
             token = Token(kind='brack_open', text='[', pos=2128, line=68, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Positional(
-                            name = 'src',
-                            nargs = None,
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=None, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Positional(
+                        name = 'src',
+                        nargs = None,
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Directory path of destination',
             token = Token(kind='angle_open', text='<', pos=2155, line=69, col=5, indent=4, is_first=True),
-                    opt = Positional(
-                        name = 'dst',
-                        nargs = None,
-                    elems = [
-                    ],
-                ),
+            opt = Positional(
+                name = 'dst',
+                nargs = None,
+                elems = [
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Forcibly copy over an existing file',
             token = Token(kind='brack_open', text='[', pos=2202, line=70, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'force',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'force',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         SectionTitle(
             scope = None,
@@ -11013,21 +11013,21 @@ SpecAST(
             scope = None,
             text = 'Confirm the action without prompting',
             token = Token(kind='brack_open', text='[', pos=2353, line=80, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'yes',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'yes',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                        ],
+                    ),
+                ],
+            ),
         ),
         SectionTitle(
             scope = None,
@@ -11044,79 +11044,79 @@ SpecAST(
             scope = None,
             text = 'Username',
             token = Token(kind='brack_open', text='[', pos=2507, line=90, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'username',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'user',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'username',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'user',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Email address',
             token = Token(kind='brack_open', text='[', pos=2542, line=91, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'email',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'address',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'email',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'address',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
         OptSpec(
             scope = None,
             text = 'Login password',
             token = Token(kind='brack_open', text='[', pos=2582, line=92, col=5, indent=4, is_first=True),
-                    opt = Group(
-                        name = None,
-                        ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                        required = False,
-                    elems = [
-                        Option(
-                            name = 'password',
-                            nargs = None,
-                            ntimes = None,
-                            aliases = [],
-                            elems = [
-                                Parameter(
-                                    name = 'pw',
-                                    nargs = None,
-                                    elems = [
-                                    ],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
+            opt = Group(
+                name = None,
+                ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
+                required = False,
+                elems = [
+                    Option(
+                        name = 'password',
+                        nargs = None,
+                        ntimes = None,
+                        aliases = [],
+                        elems = [
+                            Parameter(
+                                name = 'pw',
+                                nargs = None,
+                                elems = [
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
         ),
     ],
 ),
