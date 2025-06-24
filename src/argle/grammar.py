@@ -1,30 +1,4 @@
 
-'''
-
-traverse(), pretty() etc:
-    - Editing pass over the new material.
-
-Include notes on how the new walk code is safe for parent.elems mutations
-during a traversal.
-
-When dropping degen-groups:
-
-    - Think through the ntimes criteria.
-
-    - Current notes say that parent Group.ntimes must be singular.
-
-    - But I suspect the real test is the following:
-        Parent.ntimes singular   # enclosing Group
-        OR
-        Child.ntimes singular    # inner Group/Option
-
-        - Example: both of these seem mergeable:
-
-            [--foo]{3-4}
-            [--foo{3-4}]
-
-'''
-
 ####
 # Imports.
 ####
@@ -65,47 +39,42 @@ class TreeElem:
     WALKABLE = []
 
     def traverse(self, *wanted_types, level = 0, attr = None, structured = False):
-        # Yields a WalkElem for each TreeElem, in DFS-order.
+        #
+        # Yields a WalkElem for self and for all of its TreeElem children, in
+        # DFS-order.
+        #
+        # - wanted_types: request only specific types of TreeElem.
+        #
+        # - structured: if true, also yields WalkElem to convey list start,
+        #   list end, and elem end. For this use case, the logic to compute level
+        #   for recursive calls is different.
+        #
+        # - attr: relevent only for some recursive calls.
+        #
+        # This method can be used reliably in contexts where the parent TreeElem
+        # is modified by the caller during traversal. This works because none
+        # of the parent's WALKABLE attributes holding children are checked until
+        # after the WalkElem for self has already been yielded and mutated.
+        #
 
-        '''
-
-        # A traversal that mutates parent.elems.
-
-        # We get the parent (eg Variant) and process its elems via indexes.
-        for parent in g.traverse():
-            for i in range(len(parent.elems)):
-                child = parent.elems[i]
-
-                # Unwrap the child from 1 or more degen-groups.
-                # eg  [[--foo]]
-                was_degen = True
-                while was_degen:
-                    child, was_degen = child.unwrap_degen()
-
-                # Put the child into the same spot in parent.elems.
-                parent.elems[i] = child
-
-            # At this point parent.elems is modified. Back in traverse(), the
-            # method will look for children. Since parent.elems is no longer
-            # being modified, the rest of the traversal will use
-            # correctly-updated elems.
-
-        '''
-
+        # Setup.
+        wanted_types = wanted_types or (TreeElem,)
         WEK = WalkElemKinds
-        wanted_types = tuple(wanted_types or [TreeElem])
+
+        # Helper to calculate level, either for a WalkElem or a recursive call.
+        def calc_level(d1, d2):
+            return level + (d2 if structured else (d1 or 0))
+
+        # Helpers to yield a WalkElem conditionally.
+        def elem_yielder(**kws):
+            if isinstance(kws.get('val'), wanted_types):
+                yield WalkElem(**kws)
 
         def structure_yielder(**kws):
             if structured:
                 yield WalkElem(**kws)
 
-        def elem_yielder(**kws):
-            if isinstance(kws.get('val'), wanted_types):
-                yield WalkElem(**kws)
-
-        def calc_level(d1, d2):
-            return level + (d2 if structured else (d1 or 0))
-
+        # A WalkElem for self.
         yield from elem_yielder(
             level = calc_level(0, 0),
             kind = WEK.elem,
@@ -113,12 +82,14 @@ class TreeElem:
             val = self,
         )
 
+        # Process its WALKABLE attributes.
         for attr in self.WALKABLE:
             children = getattr(self, attr, None)
-            if children is None:
-                continue
-
             if isinstance(children, list):
+                # If the WALKABLE attribute holds a list of chidren:
+                # - Yield WalkElem for list open.
+                # - Yield from a recursive call of each child.
+                # - Yield WalkElem for list close.
                 yield from structure_yielder(
                     level = calc_level(None, 1),
                     kind = WEK.list_open,
@@ -134,7 +105,9 @@ class TreeElem:
                     level = calc_level(None, 1),
                     kind = WEK.list_close,
                 )
-            else:
+            elif children is not None:
+                # If the WALKABLE attributes hold a single child,
+                # yield from a recursive call on it.
                 c = children
                 yield from c.traverse(
                     *wanted_types,
@@ -143,66 +116,56 @@ class TreeElem:
                     structured = structured,
                 )
 
+        # Yield WalkElem for list close.
         yield from structure_yielder(
             level = calc_level(None, 0),
             kind = WEK.elem_close,
         )
 
-        '''
+    def pretty(self, indent_size = 4, omit_closing = False):
+        # Return a pretty-printable blob of text to represent
+        # the structure of a TreeElem and its children.
 
-        SpecAST(
-          elems = [
-            Variant(
-              name = None,
-              is_partial = False,
-              elems = [
-                Group(
-                  name = None,
-                  ntimes = Quantifier(m=1, n=1, required=False, greedy=True),
-                  required = False,
-                  elems = [
-                    Option(
-                      name = 'i',
-                      nargs = None,
-                      ntimes = None,
-                      aliases = [],
-                      elems = [
-
-        '''
-
-    def pretty(self, indent_size = 4, omit_end = False):
+        # Setup: lines, one level of indentation, etc.
         lines = []
-        WEK = WalkElemKinds
         indent = Chars.space * indent_size
+        WEK = WalkElemKinds
 
+        # Traverse the TreeElem so that we get both the elements
+        # and other structural information.
         for we in self.traverse(structured = True):
-
-            ind0 = indent * we.level
-            ind1 = ind0 + indent
+            # Setup for the current WalkElem.
+            level_indent = indent * we.level
             attr_eq = f'{we.attr} = ' if we.attr else ''
 
+            # Handle each kind of WalkElem.
             if we.kind == WEK.elem:
-                cls_name = we.val.__class__.__name__
-                lines.append(f'{ind0}{attr_eq}{cls_name}(')
-
+                # A line for the TreeElem class.
                 elem = we.val
+                cls_name = elem.__class__.__name__
+                lines.append(f'{level_indent}{attr_eq}{cls_name}(')
+
+                # One line per non-WALKABLE attribute.
                 for a, val in elem.__dict__.items():
                     if a not in elem.WALKABLE:
                         if isinstance(val, Token):
                             val_str = val.brief
                         else:
                             val_str = f'{val!r}'
-                        lines.append(f'{ind1}{a} = {val_str},')
+                        lines.append(f'{level_indent + indent}{a} = {val_str},')
 
             elif we.kind == WEK.list_open:
-                lines.append(f'{ind0}{attr_eq}[')
+                # List open line.
+                lines.append(f'{level_indent}{attr_eq}[')
 
-            elif not omit_end:
+            elif not omit_closing:
+                # List or elem closing lines.
                 if we.kind == WEK.elem_close:
-                    lines.append(f'{ind0}),')
+                    lines.append(f'{level_indent}),')
                 elif we.kind == WEK.list_close:
-                    lines.append(f'{ind0}],')
+                    lines.append(f'{level_indent}],')
 
+        # Return as text.
         return Chars.newline.join(lines)
 
 ####
@@ -251,10 +214,6 @@ class GrammarElem(TreeElem):
 
         # Return the child -- after applying the process recursively.
         return child.without_degen_group()
-
-    @property
-    def pp(self):
-        return 'TODO'
 
 @dataclass
 class Grammar(GrammarElem):

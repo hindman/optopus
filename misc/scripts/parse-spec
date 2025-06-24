@@ -99,7 +99,7 @@ def main(args):
     if g:
 
         if opts.tree:
-            msg = g.pretty(omit_end = True, indent_size = 2)
+            msg = g.pretty(omit_closing = True, indent_size = 2)
             print('# TREE')
             print(msg)
 
