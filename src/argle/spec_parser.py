@@ -11,49 +11,30 @@ TODO:
     x Quantifier ranges: better syntax: {m-n}
     x as_gelem(): define for ParseElem classes.
 
+    - Might be handy if all GrammarElem quantifiers were non-None:
+
+        - But maybe that's a bad approach if users wanting to go fully by API
+          could also be defining GrammarElem themselves.
+
     . ast_to_parsed_spec()
 
-        - currently returning ast_orig
-
-        - When dropping degen-groups:
-            - Think through the ntimes criteria.
-            - Current notes say that parent Group.ntimes must be singular.
-
-            - But I suspect the real test is the following:
-                Parent.ntimes singular   # enclosing Group
-                OR
-                Child.ntimes singular    # inner Group/Option
-
-                - Examples:
-
-                    [--foo]{3-4}
-                    [--foo{3-4}]
-
-                    [[<x> <y>]{3,4}]
-                    [[<x> <y>]]{3,4}
-
-        - NOTES:
-
-            - GrammarElem that can hold a degen-group:
-                - Variant
-                - Group
-                - Alternative
-                - Option
-
-            - Child GrammarElem that a Group can hold:
-                - Do not exist in Group with just 1 child elem:
-                    - Alternative
-                - Has no ntimes: so parent Group cannot be dropped.
-                    - Literal
-                    - Positional
-                - Has ntimes:
-                    - Option
-                    - Group
-
         - without_degen_group()
-            - I had this running
-            - but it didn't seem to cause any tests to fail (unexpected)
 
+            * work in progress: see TODO.
+
+            * First time I had this running, it didn't seem to cause any tests
+              to fail (unexpected).
+
+            - Can merge if parent or child has singular ntimes:
+            - Examples:
+
+                [--foo]{3-4}
+                [--foo{3-4}]
+
+                [[<x> <y>]{3,4}]
+                [[<x> <y>]]{3,4}
+
+        - currently returning ast_orig
         - todo items in doc-string
 
     - spec-parsing errors: add a new checks:

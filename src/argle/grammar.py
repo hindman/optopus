@@ -185,12 +185,10 @@ class GrammarElem(TreeElem):
     ]
 
     def without_degen_group(self):
+        # First we decide whether self is a degenerate Group.
+
         # Must be Group.
         if not isinstance(self, Group):
-            return self
-
-        # Group.ntimes must be singular.
-        if self.ntimes and not self.ntimes.is_singular:
             return self
 
         # Must have only 1 child elem.
@@ -198,11 +196,26 @@ class GrammarElem(TreeElem):
             return self
 
         # The child must be Group or Option.
-        # If so, we will be returning the child, not self.
+        #
+        # The other things a Group can hold (Alternative, Positional, Literal)
+        # lack ntimes. Group cannot be treated as degenerate in such cases.
         child = self.elems[0]
         if not isinstance(child, (Group, Option)):
             return self
 
+        # Get or create quantifiers for the parent and the child.
+        qp = self.ntimes or Quantifier(m = 1, n = 1)
+        qc = self.ntimes or Quantifier(m = 1, n = 1)
+
+        # At least one of the ntimes-quantifiers must be singular.
+        # If not, the parent Group cannot be dropped as degenerate.
+        if not (qp.is_singular or qc.is_singular):
+            return self
+
+        # TODO: merge qp and qc.
+
+        # TODO: this code uses the old (incorrect) logic.
+        #
         # If the Group is not required, apply that status
         # to the the child's ntimes.
         q = self.ntimes
