@@ -184,6 +184,19 @@ class GrammarElem(TreeElem):
         'choices',
     ]
 
+    '''
+
+    In MacVim I sometimes want to quickly peruse all lines containing
+    some text. I could use vimgrep. For example:
+
+    ```Vim command
+    :vimgrep /foobar/ % | cw
+    ```
+
+    But that's seems a bit awkard to type.
+
+    '''
+
     def without_degen_group(self):
         # First we decide whether self is a degenerate Group.
 
@@ -195,13 +208,17 @@ class GrammarElem(TreeElem):
         if len(self.elems) != 1:
             return self
 
-        # The child must be Group or Option.
+        # The child must be Group, Option, Positional, or Parameter.
         #
-        # The other things a Group can hold (Alternative, Positional, Literal)
-        # lack ntimes. Group cannot be treated as degenerate in such cases.
+        # And it cannot be Literal (no quantifier) or Alternative (never
+        # enclosed by itself in a Group).
         child = self.elems[0]
-        if not isinstance(child, (Group, Option)):
+        child_types = (Group, Option, Positional, Parameter)
+        if not isinstance(child, child_types):
             return self
+
+        # __HERE__
+        return self     # Disable rest of code for now.
 
         # Get or create quantifiers for the parent and the child.
         qp = self.ntimes or Quantifier(m = 1, n = 1)

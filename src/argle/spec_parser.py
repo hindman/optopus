@@ -11,14 +11,76 @@ TODO:
     x Quantifier ranges: better syntax: {m-n}
     x as_gelem(): define for ParseElem classes.
 
-    - Might be handy if all GrammarElem quantifiers were non-None:
+    - Literal:
+        - I have logic for no quantifier.
+        - If you need a quantified Literal, you must care
+          about the data: how many times was it supplied?
+        - If so, use a single-choice Positional.
 
-        - But maybe that's a bad approach if users wanting to go fully by API
-          could also be defining GrammarElem themselves.
+        - OK, but consider:
+
+            - Spec looks wierd:
+
+                <x> <`/`>... <y>
+
+            - How does usage-text work?
+
+                <x> /... <y>
+                <x> `/`... <y>
+
+            - How does usage-text work generally for literals?
+
+                - docopt represents a choice literally:
+
+                    naval-fate ship new <name>...
+
+                - a literal is a kind of choice situation: with one choice.
+
+                - decision: literals shown literally:
+
+                    <x> / <y>
+
+                - if so, it would seem odd to support quantifier syntax for
+                  such things.
+
+                    <x> /{3,4} <y>
+
+                - if there is no syntax for literals in usage text, does that
+                  mean they must be a single WORD?
+
+                    # Spec
+                    <x> `foo bar` <y>
+
+                    # usage: display with shell-quoting.
+                    <x> 'foo bar' <y>
+
+        - DECISION: still no quantifier for Literals
+
+            - and no degen-group removal
+
+            - Plus if you want an optional quantifier, the way to
+              convey that in in usage-text would be via [] brackets
+
+                <x> [/] <y>
+
+            - So the spec and usage align well by retaining even
+              a seeming degenerate group.
 
     . ast_to_parsed_spec()
 
         - without_degen_group()
+
+            - In think Positional & Parameter are relevant in this context.
+                - But not Alternative: never exist as a solo child.
+                - And not not Literal: has no quantifier.
+
+                - Mergeable
+
+                    [<x>{2}]
+                    [<x>]{2}
+
+                    --foo [<x>{2}]
+                    --foo [<x>]{2}
 
             * work in progress: see TODO.
 
@@ -46,6 +108,11 @@ TODO:
 
     - error(): include expected-elements:
         - Probably framed in terms of parsing-functions.
+
+    - Might be handy if all GrammarElem quantifiers were non-None:
+        - But maybe that's a bad approach if users wanting to go fully by API
+          could also be defining GrammarElem themselves.
+        - leaning against the idea for now
 
 ----
 Spec-parsing overview
@@ -1773,7 +1840,4 @@ class SpecParser:
         err = SpecParseError(**err_kws)
         err.parse_context = lex.get_context().for_error
         raise err
-
-
-
 
