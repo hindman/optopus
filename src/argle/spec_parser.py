@@ -66,6 +66,28 @@ TODO:
             - So the spec and usage align well by retaining even
               a seeming degenerate group.
 
+    - Grammar.normalize_quantifiers:
+
+        - traverse the tree.
+        - set all nargs/ntimes to a normalize Quantifier.
+        - remove all degenerate Group.
+
+        - merging two quantifiers:
+
+            - normalize each.
+            - qs: singular    (it will be m=1 n=1 after normalization).
+            - qp: plural
+
+            # The singular Quantifier is relevant only for required.
+            # m and n do nothing (both are 1)
+            # greedy is irrelevant when m==n.
+            q = Quantifier(
+                m        = qp.m,
+                n        = qp.n,
+                required = qp.required and qs.required,
+                greedy   = qp.greedy,
+            )
+
     . ast_to_parsed_spec()
 
         - without_degen_group()
@@ -81,6 +103,8 @@ TODO:
 
                     --foo [<x>{2}]
                     --foo [<x>]{2}
+
+            - how to merge
 
             * work in progress: see TODO.
 
@@ -108,11 +132,6 @@ TODO:
 
     - error(): include expected-elements:
         - Probably framed in terms of parsing-functions.
-
-    - Might be handy if all GrammarElem quantifiers were non-None:
-        - But maybe that's a bad approach if users wanting to go fully by API
-          could also be defining GrammarElem themselves.
-        - leaning against the idea for now
 
 ----
 Spec-parsing overview

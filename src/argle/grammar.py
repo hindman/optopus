@@ -184,19 +184,6 @@ class GrammarElem(TreeElem):
         'choices',
     ]
 
-    '''
-
-    In MacVim I sometimes want to quickly peruse all lines containing
-    some text. I could use vimgrep. For example:
-
-    ```Vim command
-    :vimgrep /foobar/ % | cw
-    ```
-
-    But that's seems a bit awkard to type.
-
-    '''
-
     def without_degen_group(self):
         # First we decide whether self is a degenerate Group.
 
