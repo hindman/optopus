@@ -2008,24 +2008,60 @@ Why Literals cannot have a name:
 
 Why Literals do not support quantifiers and dests:
 
-    - Difficult to imagine plausible use cases:
+    - Strongest reason is to consider how literals appear in usage-text:
+
+        - A literal is like a choice-situation where the N of choices is 1.
+        - Docopt displays a choice literally:
+
+            naval-fate ship new <name>...
+
+        - Similarly, argle will display a literal ... literally:
+
+            # Literally when possible.
+            <x> / <y>
+
+            # Via shell-quoting is needed.
+            <x> 'divided by' <y>
+
+        - Now imagine trying to attach quantifier syntax to that:
+
+            # Very awkward.
+            <x> /{3,4} <y>
+
+    - No quantifier for literals implies no degenerate-group removal:
+
+        - Removing a [] requires a quantifier where required=False can be
+          registered.
+
+        - Also, if you want an optional literal, the way to convey that in
+          usage-text would be via [] brackets.
+
+            <x> [/] <y>
+
+        - So not removing a seeming degenerate-group aligns the spec and
+          usage-text well.
+
+    - Difficult to imagine plausible use cases for quantified literals:
 
         `fast`... <x> <y>
         [`down`] <x> <y>
 
-    - User has a good (and better) workaround:
+    - User has a good workaround:
+
         - Define a Positional with one choice.
         - The choice will appear in the usage text (as desired).
         - Positionals support quantifiers.
         - Data would be stored in a dest.
+        - Presumably the data is meaningful if the literal needs
+          quantification.
         - And the Positional could be anchored if the user cases about the
           divider-aspect of a Literal.
 
         <speed=fast>... <x> <y>
         [<direction=down>] <x> <y>
 
-    - The existence of a better workaround implies that a Literal also has no
-      need for a dest.
+        - The existence of a better workaround implies that a Literal also has
+          no need for a dest.
 
 Literals as a grammatical dividers:
 

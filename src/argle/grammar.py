@@ -5,6 +5,7 @@
 
 from dataclasses import dataclass, field, replace as clone
 from functools import wraps
+from operator import attrgetter
 from typing import Union
 
 from short_con import cons, constants
@@ -191,6 +192,10 @@ class GrammarElem(TreeElem):
         if not isinstance(self, Group):
             return self
 
+        # Must have no name/dest.
+        if self.name or self.dest:
+            return self
+
         # Must have only 1 child elem.
         if len(self.elems) != 1:
             return self
@@ -208,8 +213,8 @@ class GrammarElem(TreeElem):
         return self     # Disable rest of code for now.
 
         # Get or create quantifiers for the parent and the child.
-        qp = self.ntimes or Quantifier(m = 1, n = 1)
-        qc = self.ntimes or Quantifier(m = 1, n = 1)
+        qp = self.ntimes
+        qc = child.ntimes
 
         # At least one of the ntimes-quantifiers must be singular.
         # If not, the parent Group cannot be dropped as degenerate.
@@ -232,9 +237,36 @@ class GrammarElem(TreeElem):
         # Return the child -- after applying the process recursively.
         return child.without_degen_group()
 
+    def qnormalize(self):
+        # If the GrammarElem has any quantifier attributes,
+        # make sure they are occupied by a normalized Quantifier.
+        for a in ('nargs', 'ntimes'):
+            if hasattr(self, a):
+                q = getattr(self, a)
+                setattr(self, a, Quantifier.normalized(q))
+
 @dataclass
 class Grammar(GrammarElem):
     variants: list['Variant']
+
+    def normalize_quantifiers(self):
+        for we in self.traverse():
+            we.val.qnormalize()
+
+    def drop_degenerate_groups(self):
+
+        # Remove degenerate-groups, under some conditions: the
+        # without_degen_group() method handles those details, returning a new
+        # elem if they are met, or the same elem if they are not.
+        for we in self.traverse(Variant, Group, Alternative, Option):
+            e = we.val
+            if isinstance(e, Option):
+                attr = 'parameters'
+            else:
+                attr = 'elems'
+            old_elems = getattr(e, attr)
+            new_elems = [c.without_degen_group() for c in old_elems]
+            setattr(e, attr, new_elems)
 
 @dataclass
 class Variant(GrammarElem):
@@ -322,10 +354,47 @@ class Parameter(VarInput):
 
 @dataclass
 class Quantifier(GrammarElem):
-    m: int = None
+    m: int
     n: int = None
     required: bool = True
     greedy: bool = True
+
+    @classmethod
+    def normalized(cls, q):
+        if q is None:
+            # Default.
+            return cls(m = 1, n = 1)
+        elif q.m == 0:
+            # Shift optionality from m into required.
+            return cls(m = 1, n = q.n, required = False, greedy = q.greedy)
+        else:
+            # Do nothing.
+            return q
+
+    @classmethod
+    def merged(cls, q1, q2):
+        # To merge two quantifiers, at least one must be singular.
+        qs = [q1, q2]
+        if not any(q.is_singular for q in qs):
+            raise ValueError('Cannot merge quantifiers unless one is singular')
+
+        # Convert to normalized.
+        qs = [
+            Quantifier.normalized(q)
+            for q in [q1, q2]
+        ]
+
+        # Determine which is plural (if both singular, either will work).
+        plural, singular = qs.sort(key = attrgetter('is_singular'))
+
+        # Return a new Quantifier based entirely on the plural one,
+        # other than required=False, which can come from either Quantifier.
+        return cls(
+            m = plural.m,
+            n = plural.n,
+            required = plural.required and singular.required,
+            greedy = plural.greedy,
+        )
 
     @property
     def is_singular(self):

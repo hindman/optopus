@@ -10,118 +10,28 @@ TODO:
     x Quantifier: normalize post-init: m=0  =>  m=1, required=False
     x Quantifier ranges: better syntax: {m-n}
     x as_gelem(): define for ParseElem classes.
-
-    - Literal:
-        - I have logic for no quantifier.
-        - If you need a quantified Literal, you must care
-          about the data: how many times was it supplied?
-        - If so, use a single-choice Positional.
-
-        - OK, but consider:
-
-            - Spec looks wierd:
-
-                <x> <`/`>... <y>
-
-            - How does usage-text work?
-
-                <x> /... <y>
-                <x> `/`... <y>
-
-            - How does usage-text work generally for literals?
-
-                - docopt represents a choice literally:
-
-                    naval-fate ship new <name>...
-
-                - a literal is a kind of choice situation: with one choice.
-
-                - decision: literals shown literally:
-
-                    <x> / <y>
-
-                - if so, it would seem odd to support quantifier syntax for
-                  such things.
-
-                    <x> /{3,4} <y>
-
-                - if there is no syntax for literals in usage text, does that
-                  mean they must be a single WORD?
-
-                    # Spec
-                    <x> `foo bar` <y>
-
-                    # usage: display with shell-quoting.
-                    <x> 'foo bar' <y>
-
-        - DECISION: still no quantifier for Literals
-
-            - and no degen-group removal
-
-            - Plus if you want an optional quantifier, the way to
-              convey that in in usage-text would be via [] brackets
-
-                <x> [/] <y>
-
-            - So the spec and usage align well by retaining even
-              a seeming degenerate group.
-
-    - Grammar.normalize_quantifiers:
-
-        - traverse the tree.
-        - set all nargs/ntimes to a normalize Quantifier.
-        - remove all degenerate Group.
-
-        - merging two quantifiers:
-
-            - normalize each.
-            - qs: singular    (it will be m=1 n=1 after normalization).
-            - qp: plural
-
-            # The singular Quantifier is relevant only for required.
-            # m and n do nothing (both are 1)
-            # greedy is irrelevant when m==n.
-            q = Quantifier(
-                m        = qp.m,
-                n        = qp.n,
-                required = qp.required and qs.required,
-                greedy   = qp.greedy,
-            )
+    x Grammar.normalize_quantifiers()
 
     . ast_to_parsed_spec()
 
-        - without_degen_group()
+        . Quantifier.merged():
+            * DONE but not tested.
 
-            - In think Positional & Parameter are relevant in this context.
+        - without_degen_group()
+            * currently returning ast_orig
+            * work in progress: see TODO.
+
+            - Positional & Parameter are relevant in this context.
                 - But not Alternative: never exist as a solo child.
                 - And not not Literal: has no quantifier.
 
-                - Mergeable
+                - Mergeable:
 
                     [<x>{2}]
                     [<x>]{2}
 
                     --foo [<x>{2}]
                     --foo [<x>]{2}
-
-            - how to merge
-
-            * work in progress: see TODO.
-
-            * First time I had this running, it didn't seem to cause any tests
-              to fail (unexpected).
-
-            - Can merge if parent or child has singular ntimes:
-            - Examples:
-
-                [--foo]{3-4}
-                [--foo{3-4}]
-
-                [[<x> <y>]{3,4}]
-                [[<x> <y>]]{3,4}
-
-        - currently returning ast_orig
-        - todo items in doc-string
 
     - spec-parsing errors: add a new checks:
         - Unknown partial:
@@ -566,7 +476,7 @@ class Variant(ParseElem):
     elems: list[VariantElem]
 
     def as_gelem(self):
-        return GE.Group(
+        return GE.Variant(
             name = self.name,
             elems = [e.as_gelem() for e in self.elems],
         )
@@ -1776,18 +1686,8 @@ class SpecParser:
             variants = [v.as_gelem() for v in variants],
         )
 
-        # Remove degenerate-groups, under some conditions: the
-        # without_degen_group() method handles those details, returning a new
-        # elem if they are met, or the same elem if they are not.
-        for we in g.traverse(GE.Variant, GE.Group, GE.Alternative, GE.Option):
-            e = we.val
-            if isinstance(e, GE.Option):
-                attr = 'parameters'
-            else:
-                attr = 'elems'
-            old_elems = getattr(e, attr)
-            new_elems = [c.without_degen_group() for c in old_elems]
-            setattr(e, attr, new_elems)
+        g.normalize_quantifiers()
+        g.drop_degenerate_groups()
 
         # TODO: elems: traverse:
         #   - Convert ParseElem => Sections.
