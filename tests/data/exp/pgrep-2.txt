@@ -611,7 +611,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'ignore-case',
-                        nargs = None,
                         ntimes = None,
                         aliases = [BareOption(name='i')],
                         elems = [
@@ -631,7 +630,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'invert-match',
-                        nargs = None,
                         ntimes = None,
                         aliases = [BareOption(name='v')],
                         elems = [

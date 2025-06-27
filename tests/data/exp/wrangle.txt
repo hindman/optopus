@@ -4194,7 +4194,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'i',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4209,7 +4208,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'v',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4224,7 +4222,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'm',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4239,7 +4236,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'C',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4254,7 +4250,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'color',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4318,7 +4313,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'i',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4333,7 +4327,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'n',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4388,7 +4381,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'i',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4403,7 +4395,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'g',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4418,7 +4409,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'd',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4428,7 +4418,6 @@ SpecAST(
                         ),
                         Option(
                             name = 'p',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -4549,7 +4538,6 @@ SpecAST(
             token = Token(kind='short_option', text='-i', pos=517, line=14, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'ignore-case',
-                nargs = None,
                 ntimes = None,
                 aliases = [BareOption(name='i')],
                 elems = [
@@ -4562,7 +4550,6 @@ SpecAST(
             token = Token(kind='short_option', text='-v', pos=550, line=15, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'invert-match',
-                nargs = None,
                 ntimes = None,
                 aliases = [BareOption(name='v')],
                 elems = [
@@ -4575,7 +4562,6 @@ SpecAST(
             token = Token(kind='short_option', text='-m', pos=597, line=16, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'max-count',
-                nargs = None,
                 ntimes = None,
                 aliases = [BareOption(name='m')],
                 elems = [
@@ -4594,7 +4580,6 @@ SpecAST(
             token = Token(kind='short_option', text='-C', pos=649, line=17, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'context',
-                nargs = None,
                 ntimes = None,
                 aliases = [BareOption(name='C')],
                 elems = [
@@ -4613,7 +4598,6 @@ SpecAST(
             token = Token(kind='long_option', text='--color', pos=708, line=18, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'color',
-                nargs = None,
                 ntimes = None,
                 aliases = [],
                 elems = [
@@ -4632,7 +4616,6 @@ SpecAST(
             token = Token(kind='short_option', text='-n', pos=753, line=19, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'nsubs',
-                nargs = None,
                 ntimes = None,
                 aliases = [BareOption(name='n')],
                 elems = [
@@ -4651,7 +4634,6 @@ SpecAST(
             token = Token(kind='short_option', text='-g', pos=793, line=20, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'group',
-                nargs = None,
                 ntimes = None,
                 aliases = [BareOption(name='g')],
                 elems = [
@@ -4670,7 +4652,6 @@ SpecAST(
             token = Token(kind='short_option', text='-d', pos=852, line=21, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'delim',
-                nargs = None,
                 ntimes = None,
                 aliases = [BareOption(name='d')],
                 elems = [
@@ -4689,7 +4670,6 @@ SpecAST(
             token = Token(kind='short_option', text='-p', pos=908, line=22, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'para',
-                nargs = None,
                 ntimes = None,
                 aliases = [BareOption(name='p')],
                 elems = [

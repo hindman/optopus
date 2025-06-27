@@ -1802,7 +1802,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'i',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -1817,7 +1816,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'v',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -1857,7 +1855,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'foo',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -1923,7 +1920,6 @@ SpecAST(
             token = Token(kind='short_option', text='-i', pos=321, line=25, col=5, indent=4, is_first=True),
             opt = Option(
                 name = 'i',
-                nargs = None,
                 ntimes = None,
                 aliases = [],
                 elems = [
@@ -1936,7 +1932,6 @@ SpecAST(
             token = Token(kind='short_option', text='-v', pos=367, line=27, col=5, indent=4, is_first=True),
             opt = Option(
                 name = 'v',
-                nargs = None,
                 ntimes = None,
                 aliases = [],
                 elems = [

@@ -2301,7 +2301,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'speed',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -2397,7 +2396,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'moored',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -2407,7 +2405,6 @@ SpecAST(
                         ),
                         Option(
                             name = 'drifting',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -2456,7 +2453,6 @@ SpecAST(
             token = Token(kind='long_option', text='--speed', pos=319, line=9, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'speed',
-                nargs = None,
                 ntimes = None,
                 aliases = [],
                 elems = [
@@ -2475,7 +2471,6 @@ SpecAST(
             token = Token(kind='long_option', text='--moored', pos=363, line=10, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'moored',
-                nargs = None,
                 ntimes = None,
                 aliases = [],
                 elems = [
@@ -2488,7 +2483,6 @@ SpecAST(
             token = Token(kind='long_option', text='--drifting', pos=401, line=11, col=1, indent=0, is_first=True),
             opt = Option(
                 name = 'drifting',
-                nargs = None,
                 ntimes = None,
                 aliases = [],
                 elems = [

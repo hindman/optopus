@@ -61,3 +61,6 @@ def partition(xs, predicate = bool):
         d[result].append(x)
     return (d[True], d[False])
 
+def is_subclass(obj, *types):
+    return isinstance(obj, type) and issubclass(obj, types)
+

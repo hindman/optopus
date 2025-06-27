@@ -13,25 +13,18 @@ TODO:
     x Grammar.normalize_quantifiers()
 
     . ast_to_parsed_spec()
+        x Quantifier.merged()
+        x without_degen_group()
+        x drop_degenerate_groups()
 
-        . Quantifier.merged():
-            * DONE but not tested.
+        __HERE__
 
-        - without_degen_group()
-            * currently returning ast_orig
-            * work in progress: see TODO.
+        - Convert ParseElem => list[GE.Section]
+        - unify/reconcile: opt-specs <=> variants.
 
-            - Positional & Parameter are relevant in this context.
-                - But not Alternative: never exist as a solo child.
-                - And not not Literal: has no quantifier.
+        - USE_NEW = False: DROP
 
-                - Mergeable:
-
-                    [<x>{2}]
-                    [<x>]{2}
-
-                    --foo [<x>{2}]
-                    --foo [<x>]{2}
+    - Full recheck of tests/data/got.
 
     - spec-parsing errors: add a new checks:
         - Unknown partial:
@@ -501,7 +494,7 @@ class Group(ParseElem):
             name = self.name,
             dest = self.name,
             elems = [e.as_gelem() for e in self.elems],
-            ntimes = as_gelem(self.ntimes),
+            ntimes = gelem_or_none(self.ntimes),
         )
 
 @dataclass
@@ -525,7 +518,7 @@ class Positional(ParseElem):
         return GE.Positional(
             name = self.name,
             dest = self.name,
-            nargs = as_gelem(self.nargs),
+            nargs = gelem_or_none(self.nargs),
             choices = [e.as_gelem() for e in self.elems],
         )
 
@@ -539,7 +532,7 @@ class Parameter(ParseElem):
         return GE.Parameter(
             name = self.name,
             dest = self.name,
-            nargs = as_gelem(self.nargs),
+            nargs = gelem_or_none(self.nargs),
             choices = [e.as_gelem() for e in self.elems],
         )
 
@@ -558,7 +551,6 @@ class BareOption(ParseElem):
 class Option(ParseElem):
     name: str
     elems: list[OptionElem]
-    nargs: Quantifier = None
     ntimes: Quantifier = None
     aliases: list[BareOption] = field(default_factory = list)
 
@@ -566,8 +558,7 @@ class Option(ParseElem):
         return GE.Option(
             name = self.name,
             dest = self.name,
-            nargs = as_gelem(self.nargs),
-            ntimes = as_gelem(self.ntimes),
+            ntimes = gelem_or_none(self.ntimes),
             parameters = [e.as_gelem() for e in self.elems],
             aliases = [e.as_gelem() for e in self.aliases],
         )
@@ -631,7 +622,7 @@ class Alternative(ParseElem):
             elems = [e.as_gelem() for e in self.elems],
         )
 
-def as_gelem(e):
+def gelem_or_none(e):
     if e:
         return e.as_gelem()
     else:
@@ -1609,49 +1600,7 @@ class SpecParser:
     ####
 
     def ast_to_parsed_spec(self, ast):
-
-        '''
-
-        - Degenerate-groups: remove.
-
-        - elems: traverse:
-            - Convert ParseElem => Sections.
-            - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
-
-            - Issue. GE.Choice.help_text: figure out what needs to be added to
-              spec_parser.py to support this. This will be relevant when
-              dealing with OptSpec (the sections, not the grammar).
-
-            SectionTitle
-                scope: Scope
-                title: str
-                token: Token
-            Heading
-                title: str
-                token: Token
-            BlockQuote
-                text: str
-                comment: bool
-                no_wrap: bool
-                token: Token
-            OptSpec
-                scope: Scope
-                opt: OptSpecElem
-                text: str
-                token: Token
-
-        - opts: unify/reconcile: opt-specs <=> variants.
-
-        - return Grammar and sections.
-
-        '''
-
-        # sections = []
-        # return ParsedSpec(
-        #     grammar = ast,
-        #     sections = sections,
-        # )
-
+        USE_NEW = False             # TODO: drop
         ast_orig = deepcopy(ast)
 
         # Partition SpecAST.elems into:
@@ -1680,31 +1629,50 @@ class SpecParser:
                 e = we.val
                 e.elems = e.elems_without_partials(partials)
 
-        # Define a Grammar by converting the ParseElem Variants
+        # Define a Grammar by converting each Variant to GE.Variant.
         # to GrammarElem Variants.
-        g = GE.Grammar(
-            variants = [v.as_gelem() for v in variants],
-        )
+        ge_variants = [v.as_gelem() for v in variants]
+        g = GE.Grammar(variants = ge_variants)
 
+        # Normalize quantifiers and drop unneeded groups.
         g.normalize_quantifiers()
         g.drop_degenerate_groups()
 
+        # __HERE__
+        #
         # TODO: elems: traverse:
         #   - Convert ParseElem => Sections.
         #   - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
-        pass
+        '''
+            - Issue. GE.Choice.help_text: figure out what needs to be added to
+              spec_parser.py to support this.
+
+            SectionTitle
+                scope: Scope
+                title: str
+                token: Token
+            Heading
+                title: str
+                token: Token
+            BlockQuote
+                text: str
+                comment: bool
+                no_wrap: bool
+                token: Token
+            OptSpec
+                scope: Scope
+                opt: OptSpecElem
+                text: str
+                token: Token
+        '''
+        sections = []
 
         # TODO: opts: unify/reconcile: opt-specs <=> variants.
         pass
 
-        # TODO: return Grammar and list[Section]
-        pass
-
-        # Return -- TEMP.
-        sections = []
+        # Return a ParsedSpec.
         return ParsedSpec(
-            grammar = ast_orig,
-            # grammar = g,
+            grammar = g if USE_NEW else ast_orig,  # TODO: drop
             sections = sections,
         )
 

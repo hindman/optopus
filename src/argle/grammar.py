@@ -14,7 +14,7 @@ from .constants import Chars, Pmodes
 from .errors import SpecParseError, ErrKinds, ErrMsgs
 from .regex_lexer import RegexLexer
 from .tokens import Token, TokDefs
-from .utils import get, distilled
+from .utils import get, distilled, is_subclass
 
 ####
 # Data classes: TreeElem and WalkElem.
@@ -187,6 +187,7 @@ class GrammarElem(TreeElem):
 
     def without_degen_group(self):
         # First we decide whether self is a degenerate Group.
+        # If not we do nothing and return self.
 
         # Must be Group.
         if not isinstance(self, Group):
@@ -202,48 +203,51 @@ class GrammarElem(TreeElem):
 
         # The child must be Group, Option, Positional, or Parameter.
         #
-        # And it cannot be Literal (no quantifier) or Alternative (never
-        # enclosed by itself in a Group).
+        # It cannot be:
+        # - Literal (no quantifier).
+        # - Alternative (never solo in a Group).
+        #
         child = self.elems[0]
         child_types = (Group, Option, Positional, Parameter)
         if not isinstance(child, child_types):
             return self
 
-        # __HERE__
-        return self     # Disable rest of code for now.
-
-        # Get or create quantifiers for the parent and the child.
+        # Get the Quantifiers for the parent and child.
         qp = self.ntimes
-        qc = child.ntimes
+        qc = getattr(child, child.quant_attr)
 
-        # At least one of the ntimes-quantifiers must be singular.
-        # If not, the parent Group cannot be dropped as degenerate.
+        # At least one of the quantifiers must be singular.
         if not (qp.is_singular or qc.is_singular):
             return self
 
-        # TODO: merge qp and qc.
-
-        # TODO: this code uses the old (incorrect) logic.
-        #
-        # If the Group is not required, apply that status
-        # to the the child's ntimes.
-        q = self.ntimes
-        if q and q.is_optional:
-            if child.ntimes:
-                child.ntimes.required = False
-            else:
-                child.ntimes = Quantifier(m = 1, n = 1, required = False)
+        # Set child's quantifier by merging qp and qc.
+        q = Quantifier.merged(qp, qc)
+        setattr(child, child.quant_attr, q)
 
         # Return the child -- after applying the process recursively.
         return child.without_degen_group()
 
     def qnormalize(self):
-        # If the GrammarElem has any quantifier attributes,
-        # make sure they are occupied by a normalized Quantifier.
-        for a in ('nargs', 'ntimes'):
+        # If the GrammarElem has a non-derived Quantifier, normalize it.
+        attr = self.quant_attr
+        if attr:
+            q = getattr(self, attr)
+            setattr(self, attr, Quantifier.normalized(q))
+
+    @property
+    def quant_attr(self):
+        # For Option, we want ntimes, not nargs, which is derived.
+        for a in ('ntimes', 'nargs'):
             if hasattr(self, a):
-                q = getattr(self, a)
-                setattr(self, a, Quantifier.normalized(q))
+                return a
+        return None
+
+    @property
+    def elems_attr(self):
+        if isinstance(self, Option):
+            return 'parameters'
+        else:
+            return 'elems'
 
 @dataclass
 class Grammar(GrammarElem):
@@ -254,19 +258,18 @@ class Grammar(GrammarElem):
             we.val.qnormalize()
 
     def drop_degenerate_groups(self):
-
-        # Remove degenerate-groups, under some conditions: the
-        # without_degen_group() method handles those details, returning a new
-        # elem if they are met, or the same elem if they are not.
+        # Removes all degenerate-groups in the Grammar.
+        #
+        # The without_degen_group() method determines whether an elem qualifies
+        # as a degenerate-group. If yes, it returns a new elem (the only child
+        # of the group), without unneeded Group(s) wrapping it. If no, the
+        # method returns the same elem, unchanged.
+        #
         for we in self.traverse(Variant, Group, Alternative, Option):
             e = we.val
-            if isinstance(e, Option):
-                attr = 'parameters'
-            else:
-                attr = 'elems'
-            old_elems = getattr(e, attr)
+            old_elems = getattr(e, e.elems_attr)
             new_elems = [c.without_degen_group() for c in old_elems]
-            setattr(e, attr, new_elems)
+            setattr(e, e.elems_attr, new_elems)
 
 @dataclass
 class Variant(GrammarElem):
@@ -319,7 +322,6 @@ class Option(Opt):
     name: str
     dest: str = None
     help_text: str = None
-    nargs: 'Quantifier' = None
     ntimes: 'Quantifier' = None
     parameters: list[Union['Parameter', Group]] = field(default_factory = list)
     aliases: list[str] = field(default_factory = list)
@@ -328,6 +330,16 @@ class Option(Opt):
     dispatch: list[callable] = None
     priority: bool = False
     negaters: list['Option'] = None
+
+    # TODO: implement derived behavior.
+
+    @property
+    def nargs(self):
+        return None
+
+    @nargs.setter
+    def nargs(self):
+        raise NotImplementedError
 
 @dataclass
 class Alias(GrammarElem):
@@ -373,7 +385,7 @@ class Quantifier(GrammarElem):
 
     @classmethod
     def merged(cls, q1, q2):
-        # To merge two quantifiers, at least one must be singular.
+        # To merge quantifiers, at least one must be singular.
         qs = [q1, q2]
         if not any(q.is_singular for q in qs):
             raise ValueError('Cannot merge quantifiers unless one is singular')
@@ -384,11 +396,11 @@ class Quantifier(GrammarElem):
             for q in [q1, q2]
         ]
 
-        # Determine which is plural (if both singular, either will work).
-        plural, singular = qs.sort(key = attrgetter('is_singular'))
+        # Determine which is plural (if both singular, order does not matter).
+        plural, singular = sorted(qs, key = attrgetter('is_singular'))
 
-        # Return a new Quantifier based entirely on the plural one,
-        # other than required=False, which can come from either Quantifier.
+        # Return a new Quantifier based mainly on the plural one.
+        # The exception is required=False, which can come from either.
         return cls(
             m = plural.m,
             n = plural.n,
@@ -437,9 +449,6 @@ class OptSpec(SectionElem):
 GrammarElems = constants({
     name : obj
     for name, obj in globals().items()
-    if (
-        isinstance(obj, type) and
-        issubclass(obj, (GrammarElem, SectionElem))
-    )
+    if is_subclass(obj, GrammarElem, SectionElem)
 })
 

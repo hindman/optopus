@@ -10262,7 +10262,6 @@ SpecAST(
                             elems = [
                                 Option(
                                     name = 'repo-home',
-                                    nargs = None,
                                     ntimes = None,
                                     aliases = [],
                                     elems = [
@@ -10277,7 +10276,6 @@ SpecAST(
                             elems = [
                                 Option(
                                     name = 'config',
-                                    nargs = None,
                                     ntimes = None,
                                     aliases = [],
                                     elems = [
@@ -10292,7 +10290,6 @@ SpecAST(
                             elems = [
                                 Option(
                                     name = 'verbose',
-                                    nargs = None,
                                     ntimes = None,
                                     aliases = [],
                                     elems = [
@@ -10346,7 +10343,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'shallow',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10356,7 +10352,6 @@ SpecAST(
                         ),
                         Option(
                             name = 'deep',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10371,7 +10366,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'rev',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10417,7 +10411,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'message',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10469,7 +10462,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'force',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10502,7 +10494,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'yes',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10535,7 +10526,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'username',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10550,7 +10540,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'email',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10565,7 +10554,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'password',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -10670,7 +10658,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'repo-home',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -10696,7 +10683,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'config',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -10728,7 +10714,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'verbose',
-                        nargs = None,
                         ntimes = None,
                         aliases = [BareOption(name='v')],
                         elems = [
@@ -10748,7 +10733,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'version',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -10768,7 +10752,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'help',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -10828,7 +10811,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'deep',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -10848,7 +10830,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'shallow',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -10868,7 +10849,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'rev',
-                        nargs = None,
                         ntimes = None,
                         aliases = [BareOption(name='r')],
                         elems = [
@@ -10923,7 +10903,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'message',
-                        nargs = None,
                         ntimes = None,
                         aliases = [BareOption(name='m')],
                         elems = [
@@ -10989,7 +10968,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'force',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -11020,7 +10998,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'yes',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -11051,7 +11028,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'username',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -11077,7 +11053,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'email',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [
@@ -11103,7 +11078,6 @@ SpecAST(
                 elems = [
                     Option(
                         name = 'password',
-                        nargs = None,
                         ntimes = None,
                         aliases = [],
                         elems = [

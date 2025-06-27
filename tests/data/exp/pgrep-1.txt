@@ -481,7 +481,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'i',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
@@ -496,7 +495,6 @@ SpecAST(
                     elems = [
                         Option(
                             name = 'v',
-                            nargs = None,
                             ntimes = None,
                             aliases = [],
                             elems = [
