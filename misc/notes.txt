@@ -4529,8 +4529,8 @@ Querying grammar elements in a Parser:
 
         - Where ATTR:
             - Attribute name to match.
-            - Choices: name, dest, or both.
-            - Default: both.
+            - Choices: name, dest, or (name, dest).
+            - Default: (name, dest).
 
         - If negate=True:
             - Select entities that do not meeting the criteria.

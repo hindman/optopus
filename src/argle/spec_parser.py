@@ -21,6 +21,14 @@ TODO:
 
         - Convert ParseElem => list[GE.Section]
         - unify/reconcile: opt-specs <=> variants.
+            - See discussion: opt-independence
+            - Also involves unifying opts having choices.
+
+            - Relevant notes:
+                grammar-querying-api: Grammar querying API
+                parser-config-api: Parser.config() API
+                query-path
+                query-elem
 
         - USE_NEW = False: DROP
 
