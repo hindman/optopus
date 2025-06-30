@@ -4771,7 +4771,7 @@ programmer:
     - Help text for each option/argument.
     - Metavars.
     - Aliases.
-    - Section names.
+    - Section titles.
     - Choice values (if simple strings).
 
 The simplest, clearest way to write that material is as a block of options

@@ -426,9 +426,10 @@ class SectionElem:
 
 @dataclass
 class Section(SectionElem):
-    name: str
-    title: str
-    elems: list[SectionElem]
+    name: str = None
+    scope: str = None
+    title: str = None
+    elems: list[SectionElem] = field(default_factory = list)
 
 @dataclass
 class Heading(SectionElem):

@@ -1648,31 +1648,25 @@ class SpecParser:
 
         # __HERE__
         #
-        # TODO: elems: traverse:
-        #   - Convert ParseElem => Sections.
-        #   - Relevent elems: SectionTitle, Heading, BlockQuote, OptSpec.
-        '''
-            - Issue. GE.Choice.help_text: figure out what needs to be added to
-              spec_parser.py to support this.
+        # GE.Section:
+        # - Name: keep [for API use; not in spec].
+        # - Scope: YES. Added
+        #    - Needed because we want to connect opt-spec/variants
+        #      in the Grammar, where we have Grammar.query().
+        #
+        # PE.Section:
+        # - Use to organize the data.
+        # - They use as_gelem() strategy to convert everything.
 
-            SectionTitle
-                scope: Scope
-                title: str
-                token: Token
-            Heading
-                title: str
-                token: Token
-            BlockQuote
-                text: str
-                comment: bool
-                no_wrap: bool
-                token: Token
-            OptSpec
-                scope: Scope
-                opt: OptSpecElem
-                text: str
-                token: Token
-        '''
+        # Organize the other elements (SectionTitle, Heading, BlockQuote,
+        # OptSpec) into groups that will eventually become sections.
+        sgroups = [[]]
+        for e in others:
+            # TODO: use Sections, not inner-lists.
+            if isinstance(e, SectionTitle):
+                sgroups.append([])
+            sgroups[-1].append(e)
+
         sections = []
 
         # TODO: opts: unify/reconcile: opt-specs <=> variants.
