@@ -425,27 +425,34 @@ class SectionElem:
     pass
 
 @dataclass
+class Scope(SectionElem):
+    query_path: str
+
+@dataclass
 class Section(SectionElem):
-    name: str = None
-    scope: str = None
+    name: str = None      # For API use.
+    scope: Scope = None
     title: str = None
     elems: list[SectionElem] = field(default_factory = list)
+    token: Token = None
 
 @dataclass
 class Heading(SectionElem):
     title: str
+    token: Token = None
 
 @dataclass
 class BlockQuote(SectionElem):
     text: str
     comment: bool
     no_wrap: bool
-    token_indent: int
+    # token_indent: int     # ADD???
+    token: Token = None
 
 @dataclass
 class OptSpec(SectionElem):
     # TODO: not sure what this needs.
-    pass
+    token: Token = None
 
 GrammarElems = constants({
     name : obj

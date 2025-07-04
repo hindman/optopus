@@ -16,11 +16,12 @@ TODO:
         x Quantifier.merged()
         x without_degen_group()
         x drop_degenerate_groups()
+        x Convert ParseElem => list[GE.Section]
 
         __HERE__
 
-        - Convert ParseElem => list[GE.Section]
         - unify/reconcile: opt-specs <=> variants.
+
             - See discussion: opt-independence
             - Also involves unifying opts having choices.
 
@@ -438,6 +439,9 @@ class Scope(ParseElem):
     # A scope attached to either a SectionTitle or OptSpec.
     query_path: str
 
+    def as_gelem(self):
+        return GE.Scope(query_path = self.query_path)
+
 @dataclass
 class Quantifier(ParseElem):
     # A quantifier attached to various ParseElem.
@@ -588,6 +592,9 @@ class OptSpec(ParseElem):
     text: str
     token: Token
 
+    def as_gelem(self):
+        return GE.OptSpec()
+
 @dataclass
 class SectionTitle(ParseElem):
     scope: Scope
@@ -599,12 +606,26 @@ class Heading(ParseElem):
     title: str
     token: Token
 
+    def as_gelem(self):
+        return GE.Heading(
+            title = self.title,
+            token = self.token,
+        )
+
 @dataclass
 class BlockQuote(ParseElem):
     text: str
     comment: bool
     no_wrap: bool
     token: Token
+
+    def as_gelem(self):
+        return GE.BlockQuote(
+            text = self.text,
+            comment = self.comment,
+            no_wrap = self.no_wrap,
+            token = self.token,
+        )
 
 @dataclass
 class QuotedText(ParseElem):
@@ -628,6 +649,31 @@ class Alternative(ParseElem):
     def as_gelem(self):
         return GE.Group(
             elems = [e.as_gelem() for e in self.elems],
+        )
+
+@dataclass
+class Section(ParseElem):
+    title: SectionTitle = None
+    elems: list[ParseElem] = field(default_factory = list)
+
+    def as_gelem(self):
+
+        scope = None
+        title = None
+        token = None
+        elems = [e.as_gelem() for e in self.elems]
+
+        t = self.title
+        if t:
+            scope = t.scope.as_gelem() if t.scope else None
+            title = t.title
+            token = t.token
+
+        return GE.Section(
+            scope = scope,
+            title = title,
+            elems = elems,
+            token = token,
         )
 
 def gelem_or_none(e):
@@ -1646,36 +1692,25 @@ class SpecParser:
         g.normalize_quantifiers()
         g.drop_degenerate_groups()
 
-        # __HERE__
-        #
-        # GE.Section:
-        # - Name: keep [for API use; not in spec].
-        # - Scope: YES. Added
-        #    - Needed because we want to connect opt-spec/variants
-        #      in the Grammar, where we have Grammar.query().
-        #
-        # PE.Section:
-        # - Use to organize the data.
-        # - They use as_gelem() strategy to convert everything.
-
-        # Organize the other elements (SectionTitle, Heading, BlockQuote,
-        # OptSpec) into groups that will eventually become sections.
-        sgroups = [[]]
+        # Organize the other elements into Sections.
+        # Relevant elems: SectionTitle, Heading, BlockQuote, OptSpec.
+        pe_sections = [Section()]
         for e in others:
-            # TODO: use Sections, not inner-lists.
             if isinstance(e, SectionTitle):
-                sgroups.append([])
-            sgroups[-1].append(e)
+                pe_sections.append(Section(title = e))
+            else:
+                pe_sections[-1].elems.append(e)
 
-        sections = []
+        # Convert PE.Section to GE.Section.
+        sections = [s.as_gelem() for s in pe_sections]
 
         # TODO: opts: unify/reconcile: opt-specs <=> variants.
         pass
 
         # Return a ParsedSpec.
         return ParsedSpec(
-            grammar = g if USE_NEW else ast_orig,  # TODO: drop
-            sections = sections,
+            grammar = g if USE_NEW else ast_orig,    # TODO: drop
+            sections = sections if USE_NEW else [],  # TODO: drop
         )
 
     ####
