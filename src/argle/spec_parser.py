@@ -20,12 +20,14 @@ TODO:
 
         __HERE__
 
+        - GE.OptSpec: add attributes: see PE.OptSpec.as_gelem()
+
         - unify/reconcile: opt-specs <=> variants.
 
-            - See discussion: opt-independence
             - Also involves unifying opts having choices.
 
             - Relevant notes:
+                opt-independence
                 grammar-querying-api: Grammar querying API
                 parser-config-api: Parser.config() API
                 query-path
